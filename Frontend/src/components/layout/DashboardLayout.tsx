@@ -35,7 +35,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme-mode');
     if (saved) return saved === 'dark';
-    return true;
+    return false; // Changed from true to false for light theme by default
   });
 
   const theme = isDarkMode ? darkTheme : lightTheme;
