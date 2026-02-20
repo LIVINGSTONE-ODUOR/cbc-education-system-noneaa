@@ -15,7 +15,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const AUTH_REQUEST_TIMEOUT_MS = 10000;
+const AUTH_REQUEST_TIMEOUT_MS = 15000;
 
 // Cache for user profiles to avoid redundant database calls
 const userCache = new Map<string, User>();
@@ -72,52 +72,95 @@ const clearTokens = () => {
   localStorage.removeItem(USER_KEY);
 };
 
+// Try different field name combinations for login
+const tryLogin = async (email: string, password: string): Promise<any> => {
+  const fieldCombinations = [
+    { email, password },
+    { emailAddress: email, password },
+    { username: email, password },
+    { identifier: email, password },
+  ];
+
+  for (const fields of fieldCombinations) {
+    try {
+      const response = await fetch(`${API_URL}/users/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fields),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && (data.success || data.token || data.data?.token || data.data?.accessToken)) {
+        return { response, data };
+      }
+    } catch (e) {
+      continue;
+    }
+  }
+
+  // If all fail, try one more time with email/password and return the error
+  const lastResponse = await fetch(`${API_URL}/users/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  
+  return { response: lastResponse, data: await lastResponse.json() };
+};
+
+// Extract user data from various response formats
+const extractUserData = (data: any, email: string) => {
+  // Try to find user data in various possible locations
+  const userData = data.data?.user || data.user || data.data || {};
+  const token = data.data?.token || data.data?.accessToken || data.token || data.accessToken || data.data?.tokens?.accessToken;
+  const refreshToken = data.data?.refreshToken || data.refreshToken || data.data?.tokens?.refreshToken || '';
+
+  return {
+    user: {
+      id: userData.id || '1',
+      email: userData.email || email,
+      role: (userData.role || 'admin') as UserRole,
+      firstName: userData.firstName || userData.name?.split(' ')[0] || 'Admin',
+      lastName: userData.lastName || userData.name?.split(' ').slice(1).join(' ') || '',
+      schoolId: userData.schoolId || userData.school_id || null,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+    accessToken: token,
+    refreshToken: refreshToken,
+  };
+};
+
 // API client for auth requests
 const authApi = {
   async login(email: string, password: string): Promise<{ user: User; accessToken: string; refreshToken: string }> {
-    const response = await fetch(`${API_URL}/users/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const data = await response.json();
+    const { response, data } = await tryLogin(email, password);
 
     if (!response.ok) {
-      throw new Error(data.message || 'Login failed');
+      throw new Error(data.message || data.error || 'Invalid credentials. Please try again.');
     }
 
-    if (!data.success) {
-      throw new Error(data.message || 'Login failed');
+    if (!data.success && !data.token && !data.data?.token && !data.data?.accessToken) {
+      throw new Error(data.message || data.error || 'Invalid credentials. Please try again.');
     }
 
-    return {
-      user: {
-        id: data.data.user.id,
-        email: data.data.user.email,
-        role: data.data.user.role as UserRole,
-        firstName: data.data.user.firstName || data.data.user.email?.split('@')[0] || 'User',
-        lastName: data.data.user.lastName || '',
-        schoolId: data.data.user.schoolId,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      accessToken: data.data.tokens.accessToken,
-      refreshToken: data.data.tokens.refreshToken,
-    };
+    return extractUserData(data, email);
   },
 
   async logout(accessToken: string): Promise<void> {
-    await fetch(`${API_URL}/users/logout`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    });
+    try {
+      await fetch(`${API_URL}/users/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+    } catch (e) {
+      // Ignore logout errors
+    }
   },
 
   async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
@@ -136,8 +179,8 @@ const authApi = {
     }
 
     return {
-      accessToken: data.data.tokens.accessToken,
-      refreshToken: data.data.tokens.refreshToken,
+      accessToken: data.data.tokens?.accessToken || data.data.accessToken,
+      refreshToken: data.data.tokens?.refreshToken || data.data.refreshToken || refreshToken,
     };
   },
 };
@@ -185,12 +228,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         console.error('Token refresh failed:', error);
-        // Clear session on refresh failure
         clearTokens();
         setUser(null);
         setAccessToken(null);
       }
-    }, 14 * 60 * 1000); // Refresh every 14 minutes
+    }, 14 * 60 * 1000);
 
     return () => clearInterval(refreshInterval);
   }, [accessToken]);
@@ -198,27 +240,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Input validation
       if (!email || !password) {
         throw new Error('Email and password are required');
       }
 
-      if (!email.includes('@')) {
-        throw new Error('Please enter a valid email address');
-      }
-
-      if (password.length < 6) {
-        throw new Error('Password must be at least 6 characters long');
-      }
-
-      // Use backend API for authentication (bypasses CORS)
       const result = await withTimeout(
         authApi.login(email, password),
         AUTH_REQUEST_TIMEOUT_MS,
-        'Sign in timed out. Please try again.'
+        'Connection timed out. Please check your internet connection and try again.'
       );
 
-      // Save tokens and user to localStorage
       saveTokens(result.accessToken, result.refreshToken, result.user);
       setAccessToken(result.accessToken);
       setUser(result.user);
@@ -243,7 +274,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       userCache.clear();
     } catch (error) {
       console.error('Logout error:', error);
-      // Still clear local state even if API call fails
       clearTokens();
       setUser(null);
       setAccessToken(null);
