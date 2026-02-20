@@ -75,7 +75,7 @@ const clearTokens = () => {
 // API client for auth requests
 const authApi = {
   async login(email: string, password: string): Promise<{ user: User; accessToken: string; refreshToken: string }> {
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await fetch(`${API_URL}/users/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -111,7 +111,7 @@ const authApi = {
   },
 
   async logout(accessToken: string): Promise<void> {
-    await fetch(`${API_URL}/auth/logout`, {
+    await fetch(`${API_URL}/users/logout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -121,7 +121,7 @@ const authApi = {
   },
 
   async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
-    const response = await fetch(`${API_URL}/auth/refresh-token`, {
+    const response = await fetch(`${API_URL}/users/refresh-token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
