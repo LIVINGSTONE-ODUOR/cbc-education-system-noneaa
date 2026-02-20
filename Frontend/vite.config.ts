@@ -10,6 +10,14 @@ export default defineConfig({
     hmr: {
       overlay: false,
     },
+    proxy: {
+      // Proxy API requests to backend to bypass CORS
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   plugins: [
     react(),

@@ -406,8 +406,8 @@ exports.registerLearner = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const clientIp = req.ip;
-    const userAgent = req.get('User-Agent');
+    const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
+    const userAgent = req.get('User-Agent') || 'unknown';
 
     // Validate inputs
     if (!email || !password) {
@@ -463,7 +463,7 @@ exports.login = async (req, res) => {
     const isValidPassword = await verifyPassword(password, user.password_hash);
     if (!isValidPassword) {
       // Increment login attempts
-      await incrementLoginAttempts(user.id);
+      await incrementLoginAttempts(user.id).catch(err => console.error('Failed to increment login attempts:', err));
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials.'
@@ -479,20 +479,21 @@ exports.login = async (req, res) => {
     }
 
     // Reset login attempts on successful login
-    await resetLoginAttempts(user.id);
+    await resetLoginAttempts(user.id).catch(err => console.error('Failed to reset login attempts:', err));
 
     // Generate tokens
     const tokens = await generateTokens(user);
 
-    // Update session with IP and user agent (optimized)
+    // Update session with IP and user agent (optimized) - ignore errors for this optional update
     await query(
       `UPDATE user_sessions 
        SET ip_address = $1, user_agent = $2 
        WHERE session_token = $3`,
       [clientIp, userAgent, tokens.refreshToken]
-    );
+    ).catch(err => console.error('Failed to update session:', err));
 
-    res.json({
+    // Send successful response
+    return res.json({
       success: true,
       message: 'Login successful.',
       data: {
@@ -508,9 +509,10 @@ exports.login = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Login error:', error);
-    res.status(500).json({
+    // Ensure we always send a valid JSON response
+    return res.status(500).json({
       success: false,
-      message: 'Internal server error during login.'
+      message: 'An error occurred during login. Please try again.'
     });
   }
 };

@@ -198,46 +198,47 @@ const csrfProtection = (req, res, next) => {
 const auditLog = (action) => {
   return async (req, res, next) => {
     const startTime = Date.now();
-    const originalSend = res.send;
-    let responseBody = null;
 
-    res.send = function(body) {
-      responseBody = body;
-      return originalSend.call(this, body);
-    };
+    // Store original send and json methods
+    const originalSend = res.send;
+    const originalJson = res.json;
 
     res.on('finish', async () => {
       try {
         const duration = Date.now() - startTime;
-        const logData = {
-          user_id: req.user?.id || null,
-          school_id: req.user?.schoolId || null,
-          action: action || `${req.method} ${req.route?.path || req.path}`,
-          table_name: null,
-          record_id: null,
-          ip_address: req.ip,
-          user_agent: req.get('User-Agent'),
-          request_method: req.method,
-          request_path: req.path,
-          request_body: req.method !== 'GET' ? req.body : null,
-          response_status: res.statusCode,
-          response_time: duration,
-          timestamp: new Date().toISOString()
-        };
+        
+        // Only log audit if response is successful or created
+        if (res.statusCode >= 200 && res.statusCode < 500) {
+          const logData = {
+            user_id: req.user?.id || null,
+            school_id: req.user?.schoolId || null,
+            action: action || `${req.method} ${req.route?.path || req.path}`,
+            table_name: null,
+            record_id: null,
+            ip_address: req.ip,
+            user_agent: req.get('User-Agent'),
+            request_method: req.method,
+            request_path: req.path,
+            request_body: req.method !== 'GET' ? req.body : null,
+            response_status: res.statusCode,
+            response_time: duration,
+            timestamp: new Date().toISOString()
+          };
 
-        // Log to console for monitoring
-        console.log(`📊 Audit: ${logData.action} - ${res.statusCode} - ${duration}ms`);
+          // Log to console for monitoring
+          console.log(`📊 Audit: ${logData.action} - ${res.statusCode} - ${duration}ms`);
 
-        // Store in database (optional, can be disabled for performance)
-        if (process.env.ENABLE_AUDIT_LOGGING === 'true') {
-          try {
-            await query(
-              `INSERT INTO audit_logs (user_id, school_id, action, ip_address, user_agent, created_at)
-               VALUES ($1, $2, $3, $4, $5, NOW())`,
-              [logData.user_id, logData.school_id, logData.action, logData.ip_address, logData.user_agent]
-            );
-          } catch (auditError) {
-            console.error('❌ Audit logging failed:', auditError);
+          // Store in database (optional, can be disabled for performance)
+          if (process.env.ENABLE_AUDIT_LOGGING === 'true') {
+            try {
+              await query(
+                `INSERT INTO audit_logs (user_id, school_id, action, ip_address, user_agent, created_at)
+                 VALUES ($1, $2, $3, $4, $5, NOW())`,
+                [logData.user_id, logData.school_id, logData.action, logData.ip_address, logData.user_agent]
+              );
+            } catch (auditError) {
+              console.error('❌ Audit logging failed:', auditError);
+            }
           }
         }
       } catch (error) {

@@ -1,7 +1,9 @@
 import { useState, createContext, useContext, ReactNode, useEffect, useCallback } from 'react';
-import type { User as SupabaseAuthUser } from '@supabase/supabase-js';
 import { User, UserRole } from '@/types';
-import { supabase } from '@/lib/supabase';
+
+// Backend API URL - uses Vite proxy in development to avoid CORS issues
+// The proxy is configured in vite.config.ts to forward /api requests to localhost:3000
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 interface AuthContextType {
   user: User | null;
@@ -14,8 +16,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AUTH_REQUEST_TIMEOUT_MS = 10000;
-const SESSION_REQUEST_TIMEOUT_MS = 5000;
-const PROFILE_REQUEST_TIMEOUT_MS = 3000;
 
 // Cache for user profiles to avoid redundant database calls
 const userCache = new Map<string, User>();
@@ -40,137 +40,160 @@ const withTimeout = async <T,>(
   }
 };
 
-const mapAuthUserToAppUser = (authUser: SupabaseAuthUser): User => {
-  const metadata = (authUser.user_metadata ?? {}) as Record<string, unknown>;
-  const email = authUser.email ?? '';
-  const emailLocalPart = email.includes('@') ? email.split('@')[0] : email;
+// Token storage keys
+const ACCESS_TOKEN_KEY = 'cbc_access_token';
+const REFRESH_TOKEN_KEY = 'cbc_refresh_token';
+const USER_KEY = 'cbc_user';
 
-  const firstNameCandidate = metadata.first_name ?? metadata.firstName;
-  const lastNameCandidate = metadata.last_name ?? metadata.lastName;
-  const phoneNumberCandidate = metadata.phone_number ?? metadata.phoneNumber;
-  const avatarUrlCandidate = metadata.avatar_url ?? metadata.avatarUrl;
-  const schoolIdCandidate = metadata.school_id ?? metadata.schoolId;
-  const isActiveCandidate = metadata.is_active ?? metadata.isActive;
-  const roleCandidate = metadata.role;
+// Get stored tokens
+const getStoredTokens = () => {
+  try {
+    const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+    const userStr = localStorage.getItem(USER_KEY);
+    const user = userStr ? JSON.parse(userStr) : null;
+    return { accessToken, refreshToken, user };
+  } catch {
+    return { accessToken: null, refreshToken: null, user: null };
+  }
+};
 
-  const role =
-    typeof roleCandidate === 'string' && Object.values(UserRole).includes(roleCandidate as UserRole)
-      ? (roleCandidate as UserRole)
-      : UserRole.SCHOOL_ADMIN;
+// Save tokens to storage
+const saveTokens = (accessToken: string, refreshToken: string, user: User) => {
+  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+};
 
-  const firstName =
-    typeof firstNameCandidate === 'string' && firstNameCandidate.trim()
-      ? firstNameCandidate
-      : emailLocalPart || 'User';
+// Clear tokens from storage
+const clearTokens = () => {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+};
 
-  const lastName =
-    typeof lastNameCandidate === 'string'
-      ? lastNameCandidate
-      : '';
+// API client for auth requests
+const authApi = {
+  async login(email: string, password: string): Promise<{ user: User; accessToken: string; refreshToken: string }> {
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
 
-  const phoneNumber =
-    typeof phoneNumberCandidate === 'string'
-      ? phoneNumberCandidate
-      : undefined;
+    const data = await response.json();
 
-  const avatarUrl =
-    typeof avatarUrlCandidate === 'string'
-      ? avatarUrlCandidate
-      : undefined;
+    if (!response.ok) {
+      throw new Error(data.message || 'Login failed');
+    }
 
-  const schoolId =
-    typeof schoolIdCandidate === 'string'
-      ? schoolIdCandidate
-      : undefined;
+    if (!data.success) {
+      throw new Error(data.message || 'Login failed');
+    }
 
-  const isActive =
-    typeof isActiveCandidate === 'boolean'
-      ? isActiveCandidate
-      : true;
+    return {
+      user: {
+        id: data.data.user.id,
+        email: data.data.user.email,
+        role: data.data.user.role as UserRole,
+        firstName: data.data.user.firstName || data.data.user.email?.split('@')[0] || 'User',
+        lastName: data.data.user.lastName || '',
+        schoolId: data.data.user.schoolId,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      accessToken: data.data.tokens.accessToken,
+      refreshToken: data.data.tokens.refreshToken,
+    };
+  },
 
-  const createdAt = authUser.created_at ?? new Date().toISOString();
-  const updatedAt = authUser.updated_at ?? createdAt;
+  async logout(accessToken: string): Promise<void> {
+    await fetch(`${API_URL}/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+  },
 
-  return {
-    id: authUser.id,
-    email,
-    role,
-    firstName,
-    lastName,
-    phoneNumber,
-    avatarUrl,
-    schoolId,
-    isActive,
-    createdAt,
-    updatedAt,
-  };
+  async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+    const response = await fetch(`${API_URL}/auth/refresh-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Token refresh failed');
+    }
+
+    return {
+      accessToken: data.data.tokens.accessToken,
+      refreshToken: data.data.tokens.refreshToken,
+    };
+  },
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
-  const fetchUserProfile = useCallback(async (userId: string): Promise<User | null> => {
-    // Check cache first
-    if (userCache.has(userId)) {
-      return userCache.get(userId) || null;
-    }
-
-    try {
-      // Optimized query with only necessary fields
-      const { data: profileData, error } = await supabase
-        .from('users')
-        .select('id, email, role, first_name, last_name, phone_number, avatar_url, school_id, is_active, created_at, updated_at')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (error) {
-        throw error;
+  // Initialize - check for existing session
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const { accessToken: storedToken, user: storedUser } = getStoredTokens();
+        
+        if (storedToken && storedUser) {
+          setAccessToken(storedToken);
+          setUser(storedUser);
+        }
+      } catch (error) {
+        console.error('Session initialization error:', error);
+        clearTokens();
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      if (profileData) {
-        const userProfile: User = {
-          id: profileData.id,
-          email: profileData.email,
-          role: profileData.role,
-          firstName: profileData.first_name,
-          lastName: profileData.last_name,
-          phoneNumber: profileData.phone_number,
-          avatarUrl: profileData.avatar_url,
-          schoolId: profileData.school_id,
-          isActive: profileData.is_active,
-          createdAt: profileData.created_at,
-          updatedAt: profileData.updated_at,
-        };
-
-        // Cache the user profile
-        userCache.set(userId, userProfile);
-        return userProfile;
-      }
-    } catch (error) {
-      console.error('Profile fetch error:', error);
-    }
-    
-    return null;
+    initializeAuth();
   }, []);
 
-  const hydrateUser = useCallback((authUser: SupabaseAuthUser) => {
-    setUser(mapAuthUserToAppUser(authUser));
+  // Token refresh interval
+  useEffect(() => {
+    if (!accessToken) return;
 
-    void withTimeout(
-      fetchUserProfile(authUser.id),
-      PROFILE_REQUEST_TIMEOUT_MS,
-      'Profile lookup timed out.'
-    )
-      .then((profile) => {
-        if (profile) {
-          setUser(profile);
+    const refreshInterval = setInterval(async () => {
+      try {
+        const { refreshToken } = getStoredTokens();
+        if (refreshToken) {
+          const tokens = await authApi.refreshToken(refreshToken);
+          const { user } = getStoredTokens();
+          if (user) {
+            saveTokens(tokens.accessToken, tokens.refreshToken, user);
+            setAccessToken(tokens.accessToken);
+          }
         }
-      })
-      .catch((error) => {
-        console.warn('Using fallback auth profile:', error);
-      });
-  }, [fetchUserProfile]);
+      } catch (error) {
+        console.error('Token refresh failed:', error);
+        // Clear session on refresh failure
+        clearTokens();
+        setUser(null);
+        setAccessToken(null);
+      }
+    }, 14 * 60 * 1000); // Refresh every 14 minutes
+
+    return () => clearInterval(refreshInterval);
+  }, [accessToken]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -188,34 +211,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Password must be at least 6 characters long');
       }
 
-      // Use Supabase authentication with optimized settings
-      const { data, error } = await withTimeout(
-        supabase.auth.signInWithPassword({
-          email,
-          password,
-        }),
+      // Use backend API for authentication (bypasses CORS)
+      const result = await withTimeout(
+        authApi.login(email, password),
         AUTH_REQUEST_TIMEOUT_MS,
         'Sign in timed out. Please try again.'
       );
 
-      if (error) {
-        throw error;
-      }
-
-      if (data.user) {
-        // Authenticate immediately, then enrich profile asynchronously.
-        hydrateUser(data.user);
-        
-        // Wait a brief moment for user data to be hydrated before resolving
-        await new Promise(resolve => setTimeout(resolve, 100));
-      } else {
-        throw new Error('Authentication failed. Please try again.');
-      }
+      // Save tokens and user to localStorage
+      saveTokens(result.accessToken, result.refreshToken, result.user);
+      setAccessToken(result.accessToken);
+      setUser(result.user);
     } catch (error) {
       console.error('Login error:', error);
       throw error;
     } finally {
-      // Always reset loading state
       setIsLoading(false);
     }
   };
@@ -223,65 +233,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        throw error;
+      const { accessToken: token } = getStoredTokens();
+      if (token) {
+        await authApi.logout(token).catch(console.error);
       }
+      clearTokens();
       setUser(null);
-      // Clear cache on logout
+      setAccessToken(null);
       userCache.clear();
     } catch (error) {
       console.error('Logout error:', error);
+      // Still clear local state even if API call fails
+      clearTokens();
+      setUser(null);
+      setAccessToken(null);
     } finally {
       setIsLoading(false);
     }
   };
-
-  // Check for existing session on mount with optimized performance
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const { data: { session }, error } = await withTimeout(
-          supabase.auth.getSession(),
-          SESSION_REQUEST_TIMEOUT_MS,
-          'Session check timed out.'
-        );
-        
-        if (error) {
-          throw error;
-        }
-
-        if (session?.user) {
-          hydrateUser(session.user);
-        }
-      } catch (error) {
-        console.error('Session check error:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkSession();
-
-    // Listen for auth changes with optimized subscription
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          hydrateUser(session.user);
-          setIsLoading(false);
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          // Clear cache on logout
-          userCache.clear();
-          setIsLoading(false);
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [hydrateUser]);
 
   return (
     <AuthContext.Provider value={{
