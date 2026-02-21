@@ -10,6 +10,8 @@ const morgan = require("morgan");
 const aiRoutes = require("./routes/ai.routes");
 const authRoutes = require("./routes/auth.routes");
 const usersRoutes = require("./routes/users.routes");
+const registerRoutes = require("./routes/register.routes");
+const passwordRoutes = require("./routes/password.routes");
 
 const app = express();
 
@@ -74,6 +76,8 @@ app.set("trust proxy", 1);
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", usersRoutes);
+app.use("/api/register", registerRoutes);
+app.use("/api/password", passwordRoutes);
 app.use("/api/ai", aiRoutes);
 
 // Health check endpoint
