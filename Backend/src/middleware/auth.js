@@ -259,14 +259,38 @@ const securityHeaders = (req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
   
-  // Content Security Policy - include Vercel and Render domains for CORS
+  // Content Security Policy - allow connections from frontend origins
+  // Note: CORS handles cross-origin requests, so we need to allow the frontend
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174', 
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://cbc-education-system-sooty.vercel.app',
+    'https://*.vercel.app',
+    'https://*.render.com'
+  ];
+  
+  const isAllowedOrigin = allowedOrigins.some(allowed => 
+    origin === allowed || 
+    (allowed.includes('*') && origin?.endsWith(allowed.replace('*', '').replace('.', ''))) ||
+    (allowed.includes('vercel.app') && origin?.includes('vercel.app')) ||
+    (allowed.includes('render.com') && origin?.includes('render.com'))
+  );
+
+  // Only set CSP connect-src for allowed origins, don't block CORS
+  const connectSrc = isAllowedOrigin && origin 
+    ? `'self' https: ${origin}`
+    : "'self' https: https://cbc-education-system-sooty.vercel.app https://college-cohatmi-college-1.onrender.com https://*.vercel.app https://*.render.com";
+
   res.setHeader('Content-Security-Policy', 
     "default-src 'self'; " +
     "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
     "style-src 'self' 'unsafe-inline'; " +
     "img-src 'self' data: https:; " +
     "font-src 'self' https:; " +
-    "connect-src 'self' https://cbc-education-system-sooty.vercel.app https://college-cohatmi-college-1.onrender.com https://*.vercel.app https://*.render.com; " +
+    `connect-src ${connectSrc}; ` +
     "frame-ancestors 'none';"
   );
 

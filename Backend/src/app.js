@@ -56,13 +56,21 @@ app.use(cors({
       return callback(null, true);
     }
     
-    // Also allow all Vercel preview/production deployments
-    if (origin && (origin.endsWith('.vercel.app') || origin.includes('vercel.app'))) {
+    // Allow all Vercel deployments - more permissive check
+    // This handles production, preview, and custom deployments
+    if (origin && (
+      origin.includes('.vercel.app') || 
+      origin.includes('vercel.app') ||
+      origin.endsWith('vercel.app')
+    )) {
       return callback(null, true);
     }
     
     // Also allow all Render deployments
-    if (origin && (origin.endsWith('.render.com') || origin.includes('render.com'))) {
+    if (origin && (
+      origin.includes('.render.com') || 
+      origin.includes('render.com')
+    )) {
       return callback(null, true);
     }
     
@@ -72,9 +80,9 @@ app.use(cors({
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token", "X-Requested-With", "Accept", "Origin"],
-  exposedHeaders: ["Content-Length", "Content-Type", "Authorization"],
-  preflightContinue: false,
+  allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Methods", "Access-Control-Request-Headers"],
+  exposedHeaders: ["Content-Length", "Content-Type", "Authorization", "Access-Control-Allow-Origin"],
+  preflightContinue: true, // Pass the OPTIONS request to next middleware
   optionsSuccessStatus: 204
 }));
 
