@@ -115,10 +115,27 @@ exports.login = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Login error:', error);
+    console.error('Error stack:', error.stack);
+    
+    // Determine more specific error message
+    let errorMessage = 'An error occurred during login. Please try again.';
+    
+    if (error.code === '42P01') {
+      // Table doesn't exist
+      errorMessage = 'Database configuration error. Please contact support.';
+      console.error('❌ Table does not exist:', error.message);
+    } else if (error.code === '42703') {
+      // Column doesn't exist
+      errorMessage = 'Database schema error. Please contact support.';
+      console.error('❌ Column does not exist:', error.message);
+    } else if (error.message && error.message.includes('connection')) {
+      errorMessage = 'Database connection error. Please try again later.';
+    }
+    
     // Ensure we always send a valid JSON response
     return res.status(500).json({
       success: false,
-      message: 'An error occurred during login. Please try again.'
+      message: errorMessage
     });
   }
 };
@@ -194,4 +211,3 @@ exports.refreshToken = async (req, res) => {
     });
   }
 };
-
