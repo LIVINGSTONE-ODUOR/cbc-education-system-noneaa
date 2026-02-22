@@ -27,7 +27,9 @@ const unwrapResponse = <T>(response: ApiResponse<T>, fallbackMessage: string): T
 };
 
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+// Production fallback: Use Render backend URL when deployed on Vercel
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (import.meta.env.PROD ? 'https://cbc-education-system-1.onrender.com/api' : 'http://localhost:3001/api');
 const TOKEN_KEY = 'cbc_auth_token';
 const REFRESH_TOKEN_KEY = 'cbc_refresh_token';
 const USER_KEY = 'cbc_user_data';

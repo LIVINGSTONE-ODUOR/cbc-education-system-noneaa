@@ -4,7 +4,9 @@ import { User, UserRole } from '@/types';
 // Use environment variable for API URL, fallback to relative path for development
 // In production, set VITE_API_URL to your backend URL (e.g., https://cbc-education-system-1.onrender.com)
 // Use empty string (relative path) in development to leverage Vite proxy
-const API_URL = import.meta.env.VITE_API_URL || '';
+// Production fallback: Use Render backend URL when deployed on Vercel
+const API_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.PROD ? 'https://cbc-education-system-1.onrender.com' : '');
 
 interface AuthContextType {
   user: User | null;

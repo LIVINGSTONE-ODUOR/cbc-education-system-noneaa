@@ -31,7 +31,9 @@ Key CBE information:
 
 // Configure your backend API endpoint via environment variable
 // Set VITE_AI_API_ENDPOINT in your .env file
-const AI_API_ENDPOINT = import.meta.env.VITE_AI_API_ENDPOINT || 'http://localhost:3001/api/ai-chat';
+// Production fallback: Use Render backend URL when deployed on Vercel
+const AI_API_ENDPOINT = import.meta.env.VITE_AI_API_ENDPOINT || 
+  (import.meta.env.PROD ? 'https://cbc-education-system-1.onrender.com/api/ai-chat' : 'http://localhost:3001/api/ai-chat');
 
 export default function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false);
