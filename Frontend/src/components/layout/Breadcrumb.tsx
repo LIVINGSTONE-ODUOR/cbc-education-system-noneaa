@@ -30,7 +30,7 @@ interface BreadcrumbProps {
 // Define menu sections locally for breadcrumb lookup
 const menuSections: MenuSection[] = [
   {
-    title: "ACADEMICS",
+    title: "ACADEMIC",
     items: [
       { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/school-admin/dashboard" },
       { id: "students", label: "Students", icon: GraduationCap, href: "/school-admin/learners", submenu: [
@@ -43,7 +43,7 @@ const menuSections: MenuSection[] = [
         { id: "add-teacher", label: "Add Teacher", href: "/school-admin/teachers/add" },
         { id: "departments", label: "Departments", href: "/school-admin/teachers/departments" },
       ]},
-      { id: "assignments", label: "Teacher Assignments", icon: ClipboardList, href: "/school-admin/assignments", badge: 1 },
+      { id: "assignments", label: "Staff Management", icon: ClipboardList, href: "/school-admin/staff-manage", badge: 1 },
       { id: "parents", label: "Parents", icon: Users, href: "/school-admin/parents" },
     ]
   },

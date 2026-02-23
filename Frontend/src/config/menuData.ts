@@ -47,17 +47,22 @@ export const menuSections: MenuSection[] = [
         icon: Users, 
         href: "/school-admin/teachers",
         submenu: [
-          { id: "all-teachers", label: "All Teachers", href: "/school-admin/teachers/all" },
+          { id: "all-teachers", label: "All Teachers", href: "/school-admin/teacher-list" },
           { id: "add-teacher", label: "Add Teacher", href: "/school-admin/teachers/add" },
           { id: "departments", label: "Departments", href: "/school-admin/teachers/departments" },
         ]
       },
       { 
         id: "assignments", 
-        label: "Teacher Assignments", 
+        label: "Staff Management", 
         icon: ClipboardList, 
-        href: "/school-admin/assignments",
-        badge: 1
+        href: "/school-admin/staff-manage",
+        submenu: [ 
+              { id: "staff-attendance", label: "Staff Management", href: "/school-admin/staff-manage" },
+               { id: "staff-payroll", label: "Staff Attendance", href: "/school-admin/staff-attendance" },
+
+        ],
+    
       },
       { 
         id: "parents", 

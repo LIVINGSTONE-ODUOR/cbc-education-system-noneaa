@@ -322,7 +322,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </nav>
 
         {/* User section */}
-        <div className={cn('flex-shrink-0 p-4 border-t', theme.sidebar.border)}>
+        <div className={cn('flex-shrink-0 p-2 border-t', theme.sidebar.border)}>
           {!collapsed ? (
             <>
               <div

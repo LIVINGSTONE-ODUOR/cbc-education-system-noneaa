@@ -1,242 +1,317 @@
-
 import React from 'react';
+import StatCard from '@/components/dashboard/StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Users, 
-  UserCheck, 
-  Calendar, 
-  Target,
+import {
+  GraduationCap,
+  Users,
+  ClipboardCheck,
+  Wallet,
+  BookOpen,
   TrendingUp,
-  Activity,
   AlertCircle,
-  CheckCircle
+  Calendar
 } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+} from 'recharts';
+import { Badge } from '@/components/ui/badge';
 
-interface DashboardWidgetsProps {
-  onNavigate: (page: string) => void;
-}
+// Mock data for charts
+const enrollmentByGrade = [
+  { grade: 'PP1', students: 45 },
+  { grade: 'PP2', students: 52 },
+  { grade: 'G1', students: 48 },
+  { grade: 'G2', students: 55 },
+  { grade: 'G3', students: 50 },
+  { grade: 'G4', students: 47 },
+  { grade: 'G5', students: 42 },
+  { grade: 'G6', students: 38 },
+  { grade: 'G7', students: 35 },
+  { grade: 'G8', students: 30 },
+  { grade: 'G9', students: 25 },
+];
 
-export const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({ onNavigate }) => {
-  const widgets = [
-    {
-      title: 'Total Students',
-      value: '1,247',
-      change: '+15 this week',
-      changeType: 'positive' as const,
-      icon: Users,
-      color: 'bg-blue-500',
-      page: 'students'
-    },
-    {
-      title: 'Present Today',
-      value: '1,156',
-      change: '92.7% attendance',
-      changeType: 'positive' as const,
-      icon: CheckCircle,
-      color: 'bg-green-500',
-      page: 'attendance'
-    },
-    {
-      title: 'Active Staff',
-      value: '87',
-      change: '3 new this month',
-      changeType: 'positive' as const,
-      icon: UserCheck,
-      color: 'bg-purple-500',
-      page: 'teachers'
-    },
-    {
-      title: 'Pending Assessments',
-      value: '24',
-      change: '8 due this week',
-      changeType: 'warning' as const,
-      icon: Target,
-      color: 'bg-orange-500',
-      page: 'cbc-assessment'
-    }
-  ];
+const assessmentDistribution = [
+  { name: 'Exceeding', value: 25, color: '#22c55e' },
+  { name: 'Meeting', value: 45, color: '#3b82f6' },
+  { name: 'Approaching', value: 22, color: '#f59e0b' },
+  { name: 'Below', value: 8, color: '#ef4444' },
+];
 
-  const recentActivities = [
-    {
-      id: 1,
-      action: 'New Student Enrolled',
-      details: 'Sarah Mwangi joined Grade 5A',
-      time: '5 minutes ago',
-      type: 'enrollment'
-    },
-    {
-      id: 2,
-      action: 'Assessment Completed',
-      details: 'Grade 4 Mathematics assessment results available',
-      time: '1 hour ago',
-      type: 'assessment'
-    },
-    {
-      id: 3,
-      action: 'Fee Payment Received',
-      details: 'Term 2 fees - John Kamau (Form 1B)',
-      time: '2 hours ago',
-      type: 'payment'
-    },
-    {
-      id: 4,
-      action: 'Staff Update',
-      details: 'Mary Wanjiku updated attendance records',
-      time: '3 hours ago',
-      type: 'staff'
-    }
-  ];
+const attendanceTrend = [
+  { week: 'W1', attendance: 92 },
+  { week: 'W2', attendance: 95 },
+  { week: 'W3', attendance: 88 },
+  { week: 'W4', attendance: 94 },
+  { week: 'W5', attendance: 91 },
+  { week: 'W6', attendance: 96 },
+  { week: 'W7', attendance: 93 },
+  { week: 'W8', attendance: 97 },
+];
 
+const feeCollection = [
+  { month: 'Jan', collected: 450000, pending: 120000 },
+  { month: 'Feb', collected: 520000, pending: 80000 },
+  { month: 'Mar', collected: 380000, pending: 150000 },
+  { month: 'Apr', collected: 620000, pending: 60000 },
+];
+
+const recentActivities = [
+  { id: 1, action: 'New student enrolled', details: 'Jane Wanjiku - Grade 4', time: '10 minutes ago', type: 'enrollment' },
+  { id: 2, action: 'Fee payment received', details: 'KES 25,000 - John Kamau', time: '25 minutes ago', type: 'payment' },
+  { id: 3, action: 'Assessment submitted', details: 'Mathematics - Grade 6', time: '1 hour ago', type: 'assessment' },
+  { id: 4, action: 'Staff leave approved', details: 'Mary Njeri - 3 days', time: '2 hours ago', type: 'leave' },
+  { id: 5, action: 'New teacher assigned', details: 'Peter Ochieng - Science G7', time: '3 hours ago', type: 'assignment' },
+];
+
+const pendingTasks = [
+  { id: 1, task: 'Review Term 2 assessments', dueDate: 'Today', priority: 'high' },
+  { id: 2, task: 'Approve fee waiver requests (5)', dueDate: 'Tomorrow', priority: 'medium' },
+  { id: 3, task: 'Update academic calendar', dueDate: 'This week', priority: 'low' },
+  { id: 4, task: 'Staff performance reviews', dueDate: 'Next week', priority: 'medium' },
+];
+
+const DashboardWidgets = () => {
   return (
-    <div className="space-y-6">
-      {/* Main Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {widgets.map((widget, index) => (
-          <Card 
-            key={index}
-            className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => onNavigate(widget.page)}
-          >
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-600">{widget.title}</p>
-                  <p className="text-3xl font-bold text-gray-900">{widget.value}</p>
-                  <div className="flex items-center space-x-1">
-                    <TrendingUp className={`w-3 h-3 ${
-                      widget.changeType === 'positive' ? 'text-green-600' : 
-                      widget.changeType === 'warning' ? 'text-orange-600' : 'text-red-600'
-                    }`} />
-                    <span className={`text-xs ${
-                      widget.changeType === 'positive' ? 'text-green-600' : 
-                      widget.changeType === 'warning' ? 'text-orange-600' : 'text-red-600'
-                    }`}>
-                      {widget.change}
-                    </span>
+    <div className="min-h-screen">
+      
+      <div className="p-6 space-y-6">
+        {/* Stats Grid */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Total Students"
+            value="467"
+            subtitle="PP1 - Grade 9"
+            icon={GraduationCap}
+            trend={{ value: 5.2, isPositive: true }}
+            iconClassName="bg-blue-100 text-blue-600"
+          />
+          <StatCard
+            title="Active Staff"
+            value="32"
+            subtitle="Teachers & Support"
+            icon={Users}
+            trend={{ value: 2.1, isPositive: true }}
+            iconClassName="bg-green-100 text-green-600"
+          />
+          <StatCard
+            title="Today's Attendance"
+            value="94%"
+            subtitle="438 present"
+            icon={ClipboardCheck}
+            trend={{ value: 1.5, isPositive: true }}
+            iconClassName="bg-amber-100 text-amber-600"
+          />
+          <StatCard
+            title="Fee Collection"
+            value="KES 1.97M"
+            subtitle="Term 1 2025"
+            icon={Wallet}
+            trend={{ value: 12.3, isPositive: true }}
+            iconClassName="bg-purple-100 text-purple-600"
+          />
+        </div>
+
+        {/* Secondary Stats */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Pending Assessments"
+            value="23"
+            subtitle="Awaiting review"
+            icon={BookOpen}
+            iconClassName="bg-orange-100 text-orange-600"
+          />
+          <StatCard
+            title="Fee Balance"
+            value="KES 410K"
+            subtitle="Outstanding this term"
+            icon={AlertCircle}
+            iconClassName="bg-red-100 text-red-600"
+          />
+          <StatCard
+            title="Upcoming Events"
+            value="5"
+            subtitle="This month"
+            icon={Calendar}
+            iconClassName="bg-indigo-100 text-indigo-600"
+          />
+          <StatCard
+            title="Avg. Performance"
+            value="Meeting"
+            subtitle="CBC competency level"
+            icon={TrendingUp}
+            iconClassName="bg-teal-100 text-teal-600"
+          />
+        </div>
+
+        {/* Charts Row */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Enrollment by Grade */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Student Enrollment by Grade</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={enrollmentByGrade}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="grade" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="students" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Assessment Distribution */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">CBC Assessment Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-center">
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={assessmentDistribution}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={2}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {assessmentDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex justify-center gap-4 mt-4">
+                {assessmentDistribution.map((item) => (
+                  <div key={item.name} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-sm text-muted-foreground">{item.name}</span>
                   </div>
-                </div>
-                <div className={`w-12 h-12 ${widget.color} rounded-lg flex items-center justify-center`}>
-                  <widget.icon className="w-6 h-6 text-white" />
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-        ))}
+        </div>
+
+        {/* Second Charts Row */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Attendance Trend */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Weekly Attendance Trend</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={attendanceTrend}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="week" />
+                  <YAxis domain={[80, 100]} />
+                  <Tooltip />
+                  <Line 
+                    type="monotone" 
+                    dataKey="attendance" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2}
+                    dot={{ fill: 'hsl(var(--primary))' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Fee Collection */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Fee Collection Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={feeCollection}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => `KES ${(Number(value) / 1000).toFixed(0)}K`} />
+                  <Bar dataKey="collected" fill="#22c55e" name="Collected" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="pending" fill="#f59e0b" name="Pending" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Activity and Tasks Row */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Recent Activity */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Recent Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentActivities.map((activity) => (
+                  <div key={activity.id} className="flex items-start gap-4 pb-4 border-b last:border-0 last:pb-0">
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{activity.action}</p>
+                      <p className="text-sm text-muted-foreground">{activity.details}</p>
+                    </div>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">{activity.time}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pending Tasks */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Pending Tasks</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {pendingTasks.map((task) => (
+                  <div key={task.id} className="flex items-center justify-between pb-4 border-b last:border-0 last:pb-0">
+                    <div>
+                      <p className="font-medium text-sm">{task.task}</p>
+                      <p className="text-sm text-muted-foreground">Due: {task.dueDate}</p>
+                    </div>
+                    <Badge 
+                      variant={
+                        task.priority === 'high' ? 'destructive' : 
+                        task.priority === 'medium' ? 'default' : 'secondary'
+                      }
+                    >
+                      {task.priority}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-
-      {/* Recent Activities & Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Activities */}
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center space-x-2">
-              <Activity className="w-5 h-5 text-blue-600" />
-              <span>Recent Activities</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {recentActivities.map((activity) => (
-              <div key={activity.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                <div className={`w-2 h-2 rounded-full mt-2 ${
-                  activity.type === 'enrollment' ? 'bg-blue-500' :
-                  activity.type === 'assessment' ? 'bg-green-500' :
-                  activity.type === 'payment' ? 'bg-purple-500' : 'bg-orange-500'
-                }`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                  <p className="text-sm text-gray-600 truncate">{activity.details}</p>
-                  <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <button
-              onClick={() => onNavigate('new-student')}
-              className="w-full p-4 bg-blue-50 hover:bg-blue-100 rounded-lg text-left transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <Users className="w-5 h-5 text-blue-600" />
-                <div>
-                  <p className="font-medium text-gray-900">Add New Student</p>
-                  <p className="text-sm text-gray-600">Register a new student</p>
-                </div>
-              </div>
-            </button>
-            
-            <button
-              onClick={() => onNavigate('cbc-assessment')}
-              className="w-full p-4 bg-green-50 hover:bg-green-100 rounded-lg text-left transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <Target className="w-5 h-5 text-green-600" />
-                <div>
-                  <p className="font-medium text-gray-900">Create Assessment</p>
-                  <p className="text-sm text-gray-600">Set up new assessment</p>
-                </div>
-              </div>
-            </button>
-            
-            <button
-              onClick={() => onNavigate('reports')}
-              className="w-full p-4 bg-purple-50 hover:bg-purple-100 rounded-lg text-left transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <Calendar className="w-5 h-5 text-purple-600" />
-                <div>
-                  <p className="font-medium text-gray-900">Generate Report</p>
-                  <p className="text-sm text-gray-600">Create performance reports</p>
-                </div>
-              </div>
-            </button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* System Status */}
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center justify-between">
-            <span>System Status</span>
-            <Badge variant="secondary" className="bg-green-100 text-green-800">
-              All Systems Operational
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center space-x-3">
-              <CheckCircle className="w-5 h-5 text-green-500" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">Database</p>
-                <p className="text-xs text-gray-600">Operational</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <CheckCircle className="w-5 h-5 text-green-500" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">Authentication</p>
-                <p className="text-xs text-gray-600">Active</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <AlertCircle className="w-5 h-5 text-yellow-500" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">Backup</p>
-                <p className="text-xs text-gray-600">Last: 2 hours ago</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
+
+export default DashboardWidgets;

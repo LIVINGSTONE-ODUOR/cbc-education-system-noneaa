@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -21,7 +21,6 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Plus, 
   Search, 
-  Filter, 
   Download, 
   MoreHorizontal,
   Eye,
@@ -34,39 +33,44 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
-// Mock student data
-const mockStudents = [
-  { id: '1', admNo: 'CBC/2024/001', firstName: 'John', lastName: 'Kamau', grade: 'Grade4', gender: 'Male', guardianName: 'Mary Kamau', guardianPhone: '0712345678', status: 'active' },
-  { id: '2', admNo: 'CBC/2024/002', firstName: 'Jane', lastName: 'Wanjiku', grade: 'Grade5', gender: 'Female', guardianName: 'Peter Wanjiku', guardianPhone: '0723456789', status: 'active' },
-  { id: '3', admNo: 'CBC/2024/003', firstName: 'David', lastName: 'Ochieng', grade: 'Grade3', gender: 'Male', guardianName: 'Sarah Ochieng', guardianPhone: '0734567890', status: 'active' },
-  { id: '4', admNo: 'CBC/2024/004', firstName: 'Grace', lastName: 'Njeri', grade: 'PP2', gender: 'Female', guardianName: 'James Njeri', guardianPhone: '0745678901', status: 'transferred' },
-  { id: '5', admNo: 'CBC/2024/005', firstName: 'Brian', lastName: 'Mwangi', grade: 'Grade6', gender: 'Male', guardianName: 'Anne Mwangi', guardianPhone: '0756789012', status: 'active' },
-  { id: '6', admNo: 'CBC/2024/006', firstName: 'Faith', lastName: 'Akinyi', grade: 'Grade7', gender: 'Female', guardianName: 'Tom Akinyi', guardianPhone: '0767890123', status: 'active' },
-  { id: '7', admNo: 'CBC/2024/007', firstName: 'Kevin', lastName: 'Kipchoge', grade: 'Grade8', gender: 'Male', guardianName: 'Rose Kipchoge', guardianPhone: '0778901234', status: 'active' },
-  { id: '8', admNo: 'CBC/2024/008', firstName: 'Lucy', lastName: 'Wambui', grade: 'PP1', gender: 'Female', guardianName: 'John Wambui', guardianPhone: '0789012345', status: 'active' },
+// Mock staff data
+const mockStaff = [
+  { id: '1', staffNo: 'STF/001', firstName: 'Peter', lastName: 'Ochieng', email: 'peter@school.com', phone: '0712345678', role: 'teacher', status: 'active' },
+  { id: '2', staffNo: 'STF/002', firstName: 'Mary', lastName: 'Njeri', email: 'mary@school.com', phone: '0723456789', role: 'teacher', status: 'active' },
+  { id: '3', staffNo: 'STF/003', firstName: 'James', lastName: 'Mwangi', email: 'james@school.com', phone: '0734567890', role: 'branch_admin', status: 'active' },
+  { id: '4', staffNo: 'STF/004', firstName: 'Sarah', lastName: 'Wambui', email: 'sarah@school.com', phone: '0745678901', role: 'accountant', status: 'active' },
+  { id: '5', staffNo: 'STF/005', firstName: 'John', lastName: 'Kamau', email: 'john@school.com', phone: '0756789012', role: 'teacher', status: 'on_leave' },
+  { id: '6', staffNo: 'STF/006', firstName: 'Grace', lastName: 'Akinyi', email: 'grace@school.com', phone: '0767890123', role: 'clerk', status: 'active' },
 ];
 
-const grades = ['PP1', 'PP2', 'Grade1', 'Grade2', 'Grade3', 'Grade4', 'Grade5', 'Grade6', 'Grade7', 'Grade8', 'Grade9'];
+const roleLabels: Record<string, string> = {
+  super_admin: 'Super Admin',
+  branch_admin: 'Branch Admin',
+  teacher: 'Teacher',
+  accountant: 'Accountant',
+  clerk: 'Clerk',
+};
 
-const StudentManagement = () => {
+const AdminStaff = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGrade, setSelectedGrade] = useState<string>('all');
+  const [selectedRole, setSelectedRole] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
-  const filteredStudents = mockStudents.filter(student => {
+  const filteredStaff = mockStaff.filter(staff => {
     const matchesSearch = 
-      student.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.admNo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesGrade = selectedGrade === 'all' || student.grade === selectedGrade;
-    const matchesStatus = selectedStatus === 'all' || student.status === selectedStatus;
-    return matchesSearch && matchesGrade && matchesStatus;
+      staff.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      staff.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      staff.staffNo.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = selectedRole === 'all' || staff.role === selectedRole;
+    const matchesStatus = selectedStatus === 'all' || staff.status === selectedStatus;
+    return matchesSearch && matchesRole && matchesStatus;
   });
 
   return (
     <div className="min-h-screen">
-        
+
       <div className="p-6 space-y-6">
         {/* Actions Bar */}
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
@@ -74,21 +78,22 @@ const StudentManagement = () => {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search students..."
+                placeholder="Search staff..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"
               />
             </div>
-            <Select value={selectedGrade} onValueChange={setSelectedGrade}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="Grade" />
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Grades</SelectItem>
-                {grades.map(grade => (
-                  <SelectItem key={grade} value={grade}>{grade}</SelectItem>
-                ))}
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="teacher">Teacher</SelectItem>
+                <SelectItem value="branch_admin">Branch Admin</SelectItem>
+                <SelectItem value="accountant">Accountant</SelectItem>
+                <SelectItem value="clerk">Clerk</SelectItem>
               </SelectContent>
             </Select>
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
@@ -98,9 +103,8 @@ const StudentManagement = () => {
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="transferred">Transferred</SelectItem>
-                <SelectItem value="graduated">Graduated</SelectItem>
-                <SelectItem value="withdrawn">Withdrawn</SelectItem>
+                <SelectItem value="on_leave">On Leave</SelectItem>
+                <SelectItem value="terminated">Terminated</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -111,39 +115,48 @@ const StudentManagement = () => {
             </Button>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Add Student
+              Add Staff
             </Button>
           </div>
         </div>
 
-        {/* Students Table */}
+        {/* Staff Table */}
         <Card>
           <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Adm. No</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Grade</TableHead>
-                  <TableHead>Gender</TableHead>
-                  <TableHead>Guardian</TableHead>
+                  <TableHead>Staff</TableHead>
+                  <TableHead>Staff No.</TableHead>
+                  <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
+                  <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredStudents.map((student) => (
-                  <TableRow key={student.id}>
-                    <TableCell className="font-medium">{student.admNo}</TableCell>
-                    <TableCell>{student.firstName} {student.lastName}</TableCell>
-                    <TableCell>{student.grade}</TableCell>
-                    <TableCell>{student.gender}</TableCell>
-                    <TableCell>{student.guardianName}</TableCell>
-                    <TableCell>{student.guardianPhone}</TableCell>
+                {filteredStaff.map((staff) => (
+                  <TableRow key={staff.id}>
                     <TableCell>
-                      <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
-                        {student.status}
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {staff.firstName[0]}{staff.lastName[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">{staff.firstName} {staff.lastName}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{staff.staffNo}</TableCell>
+                    <TableCell>{staff.email}</TableCell>
+                    <TableCell>{staff.phone}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{roleLabels[staff.role]}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={staff.status === 'active' ? 'default' : 'secondary'}>
+                        {staff.status === 'on_leave' ? 'On Leave' : staff.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -176,10 +189,10 @@ const StudentManagement = () => {
           </CardContent>
         </Card>
 
-        {/* Pagination placeholder */}
+        {/* Pagination */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {filteredStudents.length} of {mockStudents.length} students
+            Showing {filteredStaff.length} of {mockStaff.length} staff members
           </p>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled>Previous</Button>
@@ -191,4 +204,4 @@ const StudentManagement = () => {
   );
 };
 
-export default StudentManagement;
+export default AdminStaff;
