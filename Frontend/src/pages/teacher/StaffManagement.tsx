@@ -157,12 +157,12 @@ function NavBtn({ icon: Icon, label, onClick, primary }: { icon: React.ElementTy
 
 function TopNav({ crumb, onBack, actions }: { crumb: string; onBack?: () => void; actions?: React.ReactNode }) {
   return (
-    <div style={{ background:"#0F1624", borderBottom:"1px solid rgba(255,255,255,0.07)", padding:"13px 32px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+    <div style={{ background:"#0a1a0a", borderBottom:"1px solid rgba(197, 197, 197, 0.75)", padding:"13px 32px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
       <div style={{ display:"flex", alignItems:"center", gap:10 }}>
         <div style={{ width:32, height:32, borderRadius:8, background:T.accent, display:"flex", alignItems:"center", justifyContent:"center" }}>
           <School size={16} color="white" />
         </div>
-        <span style={{ fontSize:13, fontWeight:700, color:"rgba(255,255,255,0.85)" }}>CBC School</span>
+        <span style={{ fontSize:13, fontWeight:700, color:"rgba(255, 255, 255, 0.85)" }}>CBC School</span>
         <span style={{ color:"rgba(255,255,255,0.2)" }}>›</span>
         <span style={{ fontSize:13, color:"rgba(255,255,255,0.45)" }}>Staff</span>
         {crumb && <><span style={{ color:"rgba(255,255,255,0.2)" }}>›</span><span style={{ fontSize:13, color:"rgba(255,255,255,0.65)", fontWeight:600 }}>{crumb}</span></>}
@@ -181,9 +181,9 @@ function TopNav({ crumb, onBack, actions }: { crumb: string; onBack?: () => void
 
 function HeroBar({ title, sub, children }: { title: string; sub?: string; children?: React.ReactNode }) {
   return (
-    <div style={{ background:"#0F1624", padding:"22px 32px 30px" }}>
+    <div style={{ background:"linear-gradient(to bottom right, #166534, #16a34a, #10b981)", padding:"22px 32px 30px" }}>
       <div style={{ maxWidth:1400, margin:"0 auto" }}>
-        <div style={{ fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.28)", letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:6 }}>Republic of Kenya · CBC School · HR</div>
+        <div style={{ fontSize:11, fontWeight:600, color:"rgba(163, 0, 0, 0.28)", letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:6 }}>Republic of Kenya · CBC School · HR</div>
         <h1 style={{ fontSize:24, fontWeight:800, color:"white", marginBottom: sub ? 4 : 20 }}>{title}</h1>
         {sub && <p style={{ fontSize:13, color:"rgba(255,255,255,0.4)", marginBottom:20 }}>{sub}</p>}
         {children}

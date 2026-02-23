@@ -165,9 +165,9 @@ export const menuSections: MenuSection[] = [
         id: "fees", 
         label: "Fees", 
         icon: DollarSign, 
-        href: "/school-admin/fees",
+        href: "/school-admin/fee-management",
         submenu: [
-          { id: "fee-setup", label: "Fee Setup", href: "/school-admin/fees/setup" },
+          { id: "Fee-Records", label: "Fee Tracking", href: "/school-admin/fee-management" },
           { id: "fee-collection", label: "Collection", href: "/school-admin/fees/collection" },
           { id: "fee-reports", label: "Reports", href: "/school-admin/fees/reports" },
         ]
