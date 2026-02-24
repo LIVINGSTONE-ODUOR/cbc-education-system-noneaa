@@ -64,6 +64,10 @@ import AdminLoginPage from '@/pages/auth/AdminLoginPage';
 import UserManagement from "./pages/Users/UserManagement";
 import ModernDashboard from "@/components/ModernDashboard";
 
+// Department Pages
+import DepartmentsPage from "@/pages/auth/school-admin/teachers/departments/DepartmentsPage";
+import DepartmentDetailsPage from "@/pages/auth/school-admin/teachers/departments/DepartmentDetailsPage";
+
 // Placeholder Pages
 import CurriculumPage from "@/pages/auth/school-admin/Curriculum";
 import ReportsPage from "@/pages/auth/school-admin/Reports";
@@ -213,6 +217,8 @@ function AppRoutes() {
                 {/* Teachers */}
                 <Route path="teachers" element={<TeachersListPage />} />
                 <Route path="teachers/add" element={<AddTeacherPage />} />
+                <Route path="teachers/departments" element={<DepartmentsPage />} />
+                <Route path="teachers/departments/:id" element={<DepartmentDetailsPage />} />
                 <Route path="teacher-profile" element={<Teacher />} />
                  <Route path="teacher-list" element={<AdminStaff />} />
                   <Route path="staff-manage" element={<StaffManagement />} />
