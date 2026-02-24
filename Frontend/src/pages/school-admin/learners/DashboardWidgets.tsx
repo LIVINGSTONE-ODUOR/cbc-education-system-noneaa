@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import StatCard from '@/components/dashboard/StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
   GraduationCap,
   Users,
-  ClipboardCheck,
-  Wallet,
   BookOpen,
-  TrendingUp,
+  ClipboardCheck,
   AlertCircle,
-  Calendar
+  Loader2,
 } from 'lucide-react';
 import {
   BarChart,
@@ -22,136 +23,242 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
 } from 'recharts';
-import { Badge } from '@/components/ui/badge';
 
-// Mock data for charts
-const enrollmentByGrade = [
-  { grade: 'PP1', students: 45 },
-  { grade: 'PP2', students: 52 },
-  { grade: 'G1', students: 48 },
-  { grade: 'G2', students: 55 },
-  { grade: 'G3', students: 50 },
-  { grade: 'G4', students: 47 },
-  { grade: 'G5', students: 42 },
-  { grade: 'G6', students: 38 },
-  { grade: 'G7', students: 35 },
-  { grade: 'G8', students: 30 },
-  { grade: 'G9', students: 25 },
-];
+interface EnrollmentByGrade {
+  grade: string;
+  students: number;
+}
 
-const assessmentDistribution = [
-  { name: 'Exceeding', value: 25, color: '#22c55e' },
-  { name: 'Meeting', value: 45, color: '#3b82f6' },
-  { name: 'Approaching', value: 22, color: '#f59e0b' },
-  { name: 'Below', value: 8, color: '#ef4444' },
-];
+interface AssessmentDist {
+  name: string;
+  value: number;
+  color: string;
+}
 
-const attendanceTrend = [
-  { week: 'W1', attendance: 92 },
-  { week: 'W2', attendance: 95 },
-  { week: 'W3', attendance: 88 },
-  { week: 'W4', attendance: 94 },
-  { week: 'W5', attendance: 91 },
-  { week: 'W6', attendance: 96 },
-  { week: 'W7', attendance: 93 },
-  { week: 'W8', attendance: 97 },
-];
+interface Activity {
+  id: string | number;
+  action: string;
+  details: string;
+  time: string;
+}
 
-const feeCollection = [
-  { month: 'Jan', collected: 450000, pending: 120000 },
-  { month: 'Feb', collected: 520000, pending: 80000 },
-  { month: 'Mar', collected: 380000, pending: 150000 },
-  { month: 'Apr', collected: 620000, pending: 60000 },
-];
+interface DashboardStats {
+  totalStudents: number;
+  activeStaff: number;
+  activeClasses: number;
+  pendingAssessments: number;
+}
 
-const recentActivities = [
-  { id: 1, action: 'New student enrolled', details: 'Jane Wanjiku - Grade 4', time: '10 minutes ago', type: 'enrollment' },
-  { id: 2, action: 'Fee payment received', details: 'KES 25,000 - John Kamau', time: '25 minutes ago', type: 'payment' },
-  { id: 3, action: 'Assessment submitted', details: 'Mathematics - Grade 6', time: '1 hour ago', type: 'assessment' },
-  { id: 4, action: 'Staff leave approved', details: 'Mary Njeri - 3 days', time: '2 hours ago', type: 'leave' },
-  { id: 5, action: 'New teacher assigned', details: 'Peter Ochieng - Science G7', time: '3 hours ago', type: 'assignment' },
-];
+const GRADE_LEVELS = ['PP1', 'PP2', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'G8', 'G9'];
 
-const pendingTasks = [
-  { id: 1, task: 'Review Term 2 assessments', dueDate: 'Today', priority: 'high' },
-  { id: 2, task: 'Approve fee waiver requests (5)', dueDate: 'Tomorrow', priority: 'medium' },
-  { id: 3, task: 'Update academic calendar', dueDate: 'This week', priority: 'low' },
-  { id: 4, task: 'Staff performance reviews', dueDate: 'Next week', priority: 'medium' },
-];
+const GRADE_LEVEL_MAP: Record<string, string> = {
+  'PP1': 'PP1',
+  'PP2': 'PP2',
+  'Grade 1': 'G1',
+  'Grade 2': 'G2',
+  'Grade 3': 'G3',
+  'Grade 4': 'G4',
+  'Grade 5': 'G5',
+  'Grade 6': 'G6',
+  'Grade 7': 'G7',
+  'Grade 8': 'G8',
+  'Grade 9': 'G9',
+};
+
+const ASSESSMENT_COLORS: Record<string, string> = {
+  exceeding_expectation: '#22c55e',
+  meeting_expectation: '#3b82f6',
+  approaching_expectation: '#f59e0b',
+  below_expectation: '#ef4444',
+};
+
+const ASSESSMENT_LABELS: Record<string, string> = {
+  exceeding_expectation: 'Exceeding',
+  meeting_expectation: 'Meeting',
+  approaching_expectation: 'Approaching',
+  below_expectation: 'Below',
+};
+
+const DEFAULT_STATS: DashboardStats = {
+  totalStudents: 0,
+  activeStaff: 0,
+  activeClasses: 0,
+  pendingAssessments: 0,
+};
 
 const DashboardWidgets = () => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<DashboardStats>(DEFAULT_STATS);
+  const [enrollmentByGrade, setEnrollmentByGrade] = useState<EnrollmentByGrade[]>([]);
+  const [assessmentDistribution, setAssessmentDistribution] = useState<AssessmentDist[]>([]);
+  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+
+  const fetchDashboardData = useCallback(async () => {
+    if (!user?.schoolId) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch active learners for total count and grade breakdown
+      const { data: learnersData, error: learnersError } = await supabase
+        .from('learners')
+        .select('grade_level')
+        .eq('school_id', user.schoolId)
+        .eq('is_active', true);
+
+      if (learnersError) throw learnersError;
+
+      // Build enrollment by grade from real data
+      const gradeCountMap: Record<string, number> = {};
+      (learnersData || []).forEach((l) => {
+        const shortGrade = GRADE_LEVEL_MAP[l.grade_level] || l.grade_level;
+        gradeCountMap[shortGrade] = (gradeCountMap[shortGrade] || 0) + 1;
+      });
+      setEnrollmentByGrade(
+        GRADE_LEVELS.map((grade) => ({ grade, students: gradeCountMap[grade] || 0 }))
+      );
+
+      // Fetch active teachers count
+      const { count: teacherCount, error: teacherError } = await supabase
+        .from('teachers')
+        .select('id', { count: 'exact', head: true })
+        .eq('school_id', user.schoolId)
+        .eq('is_active', true);
+
+      if (teacherError) throw teacherError;
+
+      // Fetch aggregated school stats (active_classes, recent_assessments)
+      const { data: schoolStats } = await supabase
+        .from('school_stats')
+        .select('active_classes, recent_assessments')
+        .eq('school_id', user.schoolId)
+        .maybeSingle();
+
+      setStats({
+        totalStudents: learnersData?.length ?? 0,
+        activeStaff: teacherCount ?? 0,
+        activeClasses: schoolStats?.active_classes ?? 0,
+        pendingAssessments: schoolStats?.recent_assessments ?? 0,
+      });
+
+      // Fetch assessment distribution (if assessments table exists)
+      const { data: assessData } = await supabase
+        .from('assessments')
+        .select('performance_level')
+        .eq('school_id', user.schoolId);
+
+      if (assessData && assessData.length > 0) {
+        const levelCount: Record<string, number> = {};
+        assessData.forEach((a) => {
+          levelCount[a.performance_level] = (levelCount[a.performance_level] || 0) + 1;
+        });
+        setAssessmentDistribution(
+          Object.entries(levelCount).map(([key, value]) => ({
+            name: ASSESSMENT_LABELS[key] || key,
+            value,
+            color: ASSESSMENT_COLORS[key] || '#94a3b8',
+          }))
+        );
+      } else {
+        setAssessmentDistribution([]);
+      }
+
+      // Fetch recent activities
+      const { data: activitiesData } = await supabase
+        .from('school_activities')
+        .select('id, action, name, time, created_at')
+        .eq('school_id', user.schoolId)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      setRecentActivities(
+        (activitiesData || []).map((a) => ({
+          id: a.id,
+          action: a.action || 'Activity update',
+          details: a.name || 'School activity',
+          time:
+            a.time ||
+            (a.created_at ? new Date(a.created_at).toLocaleString() : 'Recently'),
+        }))
+      );
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError(
+        err instanceof Error ? err.message : 'Failed to load dashboard data. Please try again.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.schoolId]);
+
+  useEffect(() => {
+    void fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+          <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="w-8 h-8 mx-auto text-red-500" />
+          <p className="mt-4 text-red-600">{error}</p>
+          <Button onClick={fetchDashboardData} className="mt-4">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen">
-      
       <div className="p-6 space-y-6">
         {/* Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Total Students"
-            value="467"
-            subtitle="PP1 - Grade 9"
+            value={stats.totalStudents}
+            subtitle="Active learners"
             icon={GraduationCap}
-            trend={{ value: 5.2, isPositive: true }}
             iconClassName="bg-blue-100 text-blue-600"
           />
           <StatCard
             title="Active Staff"
-            value="32"
-            subtitle="Teachers & Support"
+            value={stats.activeStaff}
+            subtitle="Teachers"
             icon={Users}
-            trend={{ value: 2.1, isPositive: true }}
             iconClassName="bg-green-100 text-green-600"
           />
           <StatCard
-            title="Today's Attendance"
-            value="94%"
-            subtitle="438 present"
-            icon={ClipboardCheck}
-            trend={{ value: 1.5, isPositive: true }}
+            title="Active Classes"
+            value={stats.activeClasses}
+            subtitle="Current term"
+            icon={BookOpen}
             iconClassName="bg-amber-100 text-amber-600"
           />
           <StatCard
-            title="Fee Collection"
-            value="KES 1.97M"
-            subtitle="Term 1 2025"
-            icon={Wallet}
-            trend={{ value: 12.3, isPositive: true }}
-            iconClassName="bg-purple-100 text-purple-600"
-          />
-        </div>
-
-        {/* Secondary Stats */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard
             title="Pending Assessments"
-            value="23"
+            value={stats.pendingAssessments}
             subtitle="Awaiting review"
-            icon={BookOpen}
-            iconClassName="bg-orange-100 text-orange-600"
-          />
-          <StatCard
-            title="Fee Balance"
-            value="KES 410K"
-            subtitle="Outstanding this term"
-            icon={AlertCircle}
-            iconClassName="bg-red-100 text-red-600"
-          />
-          <StatCard
-            title="Upcoming Events"
-            value="5"
-            subtitle="This month"
-            icon={Calendar}
-            iconClassName="bg-indigo-100 text-indigo-600"
-          />
-          <StatCard
-            title="Avg. Performance"
-            value="Meeting"
-            subtitle="CBC competency level"
-            icon={TrendingUp}
-            iconClassName="bg-teal-100 text-teal-600"
+            icon={ClipboardCheck}
+            iconClassName="bg-purple-100 text-purple-600"
           />
         </div>
 
@@ -163,15 +270,21 @@ const DashboardWidgets = () => {
               <CardTitle className="text-lg">Student Enrollment by Grade</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={enrollmentByGrade}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="grade" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="students" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {enrollmentByGrade.some((d) => d.students > 0) ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={enrollmentByGrade}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="grade" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="students" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  No enrollment data available
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -181,134 +294,80 @@ const DashboardWidgets = () => {
               <CardTitle className="text-lg">CBC Assessment Distribution</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-center">
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={assessmentDistribution}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={2}
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {assessmentDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex justify-center gap-4 mt-4">
-                {assessmentDistribution.map((item) => (
-                  <div key={item.name} className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-sm text-muted-foreground">{item.name}</span>
+              {assessmentDistribution.length > 0 ? (
+                <>
+                  <div className="flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={assessmentDistribution}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={100}
+                          paddingAngle={2}
+                          dataKey="value"
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {assessmentDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
-                ))}
-              </div>
+                  <div className="flex justify-center gap-4 mt-4">
+                    {assessmentDistribution.map((item) => (
+                      <div key={item.name} className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="text-sm text-muted-foreground">{item.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  No assessment data available
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Second Charts Row */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Attendance Trend */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Weekly Attendance Trend</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={attendanceTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="week" />
-                  <YAxis domain={[80, 100]} />
-                  <Tooltip />
-                  <Line 
-                    type="monotone" 
-                    dataKey="attendance" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    dot={{ fill: 'hsl(var(--primary))' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Fee Collection */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Fee Collection Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={feeCollection}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `KES ${(Number(value) / 1000).toFixed(0)}K`} />
-                  <Bar dataKey="collected" fill="#22c55e" name="Collected" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="pending" fill="#f59e0b" name="Pending" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Activity and Tasks Row */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {recentActivities.length > 0 ? (
               <div className="space-y-4">
                 {recentActivities.map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-4 pb-4 border-b last:border-0 last:pb-0">
+                  <div
+                    key={activity.id}
+                    className="flex items-start gap-4 pb-4 border-b last:border-0 last:pb-0"
+                  >
                     <div className="flex-1">
                       <p className="font-medium text-sm">{activity.action}</p>
                       <p className="text-sm text-muted-foreground">{activity.details}</p>
                     </div>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">{activity.time}</span>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {activity.time}
+                    </span>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Pending Tasks */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Pending Tasks</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {pendingTasks.map((task) => (
-                  <div key={task.id} className="flex items-center justify-between pb-4 border-b last:border-0 last:pb-0">
-                    <div>
-                      <p className="font-medium text-sm">{task.task}</p>
-                      <p className="text-sm text-muted-foreground">Due: {task.dueDate}</p>
-                    </div>
-                    <Badge 
-                      variant={
-                        task.priority === 'high' ? 'destructive' : 
-                        task.priority === 'medium' ? 'default' : 'secondary'
-                      }
-                    >
-                      {task.priority}
-                    </Badge>
-                  </div>
-                ))}
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No recent activity yet. Start by adding teachers and learners to your school.
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
