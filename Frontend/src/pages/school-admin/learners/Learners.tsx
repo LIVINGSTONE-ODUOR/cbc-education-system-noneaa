@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -44,6 +44,12 @@ interface ParentInfo {
   phone_number: string;
 }
 
+interface LearnerParent {
+  parents: {
+    users: ParentInfo;
+  } | null;
+}
+
 interface Learner {
   id: string;
   admission_number: string;
@@ -52,12 +58,12 @@ interface Learner {
   grade_level: string;
   gender: string;
   is_active: boolean;
-  parents: ParentInfo | ParentInfo[] | null;
+  learner_parents: LearnerParent[] | null;
 }
 
-const getPrimaryParent = (parents: Learner['parents']) => {
-  if (!parents) return null;
-  return Array.isArray(parents) ? (parents[0] ?? null) : parents;
+const getPrimaryParent = (learnerParents: Learner['learner_parents']): ParentInfo | null => {
+  if (!learnerParents || learnerParents.length === 0) return null;
+  return learnerParents[0]?.parents?.users ?? null;
 };
 
 const grades = ['PP1', 'PP2', 'Grade1', 'Grade2', 'Grade3', 'Grade4', 'Grade5', 'Grade6', 'Grade7', 'Grade8', 'Grade9'];
@@ -76,17 +82,25 @@ const StudentManagement = () => {
       setLoading(true);
       setError(null);
 
+      if (!user?.schoolId) {
+        return;
+      }
+
       const { data, error } = await supabase
         .from('learners')
         .select(`
           *,
-          parents (
-            first_name,
-            last_name,
-            phone_number
+          learner_parents (
+            parents (
+              users (
+                first_name,
+                last_name,
+                phone_number
+              )
+            )
           )
         `)
-        .eq('school_id', user?.schoolId)
+        .eq('school_id', user.schoolId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -212,7 +226,7 @@ const StudentManagement = () => {
               </TableHeader>
               <TableBody>
                 {filteredStudents.map((student) => {
-                  const parent = getPrimaryParent(student.parents);
+                  const parent = getPrimaryParent(student.learner_parents);
                   return (
                   <TableRow key={student.id}>
                     <TableCell className="font-medium">{student.admission_number}</TableCell>
