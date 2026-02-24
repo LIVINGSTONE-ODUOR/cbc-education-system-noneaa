@@ -57,6 +57,7 @@ import AdminAttendance from "./pages/teacher/StaffAttendance";
 
 // ✅ Student Management Page
 import StudentManagement from "./pages/school-admin/learners/Learners";
+import StudentClasses from "./pages/school-admin/learners/StudentClasses";
 
 import EducationalResourcesPage from "./pages/website-pages/Educationalresourcespage";
 import AdminLoginPage from '@/pages/auth/AdminLoginPage';
@@ -218,6 +219,7 @@ function AppRoutes() {
 
                 {/* Learners */}
                 <Route path="learners/all" element={<StudentManagement />} />
+                <Route path="learners/classes" element={<StudentClasses />} />
                 
 
                 {/* ✅ Student Management — linked here */}
