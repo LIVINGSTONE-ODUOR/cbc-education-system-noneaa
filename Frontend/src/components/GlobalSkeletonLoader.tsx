@@ -1,8 +1,15 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function GlobalSkeletonLoader() {
+interface GlobalSkeletonLoaderProps {
+  fading?: boolean;
+}
+
+export default function GlobalSkeletonLoader({ fading = false }: GlobalSkeletonLoaderProps) {
   return (
-    <div className="min-h-screen bg-background flex relative">
+    <div
+      className="min-h-screen bg-background flex relative transition-opacity duration-1000"
+      style={{ opacity: fading ? 0 : 1 }}
+    >
       {/* Top animated loading bar */}
       <div className="fixed top-0 left-0 right-0 h-1.5 z-50 bg-primary/20 overflow-hidden">
         <div

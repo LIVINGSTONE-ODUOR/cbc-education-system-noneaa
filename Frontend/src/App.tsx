@@ -89,7 +89,7 @@ function ProtectedRoute({
   children: React.ReactNode;
   requiredRole?: string;
 }) {
-  const { isAuthenticated, isLoading, user, showLoginSkeleton } = useAuth();
+  const { isAuthenticated, isLoading, user, showLoginSkeleton, isSkeletonFading } = useAuth();
 
   if (isLoading) {
     return (
@@ -104,7 +104,7 @@ function ProtectedRoute({
   }
 
   if (showLoginSkeleton) {
-    return <GlobalSkeletonLoader />;
+    return <GlobalSkeletonLoader fading={isSkeletonFading} />;
   }
 
   // Redirect if role doesn't match
@@ -125,7 +125,7 @@ function ProtectedRoute({
 
 // ─── Admin Route ──────────────────────────────────────────────────────────────
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, user, showLoginSkeleton } = useAuth();
+  const { isAuthenticated, isLoading, user, showLoginSkeleton, isSkeletonFading } = useAuth();
 
   if (isLoading) {
     return (
@@ -140,7 +140,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (showLoginSkeleton) {
-    return <GlobalSkeletonLoader />;
+    return <GlobalSkeletonLoader fading={isSkeletonFading} />;
   }
 
   return <>{children}</>;

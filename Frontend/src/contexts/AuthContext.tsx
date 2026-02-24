@@ -13,6 +13,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   showLoginSkeleton: boolean;
+  isSkeletonFading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
@@ -23,6 +24,7 @@ const ACCESS_TOKEN_KEY = 'cbc_access_token';
 const REFRESH_TOKEN_KEY = 'cbc_refresh_token';
 const USER_KEY = 'cbc_user';
 const LOGIN_SKELETON_DURATION_MS = 6000;
+const SKELETON_FADE_START_MS = LOGIN_SKELETON_DURATION_MS - 1000; // fade-out begins 1 second before hide
 
 const getStoredTokens = () => {
   try {
@@ -52,7 +54,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showLoginSkeleton, setShowLoginSkeleton] = useState(false);
+  const [isSkeletonFading, setIsSkeletonFading] = useState(false);
   const skeletonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skeletonFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const startSkeletonTimer = () => {
+    if (skeletonTimerRef.current) clearTimeout(skeletonTimerRef.current);
+    if (skeletonFadeTimerRef.current) clearTimeout(skeletonFadeTimerRef.current);
+    setShowLoginSkeleton(true);
+    setIsSkeletonFading(false);
+    skeletonFadeTimerRef.current = setTimeout(() => setIsSkeletonFading(true), SKELETON_FADE_START_MS);
+    skeletonTimerRef.current = setTimeout(() => {
+      setShowLoginSkeleton(false);
+      setIsSkeletonFading(false);
+    }, LOGIN_SKELETON_DURATION_MS);
+  };
 
   useEffect(() => {
     const initializeAuth = () => {
@@ -60,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { user: storedUser } = getStoredTokens();
         if (storedUser) {
           setUser(storedUser);
+          startSkeletonTimer();
         }
       } catch (error) {
         console.error('Session initialization error:', error);
@@ -72,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       if (skeletonTimerRef.current) clearTimeout(skeletonTimerRef.current);
+      if (skeletonFadeTimerRef.current) clearTimeout(skeletonFadeTimerRef.current);
     };
   }, []);
 
@@ -113,9 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       saveTokens(token, refreshToken, user);
       setUser(user);
-      if (skeletonTimerRef.current) clearTimeout(skeletonTimerRef.current);
-      setShowLoginSkeleton(true);
-      skeletonTimerRef.current = setTimeout(() => setShowLoginSkeleton(false), LOGIN_SKELETON_DURATION_MS);
+      startSkeletonTimer();
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -126,7 +142,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     if (skeletonTimerRef.current) clearTimeout(skeletonTimerRef.current);
+    if (skeletonFadeTimerRef.current) clearTimeout(skeletonFadeTimerRef.current);
     setShowLoginSkeleton(false);
+    setIsSkeletonFading(false);
     clearTokens();
     setUser(null);
   };
@@ -137,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       isAuthenticated: !!user,
       showLoginSkeleton,
+      isSkeletonFading,
       login,
       logout,
     }}>
