@@ -161,13 +161,17 @@ export default function Footer() {
           </div>
           
           <div className="flex gap-6">
-            {['Privacy', 'Terms', 'Security'].map((item) => (
+            {[
+              { label: 'Privacy', href: '/privacy' },
+              { label: 'Terms', href: '/terms' },
+              { label: 'Security', href: '/security' },
+            ].map((item) => (
               <Link
-                key={item}
-                to="#"
+                key={item.label}
+                to={item.href}
                 className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 hover:text-blue-500 transition-colors"
               >
-                {item}
+                {item.label}
               </Link>
             ))}
           </div>
