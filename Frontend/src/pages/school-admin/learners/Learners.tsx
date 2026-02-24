@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,12 +21,13 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Plus, 
   Search, 
-  Filter, 
   Download, 
   MoreHorizontal,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -34,35 +35,114 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 
-// Mock student data
-const mockStudents = [
-  { id: '1', admNo: 'CBC/2024/001', firstName: 'John', lastName: 'Kamau', grade: 'Grade4', gender: 'Male', guardianName: 'Mary Kamau', guardianPhone: '0712345678', status: 'active' },
-  { id: '2', admNo: 'CBC/2024/002', firstName: 'Jane', lastName: 'Wanjiku', grade: 'Grade5', gender: 'Female', guardianName: 'Peter Wanjiku', guardianPhone: '0723456789', status: 'active' },
-  { id: '3', admNo: 'CBC/2024/003', firstName: 'David', lastName: 'Ochieng', grade: 'Grade3', gender: 'Male', guardianName: 'Sarah Ochieng', guardianPhone: '0734567890', status: 'active' },
-  { id: '4', admNo: 'CBC/2024/004', firstName: 'Grace', lastName: 'Njeri', grade: 'PP2', gender: 'Female', guardianName: 'James Njeri', guardianPhone: '0745678901', status: 'transferred' },
-  { id: '5', admNo: 'CBC/2024/005', firstName: 'Brian', lastName: 'Mwangi', grade: 'Grade6', gender: 'Male', guardianName: 'Anne Mwangi', guardianPhone: '0756789012', status: 'active' },
-  { id: '6', admNo: 'CBC/2024/006', firstName: 'Faith', lastName: 'Akinyi', grade: 'Grade7', gender: 'Female', guardianName: 'Tom Akinyi', guardianPhone: '0767890123', status: 'active' },
-  { id: '7', admNo: 'CBC/2024/007', firstName: 'Kevin', lastName: 'Kipchoge', grade: 'Grade8', gender: 'Male', guardianName: 'Rose Kipchoge', guardianPhone: '0778901234', status: 'active' },
-  { id: '8', admNo: 'CBC/2024/008', firstName: 'Lucy', lastName: 'Wambui', grade: 'PP1', gender: 'Female', guardianName: 'John Wambui', guardianPhone: '0789012345', status: 'active' },
-];
+interface ParentInfo {
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+}
+
+interface Learner {
+  id: string;
+  admission_number: string;
+  first_name: string;
+  last_name: string;
+  grade_level: string;
+  gender: string;
+  is_active: boolean;
+  parents: ParentInfo | ParentInfo[] | null;
+}
+
+const getPrimaryParent = (parents: Learner['parents']) => {
+  if (!parents) return null;
+  return Array.isArray(parents) ? (parents[0] ?? null) : parents;
+};
 
 const grades = ['PP1', 'PP2', 'Grade1', 'Grade2', 'Grade3', 'Grade4', 'Grade5', 'Grade6', 'Grade7', 'Grade8', 'Grade9'];
 
 const StudentManagement = () => {
+  const { user } = useAuth();
+  const [students, setStudents] = useState<Learner[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGrade, setSelectedGrade] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredStudents = mockStudents.filter(student => {
-    const matchesSearch = 
-      student.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.admNo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesGrade = selectedGrade === 'all' || student.grade === selectedGrade;
-    const matchesStatus = selectedStatus === 'all' || student.status === selectedStatus;
+  const fetchStudents = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error } = await supabase
+        .from('learners')
+        .select(`
+          *,
+          parents (
+            first_name,
+            last_name,
+            phone_number
+          )
+        `)
+        .eq('school_id', user?.schoolId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      setStudents(data || []);
+    } catch (err) {
+      console.error('Error fetching students:', err);
+      setError('Failed to load students. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.schoolId]);
+
+  useEffect(() => {
+    void fetchStudents();
+  }, [fetchStudents]);
+
+  const filteredStudents = students.filter(student => {
+    const matchesSearch =
+      student.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.admission_number.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesGrade = selectedGrade === 'all' || student.grade_level === selectedGrade;
+    const matchesStatus =
+      selectedStatus === 'all' ||
+      (selectedStatus === 'active' && student.is_active) ||
+      (selectedStatus === 'inactive' && !student.is_active);
     return matchesSearch && matchesGrade && matchesStatus;
   });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+          <p className="mt-4 text-muted-foreground">Loading students...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="w-8 h-8 mx-auto text-red-500" />
+          <p className="mt-4 text-red-600">{error}</p>
+          <Button onClick={fetchStudents} className="mt-4">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -98,9 +178,7 @@ const StudentManagement = () => {
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="transferred">Transferred</SelectItem>
-                <SelectItem value="graduated">Graduated</SelectItem>
-                <SelectItem value="withdrawn">Withdrawn</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -133,17 +211,19 @@ const StudentManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredStudents.map((student) => (
+                {filteredStudents.map((student) => {
+                  const parent = getPrimaryParent(student.parents);
+                  return (
                   <TableRow key={student.id}>
-                    <TableCell className="font-medium">{student.admNo}</TableCell>
-                    <TableCell>{student.firstName} {student.lastName}</TableCell>
-                    <TableCell>{student.grade}</TableCell>
-                    <TableCell>{student.gender}</TableCell>
-                    <TableCell>{student.guardianName}</TableCell>
-                    <TableCell>{student.guardianPhone}</TableCell>
+                    <TableCell className="font-medium">{student.admission_number}</TableCell>
+                    <TableCell>{student.first_name} {student.last_name}</TableCell>
+                    <TableCell>{student.grade_level}</TableCell>
+                    <TableCell className="capitalize">{student.gender}</TableCell>
+                    <TableCell>{parent ? `${parent.first_name} ${parent.last_name}` : 'Not assigned'}</TableCell>
+                    <TableCell>{parent?.phone_number || '-'}</TableCell>
                     <TableCell>
-                      <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
-                        {student.status}
+                      <Badge variant={student.is_active ? 'default' : 'secondary'}>
+                        {student.is_active ? 'active' : 'inactive'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -170,7 +250,8 @@ const StudentManagement = () => {
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
@@ -179,7 +260,7 @@ const StudentManagement = () => {
         {/* Pagination placeholder */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {filteredStudents.length} of {mockStudents.length} students
+            Showing {filteredStudents.length} of {students.length} students
           </p>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled>Previous</Button>
