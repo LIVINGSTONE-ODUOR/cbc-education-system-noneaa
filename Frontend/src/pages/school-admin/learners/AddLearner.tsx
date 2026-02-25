@@ -1,24 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import {
   ArrowLeft,
   Save,
   User,
-  Shield,
-  Heart,
-  Calendar,
-  MapPin,
-  Phone,
-  Mail,
-  AlertTriangle,
-  Activity
+  Users,
+  Camera,
+  Info,
 } from 'lucide-react';
 
 interface StudentDetailsProps {
@@ -27,505 +20,424 @@ interface StudentDetailsProps {
 }
 
 const StudentDetails: React.FC<StudentDetailsProps> = ({ studentId, onBack }) => {
+  // Student state
   const [student, setStudent] = useState({
     firstName: '',
+    middleName: '',
     lastName: '',
-    studentId: '',
-    currentLevel: '',
-    room: '',
+    gender: '',
     dateOfBirth: '',
-    admission: '',
-    admissionDate: '',
-    enrollmentStatus: '',
-    sex: '',
-    entryNumber: '',
-    street: '',
-    city: '',
-    email: '',
-    homePhone: '',
-    notes: ''
+    admissionNumber: '',
+    gradeLevel: '',
+    specialNeeds: '',
   });
 
-  // Example branches array; replace with API call if needed
-const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
-const [lastSaved, setLastSaved] = useState<Date | null>(null);
-const [isDuplicate, setIsDuplicate] = useState(false);
+  // Parent/Guardian state
+  const [parent, setParent] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
+    relationship: '',
+    nationalId: '',
+    occupation: '',
+    address: '',
+  });
 
-//state for profile image upload
-const [profileImage, setProfileImage] = useState<File | null>(null);
-const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  
-const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (file) {
-    setProfileImage(file);
-    setPreviewUrl(URL.createObjectURL(file)); // For preview
-  }
-};
-
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
 
   useEffect(() => {
     if (studentId) {
-      const mockStudent = {
+      setStudent({
         firstName: 'PETER',
+        middleName: '',
         lastName: 'VALERO',
-        studentId: '1',
-        currentLevel: 'Play Group',
-        room: 'Room A',
+        gender: 'male',
         dateOfBirth: '2019-09-16',
-        admission: 'regular',
-        admissionDate: '2019-09-01',
-        enrollmentStatus: 'ongoing',
-        sex: 'M',
-        entryNumber: '',
-        street: '123 Main Street',
-        city: 'Nairobi',
+        admissionNumber: 'ADM001',
+        gradeLevel: 'Grade 1',
+        specialNeeds: '',
+      });
+      setParent({
+        firstName: 'John',
+        lastName: 'Valero',
         email: 'parent@example.com',
-        homePhone: '0795387869',
-        notes: 'Active student with good performance.'
-      };
-      setStudent(mockStudent);
-      setIsDuplicate(Math.random() > 0.5);
+        phoneNumber: '0795387869',
+        relationship: 'Father',
+        nationalId: '',
+        occupation: '',
+        address: '123 Main Street, Nairobi',
+      });
     }
   }, [studentId]);
-const [selectedBranch, setSelectedBranch] = useState<string | undefined>();
 
-useEffect(() => {
-  const fetchBranches = async () => {
+  const handleStudentChange = (field: string, value: string) => {
+    setStudent(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleParentChange = (field: string, value: string) => {
+    setParent(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = async () => {
+    const branchId = localStorage.getItem('selectedBranch');
+
+    const payload = {
+      full_name: `${student.firstName} ${student.middleName} ${student.lastName}`.trim(),
+      gender: student.gender,
+      date_of_birth: student.dateOfBirth,
+      admission_number: student.admissionNumber,
+      grade_level: student.gradeLevel,
+      special_needs: student.specialNeeds,
+      guardian_name: `${parent.firstName} ${parent.lastName}`.trim(),
+      guardian_phone: parent.phoneNumber,
+      guardian_email: parent.email,
+      guardian_relationship: parent.relationship,
+      guardian_national_id: parent.nationalId,
+      guardian_occupation: parent.occupation,
+      address: parent.address,
+      branch_id: branchId,
+    };
+
     try {
-      const response = await fetch('http://localhost:5000/api/branches');
+      console.log('Sending payload:', payload);
+      const response = await fetch('http://localhost:5000/api/students/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
       const data = await response.json();
-      setBranches(data);
 
-      const savedBranch = localStorage.getItem('selectedBranch');
-      const isValidBranch = data.some(branch => branch.id === savedBranch);
-
-      if (savedBranch && isValidBranch) {
-        setSelectedBranch(savedBranch);
+      if (response.ok) {
+        setLastSaved(new Date());
+        console.log('Student registered:', data);
+        alert('Student saved successfully');
       } else {
-        setSelectedBranch(undefined); // or set first branch: data[0]?.id
+        console.error('Failed:', data);
+        alert('Failed to save student: ' + (data?.error || JSON.stringify(data)));
       }
     } catch (error) {
-      console.error('Error fetching branches:', error);
+      console.error('Save error:', error);
+      alert('Network or server error.');
     }
-  };
-
-  fetchBranches();
-}, []);
-
-const handleSave = async () => {
-  const branchId = localStorage.getItem('selectedBranch');
-
-  if (!branchId) {
-    alert('Please select a branch before saving.');
-    return;
-  }
-
-  const payload = {
-    full_name: `${student.firstName} ${student.lastName}`,
-    gender: student.sex === 'M' ? 'male' : 'female',
-    date_of_birth: student.dateOfBirth,
-    admission_number: student.studentId,
-    guardian_name: "", // Placeholder
-    guardian_phone: student.homePhone,
-    guardian_email: student.email,
-    address: `${student.street}, ${student.city}`,
-    branch_id: branchId,
-  };
-
-  try {
-    console.log('Sending payload:', payload);
-    const response = await fetch('http://localhost:5000/api/students/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      setLastSaved(new Date());
-      console.log('Student registered:', data);
-      alert('Student saved successfully');
-    } else {
-      console.error('Failed:', data);
-      alert('Failed to save student: ' + (data?.error || JSON.stringify(data)));
-    }
-  } catch (error) {
-    console.error('Save error:', error);
-    alert('Network or server error.');
-  }
-};
-
-
-  const handleInputChange = (field: string, value: string) => {
-    setStudent(prev => ({ ...prev, [field]: value }));
   };
 
   return (
     <div className="min-h-screen bg-gray-50 w-full">
-      <div className="w-full p-6">
+      <div className="w-full max-w-5xl mx-auto p-6 space-y-6">
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center">
-            <Button
-              onClick={onBack}
-              variant="ghost"
-              className="mr-4"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
+        <div className="flex items-center justify-between animate-fade-in">
+          <div className="flex items-center gap-3">
+            <Button onClick={onBack} variant="ghost" size="sm">
+              <ArrowLeft className="w-4 h-4 mr-2" />
               Back to List
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {studentId ? 'Student Details' : 'New Student'}
+              <h1 className="text-2xl font-bold text-gray-900">
+                {studentId ? 'Edit Student' : 'Add New Student'}
               </h1>
-              {isDuplicate && (
-                <div className="flex items-center mt-2">
-                  <AlertTriangle className="w-4 h-4 text-red-500 mr-2" />
-                  <span className="text-red-600 font-medium">Possible Duplicate</span>
-                </div>
+              {lastSaved && (
+                <p className="text-xs text-green-600 mt-0.5">
+                  Last saved at {lastSaved.toLocaleTimeString()}
+                </p>
               )}
             </div>
           </div>
-          
-          <div className="flex items-center space-x-4">
-            {lastSaved && (
-              <div className="flex items-center text-green-600 text-sm">
-                <Activity className="w-4 h-4 mr-2" />
-                <span>Saved at {lastSaved.toLocaleTimeString()}</span>
+        </div>
+
+        {/* ── Student Information Card ── */}
+        <Card className="shadow-md border border-gray-200 transition-shadow duration-300 hover:shadow-lg animate-fade-in">
+          <CardHeader className="pb-4 border-b border-gray-100">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold text-primary">
+              <User className="w-5 h-5" />
+              Student Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-6">
+
+            {/* Profile picture upload */}
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-28 h-28 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden transition-all duration-300 hover:border-primary">
+                {previewUrl ? (
+                  <img src={previewUrl} alt="Profile preview" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-12 h-12 text-gray-300" />
+                )}
               </div>
-            )}
-            <Button onClick={handleSave} className="bg-pink-500 hover:bg-pink-600">
-              <Save className="w-4 h-4 mr-2" />
-              Save and New
-            </Button>
-            <Button onClick={onBack} variant="outline">
-              Close
-            </Button>
-          </div>
+              <label htmlFor="upload-photo" className="cursor-pointer">
+                <div className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200 cursor-pointer">
+                  <Camera className="w-4 h-4" />
+                  Upload Profile Picture
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="upload-photo"
+                  className="hidden"
+                  onChange={handleImageChange}
+                />
+              </label>
+              <p className="text-xs text-muted-foreground">Optional · JPG, PNG up to 5 MB</p>
+            </div>
+
+            {/* Two-column fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+              <div className="space-y-1.5">
+                <Label htmlFor="firstName">
+                  First Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="firstName"
+                  placeholder="e.g. Jane"
+                  value={student.firstName}
+                  onChange={(e) => handleStudentChange('firstName', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="middleName">Middle Name <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                <Input
+                  id="middleName"
+                  placeholder="e.g. Wanjiru"
+                  value={student.middleName}
+                  onChange={(e) => handleStudentChange('middleName', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="lastName">
+                  Last Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="lastName"
+                  placeholder="e.g. Doe"
+                  value={student.lastName}
+                  onChange={(e) => handleStudentChange('lastName', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="gender">
+                  Gender <span className="text-destructive">*</span>
+                </Label>
+                <Select value={student.gender} onValueChange={(v) => handleStudentChange('gender', v)}>
+                  <SelectTrigger id="gender">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                <Input
+                  id="dateOfBirth"
+                  type="date"
+                  value={student.dateOfBirth}
+                  onChange={(e) => handleStudentChange('dateOfBirth', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="admissionNumber">Admission Number</Label>
+                <Input
+                  id="admissionNumber"
+                  placeholder="e.g. ADM-2024-001"
+                  value={student.admissionNumber}
+                  onChange={(e) => handleStudentChange('admissionNumber', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5 md:col-span-2">
+                <Label htmlFor="gradeLevel">Grade / Class</Label>
+                <Select value={student.gradeLevel} onValueChange={(v) => handleStudentChange('gradeLevel', v)}>
+                  <SelectTrigger id="gradeLevel">
+                    <SelectValue placeholder="Select grade or class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Play Group">Play Group</SelectItem>
+                    <SelectItem value="PP1">Pre-Primary 1 (PP1)</SelectItem>
+                    <SelectItem value="PP2">Pre-Primary 2 (PP2)</SelectItem>
+                    <SelectItem value="Grade 1">Grade 1</SelectItem>
+                    <SelectItem value="Grade 2">Grade 2</SelectItem>
+                    <SelectItem value="Grade 3">Grade 3</SelectItem>
+                    <SelectItem value="Grade 4">Grade 4</SelectItem>
+                    <SelectItem value="Grade 5">Grade 5</SelectItem>
+                    <SelectItem value="Grade 6">Grade 6</SelectItem>
+                    <SelectItem value="Grade 7">Grade 7</SelectItem>
+                    <SelectItem value="Grade 8">Grade 8</SelectItem>
+                    <SelectItem value="Grade 9">Grade 9</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5 md:col-span-2">
+                <Label htmlFor="specialNeeds">Special Needs <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                <Textarea
+                  id="specialNeeds"
+                  placeholder="Describe any special needs or accommodations required…"
+                  value={student.specialNeeds}
+                  onChange={(e) => handleStudentChange('specialNeeds', e.target.value)}
+                  className="min-h-24 resize-none"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── Parent / Guardian Information Card ── */}
+        <Card className="shadow-md border border-gray-200 transition-shadow duration-300 hover:shadow-lg animate-fade-in">
+          <CardHeader className="pb-4 border-b border-gray-100">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold text-primary">
+              <Users className="w-5 h-5" />
+              Parent / Guardian Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-6">
+
+            {/* Helper description */}
+            <div className="flex items-start gap-3 rounded-lg bg-blue-50 border border-blue-200 p-4">
+              <Info className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+              <p className="text-sm text-blue-700">
+                A parent account will be created with these details for portal access.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+              <div className="space-y-1.5">
+                <Label htmlFor="parentFirstName">
+                  First Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="parentFirstName"
+                  placeholder="e.g. John"
+                  value={parent.firstName}
+                  onChange={(e) => handleParentChange('firstName', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="parentLastName">
+                  Last Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="parentLastName"
+                  placeholder="e.g. Doe"
+                  value={parent.lastName}
+                  onChange={(e) => handleParentChange('lastName', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="parentEmail">
+                  Email Address <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="parentEmail"
+                  type="email"
+                  placeholder="e.g. john.doe@email.com"
+                  value={parent.email}
+                  onChange={(e) => handleParentChange('email', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="parentPhone">
+                  Phone Number <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="parentPhone"
+                  type="tel"
+                  placeholder="e.g. 0712 345 678"
+                  value={parent.phoneNumber}
+                  onChange={(e) => handleParentChange('phoneNumber', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="relationship">
+                  Relationship to Student <span className="text-destructive">*</span>
+                </Label>
+                <Select value={parent.relationship} onValueChange={(v) => handleParentChange('relationship', v)}>
+                  <SelectTrigger id="relationship">
+                    <SelectValue placeholder="Select relationship" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Father">Father</SelectItem>
+                    <SelectItem value="Mother">Mother</SelectItem>
+                    <SelectItem value="Guardian">Guardian</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="nationalId">National ID Number <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                <Input
+                  id="nationalId"
+                  placeholder="e.g. 12345678"
+                  value={parent.nationalId}
+                  onChange={(e) => handleParentChange('nationalId', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5 md:col-span-2">
+                <Label htmlFor="occupation">Occupation <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                <Input
+                  id="occupation"
+                  placeholder="e.g. Teacher, Engineer, Business Owner"
+                  value={parent.occupation}
+                  onChange={(e) => handleParentChange('occupation', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5 md:col-span-2">
+                <Label htmlFor="address">Address <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                <Textarea
+                  id="address"
+                  placeholder="Street address, city, county…"
+                  value={parent.address}
+                  onChange={(e) => handleParentChange('address', e.target.value)}
+                  className="min-h-24 resize-none"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── Form Actions ── */}
+        <div className="flex items-center justify-end gap-3 pt-2 pb-8 animate-fade-in">
+          <Button type="button" variant="outline" onClick={onBack}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={handleSave} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Save className="w-4 h-4 mr-2" />
+            Save Student
+          </Button>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Profile Picture Section */}
-          <div className="lg:col-span-1">
-            <Card className="shadow-lg">
-              <CardContent className="p-6 text-center">
-                <div className="w-32 h-32 bg-gray-200 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                  <User className="w-16 h-16 text-gray-400" />
-                </div>
-                         <input
-                            type="file"
-                            accept="image/*"
-                            id="upload-photo"
-                            className="hidden"
-                              onChange={handleImageChange}/>
-
-                                          <label htmlFor="upload-photo" className="w-full">
-                                                          <Button
-                                 type="button"
-                               className="w-full bg-pink-500 hover:bg-pink-600 text-white">
-                                        Edit Picture
-                          </Button>
-                            </label>
-
-                {/* Quick Info */}
-                <div className="mt-6 space-y-3 text-left">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Student ID:</span>
-                    <Badge variant="secondary">{student.studentId || 'New'}</Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Status:</span>
-                    <Badge variant="default" className="bg-green-500">
-                      {student.enrollmentStatus || 'New'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Level:</span>
-                    <span className="text-sm font-medium">{student.currentLevel || 'TBD'}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Forms Section */}
-          <div className="lg:col-span-3">
-            <Card className="shadow-lg">
-              <CardContent className="p-6">
-                <Tabs defaultValue="general" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4 mb-6">
-                    <TabsTrigger value="general" className="flex items-center space-x-2">
-                      <User className="w-4 h-4" />
-                      <span>General</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="guardian" className="flex items-center space-x-2">
-                      <Shield className="w-4 h-4" />
-                      <span>Guardian Information</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="medical" className="flex items-center space-x-2">
-                      <Heart className="w-4 h-4" />
-                      <span>Medical Information</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="attendance" className="flex items-center space-x-2">
-                      <Calendar className="w-4 h-4" />
-                      <span>Attendance</span>
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="general" className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">First/Second Name</Label>
-                        <Input
-                          id="firstName"
-                          value={student.firstName}
-                          onChange={(e) => handleInputChange('firstName', e.target.value)}
-                          className="bg-blue-50"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="admission">Admission</Label>
-                        <Select value={student.admission} onValueChange={(value) => handleInputChange('admission', value)}>
-                          <SelectTrigger className="bg-blue-50">
-                            <SelectValue placeholder="Select admission type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="regular">Regular</SelectItem>
-                            <SelectItem value="transfer">Transfer</SelectItem>
-                            <SelectItem value="scholarship">Scholarship</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Last Name</Label>
-                        <Input
-                          id="lastName"
-                          value={student.lastName}
-                          onChange={(e) => handleInputChange('lastName', e.target.value)}
-                          className="bg-blue-50"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="admissionDate">Admission Date</Label>
-                        <Input
-                          id="admissionDate"
-                          type="date"
-                          value={student.admissionDate}
-                          onChange={(e) => handleInputChange('admissionDate', e.target.value)}
-                          className="bg-blue-50"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="studentId">Student ID</Label>
-                        <Input
-                          id="studentId"
-                          value={student.studentId}
-                          onChange={(e) => handleInputChange('studentId', e.target.value)}
-                          className="bg-blue-50"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="enrollmentStatus">Enrollment Status</Label>
-                        <Select value={student.enrollmentStatus} onValueChange={(value) => handleInputChange('enrollmentStatus', value)}>
-                          <SelectTrigger className="bg-blue-50">
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ongoing">Ongoing</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="transferred">Transferred</SelectItem>
-                            <SelectItem value="withdrawn">Withdrawn</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="currentLevel">Current Level</Label>
-                        <Select value={student.currentLevel} onValueChange={(value) => handleInputChange('currentLevel', value)}>
-                          <SelectTrigger className="bg-blue-50">
-                            <SelectValue placeholder="Select level" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Play Group">Play Group</SelectItem>
-                            <SelectItem value="Pre-Primary 1">Pre-Primary 1</SelectItem>
-                            <SelectItem value="Pre-Primary 2">Pre-Primary 2</SelectItem>
-                            <SelectItem value="Grade 1">Grade 1</SelectItem>
-                            <SelectItem value="Grade 2">Grade 2</SelectItem>
-                            <SelectItem value="Grade 3">Grade 3</SelectItem>
-                            <SelectItem value="Grade 4">Grade 4</SelectItem>
-                            <SelectItem value="Grade 5">Grade 5</SelectItem>
-                            <SelectItem value="Grade 6">Grade 6</SelectItem>
-                            <SelectItem value="Grade 7">Grade 7</SelectItem>
-                            <SelectItem value="Grade 8">Grade 8</SelectItem>
-                            <SelectItem value="Grade 9">Grade 9</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="sex">Sex</Label>
-                        <Select value={student.sex} onValueChange={(value) => handleInputChange('sex', value)}>
-                          <SelectTrigger className="bg-blue-50">
-                            <SelectValue placeholder="Select gender" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="M">Male</SelectItem>
-                            <SelectItem value="F">Female</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="room">Room</Label>
-                        <Input
-                          id="room"
-                          value={student.room}
-                          onChange={(e) => handleInputChange('room', e.target.value)}
-                          className="bg-blue-50"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="branch">Select Branch</Label>                
-<Select
-  value={selectedBranch}
-  onValueChange={(value) => {
-    setSelectedBranch(value);
-    localStorage.setItem('selectedBranch', value);
-  }}
->
-  <SelectTrigger className="bg-blue-50">
-    <SelectValue placeholder="Choose branch" />
-  </SelectTrigger>
-  <SelectContent>
-    {branches.map((branch) => (
-      <SelectItem key={branch.id} value={branch.id}>
-        {branch.name}
-      </SelectItem>
-    ))}
-  </SelectContent>
-</Select>
-                        </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                        <Input
-                          id="dateOfBirth"
-                          type="date"
-                          value={student.dateOfBirth}
-                          onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                          className="bg-blue-50"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Contact/Address Information */}
-                    <div className="border-t pt-6">
-                      <h3 className="text-lg font-semibold mb-4 text-gray-700">Contact/Address Information</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <Label htmlFor="street" className="flex items-center space-x-2">
-                            <MapPin className="w-4 h-4" />
-                            <span>Street</span>
-                          </Label>
-                          <Input
-                            id="street"
-                            value={student.street}
-                            onChange={(e) => handleInputChange('street', e.target.value)}
-                            className="bg-blue-50"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="city">City</Label>
-                          <Input
-                            id="city"
-                            value={student.city}
-                            onChange={(e) => handleInputChange('city', e.target.value)}
-                            className="bg-blue-50"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="email" className="flex items-center space-x-2">
-                            <Mail className="w-4 h-4" />
-                            <span>E-mail Address</span>
-                          </Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            value={student.email}
-                            onChange={(e) => handleInputChange('email', e.target.value)}
-                            className="bg-blue-50"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="homePhone" className="flex items-center space-x-2">
-                            <Phone className="w-4 h-4" />
-                            <span>Home Phone</span>
-                          </Label>
-                          <Input
-                            id="homePhone"
-                            value={student.homePhone}
-                            onChange={(e) => handleInputChange('homePhone', e.target.value)}
-                            className="bg-blue-50"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Notes */}
-                    <div className="border-t pt-6">
-                      <h3 className="text-lg font-semibold mb-4 text-gray-700">Notes</h3>
-                      <Textarea
-                        value={student.notes}
-                        onChange={(e) => handleInputChange('notes', e.target.value)}
-                        className="min-h-32 bg-blue-50"
-                        placeholder="Additional notes about the student..."
-                      />
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="guardian">
-                    <div className="text-center py-12">
-                      <Shield className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-700 mb-2">Guardian Information</h3>
-                      <p className="text-gray-500">Guardian information management will be available here.</p>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="medical">
-                    <div className="text-center py-12">
-                      <Heart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-700 mb-2">Medical Information</h3>
-                      <p className="text-gray-500">Medical records and health information will be managed here.</p>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="attendance">
-                    <div className="text-center py-12">
-                      <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-700 mb-2">Attendance</h3>
-                      <p className="text-gray-500">Student attendance tracking and reports will be available here.</p>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
       </div>
     </div>
   );
