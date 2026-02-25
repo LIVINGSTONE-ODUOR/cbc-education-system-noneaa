@@ -75,6 +75,14 @@ app.use(cors({
       return callback(null, true);
     }
     
+    // Allow GitHub Codespaces domains
+    if (origin && (
+      origin.includes('.github.dev') || 
+      origin.includes('github.dev')
+    )) {
+      return callback(null, true);
+    }
+    
     // Log the rejected origin for debugging
     console.log('CORS rejected origin:', origin);
     callback(new Error('Not allowed by CORS'));
