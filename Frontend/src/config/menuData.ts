@@ -48,7 +48,6 @@ export const menuSections: MenuSection[] = [
         href: "/school-admin/teachers",
         submenu: [
           { id: "all-teachers", label: "All Teachers", href: "/school-admin/teacher-list" },
-          { id: "add-teacher", label: "Add Teacher", href: "/school-admin/teachers/add" },
           { id: "departments", label: "Departments", href: "/school-admin/teachers/departments" },
         ]
       },
@@ -128,11 +127,7 @@ export const menuSections: MenuSection[] = [
         id: "terms", 
         label: "Term Management", 
         icon: CalendarDays, 
-        href: "/school-admin/terms",
-        submenu: [
-          { id: "term-setup", label: "Setup Terms", href: "/school-admin/terms/setup" },
-          { id: "term-calendar", label: "Calendar", href: "/school-admin/terms/calendar" },
-        ]
+        href: "/school-admin/calendar",
       },
       { 
         id: "exam-groups", 

@@ -36,12 +36,14 @@ import SchoolRegistration from "@/pages/admin-registration/SchoolRegistration";
 import LearningMaterials from "@/pages/student/LearningMaterials";
 import Grade1 from "@/pages/student/Grade1";
 import Grade2 from "@/pages/student/Grade2";
+import StudentPortal from "./pages/Student-Portal/Student";
 
 // Teacher Pages
 import TeachingResources from "@/pages/teacher/TeachingResources";
 import Teacher from "./pages/teacher/TeacherProfile";
 import AdminStaff from "./pages/teacher/StaffList";
 import StaffManagement from "./pages/teacher/StaffManagement";
+import TeacherPortal from "./pages/Teacher-Portal/Teacher-Portal";
 // Layouts
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
@@ -52,9 +54,10 @@ import AddTeacherPage from "@/pages/auth/school-admin/teachers/AddTeacher";
 import LearnersListPage from "@/pages/auth/school-admin/learners/LearnersList";
 import AddLearnerPage from "./pages/school-admin/learners/AddLearner";
 import FeeManagement from "./pages/school-admin/learners/FeesManagent/FeeManagement";
-import Student from "./pages/school-admin/learners/LearnerProfile";
+import LearnerProfile from "./pages/school-admin/learners/LearnerProfile";
 import Assessments from "./pages/school-admin/Assessment";
 import AdminAttendance from "./pages/teacher/StaffAttendance";
+import Calendar from "./pages/Calendar/Calendar";
 
 // ✅ Student Management Page
 import StudentManagement from "./pages/school-admin/learners/Learners";
@@ -64,6 +67,9 @@ import EducationalResourcesPage from "./pages/website-pages/Educationalresources
 import AdminLoginPage from '@/pages/auth/AdminLoginPage';
 import UserManagement from "./pages/Users/UserManagement";
 import ModernDashboard from "@/components/ModernDashboard";
+
+//Parent Portal
+import ParentPortal from "./pages/Parent-Portal/Parent-Portal";
 
 // Department Pages
 import DepartmentsPage from "@/pages/auth/school-admin/teachers/departments/DepartmentsPage";
@@ -168,7 +174,10 @@ function AppRoutes() {
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/features" element={<Feature />} />
 
-      {/* ── Demo Routes ── */}
+      // Parent Portal
+
+
+        {/* ── Demo Routes ── */}
       <Route path="/dashboard-demo" element={<ModernDashboard />} />
       <Route path="/demo" element={<ModernDashboard />} />
 
@@ -207,6 +216,34 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/teacher/portal"
+        element={
+          <ProtectedRoute requiredRole="teacher">
+            <TeacherPortal />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ── Student Routes (Standalone Portal) ── */}
+      <Route
+        path="/student/portal"
+        element={
+          <ProtectedRoute requiredRole="student">
+            <StudentPortal />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ── Parent Routes (Standalone Portal) ── */}
+      <Route
+        path="/parent/portal"
+        element={
+          <ProtectedRoute requiredRole="parent">
+            <ParentPortal />
+          </ProtectedRoute>
+        }
+      />
 
       {/* ── Admin Registration ── */}
       <Route path="/admin/register-school" element={<SchoolRegistration />} />
@@ -230,12 +267,13 @@ function AppRoutes() {
                 <Route path="teachers/departments" element={<DepartmentsPage />} />
                 <Route path="teachers/departments/:id" element={<DepartmentDetailsPage />} />
                 <Route path="teacher-profile" element={<Teacher />} />
-                 <Route path="teacher-list" element={<AdminStaff />} />
-                  <Route path="staff-manage" element={<StaffManagement />} />
+                <Route path="teacher-list" element={<AdminStaff />} />
+                <Route path="staff-manage" element={<StaffManagement />} />
 
                 {/* Learners */}
                 <Route path="learners/all" element={<StudentManagement />} />
                 <Route path="learners/classes" element={<StudentClasses />} />
+
                 
 
                 {/* ✅ Student Management — linked here */}
@@ -248,10 +286,11 @@ function AppRoutes() {
                 <Route path="users" element={<UserManagement />} />
                 <Route path="demo" element={<ModernDashboard />} />
                 <Route path="learners/add" element={<AddLearnerPage />} />
-                <Route path="learners/profile" element={<Student/>} />
+                <Route path="learners/profile" element={<LearnerProfile/>} />
                 <Route path="fee-management/" element={<FeeManagement/>} />
                 <Route path="assessments/" element={<Assessments/>} />
-                 <Route path="staff-attendance/" element={<AdminAttendance/>} />
+                <Route path="staff-attendance/" element={<AdminAttendance/>} />
+                <Route path="calendar" element={<Calendar/>} />
                 {/* Fallback */}
                 <Route path="" element={<Navigate to="dashboard" replace />} />
               </Routes>
