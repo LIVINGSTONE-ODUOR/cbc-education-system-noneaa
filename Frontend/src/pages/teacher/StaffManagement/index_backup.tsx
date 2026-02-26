@@ -84,7 +84,6 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
         onBack={onBack}
         onViewList={() => setView("list")}
         onCreate={openCreate}
-        onViewPerformance={() => setView("performance")}
         toast={toast}
       />
     );

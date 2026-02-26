@@ -280,3 +280,4 @@ export { DashboardView } from "./DashboardView";
 export { ListView } from "./ListView";
 export { FormView } from "./FormView";
 export { DetailsView } from "./DetailsView";
+export { PerformanceDashboard as PerformanceView } from "./Performance";

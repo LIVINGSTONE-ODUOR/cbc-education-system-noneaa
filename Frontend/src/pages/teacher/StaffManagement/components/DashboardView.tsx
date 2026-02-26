@@ -10,6 +10,7 @@ interface DashboardViewProps {
   onBack?: () => void;
   onViewList: () => void;
   onCreate: () => void;
+  onViewPerformance?: () => void;
   toast: string | null;
 }
 
@@ -18,6 +19,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onBack,
   onViewList,
   onCreate,
+  onViewPerformance,
   toast,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -181,7 +183,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               { icon: UserPlus, label: "Register New Staff", sub: "Add teacher or support staff", action: onCreate, color: "#1A56DB", bg: "#EBF0FF" },
               { icon: Users, label: "View All Staff", sub: "Browse & manage records", action: onViewList, color: "#15803D", bg: "#F0FDF4" },
               { icon: Download, label: "Export Records", sub: "CSV, PDF, or Excel format", action: () => {}, color: "#7C3AED", bg: "#F5F3FF" },
-              { icon: Award, label: "Performance", sub: "Attendance & reports", action: () => {}, color: "#B45309", bg: "#FEF3C7" },
+              { icon: Award, label: "Performance", sub: "Attendance & reports", action: onViewPerformance || (() => {}), color: "#B45309", bg: "#FEF3C7" },
             ].map(({ icon: Icon, label, sub, action, color, bg }) => (
               <div
                 key={label}
