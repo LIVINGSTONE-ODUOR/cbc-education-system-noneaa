@@ -18,7 +18,7 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, user } = useAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -31,15 +31,30 @@ export default function LoginPage() {
     e.preventDefault();
     
     try {
-      await login(formData.email, formData.password);
+      const result = await login(formData.email, formData.password);
       await new Promise(resolve => setTimeout(resolve, 200));
       
       toast({
         title: 'Welcome Back',
-        description: `Successfully signed in as ${userType}.`,
+        description: `Successfully signed in.`,
       });
       
-      navigate('/admin-login');
+      // Use user selection since login doesn't return user object directly
+      const userRole = userType;
+      
+      switch (userRole) {
+        case 'admin':
+          navigate('/school-admin/dashboard');
+          break;
+        case 'teacher':
+          navigate('/teacher/portal');
+          break;
+        case 'parent':
+          navigate('/parent/portal');
+          break;
+        default:
+          navigate('/school-admin/dashboard');
+      }
     } catch (error: unknown) {
       toast({
         title: 'Sign In Failed',

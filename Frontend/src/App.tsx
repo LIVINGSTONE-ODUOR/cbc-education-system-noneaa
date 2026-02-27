@@ -141,7 +141,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated || user?.role !== "school_admin") {
-    return <Navigate to="/admin-login" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   if (showLoginSkeleton) {
@@ -248,8 +248,8 @@ function AppRoutes() {
       {/* ── Admin Registration ── */}
       <Route path="/admin/register-school" element={<SchoolRegistration />} />
 
-      {/* ── Admin Login ── */}
-      <Route path="/admin-login" element={<AdminLoginRedirect />} />
+      {/* ── Admin Login (redirects to unified login) ── */}
+      <Route path="/admin-login" element={<Navigate to="/login" replace />} />
 
       {/* ── School Admin Routes (Protected) ── */}
       <Route
@@ -287,7 +287,7 @@ function AppRoutes() {
                 <Route path="demo" element={<ModernDashboard />} />
                 <Route path="learners/add" element={<AddLearnerPage />} />
                 <Route path="learners/profile" element={<LearnerProfile/>} />
-                <Route path="fee-management/" element={<FeeManagement/>} />
+                <Route path="fee-management/" element={<FeeManagement onBack={() => window.history.back()} />} />
                 <Route path="assessments/" element={<Assessments/>} />
                 <Route path="staff-attendance/" element={<AdminAttendance/>} />
                 <Route path="calendar" element={<Calendar/>} />
@@ -303,25 +303,6 @@ function AppRoutes() {
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
-}
-
-// ─── Admin Login Redirect Helper ──────────────────────────────────────────────
-function AdminLoginRedirect() {
-  const { isAuthenticated, isLoading, user } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
-
-  if (isAuthenticated && user?.role === "school_admin") {
-    return <Navigate to="/school-admin/dashboard" replace />;
-  }
-
-  return <AdminLoginPage />;
 }
 
 // ─── Root App ─────────────────────────────────────────────────────────────────
