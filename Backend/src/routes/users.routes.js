@@ -21,86 +21,118 @@ router.get('/',
         });
       }
 
-      const { 
-        page = 1, 
-        limit = 50, 
-        role, 
-        status, 
-        search,
-        school_id 
-      } = req.query;
-
+      // Parse and validate pagination parameters
+      const page = Math.max(1, parseInt(req.query.page) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
       const offset = (page - 1) * limit;
-      
-      let queryText = `
-        SELECT u.id, u.email, u.first_name, u.last_name, u.phone_number, 
-               u.role, u.status, u.is_active, u.email_verified, u.two_factor_enabled,
-               u.last_login, u.login_attempts, u.locked_until, u.active_sessions, 
-               u.max_sessions, u.school_id, u.created_at, u.updated_at,
-               s.name as school_name
-        FROM users u
-        LEFT JOIN schools s ON u.school_id = s.id
-        WHERE 1=1
-      `;
-      
+
+      const { role, status, search, school_id } = req.query;
+
+      // Build WHERE clause dynamically
+      const whereConditions = [];
       const queryParams = [];
       let paramIndex = 1;
 
+      // Role-based filtering: school_admin can only see users from their school
       if (req.user.role === 'school_admin' && req.user.schoolId) {
-        queryText += ` AND u.school_id = $${paramIndex}`;
+        whereConditions.push(`u.school_id = $${paramIndex}`);
         queryParams.push(req.user.schoolId);
         paramIndex++;
-        queryText += ` AND u.role != 'super_admin'`;
+        // School admins cannot see super admins
+        whereConditions.push(`u.role != 'super_admin'`);
       }
 
+      // Role filter
       if (role && role !== 'all') {
-        queryText += ` AND u.role = $${paramIndex}`;
+        whereConditions.push(`u.role = $${paramIndex}`);
         queryParams.push(role);
         paramIndex++;
       }
 
+      // Status filter
       if (status && status !== 'all') {
         if (status === 'active') {
-          queryText += ` AND u.is_active = true AND (u.locked_until IS NULL OR u.locked_until < NOW())`;
+          whereConditions.push(`u.is_active = true AND (u.locked_until IS NULL OR u.locked_until < NOW())`);
         } else if (status === 'locked') {
-          queryText += ` AND u.locked_until > NOW()`;
+          whereConditions.push(`u.locked_until > NOW()`);
         } else if (status === 'inactive') {
-          queryText += ` AND u.is_active = false`;
+          whereConditions.push(`u.is_active = false`);
         } else if (status === 'not_verified') {
-          queryText += ` AND u.email_verified = false`;
+          whereConditions.push(`u.email_verified = false`);
         }
       }
 
-      if (search) {
-        queryText += ` AND (u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex})`;
-        queryParams.push(`%${search}%`);
+      // Search filter
+      if (search && search.trim()) {
+        whereConditions.push(`(u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex})`);
+        queryParams.push(`%${search.trim()}%`);
         paramIndex++;
       }
 
-      if (school_id) {
-        queryText += ` AND u.school_id = $${paramIndex}`;
+      // School filter (only super_admin can filter by school_id)
+      if (school_id && req.user.role === 'super_admin') {
+        whereConditions.push(`u.school_id = $${paramIndex}`);
         queryParams.push(school_id);
         paramIndex++;
       }
 
-      const countQuery = queryText.replace(/SELECT u\.id.*FROM users u/, 'SELECT COUNT(*) as total FROM users u');
+      // Build WHERE clause
+      const whereClause = whereConditions.length > 0 
+        ? `WHERE ${whereConditions.join(' AND ')}`
+        : '';
+
+      // Count query - same filtering conditions as main query
+      const countQuery = `
+        SELECT COUNT(*) as total 
+        FROM users u
+        ${whereClause}
+      `;
+
       const countResult = await db.query(countQuery, queryParams);
-      const total = countResult.rows[0]?.total || 0;
+      const total = parseInt(countResult.rows[0]?.total) || 0;
+      const totalPages = Math.ceil(total / limit);
 
-      queryText += ` ORDER BY u.created_at DESC`;
-      queryText += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-      queryParams.push(limit, offset);
+      // Main query - explicitly exclude sensitive fields (password_hash, mfa_secret_encrypted)
+      const dataQuery = `
+        SELECT 
+          u.id, 
+          u.email, 
+          u.first_name, 
+          u.last_name, 
+          u.phone_number, 
+          u.role, 
+          u.status, 
+          u.is_active, 
+          u.email_verified, 
+          u.two_factor_enabled,
+          u.last_login, 
+          u.login_attempts, 
+          u.locked_until, 
+          u.active_sessions, 
+          u.max_sessions, 
+          u.school_id, 
+          u.created_at, 
+          u.updated_at,
+          s.name as school_name
+        FROM users u
+        LEFT JOIN schools s ON u.school_id = s.id
+        ${whereClause}
+        ORDER BY u.created_at DESC
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      `;
 
-      const result = await db.query(queryText, queryParams);
+      // Add pagination parameters
+      const dataParams = [...queryParams, limit, offset];
+      const result = await db.query(dataQuery, dataParams);
 
       res.json({
         success: true,
         data: result.rows,
         pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
+          page,
+          limit,
           total,
-          pages: Math.ceil(total / limit)
+          pages: totalPages
         }
       });
     } catch (error) {
@@ -184,12 +216,14 @@ router.get('/:id',
 
       const { id } = req.params;
 
+      // Explicitly exclude sensitive fields
       const queryText = `
-        SELECT u.id, u.email, u.first_name, u.last_name, u.phone_number, 
-               u.role, u.status, u.is_active, u.email_verified, u.two_factor_enabled,
-               u.last_login, u.login_attempts, u.locked_until, u.active_sessions, 
-               u.max_sessions, u.school_id, u.created_at, u.updated_at,
-               s.name as school_name
+        SELECT 
+          u.id, u.email, u.first_name, u.last_name, u.phone_number, 
+          u.role, u.status, u.is_active, u.email_verified, u.two_factor_enabled,
+          u.last_login, u.login_attempts, u.locked_until, u.active_sessions, 
+          u.max_sessions, u.school_id, u.created_at, u.updated_at,
+          s.name as school_name
         FROM users u
         LEFT JOIN schools s ON u.school_id = s.id
         WHERE u.id = $1
