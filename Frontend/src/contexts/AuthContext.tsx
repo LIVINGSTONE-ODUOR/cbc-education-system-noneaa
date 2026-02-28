@@ -5,8 +5,23 @@ import { User, UserRole } from '@/types';
 // In production, set VITE_API_URL to your backend URL (e.g., https://cbc-education-system-1.onrender.com)
 // Use empty string (relative path) in development to leverage Vite proxy
 // Production fallback: Use Render backend URL when deployed on Vercel
-const API_URL = import.meta.env.VITE_API_URL || 
-  (import.meta.env.PROD ? 'https://cbc-education-system-1.onrender.com' : '');
+const getApiUrl = () => {
+  // If VITE_API_URL is explicitly set, use it
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // In production (build), use the Render backend
+  if (import.meta.env.PROD) {
+    return 'https://cbc-education-system-1.onrender.com';
+  }
+  // In development, use relative path to leverage Vite proxy
+  return '';
+};
+
+const API_URL = getApiUrl();
+
+console.log('[AuthContext] API_URL:', API_URL);
+console.log('[AuthContext] Environment:', import.meta.env.MODE);
 
 interface AuthContextType {
   user: User | null;
@@ -14,7 +29,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   showLoginSkeleton: boolean;
   isSkeletonFading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, role?: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -93,20 +108,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, role?: string) => {
     setIsLoading(true);
     try {
       if (!email || !password) {
         throw new Error('Email and password are required');
       }
 
+      console.log('[AuthContext] Login attempt for:', email, 'with role:', role);
+      console.log('[AuthContext] Full API URL:', `${API_URL}/api/auth/login`);
+
+      const requestBody = { email, password };
+      // Add role if provided (for future backend support)
+      if (role) {
+        (requestBody as any).role = role;
+      }
+
       const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
       });
 
+      console.log('[AuthContext] Response status:', response.status);
+
       const data = await response.json();
+      console.log('[AuthContext] Response data:', data);
 
       if (!response.ok || !data.success) {
         throw new Error(data.message || data.error || 'Invalid credentials. Please try again.');
@@ -132,8 +161,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveTokens(token, refreshToken, user);
       setUser(user);
       startSkeletonTimer();
+      console.log('[AuthContext] Login successful for:', email);
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('[AuthContext] Login error:', error);
       throw error;
     } finally {
       setIsLoading(false);

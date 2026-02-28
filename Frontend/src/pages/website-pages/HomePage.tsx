@@ -84,7 +84,7 @@ import {
   DollarSign,
 } from 'lucide-react';
 import heroVideo from '@/assets/teacher-teaching.mp4';
-import heroBg from '@/assets/hero-bg.jpg';
+import heroBg from '@/assets/hero-bg.png';
 import cbeLogo from '@/assets/cbe-logo.jpg';
 import {
   DropdownMenu,
