@@ -112,17 +112,24 @@ const respond = (res, statusCode, success, message, data = null, errors = null) 
 //   10. Return tokens + school info
 // ================================================================
 
-if (!supabaseAdmin) {
-  console.error('[registerSchoolAdmin] Supabase admin client is not initialized');
-  return respond(res, 500, false, 'Server configuration error. Please contact support.');
-}
-
-if (!supabaseAdmin) {
-  console.error('[registerSchoolAdmin] Supabase admin client is not initialized');
-  return respond(res, 500, false, 'Server configuration error. Please contact support.');
-}
+// Check if Supabase admin is initialized before proceeding
+const checkSupabaseAdmin = (res) => {
+  if (!supabaseAdmin) {
+    console.error('[schoolRegistration] Supabase admin client is not initialized');
+    console.error('[schoolRegistration] Please ensure SUPABASE_SERVICE_ROLE_KEY is set in environment variables');
+    res.status(500).json({
+      success: false,
+      message: 'Server configuration error. Please contact support.',
+      error: 'Database connection not available'
+    });
+    return false;
+  }
+  return true;
+};
 
 const registerSchoolAdmin = async (req, res) => {
+  // Check Supabase admin initialization
+  if (!checkSupabaseAdmin(res)) return;
   const {
     // School fields
     school_name, school_code, school_type, level,
@@ -391,6 +398,9 @@ const registerSchoolAdmin = async (req, res) => {
 // ================================================================
 
 const registerTeacher = async (req, res) => {
+  // Check Supabase admin initialization
+  if (!checkSupabaseAdmin(res)) return;
+  
   const {
     school_code,
     first_name, last_name, email, phone_number, password,
@@ -547,6 +557,9 @@ const registerTeacher = async (req, res) => {
 // ================================================================
 
 const registerParent = async (req, res) => {
+  // Check Supabase admin initialization
+  if (!checkSupabaseAdmin(res)) return;
+  
   const {
     school_code,
     first_name, last_name, email, phone_number, password,
