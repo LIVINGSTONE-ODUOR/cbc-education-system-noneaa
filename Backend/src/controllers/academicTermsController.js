@@ -1,5 +1,8 @@
 const { query, pool } = require('../config/database');
 
+// Table name - using academic_years as this is what exists in the database
+const TABLE_NAME = 'academic_years';
+
 // ─── GET ALL TERMS (for a school) ────────────────────────────────────────────
 const getTerms = async (req, res) => {
   try {
@@ -23,7 +26,7 @@ const getTerms = async (req, res) => {
         is_current, is_active,
         created_at, created_by,
         updated_at, updated_by
-      FROM academic_years
+      FROM ${TABLE_NAME}
       WHERE school_id = $1
     `;
     const params = [school_id];
@@ -63,7 +66,7 @@ const getTermById = async (req, res) => {
     const { id } = req.params;
 
     const result = await query(
-      `SELECT * FROM academic_years WHERE id = $1`,
+      `SELECT * FROM ${TABLE_NAME} WHERE id = $1`,
       [id]
     );
 
@@ -106,7 +109,7 @@ const getCurrentTerm = async (req, res) => {
     }
 
     const result = await query(
-      `SELECT * FROM academic_years
+      `SELECT * FROM ${TABLE_NAME}
        WHERE school_id = $1 AND is_current = true AND is_active = true
        LIMIT 1`,
       [school_id]
@@ -154,16 +157,16 @@ const createTerm = async (req, res) => {
 
     await client.query('BEGIN');
 
-    // If setting as current, unset any existing current term for this school/year
+    // If setting as current, unset any existing current term for this school
     if (is_current) {
       await client.query(
-        `UPDATE academic_years SET is_current = false WHERE school_id = $1 AND year = $2`,
-        [school_id, year]
+        `UPDATE ${TABLE_NAME} SET is_current = false WHERE school_id = $1`,
+        [school_id]
       );
     }
 
     const result = await client.query(
-      `INSERT INTO academic_years
+      `INSERT INTO ${TABLE_NAME}
          (school_id, name, year, start_date, end_date, is_current, is_active, created_by, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
        RETURNING *`,
@@ -176,6 +179,16 @@ const createTerm = async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('createTerm error:', error);
+    
+    // Handle duplicate key error
+    if (error.code === '23505') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'A term with this name already exists for this school year',
+        error: error.message 
+      });
+    }
+    
     return res.status(500).json({ success: false, message: 'Server error', error: error.message });
   } finally {
     client.release();
@@ -191,16 +204,16 @@ const updateTerm = async (req, res) => {
     const updated_by = req.user?.id;
 
     // Check exists
-    const existing = await client.query(`SELECT * FROM academic_years WHERE id = $1`, [id]);
+    const existing = await client.query(`SELECT * FROM ${TABLE_NAME} WHERE id = $1`, [id]);
     if (!existing.rows.length) {
       return res.status(404).json({ success: false, message: 'Academic term not found' });
     }
 
-    const current = existing.rows[0];
+    const currentTerm = existing.rows[0];
 
     // School admins can only update their own school's terms
     if (req.user.role === 'school_admin' && req.user.schoolId) {
-      if (current.school_id !== req.user.schoolId) {
+      if (currentTerm.school_id !== req.user.schoolId) {
         return res.status(403).json({
           success: false,
           message: 'You can only update terms for your own school'
@@ -208,25 +221,25 @@ const updateTerm = async (req, res) => {
       }
     }
 
-    const newStartDate = start_date || current.start_date;
-    const newEndDate   = end_date   || current.end_date;
+    const newStartDate = start_date || currentTerm.start_date;
+    const newEndDate   = end_date   || currentTerm.end_date;
     if (new Date(newStartDate) >= new Date(newEndDate)) {
       return res.status(400).json({ success: false, message: 'start_date must be before end_date' });
     }
 
     await client.query('BEGIN');
 
-    // If promoting to current, demote others for this school/year
+    // If promoting to current, demote others for this school
     if (is_current === true) {
       await client.query(
-        `UPDATE academic_years SET is_current = false
-         WHERE school_id = $1 AND year = $2 AND id != $3`,
-        [current.school_id, year || current.year, id]
+        `UPDATE ${TABLE_NAME} SET is_current = false
+         WHERE school_id = $1 AND id != $2`,
+        [currentTerm.school_id, id]
       );
     }
 
     const result = await client.query(
-      `UPDATE academic_years SET
+      `UPDATE ${TABLE_NAME} SET
         name       = COALESCE($1, name),
         year       = COALESCE($2, year),
         start_date = COALESCE($3, start_date),
@@ -259,12 +272,12 @@ const setCurrentTerm = async (req, res) => {
     const { id } = req.params;
     const updated_by = req.user?.id;
 
-    const existing = await client.query(`SELECT * FROM academic_years WHERE id = $1`, [id]);
+    const existing = await client.query(`SELECT * FROM ${TABLE_NAME} WHERE id = $1`, [id]);
     if (!existing.rows.length) {
       return res.status(404).json({ success: false, message: 'Academic term not found' });
     }
 
-    const { school_id, year } = existing.rows[0];
+    const { school_id } = existing.rows[0];
 
     // School admins can only set current for their own school's terms
     if (req.user.role === 'school_admin' && req.user.schoolId) {
@@ -278,15 +291,15 @@ const setCurrentTerm = async (req, res) => {
 
     await client.query('BEGIN');
 
-    // Unset all current terms for this school/year
+    // Unset all current terms for this school
     await client.query(
-      `UPDATE academic_years SET is_current = false WHERE school_id = $1 AND year = $2`,
-      [school_id, year]
+      `UPDATE ${TABLE_NAME} SET is_current = false WHERE school_id = $1`,
+      [school_id]
     );
 
     // Set this one as current
     const result = await client.query(
-      `UPDATE academic_years SET is_current = true, updated_at = NOW(), updated_by = $1
+      `UPDATE ${TABLE_NAME} SET is_current = true, updated_at = NOW(), updated_by = $1
        WHERE id = $2 RETURNING *`,
       [updated_by, id]
     );
@@ -309,7 +322,7 @@ const toggleTermStatus = async (req, res) => {
     const { id } = req.params;
     const updated_by = req.user?.id;
 
-    const existing = await query(`SELECT * FROM academic_years WHERE id = $1`, [id]);
+    const existing = await query(`SELECT * FROM ${TABLE_NAME} WHERE id = $1`, [id]);
     if (!existing.rows.length) {
       return res.status(404).json({ success: false, message: 'Academic term not found' });
     }
@@ -327,7 +340,7 @@ const toggleTermStatus = async (req, res) => {
     }
 
     const result = await query(
-      `UPDATE academic_years
+      `UPDATE ${TABLE_NAME}
        SET is_active = NOT is_active, updated_at = NOW(), updated_by = $1
        WHERE id = $2 RETURNING *`,
       [updated_by, id]
@@ -349,7 +362,7 @@ const deleteTerm = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const existing = await query(`SELECT * FROM academic_years WHERE id = $1`, [id]);
+    const existing = await query(`SELECT * FROM ${TABLE_NAME} WHERE id = $1`, [id]);
     if (!existing.rows.length) {
       return res.status(404).json({ success: false, message: 'Academic term not found' });
     }
@@ -373,7 +386,7 @@ const deleteTerm = async (req, res) => {
       });
     }
 
-    await query(`DELETE FROM academic_years WHERE id = $1`, [id]);
+    await query(`DELETE FROM ${TABLE_NAME} WHERE id = $1`, [id]);
 
     return res.status(200).json({ success: true, message: 'Academic term deleted' });
   } catch (error) {

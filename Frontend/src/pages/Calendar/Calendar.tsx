@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Calendar as CalendarPicker } from '@/components/ui/calendar';
 
-// Alias for use in DatePickerField
 const CalendarUI = CalendarPicker;
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,10 +20,9 @@ import { format, differenceInBusinessDays, isWithinInterval, parseISO, isBefore,
 import { cn } from '@/lib/utils';
 import {
   CalendarDays, Plus, Edit2, Trash2, Eye, AlertTriangle, CheckCircle2,
-  Clock, CalendarIcon, ChevronRight, BookOpen, FileText, Sparkles, Info, Loader2
+  Clock, CalendarIcon, BookOpen, FileText, Sparkles, Loader2
 } from 'lucide-react';
 
-// Use environment variable for API URL
 const getApiUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
@@ -37,7 +35,6 @@ const getApiUrl = () => {
 
 const API_URL = getApiUrl();
 
-// Types - matching backend response
 interface AcademicYear {
   id: string;
   school_id: string;
@@ -102,12 +99,10 @@ function detectConflicts(terms: Term[]): string[] {
   return warnings;
 }
 
-// Helper to get auth token
 const getAuthToken = (): string | null => {
   return localStorage.getItem('cbc_access_token');
 };
 
-// API functions
 const fetchAcademicYears = async (schoolId: string): Promise<AcademicYear[]> => {
   const token = getAuthToken();
   const response = await fetch(`${API_URL}/api/v1/academic-terms/school/${schoolId}`, {
@@ -251,7 +246,6 @@ const deleteAcademicTerm = async (id: string): Promise<void> => {
   }
 };
 
-// Date Picker helper
 const DatePickerField = ({ label, value, onChange }: { label: string; value?: string; onChange: (d: string) => void }) => (
   <div className="space-y-1.5">
     <Label>{label}</Label>
@@ -275,8 +269,76 @@ const DatePickerField = ({ label, value, onChange }: { label: string; value?: st
   </div>
 );
 
+// Kenya CBC Calendar Configuration
+const kenyaCBCCalendar = {
+  term1: {
+    name: 'Term 1',
+    holidays: [
+      { name: "New Year's Day", month: 0, day: 1 },
+      { name: 'Midterm Break', month: 1, day: 14 },
+      { name: 'Good Friday', month: 2, day: 7 },
+    ],
+  },
+  term2: {
+    name: 'Term 2',
+    holidays: [
+      { name: 'Labour Day', month: 4, day: 1 },
+      { name: 'Madaraka Day', month: 5, day: 1 },
+      { name: 'Midterm Break', month: 5, day: 16 },
+    ],
+  },
+  term3: {
+    name: 'Term 3',
+    holidays: [
+      { name: 'Huduma Day', month: 9, day: 10 },
+      { name: 'Mashujaa Day', month: 9, day: 20 },
+      { name: 'Midterm Break', month: 9, day: 14 },
+      { name: 'Jamhuri Day', month: 11, day: 12 },
+    ],
+  },
+};
+
+const calculateHolidays = (year: number, holidays: { name: string; month: number; day: number }[]) => {
+  return holidays.map(h => ({
+    date: `${year}-${String(h.month + 1).padStart(2, '0')}-${String(h.day).padStart(2, '0')}`,
+    name: h.name,
+  }));
+};
+
+const generateKenyaCBCTerms = (year: number) => {
+  const terms = [];
+  
+  const term1Holidays = calculateHolidays(year, kenyaCBCCalendar.term1.holidays);
+  terms.push({
+    name: kenyaCBCCalendar.term1.name,
+    year,
+    startDate: `${year}-01-06`,
+    endDate: `${year}-03-14`,
+    holidays: term1Holidays,
+  });
+
+  const term2Holidays = calculateHolidays(year, kenyaCBCCalendar.term2.holidays);
+  terms.push({
+    name: kenyaCBCCalendar.term2.name,
+    year,
+    startDate: `${year}-04-29`,
+    endDate: `${year}-07-25`,
+    holidays: term2Holidays,
+  });
+
+  const term3Holidays = calculateHolidays(year, kenyaCBCCalendar.term3.holidays);
+  terms.push({
+    name: kenyaCBCCalendar.term3.name,
+    year,
+    startDate: `${year}-08-26`,
+    endDate: `${year}-11-22`,
+    holidays: term3Holidays,
+  });
+
+  return terms;
+};
+
 const Calendar = () => {
-  // Get user from localStorage
   const [userData, setUserData] = useState<{ schoolId: string | null; role: string } | null>(null);
   const [terms, setTerms] = useState<Term[]>([]);
   const [loading, setLoading] = useState(true);
@@ -288,8 +350,8 @@ const Calendar = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('terms');
   const [actionLoading, setActionLoading] = useState(false);
+  const [newTerm, setNewTerm] = useState<Partial<Term>>({ holidays: [], notes: '' });
 
-  // Initialize user data from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('cbc_user');
     if (storedUser) {
@@ -302,7 +364,6 @@ const Calendar = () => {
     }
   }, []);
 
-  // Fetch academic years when schoolId is available
   const loadAcademicTerms = useCallback(async () => {
     if (!userData?.schoolId) return;
     
@@ -310,7 +371,6 @@ const Calendar = () => {
     try {
       const data = await fetchAcademicYears(userData.schoolId);
       
-      // Transform backend data to frontend format
       const transformedTerms: Term[] = data.map(t => ({
         id: t.id,
         name: t.name,
@@ -327,21 +387,17 @@ const Calendar = () => {
       
       setTerms(transformedTerms);
       
-      // Set current term
       const current = data.find((t: AcademicYear) => t.is_current);
       if (current) {
         setCurrentTermId(current.id);
         setSelectedYear(String(current.year));
       } else if (data.length > 0) {
-        // Use first term's year if no current term
         setSelectedYear(String(data[0].year));
       }
       
-      // Extract available years
       const years = [...new Set(data.map((t: AcademicYear) => t.year))].sort((a, b) => b - a);
       setAvailableYears(years);
       
-      // If no years yet, set default
       if (years.length === 0) {
         const currentYear = new Date().getFullYear();
         setAvailableYears([currentYear, currentYear + 1]);
@@ -350,7 +406,6 @@ const Calendar = () => {
     } catch (error) {
       console.error('Failed to load academic terms:', error);
       toast.error('Failed to load academic terms');
-      // Set default years on error
       const currentYear = new Date().getFullYear();
       setAvailableYears([currentYear, currentYear + 1]);
       setSelectedYear(String(currentYear));
@@ -368,8 +423,6 @@ const Calendar = () => {
   const yearNum = parseInt(selectedYear);
   const filteredTerms = useMemo(() => terms.filter(t => t.year === yearNum), [terms, yearNum]);
   const conflicts = useMemo(() => detectConflicts(filteredTerms), [filteredTerms]);
-
-  const [newTerm, setNewTerm] = useState<Partial<Term>>({ holidays: [], notes: '' });
 
   const handleAddTerm = async () => {
     if (!userData?.schoolId) {
@@ -413,7 +466,6 @@ const Calendar = () => {
       
       setTerms(prev => [...prev, newTermData]);
       
-      // Update available years
       if (!availableYears.includes(yearNum)) {
         setAvailableYears(prev => [...prev, yearNum].sort((a, b) => b - a));
       }
@@ -528,36 +580,52 @@ const Calendar = () => {
       toast.error('School ID not found. Please login again.');
       return;
     }
-    if (filteredTerms.length >= 3) {
-      toast.info('3 terms already exist for this year.');
+
+    // Find years that don't have terms yet
+    const existingYears = terms.map(t => t.year);
+    const currentYear = new Date().getFullYear();
+    
+    // Find the first year (starting from current year) that doesn't have terms
+    let targetYear = currentYear;
+    for (let y = currentYear; y <= currentYear + 5; y++) {
+      if (!existingYears.includes(y)) {
+        targetYear = y;
+        break;
+      }
+    }
+
+    // If all years up to current+5 have terms, find any year not used
+    if (existingYears.includes(targetYear)) {
+      for (let y = 2020; y <= 2030; y++) {
+        if (!existingYears.includes(y)) {
+          targetYear = y;
+          break;
+        }
+      }
+    }
+
+    // Use targetYear for generating terms
+    const termsForYear = terms.filter(t => t.year === targetYear);
+    if (termsForYear.length >= 3) {
+      toast.info(`3 terms already exist for ${targetYear}. Please delete existing terms first.`);
       return;
     }
 
     setActionLoading(true);
     try {
-      // Generate 3 terms
-      const termNames = ['Term 1', 'Term 2', 'Term 3'];
+      const kenyaTerms = generateKenyaCBCTerms(targetYear);
       const newTerms: Term[] = [];
       
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < kenyaTerms.length; i++) {
         const termData = {
           school_id: userData.schoolId,
-          name: termNames[i],
-          year: yearNum,
-          start_date: `${yearNum}-01-06`,
-          end_date: `${yearNum}-04-04`,
-          is_current: i === 0, // First term is current
+          name: kenyaTerms[i].name,
+          year: targetYear,
+          start_date: kenyaTerms[i].startDate,
+          end_date: kenyaTerms[i].endDate,
+          is_current: i === 0,
           is_active: true,
         };
-        
-        // Adjust dates for each term
-        if (i === 1) {
-          termData.start_date = `${yearNum}-04-28`;
-          termData.end_date = `${yearNum}-08-01`;
-        } else if (i === 2) {
-          termData.start_date = `${yearNum}-08-25`;
-          termData.end_date = `${yearNum}-11-28`;
-        }
         
         const created = await createAcademicTerm(termData);
         newTerms.push({
@@ -567,8 +635,8 @@ const Calendar = () => {
           startDate: created.start_date,
           endDate: created.end_date,
           closingDate: created.end_date,
-          holidays: [],
-          notes: 'Auto-generated.',
+          holidays: kenyaTerms[i].holidays,
+          notes: `Kenya CBC Calendar ${targetYear}. Includes ${kenyaTerms[i].holidays.length} holidays/breaks.`,
           status: created.is_current ? 'active' : 'upcoming',
           is_current: created.is_current,
           is_active: created.is_active,
@@ -579,14 +647,18 @@ const Calendar = () => {
         }
       }
       
-      setTerms(prev => [...prev.filter(t => t.year !== yearNum), ...newTerms]);
+      setTerms(prev => [...prev.filter(t => t.year !== targetYear), ...newTerms]);
       
-      // Update available years
-      if (!availableYears.includes(yearNum)) {
-        setAvailableYears(prev => [...prev, yearNum].sort((a, b) => b - a));
+      if (!availableYears.includes(targetYear)) {
+        setAvailableYears(prev => [...prev, targetYear].sort((a, b) => b - a));
       }
       
-      toast.success(`3 terms auto-generated for ${yearNum}.`);
+      // Update selected year if changed
+      if (String(targetYear) !== selectedYear) {
+        setSelectedYear(String(targetYear));
+      }
+      
+      toast.success(`Kenya CBC Calendar for ${targetYear} generated successfully!`);
     } catch (error: any) {
       toast.error(error.message || 'Failed to auto-generate terms');
     } finally {
@@ -594,11 +666,9 @@ const Calendar = () => {
     }
   };
 
-  // Summary stats
   const totalDays = filteredTerms.reduce((sum, t) => sum + calcInstructionDays(t.startDate, t.endDate, t.holidays), 0);
   const activeTerm = filteredTerms.find(t => t.is_current);
 
-  // Show loading state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -613,7 +683,6 @@ const Calendar = () => {
   return (
     <div className="min-h-screen">
       <div className="p-4 md:p-6 space-y-6">
-        {/* Page Title + Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Academic Terms Management</h1>
@@ -641,7 +710,6 @@ const Calendar = () => {
           </div>
         </div>
 
-        {/* Conflict warnings */}
         {conflicts.length > 0 && (
           <Card className="border-destructive/50 bg-destructive/5">
             <CardContent className="p-4 flex items-start gap-3">
@@ -654,7 +722,6 @@ const Calendar = () => {
           </Card>
         )}
 
-        {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4 flex items-center gap-4">
@@ -702,7 +769,6 @@ const Calendar = () => {
           </Card>
         </div>
 
-        {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="terms">Term Cards</TabsTrigger>
@@ -710,7 +776,6 @@ const Calendar = () => {
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
           </TabsList>
 
-          {/* Cards View */}
           <TabsContent value="terms" className="mt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredTerms.map(term => {
@@ -782,7 +847,6 @@ const Calendar = () => {
             </div>
           </TabsContent>
 
-          {/* Table View */}
           <TabsContent value="table" className="mt-4">
             <Card>
               <Table>
@@ -829,7 +893,6 @@ const Calendar = () => {
             </Card>
           </TabsContent>
 
-          {/* Timeline View */}
           <TabsContent value="timeline" className="mt-4">
             <Card>
               <CardContent className="p-6">
@@ -865,7 +928,6 @@ const Calendar = () => {
         </Tabs>
       </div>
 
-      {/* Detail Modal */}
       <Dialog open={!!detailTerm} onOpenChange={() => setDetailTerm(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -891,7 +953,6 @@ const Calendar = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Modal */}
       <Dialog open={!!editTerm} onOpenChange={() => setEditTerm(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -920,7 +981,6 @@ const Calendar = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Add Term Modal */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
