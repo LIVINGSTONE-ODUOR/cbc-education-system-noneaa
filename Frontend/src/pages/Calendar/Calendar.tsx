@@ -581,46 +581,34 @@ const Calendar = () => {
       return;
     }
 
-    // Find years that don't have terms yet
-    const existingYears = terms.map(t => t.year);
-    const currentYear = new Date().getFullYear();
+    // Use selected year - allow generating if year has less than 3 terms
+    const termsForYear = terms.filter(t => t.year === yearNum);
     
-    // Find the first year (starting from current year) that doesn't have terms
-    let targetYear = currentYear;
-    for (let y = currentYear; y <= currentYear + 5; y++) {
-      if (!existingYears.includes(y)) {
-        targetYear = y;
-        break;
-      }
-    }
-
-    // If all years up to current+5 have terms, find any year not used
-    if (existingYears.includes(targetYear)) {
-      for (let y = 2020; y <= 2030; y++) {
-        if (!existingYears.includes(y)) {
-          targetYear = y;
-          break;
-        }
-      }
-    }
-
-    // Use targetYear for generating terms
-    const termsForYear = terms.filter(t => t.year === targetYear);
     if (termsForYear.length >= 3) {
-      toast.info(`3 terms already exist for ${targetYear}. Please delete existing terms first.`);
+      toast.info(`3 terms already exist for ${yearNum}. Please delete existing terms first or select a different year.`);
       return;
     }
 
     setActionLoading(true);
     try {
-      const kenyaTerms = generateKenyaCBCTerms(targetYear);
+      // Only generate missing terms for this year
+      const existingTermNames = termsForYear.map(t => t.name);
+      const kenyaTerms = generateKenyaCBCTerms(yearNum).filter(
+        kt => !existingTermNames.includes(kt.name)
+      );
+      
+      if (kenyaTerms.length === 0) {
+        toast.info(`All terms already exist for ${yearNum}.`);
+        setActionLoading(false);
+        return;
+      }
       const newTerms: Term[] = [];
       
       for (let i = 0; i < kenyaTerms.length; i++) {
         const termData = {
           school_id: userData.schoolId,
           name: kenyaTerms[i].name,
-          year: targetYear,
+          year: yearNum,
           start_date: kenyaTerms[i].startDate,
           end_date: kenyaTerms[i].endDate,
           is_current: i === 0,
@@ -636,7 +624,7 @@ const Calendar = () => {
           endDate: created.end_date,
           closingDate: created.end_date,
           holidays: kenyaTerms[i].holidays,
-          notes: `Kenya CBC Calendar ${targetYear}. Includes ${kenyaTerms[i].holidays.length} holidays/breaks.`,
+          notes: `Kenya CBC Calendar ${yearNum}. Includes ${kenyaTerms[i].holidays.length} holidays/breaks.`,
           status: created.is_current ? 'active' : 'upcoming',
           is_current: created.is_current,
           is_active: created.is_active,
@@ -647,18 +635,13 @@ const Calendar = () => {
         }
       }
       
-      setTerms(prev => [...prev.filter(t => t.year !== targetYear), ...newTerms]);
+      setTerms(prev => [...prev.filter(t => t.year !== yearNum), ...newTerms]);
       
-      if (!availableYears.includes(targetYear)) {
-        setAvailableYears(prev => [...prev, targetYear].sort((a, b) => b - a));
+      if (!availableYears.includes(yearNum)) {
+        setAvailableYears(prev => [...prev, yearNum].sort((a, b) => b - a));
       }
       
-      // Update selected year if changed
-      if (String(targetYear) !== selectedYear) {
-        setSelectedYear(String(targetYear));
-      }
-      
-      toast.success(`Kenya CBC Calendar for ${targetYear} generated successfully!`);
+      toast.success(`Kenya CBC Calendar for ${yearNum} generated successfully!`);
     } catch (error: any) {
       toast.error(error.message || 'Failed to auto-generate terms');
     } finally {
@@ -689,7 +672,20 @@ const Calendar = () => {
             <p className="text-muted-foreground mt-1">Configure term dates and academic years</p>
           </div>
           <div className="flex items-center gap-3">
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <Select value={selectedYear} onValueChange={(value) => {
+              if (value === 'add-new') {
+                const newYear = prompt('Enter year (e.g., 2025):');
+                if (newYear && !isNaN(parseInt(newYear))) {
+                  const year = parseInt(newYear);
+                  if (!availableYears.includes(year)) {
+                    setAvailableYears(prev => [...prev, year].sort((a, b) => b - a));
+                  }
+                  setSelectedYear(String(year));
+                }
+              } else {
+                setSelectedYear(value);
+              }
+            }}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Select year" />
               </SelectTrigger>
@@ -697,6 +693,7 @@ const Calendar = () => {
                 {availableYears.map(y => (
                   <SelectItem key={y} value={String(y)}>{y} Academic Year</SelectItem>
                 ))}
+                <SelectItem value="add-new">+ Add New Year</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" onClick={handleAutoGenerate} className="gap-2" disabled={actionLoading}>
