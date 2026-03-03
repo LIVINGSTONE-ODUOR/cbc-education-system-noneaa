@@ -1,14 +1,20 @@
 import { useState, useRef, createContext, useContext, ReactNode, useEffect } from 'react';
 import { User, UserRole } from '@/types';
 
-// Use environment variable for API URL, fallback to relative path for development
-// In production, use empty string (relative path) so requests are proxied through Vercel (avoids CORS on custom domains)
+// In production builds (Vercel), always use relative path so requests are proxied
+// through Vercel's server-side rewrite rules (vercel.json) to the backend on Render.
+// This completely avoids browser CORS errors because the request stays on the same origin.
+// In development, VITE_API_URL can point to a local or remote backend, or fall back to
+// the Vite dev-server proxy (also configured in vite.config.ts).
 const getApiUrl = () => {
-  // If VITE_API_URL is explicitly set, use it
+  // Production: always use relative path → proxied by Vercel, no CORS
+  if (import.meta.env.PROD) {
+    return '';
+  }
+  // Development: use VITE_API_URL if set, otherwise fall back to Vite proxy
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  // Use relative path in all environments to leverage the proxy
   return '';
 };
 

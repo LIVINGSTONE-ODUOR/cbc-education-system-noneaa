@@ -33,8 +33,8 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
-// API URL - use environment variable or relative path
-const API_URL = import.meta.env.VITE_API_URL || '';
+// API URL - always relative in production (proxied by Vercel) to avoid CORS
+const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || '');
 
 // Type definitions
 interface SystemUser {

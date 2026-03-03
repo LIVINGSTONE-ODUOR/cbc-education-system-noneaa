@@ -3,13 +3,12 @@
  * Handles all HTTP requests to the fee-structures backend API
  */
 
-// API URL - uses environment variable or falls back to relative proxy path
+// API URL - uses relative path in production (proxied by Vercel) to avoid CORS
 const getApiUrl = (): string => {
-  // If VITE_API_URL is explicitly set, use it
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-  // Use relative path so requests are proxied through Vercel (avoids CORS on custom domains)
+  // Production: always use relative path → proxied by Vercel, no CORS
+  if (import.meta.env.PROD) return '';
+  // Development: use VITE_API_URL if set, otherwise fall back to Vite proxy
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
   return '';
 };
 
