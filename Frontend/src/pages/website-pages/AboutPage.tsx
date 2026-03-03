@@ -166,7 +166,7 @@ const HeroSection = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
             >
-              About EduStack
+              About Noneaa
             </motion.span>
           </motion.div>
 
@@ -536,7 +536,7 @@ export default function AboutPage() {
               Ready to Transform Your School?
             </h2>
             <p className={`${fontSize.lg} text-blue-100 mb-8 max-w-2xl mx-auto`}>
-              Join 150+ schools across Kenya already using EduStack to improve CBC implementation 
+              Join 150+ schools across Kenya already using Noneaa to improve CBC implementation 
               and student outcomes.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

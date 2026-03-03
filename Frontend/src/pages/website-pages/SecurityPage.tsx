@@ -74,7 +74,7 @@ export default function SecurityPage() {
                 </CardHeader>
                 <CardContent className="prose prose-sm max-w-none">
                   <p>
-                    At EduStack Africa, the security of your data is our highest priority. We understand
+                    At Noneaa Africa, the security of your data is our highest priority. We understand
                     that our platform handles sensitive educational records, student information, and
                     institutional data. We are committed to maintaining robust security practices to
                     safeguard this information at all times.
@@ -294,7 +294,7 @@ export default function SecurityPage() {
                   </p>
                   <p className="text-sm text-muted-foreground">
                     To report a vulnerability, please contact our security team at{' '}
-                    <span className="font-medium text-foreground">security@edustack.africa</span>.
+                    <span className="font-medium text-foreground">security@noneaa.africa</span>.
                     We will acknowledge your report within 48 hours and work with you to resolve
                     the issue as quickly as possible.
                   </p>
@@ -324,7 +324,7 @@ export default function SecurityPage() {
                       <h4 className="font-semibold mb-2">
                         <span className="inline-flex items-center gap-1"><Mail className="w-4 h-4" /> Security Email</span>
                       </h4>
-                      <p className="text-sm text-muted-foreground">security@edustack.africa</p>
+                      <p className="text-sm text-muted-foreground">security@noneaa.africa</p>
                     </div>
                     <div>
                       <h4 className="font-semibold mb-2">
@@ -335,13 +335,13 @@ export default function SecurityPage() {
                     <div>
                       <h4 className="font-semibold mb-2">Address</h4>
                       <p className="text-sm text-muted-foreground">
-                        EduStack Africa<br />
+                        Noneaa Africa<br />
                         Nairobi, Kenya
                       </p>
                     </div>
                     <div>
                       <h4 className="font-semibold mb-2">Data Protection Officer</h4>
-                      <p className="text-sm text-muted-foreground">dpo@edustack.africa</p>
+                      <p className="text-sm text-muted-foreground">dpo@noneaa.africa</p>
                     </div>
                   </div>
                 </CardContent>

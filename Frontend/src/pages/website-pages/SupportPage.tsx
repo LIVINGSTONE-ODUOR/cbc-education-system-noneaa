@@ -101,7 +101,7 @@ const faqSections = [
       },
       {
         question: "What are the system requirements?",
-        answer: "EduStack works on any modern browser (Chrome, Firefox, Safari, Edge) with an internet connection. Mobile apps are available for iOS and Android.",
+        answer: "Noneaa works on any modern browser (Chrome, Firefox, Safari, Edge) with an internet connection. Mobile apps are available for iOS and Android.",
         tags: ['technical', 'requirements']
       }
     ]
@@ -463,7 +463,7 @@ export default function SupportPage() {
               transition={{ delay: 0.4 }}
               className="text-xl text-gray-600 dark:text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed"
             >
-              Get expert support for the EduStack platform. From setup to daily operations, 
+              Get expert support for the Noneaa platform. From setup to daily operations, 
               our team is dedicated to your success in education technology.
             </motion.p>
 
@@ -535,7 +535,7 @@ export default function SupportPage() {
           >
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                Why Choose EduStack Support?
+                Why Choose Noneaa Support?
               </h2>
               <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
                 Our dedicated support team combines technical expertise with educational 
@@ -665,7 +665,7 @@ export default function SupportPage() {
                 Learning Resources
               </h2>
               <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                Explore our library of tutorials, guides, and templates to master the EduStack platform
+                Explore our library of tutorials, guides, and templates to master the Noneaa platform
               </p>
             </div>
 
@@ -975,7 +975,7 @@ export default function SupportPage() {
                         className="border-white text-white hover:bg-white/10 px-8 py-6 rounded-xl"
                       >
                         <Mail className="w-5 h-5 mr-2" />
-                        emergency@edustack.edu
+                        emergency@noneaa.edu
                       </Button>
                     </div>
                   </div>

@@ -25,9 +25,9 @@ const contactInfo = [
   {
     icon: Mail,
     label: "Email Support",
-    value: "hello@edustack.ke",
+    value: "hello@noneaa.ke",
     subtext: "24/7 response",
-    href: "mailto:hello@edustack.ke"
+    href: "mailto:hello@noneaa.ke"
   },
   {
     icon: MapPin,
@@ -47,20 +47,20 @@ const contactInfo = [
 
 const faqs = [
   {
-    question: "How does EduStack help with CBC assessment?",
-    answer: "EduStack provides comprehensive CBC assessment analysis tools that track learner competencies, generate detailed reports, and help teachers identify areas where students need additional support. Our platform aligns with Kenya's CBC curriculum requirements."
+    question: "How does Noneaa help with CBC assessment?",
+    answer: "Noneaa provides comprehensive CBC assessment analysis tools that track learner competencies, generate detailed reports, and help teachers identify areas where students need additional support. Our platform aligns with Kenya's CBC curriculum requirements."
   },
   {
-    question: "Is EduStack available on mobile devices?",
-    answer: "Yes, EduStack is fully responsive and works seamlessly on mobile devices, tablets, and desktops. Teachers can access student data and manage assessments from anywhere."
+    question: "Is Noneaa available on mobile devices?",
+    answer: "Yes, Noneaa is fully responsive and works seamlessly on mobile devices, tablets, and desktops. Teachers can access student data and manage assessments from anywhere."
   },
   {
-    question: "How much does EduStack cost?",
-    answer: "EduStack offers flexible pricing plans tailored to schools of all sizes. Contact our sales team for a custom quote based on your institution's needs and student count."
+    question: "How much does Noneaa cost?",
+    answer: "Noneaa offers flexible pricing plans tailored to schools of all sizes. Contact our sales team for a custom quote based on your institution's needs and student count."
   },
   {
     question: "Do you provide training for teachers?",
-    answer: "Absolutely! We provide comprehensive training programs, workshops, and ongoing support to ensure your teachers get the most out of EduStack. Training can be conducted online or in-person."
+    answer: "Absolutely! We provide comprehensive training programs, workshops, and ongoing support to ensure your teachers get the most out of Noneaa. Training can be conducted online or in-person."
   },
   {
     question: "Is my school data secure?",
@@ -80,7 +80,7 @@ const subHeadingLines1 = [
   "We'd love to hear from you.",
   "Whether you're a school looking to implement the CBC system,",
   "a partner interested in collaboration, or a user needing support,",
-  "the EduStack team is ready to help."
+  "the Noneaa team is ready to help."
 ];
 
 const subHeadingLines2 = [
@@ -198,7 +198,7 @@ export default function ContactPage() {
     if (!accessKey) {
       setStatus({
         type: 'error',
-        message: 'Configuration error. Please email hello@edustack.ke directly.'
+        message: 'Configuration error. Please email hello@noneaa.ke directly.'
       });
       setIsSubmitting(false);
       return;

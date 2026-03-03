@@ -81,7 +81,7 @@ import ReportsPage from "@/pages/auth/school-admin/Reports";
 import SettingsPage from "@/pages/auth/school-admin/Settings";
 
 import NotFound from "./pages/website-pages/NotFound";
-import EduStackPlatformPage from "@/pages/website-pages/Platform";
+import NoneaaPlatformPage from "@/pages/website-pages/Platform";
 import TeamMembersPage from "@/pages/website-pages/TeamPage";
 
 const queryClient = new QueryClient();
@@ -160,7 +160,7 @@ function AppRoutes() {
       <Route path="/" element={<HomePage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/resources" element={<EducationalResourcesPage />} />
-      <Route path="/analytics" element={<EduStackPlatformPage />} />
+      <Route path="/analytics" element={<NoneaaPlatformPage />} />
       <Route path="/company/client" element={<ClientsPage />} />
       <Route path="/support" element={<SupportPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />

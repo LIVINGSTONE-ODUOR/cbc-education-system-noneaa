@@ -240,7 +240,7 @@ export default function ModernDashboard() {
           </motion.button>
           
           <div className="flex flex-col">
-            <span className="font-bold text-white text-xl tracking-tight">EduStack</span>
+            <span className="font-bold text-white text-xl tracking-tight">Noneaa</span>
             <span className="text-blue-300 text-xs">Modern Dashboard</span>
           </div>
           <button 

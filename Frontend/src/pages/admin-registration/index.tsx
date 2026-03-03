@@ -42,7 +42,7 @@ const STEPS = [
     title: 'Basic Info',
     subtitle: 'School identity & details',
     cardTitle: 'Tell us about your school',
-    cardDesc:  'Enter your school information to get started with CBC EduStack',
+    cardDesc:  'Enter your school information to get started with CBC Noneaa',
     icon: GraduationCap,
     gradient: 'linear-gradient(135deg,#3b82f6,#6366f1)',
     color: '#3b82f6',
@@ -612,7 +612,7 @@ export default function AdminRegistrationPage() {
                   <div className="ar-help-title">Need assistance?</div>
                   <div className="ar-help-sub">Our team is available Mon–Fri, 8am–6pm EAT</div>
                 </div>
-                <a href="mailto:support@cbcedustack.ac.ke" className="ar-help-btn">
+                <a href="mailto:support@cbcnoneaa.ac.ke" className="ar-help-btn">
                   Contact support <ChevronRight size={13} />
                 </a>
               </div>

@@ -411,7 +411,7 @@ const NotFound = () => {
           >
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Rocket className="w-4 h-4" />
-              <span>EduStack Platform • 404</span>
+              <span>Noneaa Platform • 404</span>
             </div>
           </motion.div>
 

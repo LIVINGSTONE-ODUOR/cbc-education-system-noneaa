@@ -159,13 +159,13 @@ const STATS = {
 
 const TESTIMONIALS = [
   {
-    quote: "EduStack has transformed how we track CBC competencies. The platform is intuitive and saves us countless hours.",
+    quote: "Noneaa has transformed how we track CBC competencies. The platform is intuitive and saves us countless hours.",
     author: "Mrs. Jane Kamau",
     role: "Headteacher, Green Valley Academy",
     rating: 5
   },
   {
-    quote: "Parent engagement has increased by 70% since we started using EduStack's communication features.",
+    quote: "Parent engagement has increased by 70% since we started using Noneaa's communication features.",
     author: "Mr. David Otieno",
     role: "Principal, Hope International School",
     rating: 5
@@ -188,7 +188,7 @@ const PlatformHeroContent = () => {
     repeat: false,
   });
 
-  const descriptionText = "EduStack is an all-in-one Competency-Based Curriculum platform designed to streamline CBC implementation, enhance learning outcomes, and simplify competency tracking for Kenyan schools.";
+  const descriptionText = "Noneaa is an all-in-one Competency-Based Curriculum platform designed to streamline CBC implementation, enhance learning outcomes, and simplify competency tracking for Kenyan schools.";
   const typedDescription = useTypewriter({
     text: descriptionText,
     speed: 15,
@@ -234,7 +234,7 @@ const PlatformHeroContent = () => {
         >
           <Zap className="w-4 h-4" />
         </motion.div>
-        <span className="text-sm font-bold">Why Choose EduStack</span>
+        <span className="text-sm font-bold">Why Choose Noneaa</span>
       </motion.div>
 
       {/* Animated Heading with Typewriter Effect */}
@@ -442,7 +442,7 @@ const PricingCard = ({ plan, planKey, hoveredCard, setHoveredCard, delay }) => (
 );
 
 // Main Component
-export default function EduStackPlatformPage() {
+export default function NoneaaPlatformPage() {
   const [hoveredCard, setHoveredCard] = useState(null);
 
   return (
@@ -746,7 +746,7 @@ export default function EduStackPlatformPage() {
               </span>
             </h2>
             <p className="text-lg text-slate-300 max-w-3xl mx-auto">
-              See what school leaders have to say about their experience with EduStack
+              See what school leaders have to say about their experience with Noneaa
             </p>
           </motion.div>
 

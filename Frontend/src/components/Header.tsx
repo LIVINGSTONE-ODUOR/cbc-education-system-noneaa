@@ -54,7 +54,7 @@ export default function Header() {
           <Link to="/" className="flex items-center" onClick={closeMenus}>
             <img
               src="/Gemini_Generated_Image_8kqr628kqr628kqr.png"
-              alt="EduStack"
+              alt="Noneaa"
               className="h-10 w-auto object-contain"
             />
           </Link>

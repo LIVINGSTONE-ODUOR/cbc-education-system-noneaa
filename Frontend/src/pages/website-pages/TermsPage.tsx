@@ -74,7 +74,7 @@ export default function TermsPage() {
                 </CardHeader>
                 <CardContent className="prose prose-sm max-w-none">
                   <p>
-                    By accessing and using the EduStack Africa platform ("Service"), you accept and agree to be bound by the terms
+                    By accessing and using the Noneaa Africa platform ("Service"), you accept and agree to be bound by the terms
                     and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
                   </p>
                   <p>
@@ -103,7 +103,7 @@ export default function TermsPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
-                    EduStack Africa provides a comprehensive Competency-Based Curriculum (CBC) platform that includes:
+                    Noneaa Africa provides a comprehensive Competency-Based Curriculum (CBC) platform that includes:
                   </p>
                   <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
                     <li>Student progress tracking and assessment management</li>
@@ -207,7 +207,7 @@ export default function TermsPage() {
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
                     The Service and its original content, features, and functionality are and will remain the exclusive property
-                    of EduStack Africa and its licensors. The Service is protected by copyright, trademark, and other laws.
+                    of Noneaa Africa and its licensors. The Service is protected by copyright, trademark, and other laws.
                   </p>
                   <p className="text-sm text-muted-foreground">
                     You may not duplicate, copy, or reuse any portion of the HTML/CSS, JavaScript, visual design elements, or concepts
@@ -309,7 +309,7 @@ export default function TermsPage() {
                     <div>
                       <h4 className="font-semibold mb-2">Limitation of Liability</h4>
                       <p className="text-sm text-muted-foreground">
-                        In no event shall EduStack Africa be liable for any indirect, incidental, special, consequential,
+                        In no event shall Noneaa Africa be liable for any indirect, incidental, special, consequential,
                         or punitive damages arising out of or related to your use of the Service.
                       </p>
                     </div>
@@ -413,7 +413,7 @@ export default function TermsPage() {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <h4 className="font-semibold mb-2">Email</h4>
-                      <p className="text-sm text-muted-foreground">legal@edustack.africa</p>
+                      <p className="text-sm text-muted-foreground">legal@noneaa.africa</p>
                     </div>
                     <div>
                       <h4 className="font-semibold mb-2">Phone</h4>
@@ -422,13 +422,13 @@ export default function TermsPage() {
                     <div>
                       <h4 className="font-semibold mb-2">Address</h4>
                       <p className="text-sm text-muted-foreground">
-                        EduStack Africa<br />
+                        Noneaa Africa<br />
                         Nairobi, Kenya
                       </p>
                     </div>
                     <div>
                       <h4 className="font-semibold mb-2">Legal Department</h4>
-                      <p className="text-sm text-muted-foreground">legal@edustack.africa</p>
+                      <p className="text-sm text-muted-foreground">legal@noneaa.africa</p>
                     </div>
                   </div>
                 </CardContent>

@@ -20,7 +20,7 @@ export default function AdminLoginPage() {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: 'superadminlevi@edustack.co.ke',
+    email: 'superadminlevi@noneaa.co.ke',
     password: 'hashedbossie'
   });
 
@@ -45,7 +45,7 @@ export default function AdminLoginPage() {
 
   const handleDemoLogin = () => {
     setFormData({
-      email: 'superadminlevi@edustack.co.ke',
+      email: 'superadminlevi@noneaa.co.ke',
       password: 'hashedbossie'
     });
   };
@@ -93,7 +93,7 @@ export default function AdminLoginPage() {
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="bg-white/5 rounded p-2">
                 <span className="text-slate-400">Email:</span>
-                <span className="text-white ml-1">superadminlevi@edustack.co.ke</span>
+                <span className="text-white ml-1">superadminlevi@noneaa.co.ke</span>
               </div>
               <div className="bg-white/5 rounded p-2">
                 <span className="text-slate-400">Password:</span>
@@ -122,7 +122,7 @@ export default function AdminLoginPage() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent focus:bg-white/15 transition-all duration-300"
-                placeholder="superadminlevi@edustack.co.ke"
+                placeholder="superadminlevi@noneaa.co.ke"
               />
             </div>
 

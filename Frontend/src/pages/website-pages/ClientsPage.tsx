@@ -160,7 +160,7 @@ const ClientsPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <TestimonialCard 
-              quote="EduStack has transformed how we implement CBC. The curriculum management tools are exceptional."
+              quote="Noneaa has transformed how we implement CBC. The curriculum management tools are exceptional."
               author="Dr. Mary Kamau" role="Principal, Makini School" initials="MK"
             />
             <TestimonialCard 

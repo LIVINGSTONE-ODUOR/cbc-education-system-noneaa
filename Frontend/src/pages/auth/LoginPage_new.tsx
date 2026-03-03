@@ -345,7 +345,7 @@ export default function LoginPage() {
                   <GraduationCap size={22} color="#fff" />
                 </div>
                 <div>
-                  <div className="lp-logo-name">CBC EduStack</div>
+                  <div className="lp-logo-name">CBC Noneaa</div>
                   <div className="lp-logo-sub">Kenya Education</div>
                 </div>
               </div>
@@ -472,7 +472,7 @@ export default function LoginPage() {
                   <div className="lp-divider-ln" />
                 </div>
                 <div className="lp-foot">
-                  <span className="lp-foot-copy">© 2026 CBC EduStack</span>
+                  <span className="lp-foot-copy">© 2026 CBC Noneaa</span>
                   <div className="lp-foot-links">
                     <a href="/privacy">Privacy</a>
                     <a href="/terms">Terms</a>

@@ -74,7 +74,7 @@ export default function PrivacyPage() {
                 </CardHeader>
                 <CardContent className="prose prose-sm max-w-none">
                   <p>
-                    At EduStack Africa, we are committed to protecting your privacy and ensuring the security of your personal information.
+                    At Noneaa Africa, we are committed to protecting your privacy and ensuring the security of your personal information.
                     This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Competency-Based
                     Curriculum (CBC) platform designed for Kenyan schools and educational institutions.
                   </p>
@@ -289,7 +289,7 @@ export default function PrivacyPage() {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <h4 className="font-semibold mb-2">Email</h4>
-                      <p className="text-sm text-muted-foreground">privacy@edustack.africa</p>
+                      <p className="text-sm text-muted-foreground">privacy@noneaa.africa</p>
                     </div>
                     <div>
                       <h4 className="font-semibold mb-2">Phone</h4>
@@ -298,13 +298,13 @@ export default function PrivacyPage() {
                     <div>
                       <h4 className="font-semibold mb-2">Address</h4>
                       <p className="text-sm text-muted-foreground">
-                        EduStack Africa<br />
+                        Noneaa Africa<br />
                         Nairobi, Kenya
                       </p>
                     </div>
                     <div>
                       <h4 className="font-semibold mb-2">Data Protection Officer</h4>
-                      <p className="text-sm text-muted-foreground">dpo@edustack.africa</p>
+                      <p className="text-sm text-muted-foreground">dpo@noneaa.africa</p>
                     </div>
                   </div>
                 </CardContent>

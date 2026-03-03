@@ -216,7 +216,7 @@ export default function CBCStandardsPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
-                  EduStack is specifically designed to support CBC implementation:
+                  Noneaa is specifically designed to support CBC implementation:
                 </p>
                 <div className="space-y-3">
                   {[
@@ -340,7 +340,7 @@ export default function CBCStandardsPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-semibold mb-2">Email</h4>
-                    <p className="text-sm text-muted-foreground">cbc-support@edustack.africa</p>
+                    <p className="text-sm text-muted-foreground">cbc-support@noneaa.africa</p>
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">Phone</h4>
@@ -349,13 +349,13 @@ export default function CBCStandardsPage() {
                   <div>
                     <h4 className="font-semibold mb-2">Address</h4>
                     <p className="text-sm text-muted-foreground">
-                      EduStack Africa<br />
+                      Noneaa Africa<br />
                       Nairobi, Kenya
                     </p>
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">CBC Curriculum Team</h4>
-                    <p className="text-sm text-muted-foreground">curriculum@edustack.africa</p>
+                    <p className="text-sm text-muted-foreground">curriculum@noneaa.africa</p>
                   </div>
                 </div>
               </CardContent>
