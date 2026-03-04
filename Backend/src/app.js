@@ -26,7 +26,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://cbc-education-system-sooty.vercel.app", "https://cbc-education-system-1.onrender.com", "https://*.vercel.app", "https://*.render.com"],
+      connectSrc: ["'self'", "https://cbc-education-system-sooty.vercel.app", "https://cbc-education-system-1.onrender.com", "https://*.vercel.app", "https://*.render.com", "https://noneaa.com", "https://www.noneaa.com"],
       fontSrc: ["'self'", "https:", "data:"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
@@ -47,6 +47,8 @@ const allowedOrigins = [
   "http://localhost:3001",
   "https://cbc-education-system-sooty.vercel.app",
   "https://cbc-education-system-1.onrender.com",
+  "https://noneaa.com",
+  "https://www.noneaa.com",
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
@@ -83,6 +85,11 @@ app.use(cors({
       origin.includes('.github.dev') || 
       origin.includes('github.dev')
     )) {
+      return callback(null, true);
+    }
+    
+    // Allow noneaa.com and its subdomains (custom production domain)
+    if (origin && /^https:\/\/([a-z0-9-]+\.)?noneaa\.com$/.test(origin)) {
       return callback(null, true);
     }
     
