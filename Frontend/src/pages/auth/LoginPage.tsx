@@ -88,9 +88,7 @@ export default function LoginPage() {
             <div className="md:w-[45%] bg-primary/[0.04] p-8 flex flex-col animate-slide-in-left">
               {/* Logo */}
               <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground text-2xl font-black mb-3 shadow-lg">
-                  CBE
-                </div>
+                <img src="/Noneea-logo.jpg" alt="Noneaa" className="h-16 w-auto object-contain mx-auto mb-3" />
                 <h2 className="text-lg font-semibold text-foreground">Education System</h2>
               </div>
 

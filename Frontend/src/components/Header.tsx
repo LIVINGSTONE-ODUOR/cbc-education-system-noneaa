@@ -53,7 +53,7 @@ export default function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center" onClick={closeMenus}>
             <img
-              src="/Gemini_Generated_Image_8kqr628kqr628kqr.png"
+              src="/Noneea-logo.jpg"
               alt="Noneaa"
               className="h-10 w-auto object-contain"
             />

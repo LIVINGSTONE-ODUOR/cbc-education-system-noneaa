@@ -341,9 +341,7 @@ export default function LoginPage() {
 
               {/* Logo */}
               <div className="lp-logo">
-                <div className="lp-logo-icon">
-                  <GraduationCap size={22} color="#fff" />
-                </div>
+                <img src="/Noneea-logo.jpg" alt="Noneaa" className="h-[46px] w-auto object-contain rounded-[10px]" />
                 <div>
                   <div className="lp-logo-name">CBE Noneaa</div>
                   <div className="lp-logo-sub">Kenya Education</div>

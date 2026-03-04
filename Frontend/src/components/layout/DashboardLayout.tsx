@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import {
-  Building2,
   Menu,
   X,
   ChevronDown,
@@ -127,9 +126,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         >
           {!collapsed && (
             <Link to="/school-admin/dashboard" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center flex-shrink-0">
-                <Building2 className="w-5 h-5 text-white" />
-              </div>
+              <img src="/Noneea-logo.jpg" alt="Noneaa" className="w-8 h-8 object-contain rounded flex-shrink-0" />
               <span className={cn('font-bold text-lg', theme.sidebar.text)}>
                 Edu Stack
               </span>
@@ -138,9 +135,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           
           {collapsed && (
             <div className="w-full flex justify-center">
-              <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center flex-shrink-0">
-                <Building2 className="w-5 h-5 text-white" />
-              </div>
+              <img src="/Noneea-logo.jpg" alt="Noneaa" className="w-8 h-8 object-contain rounded flex-shrink-0" />
             </div>
           )}
 

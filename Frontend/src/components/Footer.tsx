@@ -58,7 +58,7 @@ export default function Footer() {
           <motion.div variants={itemVariants} className="lg:col-span-4 space-y-6">
             <Link to="/" className="inline-block group">
               <img
-                src="/Gemini_Generated_Image_8kqr628kqr628kqr.png" 
+                src="/Noneea-logo.jpg" 
                 alt="Noneaa Logo"
                 className="h-14 md:h-16 w-auto object-contain transition-transform group-hover:scale-105"
               />
