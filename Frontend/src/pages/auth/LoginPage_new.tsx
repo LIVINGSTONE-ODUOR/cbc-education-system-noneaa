@@ -341,7 +341,7 @@ export default function LoginPage() {
 
               {/* Logo */}
               <div className="lp-logo">
-                <img src="/Noneea-logo.jpg" alt="Noneaa" className="h-[46px] w-auto object-contain rounded-[10px]" />
+                <img src="/Noneea-logo.jpg" alt="Noneea" className="h-24 w-24 object-cover rounded-full shadow-lg" />
                 <div>
                   <div className="lp-logo-name">CBE Noneaa</div>
                   <div className="lp-logo-sub">Kenya Education</div>

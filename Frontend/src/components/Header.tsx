@@ -54,8 +54,8 @@ export default function Header() {
           <Link to="/" className="flex items-center" onClick={closeMenus}>
             <img
               src="/Noneea-logo.jpg"
-              alt="Noneaa"
-              className="h-10 w-auto object-contain"
+              alt="Noneea"
+              className="h-12 w-12 object-cover rounded-full"
             />
           </Link>
 

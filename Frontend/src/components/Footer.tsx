@@ -59,8 +59,8 @@ export default function Footer() {
             <Link to="/" className="inline-block group">
               <img
                 src="/Noneea-logo.jpg" 
-                alt="Noneaa Logo"
-                className="h-14 md:h-16 w-auto object-contain transition-transform group-hover:scale-105"
+                alt="Noneea Logo"
+                className="h-16 w-16 object-cover rounded-full transition-transform group-hover:scale-105"
               />
             </Link>
             

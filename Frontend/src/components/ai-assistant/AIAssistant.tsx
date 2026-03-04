@@ -174,7 +174,7 @@ export default function AIAssistant() {
         {/* Header */}
         <div className="bg-primary text-primary-foreground p-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
-            <img src="/Noneea-logo.jpg" alt="CBE" className="w-8 h-8 object-contain" />
+            <img src="/Noneea-logo.jpg" alt="CBE" className="w-8 h-8 object-cover rounded-full" />
           </div>
           <div className="flex-1">
             <h3 className="font-semibold">Your Companion Assistant</h3>
