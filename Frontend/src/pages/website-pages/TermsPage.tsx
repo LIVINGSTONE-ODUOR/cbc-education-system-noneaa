@@ -413,7 +413,7 @@ export default function TermsPage() {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <h4 className="font-semibold mb-2">Email</h4>
-                      <p className="text-sm text-muted-foreground">legal@noneaa.africa</p>
+                      <p className="text-sm text-muted-foreground">legal@noneaa.com</p>
                     </div>
                     <div>
                       <h4 className="font-semibold mb-2">Phone</h4>
@@ -428,7 +428,7 @@ export default function TermsPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold mb-2">Legal Department</h4>
-                      <p className="text-sm text-muted-foreground">legal@noneaa.africa</p>
+                      <p className="text-sm text-muted-foreground">legal@noneaa.com</p>
                     </div>
                   </div>
                 </CardContent>
