@@ -10,6 +10,10 @@ interface Message {
   content: string;
 }
 
+const GREETING_TEXT = 'Hi there 👋! My name is Jarvis, your online Assistant. Ask me anything you need to know about our platform!';
+const GREETING_CHARS = Array.from(GREETING_TEXT);
+const TYPING_SPEED_MS = 30;
+
 const SYSTEM_CONTEXT = `You are a helpful AI assistant for the Nonea CBE Education Platform. You strictly answer questions related to:
 1. The Kenyan Competency-Based Education (CBE) system
 2. The Nonea platform features and functionality
@@ -40,15 +44,19 @@ export default function AIAssistant() {
     {
       id: '1',
       role: 'assistant',
-      content: 'Hi there 👋! My name is Jarvis, your online Assistant. Ask me anything you need to know about our platform!'
+      content: GREETING_TEXT
     }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showTypingIndicator, setShowTypingIndicator] = useState(false);
+  const [greetingText, setGreetingText] = useState('');
+  const [greetingComplete, setGreetingComplete] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const greetingStartedRef = useRef(false);
+  const greetingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -80,6 +88,28 @@ export default function AIAssistant() {
       }
     };
   }, [isLoading]);
+
+  useEffect(() => {
+    if (isOpen && !greetingStartedRef.current) {
+      greetingStartedRef.current = true;
+      let charIndex = 0;
+      const typeNextChar = () => {
+        charIndex += 1;
+        setGreetingText(GREETING_CHARS.slice(0, charIndex).join(''));
+        if (charIndex < GREETING_CHARS.length) {
+          greetingTimeoutRef.current = setTimeout(typeNextChar, TYPING_SPEED_MS);
+        } else {
+          setGreetingComplete(true);
+        }
+      };
+      greetingTimeoutRef.current = setTimeout(typeNextChar, TYPING_SPEED_MS);
+    }
+    return () => {
+      if (greetingTimeoutRef.current) {
+        clearTimeout(greetingTimeoutRef.current);
+      }
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
@@ -211,7 +241,14 @@ export default function AIAssistant() {
                     : "bg-muted text-foreground rounded-bl-md"
                 )}
               >
-                {message.content}
+                {message.id === '1' && !greetingComplete ? (
+                  <span>
+                    {greetingText}
+                    <span className="inline-block w-0.5 h-3.5 bg-current ml-0.5 align-middle animate-pulse" aria-hidden="true" />
+                  </span>
+                ) : (
+                  message.content
+                )}
               </div>
             </div>
           ))}
