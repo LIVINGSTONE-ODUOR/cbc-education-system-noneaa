@@ -487,7 +487,6 @@ export default function HomePage() {
             </h1>
             
             <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-2xl leading-relaxed">
-              Noneaa empowers K-12 schools with a complete Competency-Based Education system.
               Track progress, manage curriculum, and achieve excellence through personalized pathways.
             </p>
 
