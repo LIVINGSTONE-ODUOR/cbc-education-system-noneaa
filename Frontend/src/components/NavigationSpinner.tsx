@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 /** How long (ms) the spinner stays visible before fading out. */
-const SPINNER_DISPLAY_DURATION = 700;
+const SPINNER_DISPLAY_DURATION = 2200;
 
 /** Duration (ms) of the CSS fade-out transition. */
-const FADE_TRANSITION_DURATION = 400;
+const FADE_TRANSITION_DURATION = 500;
 
 /**
  * Paths where the navigation spinner should NOT be shown.
@@ -19,20 +19,40 @@ function isExcludedPath(pathname: string): boolean {
   );
 }
 
+/** Detect dark mode from the OS/system preference only. */
+function useIsDark() {
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const update = () => setIsDark(mq.matches);
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  return isDark;
+}
+
 /**
  * Global navigation loading spinner that mimics the KUCCPS student portal
- * loader: a thin circular ring made of several curved dashed segments that
- * rotates continuously clockwise.
+ * loader: a full-screen overlay with a thick circular broken-ring spinner
+ * that rotates continuously clockwise.
  *
  * Behaviour:
- * - Appears centred on screen on every route change.
+ * - Covers the entire screen (page content is hidden behind the overlay)
+ *   on every route change, so the spinner is always seen alone.
  * - Hidden on Login and Registration pages.
- * - Fades out automatically after the page finishes rendering.
+ * - Stays visible for SPINNER_DISPLAY_DURATION ms, then fades out.
+ * - Respects the OS light/dark colour preference for the overlay background.
  */
 export default function NavigationSpinner() {
   const location = useLocation();
   const [visible, setVisible] = useState(false);
   const [fading, setFading] = useState(false);
+  const isDark = useIsDark();
 
   const prevPathRef = useRef<string>(location.pathname);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -81,19 +101,24 @@ export default function NavigationSpinner() {
 
   if (!visible) return null;
 
+  const bgColor = isDark ? '#000000' : '#ffffff';
+  const spinnerColor = isDark ? '#9ca3af' : '#4b5563';
+
   return (
     <div
       role="status"
       aria-label="Loading"
       style={{
         position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
+        inset: 0,
         zIndex: 9999,
-        pointerEvents: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: bgColor,
         opacity: fading ? 0 : 1,
-        transition: 'opacity 0.4s ease',
+        transition: `opacity ${FADE_TRANSITION_DURATION}ms ease`,
+        pointerEvents: fading ? 'none' : 'auto',
       }}
     >
       {/*
@@ -101,23 +126,28 @@ export default function NavigationSpinner() {
        *   – SVG circle with stroke-dasharray to create several short curved
        *     segments separated by visible gaps (broken-ring effect).
        *   – Tailwind's animate-spin drives the smooth clockwise rotation.
-       *   – currentColor inherits the text-gray-400 applied to the wrapper.
+       *   – Thick stroke and large size so it is clearly visible on its own.
        */}
-      <div className="animate-spin text-gray-400" aria-hidden="true">
+      <div className="animate-spin" aria-hidden="true" style={{ color: spinnerColor }}>
         <svg
-          width="38"
-          height="38"
-          viewBox="0 0 38 38"
+          width="72"
+          height="72"
+          viewBox="0 0 72 72"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
         >
+          {/*
+           * r=28 → circumference ≈ 176px.
+           * strokeDasharray="44 18": each arc is ~44px with an 18px gap,
+           * producing roughly 3 curved segments around the ring.
+           */}
           <circle
-            cx="19"
-            cy="19"
-            r="16"
+            cx="36"
+            cy="36"
+            r="28"
             stroke="currentColor"
-            strokeWidth="2.5"
-            strokeDasharray="20 8"
+            strokeWidth="6"
+            strokeDasharray="44 18"
             strokeLinecap="round"
           />
         </svg>
