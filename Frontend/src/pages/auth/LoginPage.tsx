@@ -195,7 +195,17 @@ export default function LoginPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Signing in...
+                      <span className="inline-flex">
+                        {'Signing in...'.split('').map((char, i) => (
+                          <span
+                            key={`${char}-${i}`}
+                            className="animate-bounce-letter"
+                            style={{ animationDelay: `${i * 0.07}s` }}
+                          >
+                            {char === ' ' ? '\u00A0' : char}
+                          </span>
+                        ))}
+                      </span>
                     </>
                   ) : (
                     'Sign in'
