@@ -71,7 +71,7 @@ const fadeInUp = {
 
 // Enhanced Hero Section Component
 const HeroSection = () => {
-  const headingText = "Empowering African Education Through Competency-Based Learning";
+  const headingText = "Empowering Education Through Competency-Based Learning";
   const typedHeading = useTypewriter({
     text: headingText,
     speed: 25,
