@@ -149,9 +149,9 @@ export default function NavigationSpinner() {
        *   – Small, thin SVG circle (36×36px, 3px stroke) matching the
        *     compact spinner seen on the KUCCPS student portal.
        *   – stroke-dasharray creates a broken-ring effect with visible gaps.
-       *   – Tailwind's animate-spin drives the smooth clockwise rotation.
+       *   – animate-spin-fast (0.4 s) drives the fast clockwise rotation.
        */}
-      <div className="animate-spin" aria-hidden="true" style={{ color: spinnerColor }}>
+      <div className="animate-spin-fast" aria-hidden="true" style={{ color: spinnerColor }}>
         <svg
           width="36"
           height="36"

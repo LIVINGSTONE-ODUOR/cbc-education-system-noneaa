@@ -101,6 +101,9 @@ export default {
           "0%, 100%": { boxShadow: "0 0 15px 2px rgba(59,130,246,0.4)" },
           "50%": { boxShadow: "0 0 30px 6px rgba(99,102,241,0.6)" },
         },
+        "spin-fast": {
+          to: { transform: "rotate(360deg)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -111,6 +114,7 @@ export default {
         "float-slow": "float 4s ease-in-out infinite",
         "float-slower": "float 5s ease-in-out infinite",
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+        "spin-fast": "spin-fast 0.4s linear infinite",
       },
     },
   },
