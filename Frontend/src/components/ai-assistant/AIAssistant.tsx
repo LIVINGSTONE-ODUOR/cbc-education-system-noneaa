@@ -208,7 +208,7 @@ export default function AIAssistant() {
           </div>
           <div className="flex-1">
             <h3 className="font-semibold">Jarvis</h3>
-            <p className="text-xs text-primary-foreground/70">Online Assistant</p>
+            <p className="text-xs text-primary-foreground/70">online</p>
           </div>
           <button
             onClick={() => setIsOpen(false)}
