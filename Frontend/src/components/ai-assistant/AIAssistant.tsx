@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageCircle, X, Send, Bot } from 'lucide-react';
+import { X, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import jarvisLogo from '@/assets/jarvis.png';
 
 interface Message {
   id: string;
@@ -232,7 +233,7 @@ export default function AIAssistant() {
         {isOpen ? (
           <X className="w-6 h-6" />
         ) : (
-          <MessageCircle className="w-6 h-6" />
+          <img src={jarvisLogo} alt="Jarvis" className="w-10 h-10 object-cover rounded-full" />
         )}
       </button>
 
@@ -254,7 +255,7 @@ export default function AIAssistant() {
           className="bg-primary text-primary-foreground p-4 flex items-center gap-3 cursor-move"
         >
           <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
-            <img src="/Noneea-logo.jpg" alt="CBE" className="w-8 h-8 object-cover rounded-full" />
+            <img src={jarvisLogo} alt="Jarvis" className="w-10 h-10 object-cover rounded-full" />
           </div>
           <div className="flex-1">
             <h3 className="font-semibold">Jarvis</h3>
@@ -279,8 +280,8 @@ export default function AIAssistant() {
               )}
             >
               {message.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-4 h-4 text-primary" />
+                <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                  <img src={jarvisLogo} alt="Jarvis" className="w-full h-full object-cover" />
                 </div>
               )}
               <div
@@ -304,8 +305,8 @@ export default function AIAssistant() {
           ))}
           {showTypingIndicator && (
             <div className="flex gap-2 justify-start" role="status" aria-label="AI is typing a response">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Bot className="w-4 h-4 text-primary" />
+              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                <img src={jarvisLogo} alt="Jarvis" className="w-full h-full object-cover" />
               </div>
               <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
                 <span className="text-sm text-muted-foreground inline-flex gap-1">
