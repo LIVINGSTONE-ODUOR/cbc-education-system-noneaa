@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 /** How long (ms) the spinner stays visible before fading out. */
-const SPINNER_DISPLAY_DURATION = 1500;
+const SPINNER_DISPLAY_DURATION = 1000;
 
 /** Duration (ms) of the CSS fade-out transition. */
 const FADE_TRANSITION_DURATION = 300;
