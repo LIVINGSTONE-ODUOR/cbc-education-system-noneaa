@@ -6,33 +6,21 @@ const PAUSE_BEFORE_FADE = 200;       // ms pause at 100% before starting fade
 const FADE_DURATION = 500;           // ms for the opacity fade-out transition
 const BAR_COUNT = 12;                // number of radial spinner bars
 
-/** Detect dark mode from the document class and/or media query. */
+/** Detect dark mode from the OS/system preference only. */
 function useIsDark() {
   const [isDark, setIsDark] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return (
-      document.documentElement.classList.contains('dark') ||
-      window.matchMedia('(prefers-color-scheme: dark)').matches
-    );
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const update = () =>
-      setIsDark(
-        document.documentElement.classList.contains('dark') || mq.matches,
-      );
+    const update = () => setIsDark(mq.matches);
 
     mq.addEventListener('change', update);
-    const observer = new MutationObserver(update);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    });
 
     return () => {
       mq.removeEventListener('change', update);
-      observer.disconnect();
     };
   }, []);
 
@@ -45,7 +33,7 @@ function useIsDark() {
  * - Displays immediately on mount.
  * - Stays visible for at least MIN_DURATION ms.
  * - Smoothly fades out once the minimum time has elapsed.
- * - Adapts to light / dark mode automatically.
+ * - Follows the user's OS/system colour-scheme preference (light or dark).
  * - Disappears from the DOM entirely after the fade so it never blocks
  *   the underlying form or content.
  */
