@@ -294,7 +294,7 @@ export default function SecurityPage() {
                   </p>
                   <p className="text-sm text-muted-foreground">
                     To report a vulnerability, please contact our security team at{' '}
-                    <span className="font-medium text-foreground">security@noneaa.africa</span>.
+                    <span className="font-medium text-foreground">security@noneaa.com</span>.
                     We will acknowledge your report within 48 hours and work with you to resolve
                     the issue as quickly as possible.
                   </p>
@@ -324,7 +324,7 @@ export default function SecurityPage() {
                       <h4 className="font-semibold mb-2">
                         <span className="inline-flex items-center gap-1"><Mail className="w-4 h-4" /> Security Email</span>
                       </h4>
-                      <p className="text-sm text-muted-foreground">security@noneaa.africa</p>
+                      <p className="text-sm text-muted-foreground">security@noneaa.com</p>
                     </div>
                     <div>
                       <h4 className="font-semibold mb-2">
@@ -341,7 +341,7 @@ export default function SecurityPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold mb-2">Data Protection Officer</h4>
-                      <p className="text-sm text-muted-foreground">dpo@noneaa.africa</p>
+                      <p className="text-sm text-muted-foreground">dpo@noneaa.com</p>
                     </div>
                   </div>
                 </CardContent>
