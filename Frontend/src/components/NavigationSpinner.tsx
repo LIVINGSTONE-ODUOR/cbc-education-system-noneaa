@@ -43,34 +43,58 @@ function useIsDark() {
  *
  * Behaviour:
  * - Covers the entire screen (page content is hidden behind the overlay)
- *   on every route change, so the spinner is always seen alone.
+ *   on every page load/reload and every route change, so the spinner is
+ *   always seen alone.
  * - Hidden on Login and Registration pages.
  * - Stays visible for SPINNER_DISPLAY_DURATION ms, then fades out.
  * - Respects the OS light/dark colour preference for the overlay background.
  */
 export default function NavigationSpinner() {
   const location = useLocation();
-  const [visible, setVisible] = useState(false);
-  const [fading, setFading] = useState(false);
   const isDark = useIsDark();
 
-  const prevPathRef = useRef<string>(location.pathname);
+  // Show the spinner immediately on initial page load / reload (unless excluded).
+  const [visible, setVisible] = useState(() => !isExcludedPath(location.pathname));
+  const [fading, setFading] = useState(false);
+
+  // Track whether this is the first render (initial load / reload).
+  const isInitialMount = useRef(true);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const currentPath = location.pathname;
-    const prevPath = prevPathRef.current;
-
-    // Update stored path for next comparison
-    prevPathRef.current = currentPath;
-
-    // Skip initial mount – no navigation has occurred yet
-    if (prevPath === currentPath) return;
 
     // Clear any running timers from a previous navigation
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+
+    if (isInitialMount.current) {
+      // First render: spinner is already visible (set in useState).
+      // Just schedule its fade-out; skip the "show" step.
+      isInitialMount.current = false;
+
+      if (!isExcludedPath(currentPath)) {
+        hideTimerRef.current = setTimeout(() => {
+          setFading(true);
+          fadeTimerRef.current = setTimeout(() => {
+            setVisible(false);
+            setFading(false);
+          }, FADE_TRANSITION_DURATION);
+        }, SPINNER_DISPLAY_DURATION);
+      } else {
+        // Excluded path on initial load – ensure spinner stays hidden.
+        setVisible(false);
+        setFading(false);
+      }
+
+      return () => {
+        if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+        if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+      };
+    }
+
+    // Subsequent renders: a route change has occurred.
 
     // Never show on Login / Registration pages
     if (isExcludedPath(currentPath)) {
