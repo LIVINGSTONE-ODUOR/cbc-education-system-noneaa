@@ -10,6 +10,7 @@ import CookieBanner from "@/components/CookieBanner";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import GlobalSkeletonLoader from "@/components/GlobalSkeletonLoader";
+import NavigationSpinner from "@/components/NavigationSpinner";
 import { motion } from "framer-motion";
 import { MessageCircle } from "lucide-react";
 import ContactPage from './pages/website-pages/Contact';
@@ -310,6 +311,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <ScrollToTop />
+            <NavigationSpinner />
             <AppRoutes />
             <AIAssistant />
             <CookieBanner />
