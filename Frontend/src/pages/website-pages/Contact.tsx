@@ -25,9 +25,9 @@ const contactInfo = [
   {
     icon: Mail,
     label: "Email Support",
-    value: "hello@noneaa.ke",
+    value: "contact@noneaa.com",
     subtext: "24/7 response",
-    href: "mailto:hello@noneaa.ke"
+    href: "mailto:contact@noneaa.com"
   },
   {
     icon: MapPin,
