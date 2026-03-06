@@ -860,7 +860,7 @@ export default function HomePage() {
                   <div className="relative z-10">
                     <h3 className="text-2xl font-bold text-foreground mb-4">Request a Personalized Demo</h3>
                     <p className="text-muted-foreground mb-8">
-                      See how Nonea fits your school's unique curriculum needs.
+                      See how Nonea fits your school's unique curriculum needs
                     </p>
                     
                     <div className="space-y-4">
