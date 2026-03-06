@@ -13,7 +13,8 @@
     }
   ],
   "env": {
-    "DATABASE_URL": "postgresql://postgres:hashedbossie%40admin@db.ywcrsgaxftooovqipkdr.supabase.co:5432/postgres",
+    "VITE_SUPABASE_URL": "https://your-project.supabase.co",
+    "SUPABASE_DB_PASSWORD": "your-supabase-database-password",
     "NODE_ENV": "production",
     "JWT_SECRET": "cbc-education-system-production-secret-key-2024"
   }

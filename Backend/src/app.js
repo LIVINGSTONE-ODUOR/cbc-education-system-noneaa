@@ -15,8 +15,14 @@ const registerRoutes = require("./routes/register.routes");
 const passwordRoutes = require("./routes/password.routes");
 const academicTermsRoutes = require("./routes/academicTermsRoutes");
 const feeStructureRoutes = require("./routes/feeStructure.routes");
+const aiAssistantRoutes = require("./routes/aiAssistant.routes");
+const academicYearRoutes = require("./routes/academicYear.routes");
+const { validateAiAssistantEnv } = require("./controllers/aiAssistant.controller");
 
 const app = express();
+
+// Validate AI env at startup to surface Render misconfiguration early
+validateAiAssistantEnv();
 
 // Security middleware
 app.use(helmet({
@@ -153,7 +159,9 @@ app.get("/", (req, res) => {
       users: "/api/users/*",
       register: "/api/register/*",
       password: "/api/password/*",
-      ai: "/api/ai/*"
+      ai: "/api/ai/*",
+      ai_v1: "/api/v1/ai-assistant/*",
+      academic_years: "/api/v1/academic-years*",
     },
     documentation: "https://github.com/communityteksoft-source/cbc-education-system"
   });
@@ -166,8 +174,10 @@ app.use("/api/schools", schoolsRoutes);
 app.use("/api/register", registerRoutes);
 app.use("/api/password", passwordRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/v1/ai-assistant", aiAssistantRoutes);
 app.use("/api/v1/academic-terms", academicTermsRoutes);
 app.use("/api/v1/fee-structures", feeStructureRoutes);
+app.use("/api/v1", academicYearRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -189,9 +199,11 @@ app.get("/api", (req, res) => {
     endpoints: {
       auth: "/api/auth/*",
       ai: "/api/ai/*",
+      ai_v1: "/api/v1/ai-assistant/*",
       users: "/api/users/*",
       register: "/api/register/*",
-      password: "/api/password/*"
+      password: "/api/password/*",
+      academic_years: "/api/v1/academic-years*",
     },
     documentation: "https://github.com/communityteksoft-source/cbc-education-system"
   });

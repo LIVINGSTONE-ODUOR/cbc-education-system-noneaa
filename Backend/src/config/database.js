@@ -3,37 +3,45 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-// Get Supabase connection from environment or construct it
-let connectionString = process.env.DATABASE_URL;
+// Build Postgres connection STRICTLY from SUPABASE_URL + DB credentials.
+// DATABASE_URL is intentionally not used.
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const dbPassword = process.env.SUPABASE_DB_PASSWORD || null;
+const dbUser = process.env.SUPABASE_DB_USER || 'postgres';
+const dbName = process.env.SUPABASE_DB_NAME || 'postgres';
+const dbPort = Number.parseInt(process.env.SUPABASE_DB_PORT || '5432', 10);
 
-// If no DATABASE_URL, try to construct from Supabase URL
-if (!connectionString && process.env.VITE_SUPABASE_URL) {
-  // Extract project ref from Supabase URL (e.g., https://xxxxx.supabase.co -> xxxxx)
-  const supabaseUrl = process.env.VITE_SUPABASE_URL;
-  const projectRef = supabaseUrl.replace('https://', '').replace('.supabase.co', '');
-  
-  // Supabase direct database connection string format
-  // You need to get the password from your Supabase dashboard -> Settings -> Database
-  // For now, we'll try without password which will fail, but will show the correct format
-  connectionString = `postgres://postgres:[YOUR-PASSWORD]@db.${projectRef}.supabase.co:5432/postgres`;
-}
-
-if (!connectionString) {
-  console.error('❌ No DATABASE_URL or VITE_SUPABASE_URL found in environment');
-  console.log('Please add DATABASE_URL to your .env file or set VITE_SUPABASE_URL');
+if (!supabaseUrl) {
+  console.error('❌ Missing SUPABASE_URL in environment.');
+  console.log('Please set SUPABASE_URL in your .env file.');
   process.exit(1);
 }
 
-// Check if the connection string still has placeholder
-if (connectionString.includes('[YOUR-PASSWORD]')) {
-  console.warn('⚠️  DATABASE_URL appears to have a placeholder password.');
-  console.log('Please update your .env file with the actual Supabase database password.');
-  console.log('Format: postgres://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres');
+let projectRef = null;
+try {
+  const parsed = new URL(supabaseUrl);
+  projectRef = parsed.hostname.split('.')[0] || null;
+} catch {
+  // Fallback for malformed URL strings
+  const host = supabaseUrl.replace(/^https?:\/\//, '').split('/')[0];
+  projectRef = host.split('.')[0] || null;
 }
+
+if (!projectRef) {
+  console.error('❌ Could not extract Supabase project reference from VITE_SUPABASE_URL.');
+  process.exit(1);
+}
+
+const dbHost = process.env.SUPABASE_DB_HOST || `db.${projectRef}.supabase.co`;
+const passwordForConnection = dbPassword || '[YOUR-PASSWORD]';
+
+const connectionString = `postgresql://${encodeURIComponent(dbUser)}:${encodeURIComponent(
+  passwordForConnection
+)}@${dbHost}:${dbPort}/${encodeURIComponent(dbName)}`;
 
 // Database connection configuration
 const pool = new Pool({
-  connectionString: connectionString,
+  connectionString,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : { rejectUnauthorized: false },
   max: 30,
   min: 5,

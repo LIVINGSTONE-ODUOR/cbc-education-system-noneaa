@@ -35,11 +35,19 @@ Key CBE information:
 - Core competencies include: Communication, Collaboration, Critical Thinking, Creativity, Citizenship, Digital Literacy, Learning to Learn, Self-Efficacy
 - Assessment is continuous and formative, focusing on competency development`;
 
-// Configure your backend API endpoint via environment variable
-// Set VITE_AI_API_ENDPOINT in your .env file
-// Use relative path so requests are proxied through Vercel (avoids CORS on custom domains)
-const AI_API_ENDPOINT = import.meta.env.VITE_AI_API_ENDPOINT || 
-  (import.meta.env.PROD ? '/api/ai/ai-chat' : 'http://localhost:3001/api/ai/ai-chat');
+// Configure backend AI endpoint. Auto-fix legacy "/api/ai-chat" values.
+const normalizeAiEndpoint = (raw?: string) => {
+  const fallback = '/api/ai/ai-chat';
+  if (!raw) return fallback;
+
+  const trimmed = raw.trim();
+  if (!trimmed) return fallback;
+
+  // Backward compatibility for old env values
+  return trimmed.replace(/\/api\/ai-chat$/, '/api/ai/ai-chat');
+};
+
+const AI_API_ENDPOINT = normalizeAiEndpoint(import.meta.env.VITE_AI_API_ENDPOINT || '/api/ai/ai-chat');
 
 export default function AIAssistant() {
   const [isOpen, setIsOpen] = useState(true);
@@ -175,11 +183,14 @@ export default function AIAssistant() {
     setIsLoading(true);
 
     try {
+      const accessToken = localStorage.getItem('cbe_access_token');
+
       // Option 1: Connect to your own backend
       const response = await fetch(AI_API_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
         body: JSON.stringify({
           messages: [...messages, userMessage].map(m => ({
@@ -191,21 +202,26 @@ export default function AIAssistant() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response');
+        throw new Error('ASSISTANT_OFFLINE');
       }
 
       const data = await response.json();
+      const reply =
+        data?.data?.reply ||
+        data?.message ||
+        data?.content ||
+        data?.data?.message ||
+        'I apologize, but I encountered an issue. Please try again.';
       
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.message || data.content || 'I apologize, but I encountered an issue. Please try again.'
+        content: reply
       };
 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('AI Chat Error:', error);
-      // Fallback response when backend is not configured
       const fallbackMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',

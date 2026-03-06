@@ -1,4 +1,5 @@
 const { query } = require('../config/database');
+const { createClient } = require('@supabase/supabase-js');
 const { 
   verifyPassword, 
   generateTokens, 
@@ -6,6 +7,74 @@ const {
   resetLoginAttempts,
   isValidEmail
 } = require('../config/auth');
+
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseServiceRoleKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+
+const supabaseAdmin =
+  supabaseUrl && supabaseServiceRoleKey
+    ? createClient(supabaseUrl, supabaseServiceRoleKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      })
+    : null;
+
+const fetchUserFromSupabase = async (email) => {
+  if (!supabaseAdmin) return null;
+
+  // Attempt full column set first
+  let data = null;
+  let error = null;
+
+  ({ data, error } = await supabaseAdmin
+    .from('users')
+    .select(
+      'id, email, password_hash, role, status, school_id, login_attempts, locked_until, email_verified'
+    )
+    .eq('email', email)
+    .neq('status', 'deleted')
+    .limit(1)
+    .maybeSingle());
+
+  // Fallback for schemas missing optional columns
+  if (error) {
+    ({ data, error } = await supabaseAdmin
+      .from('users')
+      .select('id, email, password_hash, role, status, school_id, email_verified')
+      .eq('email', email)
+      .neq('status', 'deleted')
+      .limit(1)
+      .maybeSingle());
+  }
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) return null;
+
+  let resolvedSchoolId = data.school_id || null;
+  if (!resolvedSchoolId) {
+    const { data: schoolAdminRow } = await supabaseAdmin
+      .from('school_admins')
+      .select('school_id')
+      .eq('user_id', data.id)
+      .maybeSingle();
+    resolvedSchoolId = schoolAdminRow?.school_id || null;
+  }
+
+  return {
+    id: data.id,
+    email: data.email,
+    password_hash: data.password_hash,
+    role: data.role,
+    status: data.status,
+    school_id: resolvedSchoolId,
+    login_attempts: Number(data.login_attempts || 0),
+    locked_until: data.locked_until || null,
+    email_verified: data.email_verified === undefined ? true : !!data.email_verified,
+  };
+};
 
 // Login with extensive debugging
 exports.login = async (req, res) => {
@@ -47,24 +116,39 @@ exports.login = async (req, res) => {
     
     let userResult;
     try {
+      // Primary lookup via direct DB query
       userResult = await query(
-        `SELECT u.id, u.email, u.password_hash, u.role, u.status, 
-                COALESCE(u.school_id, NULL) as school_id, 
+        `SELECT u.id, u.email, u.password_hash, u.role, u.status,
+                COALESCE(u.school_id, sa.school_id, NULL) as school_id,
                 COALESCE(u.login_attempts, 0) as login_attempts, 
                 u.locked_until, 
                 COALESCE(u.email_verified, false) as email_verified
          FROM users u
+         LEFT JOIN school_admins sa ON sa.user_id = u.id
          WHERE u.email = $1 AND u.status != 'deleted'
          LIMIT 1`,
         [email]
       );
     } catch (dbError) {
       console.error('❌ Database query error:', dbError.message);
-      console.error('Database may not be connected or table may not exist');
-      return res.status(503).json({
-        success: false,
-        message: 'Service temporarily unavailable. Please try again later.'
-      });
+      console.error('🔄 Falling back to Supabase API lookup...');
+
+      try {
+        const supabaseUser = await fetchUserFromSupabase(email);
+        userResult = { rows: supabaseUser ? [supabaseUser] : [] };
+      } catch (supabaseFallbackError) {
+        console.error('❌ Supabase fallback failed:', supabaseFallbackError.message);
+        return res.status(503).json({
+          success: false,
+          message: 'Service temporarily unavailable. Please try again later.',
+          ...(process.env.NODE_ENV !== 'production'
+            ? {
+                detail: supabaseFallbackError.message,
+                code: supabaseFallbackError.code || dbError.code
+              }
+            : {})
+        });
+      }
     }
 
     console.log('📊 Query result:', {

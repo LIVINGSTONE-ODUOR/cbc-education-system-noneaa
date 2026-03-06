@@ -4,24 +4,47 @@ const { query } = require('../config/database');
 
 // Authentication middleware
 const authenticate = async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access denied. No token provided.'
-      });
-    }
+  const authHeader = req.headers.authorization;
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    
-    // Verify token
-    const decoded = verifyToken(token);
-    
-    // Get user details from database with optimized query
-    // Use COALESCE to fallback to school_admins.school_id for users where school_id is not set in users table
-    const userResult = await query(
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      success: false,
+      message: 'Access denied. No token provided.'
+    });
+  }
+
+  const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+  let decoded;
+
+  try {
+    decoded = verifyToken(token);
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: 'Token expired. Please login again.'
+    });
+  }
+
+  const tokenUser = {
+    id: decoded.userId,
+    email: decoded.email,
+    role: decoded.role,
+    schoolId: decoded.schoolId || null
+  };
+
+  // Optional fast path for deployments where DB credentials are intentionally omitted.
+  const shouldSkipDbLookup =
+    process.env.AUTH_SKIP_DB_LOOKUP === 'true' || !process.env.SUPABASE_DB_PASSWORD;
+  if (shouldSkipDbLookup) {
+    req.user = tokenUser;
+    return next();
+  }
+
+  // Get user details from database with optimized query
+  // Use COALESCE to fallback to school_admins.school_id for users where school_id is not set in users table
+  let userResult;
+  try {
+    userResult = await query(
       `SELECT u.id, u.email, u.role, u.status, COALESCE(u.school_id, sa.school_id) AS school_id
        FROM users u
        LEFT JOIN school_admins sa ON sa.user_id = u.id
@@ -29,54 +52,52 @@ const authenticate = async (req, res, next) => {
        LIMIT 1`,
       [decoded.userId]
     );
+  } catch (dbError) {
+    // DB fallback mode: trust signed JWT claims when DB is temporarily unavailable.
+    // This keeps authenticated flows alive if Postgres connectivity is down.
+    console.error('❌ Authentication DB lookup failed, using JWT fallback:', dbError.message);
+    req.user = tokenUser;
+    return next();
+  }
 
-    if (userResult.rows.length === 0) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid token. User not found or account deleted.'
-      });
-    }
+  if (userResult.rows.length === 0) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid token. User not found or account deleted.'
+    });
+  }
 
-    const user = userResult.rows[0];
-    
-    // Check if account is suspended
-    if (user.status === 'suspended') {
-      return res.status(403).json({
-        success: false,
-        message: 'Account suspended. Please contact support.'
-      });
-    }
+  const user = userResult.rows[0];
 
-    // Set user context for RLS
-    req.user = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      schoolId: user.school_id
-    };
+  // Check if account is suspended
+  if (user.status === 'suspended') {
+    return res.status(403).json({
+      success: false,
+      message: 'Account suspended. Please contact support.'
+    });
+  }
 
-    // Set PostgreSQL session variables for RLS (optimized)
+  // Set user context for RLS
+  req.user = {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    schoolId: user.school_id
+  };
+
+  // Set PostgreSQL session variables for RLS (optimized)
+  try {
     await query('SELECT set_config($1, $2, false)', ['app.current_user_id', user.id]);
     await query('SELECT set_config($1, $2, false)', ['app.current_user_role', user.role]);
     if (user.school_id) {
       await query('SELECT set_config($1, $2, false)', ['app.current_school_id', user.school_id]);
     }
-
-    next();
-  } catch (error) {
-    if (error.message === 'Invalid or expired token') {
-      return res.status(401).json({
-        success: false,
-        message: 'Token expired. Please login again.'
-      });
-    }
-    
-    console.error('❌ Authentication error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error during authentication.'
-    });
+  } catch (configError) {
+    // Don't fail auth if DB session config cannot be set.
+    console.error('⚠️ Failed to set DB session context:', configError.message);
   }
+
+  return next();
 };
 
 // Role-based authorization middleware
