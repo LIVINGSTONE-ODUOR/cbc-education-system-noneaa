@@ -786,7 +786,7 @@ export default function HomePage() {
                     </span>
                   </h2>
                   <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-                    Join hundreds of schools moving toward a mastery-first future with Nonea.
+                    Join hundreds of schools moving towards a mastery-first future with Nonea.
                     Start your journey today with a personalized demo.
                   </p>
                   
