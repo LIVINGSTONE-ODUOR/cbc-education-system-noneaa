@@ -20,6 +20,9 @@ const roles = [
   { type: 'parent' as const, label: 'Parent', icon: Users },
 ];
 
+const MAX_CLIENT_ATTEMPTS = 3;
+const DEFAULT_LOCKOUT_MINS = 3;
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login, isLoading } = useAuth();
@@ -33,12 +36,14 @@ export default function LoginPage() {
   const [lockedUntil, setLockedUntil] = useState<Date | null>(null);
   const [countdown, setCountdown] = useState(0);
   const [lockoutDurationMins, setLockoutDurationMins] = useState<number | null>(null);
+  const [failedAttempts, setFailedAttempts] = useState(0);
 
   // Countdown timer: tick every second while account is locked
   useEffect(() => {
     if (!lockedUntil) {
       setCountdown(0);
       setLockoutDurationMins(null);
+      setFailedAttempts(0);
       return;
     }
 
@@ -85,6 +90,7 @@ export default function LoginPage() {
       console.log('[LoginPage] Attempting login for:', formData.email, 'as', userType);
       await login(formData.email, formData.password, userType);
       setLoginSuccess(true);
+      setFailedAttempts(0);
       setTimeout(() => {
         switch (userType) {
           case 'super_admin':
@@ -103,14 +109,27 @@ export default function LoginPage() {
       }, 2000);
     } catch (error: unknown) {
       if (error instanceof Error && (error as Error & { lockedUntil?: string }).lockedUntil) {
+        // Backend explicitly locked the account – use its lockout time
         const lockUntilDate = new Date((error as Error & { lockedUntil: string }).lockedUntil);
         const secsRemaining = Math.max(0, (lockUntilDate.getTime() - Date.now()) / 1000);
         setLockoutDurationMins(Math.ceil(secsRemaining / 60));
         setLockedUntil(lockUntilDate);
+        setFailedAttempts(0);
         setSubmitError(null);
       } else {
-        const errorMsg = getErrorMessage(error, 'Invalid email or password. Please try again.');
-        setSubmitError(errorMsg);
+        const newFailed = failedAttempts + 1;
+        setFailedAttempts(newFailed);
+
+        if (newFailed === MAX_CLIENT_ATTEMPTS) {
+          // Automatically start a client-side countdown after 3 consecutive failures
+          const lockUntil = new Date(Date.now() + DEFAULT_LOCKOUT_MINS * 60 * 1000);
+          setLockoutDurationMins(DEFAULT_LOCKOUT_MINS);
+          setLockedUntil(lockUntil);
+          setSubmitError(null);
+        } else {
+          const errorMsg = getErrorMessage(error, 'Invalid email or password. Please try again.');
+          setSubmitError(errorMsg);
+        }
       }
     }
   };
