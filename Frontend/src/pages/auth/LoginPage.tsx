@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Eye, EyeOff, Loader2, ArrowLeft, Building2, Shield, GraduationCap, Users, Check, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ArrowLeft, Building2, Shield, GraduationCap, Users, Check, CheckCircle2, Clock } from 'lucide-react';
 import loginBg from '@/assets/hero-bg.png';
 import PageLoader from '@/components/PageLoader';
 import { cn } from '@/lib/utils';
@@ -30,9 +30,40 @@ export default function LoginPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [loginSuccess, setLoginSuccess] = useState(false);
+  const [lockedUntil, setLockedUntil] = useState<Date | null>(null);
+  const [countdown, setCountdown] = useState(0);
+
+  // Countdown timer: tick every second while account is locked
+  useEffect(() => {
+    if (!lockedUntil) {
+      setCountdown(0);
+      return;
+    }
+
+    const calcSecs = () => Math.max(0, Math.ceil((lockedUntil.getTime() - Date.now()) / 1000));
+    setCountdown(calcSecs());
+
+    const interval = setInterval(() => {
+      const secs = calcSecs();
+      setCountdown(secs);
+      if (secs <= 0) {
+        setLockedUntil(null);
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [lockedUntil]);
+
+  const formatCountdown = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (countdown > 0) return; // blocked during lockout
     setSubmitError(null);
 
     const newFieldErrors: { email?: string; password?: string } = {};
@@ -69,8 +100,13 @@ export default function LoginPage() {
         }
       }, 2000);
     } catch (error: unknown) {
-      const errorMsg = getErrorMessage(error, 'Invalid email or password. Please try again.');
-      setSubmitError(errorMsg);
+      if (error instanceof Error && (error as Error & { lockedUntil?: string }).lockedUntil) {
+        setLockedUntil(new Date((error as Error & { lockedUntil: string }).lockedUntil));
+        setSubmitError(null);
+      } else {
+        const errorMsg = getErrorMessage(error, 'Invalid email or password. Please try again.');
+        setSubmitError(errorMsg);
+      }
     }
   };
 
@@ -165,6 +201,18 @@ export default function LoginPage() {
               </div>
 
               <form onSubmit={handleSubmit} noValidate className="space-y-5">
+                {/* Lockout countdown banner */}
+                {countdown > 0 && (
+                  <div className="bg-amber-500/10 border border-amber-500/40 text-amber-800 dark:text-amber-300 text-sm p-3 rounded-lg flex items-start gap-2">
+                    <Clock className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>
+                      Too many failed attempts. Please wait{' '}
+                      <span className="font-mono font-bold">{formatCountdown(countdown)}</span>
+                      {' '}before trying again.
+                    </span>
+                  </div>
+                )}
+
                 {submitError && (
                   <div className="bg-destructive/10 border border-destructive/30 text-destructive text-sm p-3 rounded-lg animate-shake">
                     {submitError}
@@ -231,7 +279,7 @@ export default function LoginPage() {
                 {/* Submit */}
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || countdown > 0}
                   className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold 
                     hover:opacity-90 active:scale-[0.98] transition-all duration-200 
                     disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
@@ -250,6 +298,11 @@ export default function LoginPage() {
                           </span>
                         ))}
                       </span>
+                    </>
+                  ) : countdown > 0 ? (
+                    <>
+                      <Clock className="w-5 h-5" />
+                      <span>Try again in {formatCountdown(countdown)}</span>
                     </>
                   ) : (
                     'Sign in'

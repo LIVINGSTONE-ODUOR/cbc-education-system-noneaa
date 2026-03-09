@@ -204,7 +204,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('[AuthContext] Response data:', data);
 
       if (!response.ok || !data.success) {
-        throw new Error(data.message || data.error || 'Invalid credentials. Please try again.');
+        const err = new Error(data.message || data.error || 'Invalid credentials. Please try again.');
+        if (response.status === 423 && data.locked_until) {
+          (err as Error & { lockedUntil: string }).lockedUntil = data.locked_until;
+        }
+        throw err;
       }
 
       const userData = data.data?.user || data.user || data.data || {};
