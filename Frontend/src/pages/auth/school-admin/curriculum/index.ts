@@ -1,6 +1,5 @@
 // Curriculum Module - Main exports
 export { default as CurriculumDashboard } from './CurriculumDashboard';
-export { default as CurriculumHeader } from './CurriculumHeader';
 export { default as CurriculumStats } from './CurriculumStats';
 export { default as CurriculumFilters } from './CurriculumFilters';
 export { default as LearningAreasTable } from './LearningAreasTable';

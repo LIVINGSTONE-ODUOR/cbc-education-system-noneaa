@@ -1,33 +1,38 @@
-# TODO - Layout Fix for Dashboard
+# Curriculum UI Refactoring TODO
 
-## Task: Fix Next.js Dashboard Layout with Shadcn UI
-
-### Issues to Fix:
-1. Sidebar navigation not properly aligned with header
-2. Stats cards overlapping with sidebar
-3. Learning area cards not properly indented from sidebar
-4. Main content needs proper padding/margin adjustments
-
-### Expected Layout:
-- Sidebar width: 280px (desktop)
-- Main content: Takes remaining width with left margin of 280px
-- Header: Full width with content shifting properly
-- Stats cards: Grid layout with 4 columns using gap-4
-- Learning areas: Properly aligned with left padding matching sidebar offset
-
-### Implementation Steps:
-
-- [x] 1. Fix DashboardLayout.tsx - Remove duplicate nested elements
-- [x] 2. Fix DashboardLayout.tsx - Add proper left margin to main content
-- [x] 3. Fix DashboardLayout.tsx - Update sidebar width to 280px
-- [x] 4. Fix DashboardLayout.tsx - Ensure header alignment is correct
-
-### Files to Edit:
-- `Frontend/src/components/layout/DashboardLayout.tsx`
+## Task: Refactor UI spacing and layout for professional enterprise dashboard look
 
 ### Changes Made:
-1. **Sidebar Width**: Changed from `w-64` (256px) to `w-[280px]` (280px)
-2. **Main Content Margin**: Added `lg:ml-[280px]` when expanded and `lg:ml-16` when collapsed
-3. **Removed Duplicate Elements**: Removed the duplicate nested `<main>` and `<header>` elements
-4. **Fixed Header Alignment**: Header is now properly aligned and takes full width
+
+- [x] 1. LearningAreaCard.tsx - Table Row Spacing
+  - Added py-4 to table rows for ~64px row height
+  - Added align-middle to all table cells
+  - Increased badge counter height for better proportions
+
+- [x] 2. LearningAreaCard.tsx - Learning Area Section
+  - Title: text-base (slightly larger)
+  - Description: text-sm text-muted-foreground
+  - gap-2 between icon and text content
+
+- [x] 3. LearningAreaCard.tsx - Badge Counters
+  - Increased badge height and padding for better centering
+
+- [x] 4. LearningAreasTable.tsx - Removed inline expand/collapse
+  - Removed ExpandedRow component
+  - Removed expand toggle column from table
+  - Added "Details" column with View button
+
+- [x] 5. CurriculumDashboard.tsx - Enhanced View Details Modal
+  - Added tabbed interface (Overview, Strands, Sub-Strands, Competencies)
+  - Added header with learning area name and badges
+  - Added action buttons (Close, Edit)
+
+- [x] 6. CurriculumDashboard.tsx - Overall spacing
+  - Added mt-6 between sections
+
+### New Design Features:
+- Modal-based details view instead of inline expand/collapse
+- Clean compact table with only summary data
+- Tabbed interface for organizing curriculum hierarchy content
+- Users can focus on one learning area at a time
 

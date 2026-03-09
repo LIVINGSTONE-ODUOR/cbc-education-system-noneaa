@@ -829,6 +829,8 @@ const seedCBCCurriculum = async (req, res) => {
 
 // ================================================================
 // 13. Soft-delete factory — used for all 4 curriculum levels
+// 14. Cascade delete for learning areas (deletes all children too)
+// 15. Hard delete — permanently removes records from database
 // ================================================================
 
 const softDelete = (table) => async (req, res) => {
@@ -837,6 +839,7 @@ const softDelete = (table) => async (req, res) => {
   const { id }     = req.params;
   const school_id  = req.user.schoolId;
   const deleted_by = req.user.id;
+  const cascade    = req.query.cascade === 'true';
 
   try {
     const existing = await query(
@@ -854,21 +857,50 @@ const softDelete = (table) => async (req, res) => {
         return respond(res, 403, false, 'Cannot delete another school\'s curriculum items');
     }
 
-    // Block if children exist
+    // Block if children exist (unless cascade=true for learning_areas)
     const CHILDREN = {
       learning_areas: { table: 'strands',      col: 'learning_area_id' },
       strands:        { table: 'sub_strands',  col: 'strand_id' },
       sub_strands:    { table: 'competencies', col: 'sub_strand_id' },
     };
     const child = CHILDREN[table];
+    
     if (child) {
       const cnt = await query(
         `SELECT COUNT(*) AS n FROM ${child.table} WHERE ${child.col} = $1 AND deleted_at IS NULL`, [id]
       );
-      if (parseInt(cnt.rows[0].n) > 0)
+      
+      // For learning_areas, allow cascade delete
+      if (table === 'learning_areas' && cascade) {
+        // Delete all competencies for all sub_strands of all strands
+        await query(`
+          UPDATE competencies SET deleted_at = NOW(), deleted_by = $1, is_active = false
+          WHERE sub_strand_id IN (
+            SELECT ss.id FROM sub_strands ss
+            JOIN strands s ON s.id = ss.strand_id
+            WHERE s.learning_area_id = $2 AND ss.deleted_at IS NULL
+          ) AND deleted_at IS NULL
+        `, [deleted_by, id]);
+        
+        // Delete all sub_strands for all strands
+        await query(`
+          UPDATE sub_strands SET deleted_at = NOW(), deleted_by = $1, is_active = false
+          WHERE strand_id IN (
+            SELECT s.id FROM strands s
+            WHERE s.learning_area_id = $2 AND s.deleted_at IS NULL
+          ) AND deleted_at IS NULL
+        `, [deleted_by, id]);
+        
+        // Delete all strands
+        await query(`
+          UPDATE strands SET deleted_at = NOW(), deleted_by = $1, is_active = false
+          WHERE learning_area_id = $2 AND deleted_at IS NULL
+        `, [deleted_by, id]);
+      } else if (parseInt(cnt.rows[0].n) > 0) {
         return respond(res, 409, false,
-          `Cannot delete: ${cnt.rows[0].n} ${child.table.replace('_',' ')} still linked. Remove those first.`
+          `Cannot delete: ${cnt.rows[0].n} ${child.table.replace('_',' ')} still linked. Use ?cascade=true to delete all, or remove those first.`
         );
+      }
     }
 
     await query(
@@ -884,6 +916,70 @@ const softDelete = (table) => async (req, res) => {
   }
 };
 
+// Hard delete - permanently removes records from database
+const hardDelete = (table) => async (req, res) => {
+  if (!isWriter(req)) return respond(res, 403, false, 'Only admins can delete curriculum items');
+
+  const { id }     = req.params;
+  const school_id  = req.user.schoolId;
+
+  try {
+    const existing = await query(
+      `SELECT * FROM ${table} WHERE id = $1`, [id]
+    );
+    if (!existing.rows.length)
+      return respond(res, 404, false, `Item not found`);
+
+    // Protect national items from school_admin
+    if (table === 'learning_areas') {
+      const item = existing.rows[0];
+      if (item.school_id === null && req.user.role !== 'super_admin')
+        return respond(res, 403, false, 'Cannot delete national curriculum items');
+      if (item.school_id && item.school_id !== school_id && req.user.role !== 'super_admin')
+        return respond(res, 403, false, 'Cannot delete another school\'s curriculum items');
+    }
+
+    // Delete children first (cascade)
+    if (table === 'learning_areas') {
+      // Delete competencies for all sub_strands of all strands
+      await query(`
+        DELETE FROM competencies
+        WHERE sub_strand_id IN (
+          SELECT ss.id FROM sub_strands ss
+          JOIN strands s ON s.id = ss.strand_id
+          WHERE s.learning_area_id = $1
+        )
+      `, [id]);
+      
+      // Delete all sub_strands for all strands
+      await query(`
+        DELETE FROM sub_strands
+        WHERE strand_id IN (
+          SELECT s.id FROM strands s
+          WHERE s.learning_area_id = $1
+        )
+      `, [id]);
+      
+      // Delete all strands
+      await query(`DELETE FROM strands WHERE learning_area_id = $1`, [id]);
+    } else if (table === 'strands') {
+      await query(`DELETE FROM competencies WHERE sub_strand_id IN (SELECT id FROM sub_strands WHERE strand_id = $1)`, [id]);
+      await query(`DELETE FROM sub_strands WHERE strand_id = $1`, [id]);
+    } else if (table === 'sub_strands') {
+      await query(`DELETE FROM competencies WHERE sub_strand_id = $1`, [id]);
+    }
+
+    // Delete the record itself
+    await query(`DELETE FROM ${table} WHERE id = $1`, [id]);
+
+    return respond(res, 200, true, 'Permanently deleted');
+
+  } catch (err) {
+    console.error(`[hardDelete:${table}]`, err.message);
+    return respond(res, 500, false, 'Failed to permanently delete item');
+  }
+};
+
 
 module.exports = {
   getLearningAreas,
@@ -891,18 +987,22 @@ module.exports = {
   createLearningArea,
   updateLearningArea,
   deleteLearningArea: softDelete('learning_areas'),
+  hardDeleteLearningArea: hardDelete('learning_areas'),
 
   getStrands,
   createStrand,
   deleteStrand: softDelete('strands'),
+  hardDeleteStrand: hardDelete('strands'),
 
   getSubStrands,
   createSubStrand,
   deleteSubStrand: softDelete('sub_strands'),
+  hardDeleteSubStrand: hardDelete('sub_strands'),
 
   getCompetencies,
   createCompetency,
   deleteCompetency: softDelete('competencies'),
+  hardDeleteCompetency: hardDelete('competencies'),
 
   getCurriculumTree,
   seedCBCCurriculum,

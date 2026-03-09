@@ -263,14 +263,29 @@ export const updateLearningArea = async (
 /**
  * DELETE /api/v1/curriculum/learning-areas/:id
  * Delete a learning area (soft delete)
+ * @param cascade - if true, deletes all child strands, sub-strands, and competencies
  */
-export const deleteLearningArea = async (id: string): Promise<void> => {
-  const url = `${API_URL}/api/v1/curriculum/learning-areas/${id}`;
+export const deleteLearningArea = async (id: string, cascade: boolean = true): Promise<void> => {
+  const url = `${API_URL}/api/v1/curriculum/learning-areas/${id}?cascade=${cascade}`;
+  const response = await fetch(url, getFetchOptions('DELETE'));
+  
+  if (!response.ok) {
+    const data = await response.json()
+    throw new Error(data.message || 'Failed to delete learning area');
+  }
+};
+
+/**
+ * DELETE /api/v1/curriculum/learning-areas/:id/hard
+ * Permanently delete a learning area and all its children (strands, sub-strands, competencies)
+ */
+export const hardDeleteLearningArea = async (id: string): Promise<void> => {
+  const url = `${API_URL}/api/v1/curriculum/learning-areas/${id}/hard`;
   const response = await fetch(url, getFetchOptions('DELETE'));
   
   if (!response.ok) {
     const data = await response.json();
-    throw new Error(data.message || 'Failed to delete learning area');
+    throw new Error(data.message || 'Failed to permanently delete learning area');
   }
 };
 
