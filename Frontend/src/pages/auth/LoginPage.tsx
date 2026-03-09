@@ -32,11 +32,13 @@ export default function LoginPage() {
   const [loginSuccess, setLoginSuccess] = useState(false);
   const [lockedUntil, setLockedUntil] = useState<Date | null>(null);
   const [countdown, setCountdown] = useState(0);
+  const [lockoutDurationMins, setLockoutDurationMins] = useState<number | null>(null);
 
   // Countdown timer: tick every second while account is locked
   useEffect(() => {
     if (!lockedUntil) {
       setCountdown(0);
+      setLockoutDurationMins(null);
       return;
     }
 
@@ -101,7 +103,10 @@ export default function LoginPage() {
       }, 2000);
     } catch (error: unknown) {
       if (error instanceof Error && (error as Error & { lockedUntil?: string }).lockedUntil) {
-        setLockedUntil(new Date((error as Error & { lockedUntil: string }).lockedUntil));
+        const lockUntilDate = new Date((error as Error & { lockedUntil: string }).lockedUntil);
+        const secsRemaining = Math.max(0, (lockUntilDate.getTime() - Date.now()) / 1000);
+        setLockoutDurationMins(Math.ceil(secsRemaining / 60));
+        setLockedUntil(lockUntilDate);
         setSubmitError(null);
       } else {
         const errorMsg = getErrorMessage(error, 'Invalid email or password. Please try again.');
@@ -203,13 +208,30 @@ export default function LoginPage() {
               <form onSubmit={handleSubmit} noValidate className="space-y-5">
                 {/* Lockout countdown banner */}
                 {countdown > 0 && (
-                  <div className="bg-amber-500/10 border border-amber-500/40 text-amber-800 dark:text-amber-300 text-sm p-3 rounded-lg flex items-start gap-2">
-                    <Clock className="w-4 h-4 mt-0.5 shrink-0" />
-                    <span>
-                      Too many failed attempts. Please wait{' '}
-                      <span className="font-mono font-bold">{formatCountdown(countdown)}</span>
-                      {' '}before trying again.
-                    </span>
+                  <div className="bg-amber-500/10 border border-amber-500/40 rounded-xl p-4 flex flex-col items-center gap-2 text-center">
+                    <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
+                      <Clock className="w-4 h-4 shrink-0" />
+                      <span className="text-sm font-semibold">Account Temporarily Locked</span>
+                    </div>
+                    <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                      Too many failed login attempts.
+                      {lockoutDurationMins != null && (
+                        <> Please wait{' '}
+                          <span className="font-semibold">
+                            {lockoutDurationMins} {lockoutDurationMins === 1 ? 'minute' : 'minutes'}
+                          </span>
+                          {' '}before trying again.
+                        </>
+                      )}
+                    </p>
+                    <div className="text-4xl font-mono font-bold text-amber-700 dark:text-amber-200 tabular-nums leading-none py-1">
+                      {formatCountdown(countdown)}
+                    </div>
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      {Math.floor(countdown / 60) > 0
+                        ? 'minutes and seconds remaining'
+                        : 'seconds remaining'}
+                    </p>
                   </div>
                 )}
 
