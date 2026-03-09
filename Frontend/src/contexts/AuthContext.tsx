@@ -1,5 +1,6 @@
-import { useState, useRef, createContext, useContext, ReactNode, useEffect } from 'react';
+import { useState, useRef, createContext, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { User, UserRole } from '@/types';
+import { toast } from '@/components/ui/sonner';
 
 // In production builds (Vercel), always use relative path so requests are proxied
 // through Vercel's server-side rewrite rules (vercel.json) to the backend on Render.
@@ -41,6 +42,11 @@ const USER_KEY = 'cbe_user';
 const LOGIN_SKELETON_DURATION_MS = 6000;
 const SKELETON_FADE_START_MS = LOGIN_SKELETON_DURATION_MS - 1000; // fade-out begins 1 second before hide
 
+// Inactivity auto-logout settings
+const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;        // 30 minutes
+const INACTIVITY_WARNING_MS = INACTIVITY_TIMEOUT_MS - 5 * 60 * 1000; // warn 5 min before logout
+const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'] as const;
+
 const getStoredTokens = () => {
   try {
     const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
@@ -72,6 +78,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isSkeletonFading, setIsSkeletonFading] = useState(false);
   const skeletonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skeletonFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inactivityWarningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warningToastIdRef = useRef<string | number | null>(null);
 
   const startSkeletonTimer = () => {
     if (skeletonTimerRef.current) clearTimeout(skeletonTimerRef.current);
@@ -84,6 +93,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsSkeletonFading(false);
     }, LOGIN_SKELETON_DURATION_MS);
   };
+
+  const stopInactivityTimer = useCallback(() => {
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
+    }
+    if (inactivityWarningTimerRef.current) {
+      clearTimeout(inactivityWarningTimerRef.current);
+      inactivityWarningTimerRef.current = null;
+    }
+    if (warningToastIdRef.current !== null) {
+      toast.dismiss(warningToastIdRef.current);
+      warningToastIdRef.current = null;
+    }
+  }, []);
+
+  const performLogout = useCallback(() => {
+    if (skeletonTimerRef.current) clearTimeout(skeletonTimerRef.current);
+    if (skeletonFadeTimerRef.current) clearTimeout(skeletonFadeTimerRef.current);
+    setShowLoginSkeleton(false);
+    setIsSkeletonFading(false);
+    stopInactivityTimer();
+    clearTokens();
+    setUser(null);
+  }, [stopInactivityTimer]);
+
+  const startInactivityTimer = useCallback(() => {
+    stopInactivityTimer();
+    inactivityWarningTimerRef.current = setTimeout(() => {
+      warningToastIdRef.current = toast.warning(
+        'Your session will expire in 5 minutes due to inactivity. Move your mouse or press a key to stay logged in.',
+        { duration: 30000, id: 'inactivity-warning' }
+      );
+    }, INACTIVITY_WARNING_MS);
+    inactivityTimerRef.current = setTimeout(() => {
+      performLogout();
+      toast.info('You have been logged out due to inactivity.', { id: 'inactivity-logout' });
+    }, INACTIVITY_TIMEOUT_MS);
+  }, [stopInactivityTimer, performLogout]);
 
   useEffect(() => {
     const initializeAuth = () => {
@@ -107,6 +155,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (skeletonFadeTimerRef.current) clearTimeout(skeletonFadeTimerRef.current);
     };
   }, []);
+
+  // Start/stop inactivity timer based on authentication state
+  useEffect(() => {
+    if (!user) {
+      stopInactivityTimer();
+      return;
+    }
+
+    startInactivityTimer();
+
+    const handleActivity = () => startInactivityTimer();
+    ACTIVITY_EVENTS.forEach((event) => window.addEventListener(event, handleActivity, { passive: true }));
+
+    return () => {
+      ACTIVITY_EVENTS.forEach((event) => window.removeEventListener(event, handleActivity));
+      stopInactivityTimer();
+    };
+  }, [user, startInactivityTimer, stopInactivityTimer]);
 
   const login = async (email: string, password: string, role?: string) => {
     setIsLoading(true);
@@ -171,12 +237,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    if (skeletonTimerRef.current) clearTimeout(skeletonTimerRef.current);
-    if (skeletonFadeTimerRef.current) clearTimeout(skeletonFadeTimerRef.current);
-    setShowLoginSkeleton(false);
-    setIsSkeletonFading(false);
-    clearTokens();
-    setUser(null);
+    performLogout();
   };
 
   return (
