@@ -47,7 +47,7 @@ export default function AdminDetailsStep({ initialData, onSubmit, onBack, isLoad
     formData.password;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} noValidate className="space-y-6">
       <motion.div 
         className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6"
         initial={{ opacity: 0, scale: 0.95 }}

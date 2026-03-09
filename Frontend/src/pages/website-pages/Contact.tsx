@@ -90,6 +90,12 @@ const subHeadingLines2 = [
   "schools across Kenya with reliable digital solutions."
 ];
 
+type ContactErrors = {
+  fullName?: string;
+  email?: string;
+  message?: string;
+};
+
 export default function ContactPage() {
   const [formData, setFormData] = useState({
     fullName: '',
@@ -101,6 +107,7 @@ export default function ContactPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState(null);
+  const [errors, setErrors] = useState<ContactErrors>({});
   const [expandedFaq, setExpandedFaq] = useState(0);
 
   const [typedMainText, setTypedMainText] = useState('');
@@ -186,10 +193,37 @@ export default function ContactPage() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    const field = name as keyof ContactErrors;
+    if (Object.prototype.hasOwnProperty.call(errors, field)) {
+      setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const validate = (): ContactErrors => {
+    const newErrors: ContactErrors = {};
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Full name is required.';
+    }
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email address is required.';
+    } else if (!/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address.';
+    }
+    if (!formData.message.trim()) {
+      newErrors.message = 'Message is required.';
+    }
+    return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
     setIsSubmitting(true);
     setStatus(null);
 
@@ -345,7 +379,7 @@ export default function ContactPage() {
                 Send us your inquiry and our team will respond within 24 hours.
               </p>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} noValidate className="space-y-5">
                 {/* Full Name */}
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-2">
@@ -357,9 +391,13 @@ export default function ContactPage() {
                     value={formData.fullName}
                     onChange={handleChange}
                     placeholder="Your name"
-                    required
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${errors.fullName ? 'border-red-500 bg-red-50' : 'border-slate-300'}`}
                   />
+                  {errors.fullName && (
+                    <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
+                      <span aria-hidden="true">⚠</span> {errors.fullName}
+                    </p>
+                  )}
                 </div>
 
                 {/* Email */}
@@ -373,9 +411,13 @@ export default function ContactPage() {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="principal@school.ke"
-                    required
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${errors.email ? 'border-red-500 bg-red-50' : 'border-slate-300'}`}
                   />
+                  {errors.email && (
+                    <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
+                      <span aria-hidden="true">⚠</span> {errors.email}
+                    </p>
+                  )}
                 </div>
 
                 {/* Phone & School */}
@@ -419,9 +461,13 @@ export default function ContactPage() {
                     onChange={handleChange}
                     rows={6}
                     placeholder="Tell us how we can help..."
-                    required
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none"
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none ${errors.message ? 'border-red-500 bg-red-50' : 'border-slate-300'}`}
                   />
+                  {errors.message && (
+                    <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
+                      <span aria-hidden="true">⚠</span> {errors.message}
+                    </p>
+                  )}
                 </div>
 
                 {/* Submit Button */}
