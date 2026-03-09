@@ -183,7 +183,8 @@ exports.login = async (req, res) => {
       console.log('❌ Account is locked until:', user.locked_until);
       return res.status(423).json({
         success: false,
-        message: 'Account temporarily locked due to too many failed login attempts. Please try again later.'
+        message: 'Account temporarily locked due to too many failed login attempts. Please wait before trying again.',
+        locked_until: user.locked_until,
       });
     }
     console.log('✅ Account not locked');
@@ -217,11 +218,24 @@ exports.login = async (req, res) => {
     if (!isValidPassword) {
       console.log('❌ Invalid password, incrementing login attempts...');
       
+      let lockedUntil = null;
       try {
-        await incrementLoginAttempts(user.id);
+        const attemptResult = await incrementLoginAttempts(user.id);
         console.log('✅ Login attempts incremented');
+        if (attemptResult && attemptResult.locked_until && new Date() < new Date(attemptResult.locked_until)) {
+          lockedUntil = attemptResult.locked_until;
+          console.log('🔒 Account is now locked until:', lockedUntil);
+        }
       } catch (err) {
         console.error('Failed to increment login attempts:', err.message);
+      }
+
+      if (lockedUntil) {
+        return res.status(423).json({
+          success: false,
+          message: 'Too many failed login attempts. Please wait before trying again.',
+          locked_until: lockedUntil,
+        });
       }
       
       return res.status(401).json({

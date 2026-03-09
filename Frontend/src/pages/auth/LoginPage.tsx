@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2, ArrowLeft, Building2, Shield, GraduationCap, Users, Check } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ArrowLeft, Building2, Shield, GraduationCap, Users, Check, CheckCircle2, Clock } from 'lucide-react';
 import loginBg from '@/assets/hero-bg.png';
 import PageLoader from '@/components/PageLoader';
+import { cn } from '@/lib/utils';
 
 type LoginUserType = 'admin' | 'super_admin' | 'teacher' | 'parent';
 
@@ -15,46 +15,98 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 
 const roles = [
   { type: 'admin' as const, label: 'Administrator', icon: Building2 },
-  { type: 'super_admin' as const, label: 'Super Admin', icon: Shield },
   { type: 'teacher' as const, label: 'Teacher', icon: GraduationCap },
+  { type: 'student' as const, label: 'Student', icon: Shield },
   { type: 'parent' as const, label: 'Parent', icon: Users },
 ];
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login, isLoading } = useAuth();
-  const { toast } = useToast();
 
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [userType, setUserType] = useState<LoginUserType>('admin');
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const [loginSuccess, setLoginSuccess] = useState(false);
+  const [lockedUntil, setLockedUntil] = useState<Date | null>(null);
+  const [countdown, setCountdown] = useState(0);
+
+  // Countdown timer: tick every second while account is locked
+  useEffect(() => {
+    if (!lockedUntil) {
+      setCountdown(0);
+      return;
+    }
+
+    const calcSecs = () => Math.max(0, Math.ceil((lockedUntil.getTime() - Date.now()) / 1000));
+    setCountdown(calcSecs());
+
+    const interval = setInterval(() => {
+      const secs = calcSecs();
+      setCountdown(secs);
+      if (secs <= 0) {
+        setLockedUntil(null);
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [lockedUntil]);
+
+  const formatCountdown = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (countdown > 0) return; // blocked during lockout
     setSubmitError(null);
+
+    const newFieldErrors: { email?: string; password?: string } = {};
+    if (!formData.email.trim()) {
+      newFieldErrors.email = 'Email address is required.';
+    }
+    if (!formData.password) {
+      newFieldErrors.password = 'Password is required.';
+    }
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
+      return;
+    }
+    setFieldErrors({});
+
     try {
       console.log('[LoginPage] Attempting login for:', formData.email, 'as', userType);
       await login(formData.email, formData.password, userType);
-      toast({ title: 'Welcome Back', description: 'Successfully signed in.' });
-      switch (userType) {
-        case 'super_admin':
-        case 'admin':
-          navigate('/school-admin/dashboard');
-          break;
-        case 'teacher':
-          navigate('/teacher/portal');
-          break;
-        case 'parent':
-          navigate('/parent/portal');
-          break;
-        default:
-          navigate('/school-admin/dashboard');
-      }
+      setLoginSuccess(true);
+      setTimeout(() => {
+        switch (userType) {
+          case 'super_admin':
+          case 'admin':
+            navigate('/school-admin/dashboard');
+            break;
+          case 'teacher':
+            navigate('/teacher/portal');
+            break;
+          case 'parent':
+            navigate('/parent/portal');
+            break;
+          default:
+            navigate('/school-admin/dashboard');
+        }
+      }, 2000);
     } catch (error: unknown) {
-      const errorMsg = getErrorMessage(error, 'Invalid email or password. Please try again.');
-      setSubmitError(errorMsg);
-      toast({ title: 'Sign In Failed', description: errorMsg, variant: 'destructive' });
+      if (error instanceof Error && (error as Error & { lockedUntil?: string }).lockedUntil) {
+        setLockedUntil(new Date((error as Error & { lockedUntil: string }).lockedUntil));
+        setSubmitError(null);
+      } else {
+        const errorMsg = getErrorMessage(error, 'Invalid email or password. Please try again.');
+        setSubmitError(errorMsg);
+      }
     }
   };
 
@@ -83,7 +135,21 @@ export default function LoginPage() {
 
       {/* Main Card */}
       <div className="relative z-10 w-full max-w-4xl mx-4 animate-fade-in-up">
-        <div className="glass-card rounded-2xl shadow-2xl overflow-hidden">
+        <div className="relative glass-card rounded-2xl shadow-2xl overflow-hidden">
+
+          {/* Login Success Overlay */}
+          {loginSuccess && (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-background/90 backdrop-blur-sm animate-fade-in-up">
+              <div className="flex flex-col items-center gap-4 text-center px-6">
+                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-blue-100 dark:bg-blue-900/40 animate-success-pop">
+                  <CheckCircle2 className="w-12 h-12 text-blue-500 animate-success-check" strokeWidth={2} />
+                </div>
+                <h2 className="text-3xl font-bold text-foreground">Welcome Back</h2>
+                <p className="text-muted-foreground text-sm tracking-widest animate-pulse">Redirecting...</p>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col md:flex-row">
 
             {/* LEFT – Roles */}
@@ -134,7 +200,19 @@ export default function LoginPage() {
                 <p className="text-muted-foreground mt-1">to access your account</p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} noValidate className="space-y-5">
+                {/* Lockout countdown banner */}
+                {countdown > 0 && (
+                  <div className="bg-amber-500/10 border border-amber-500/40 text-amber-800 dark:text-amber-300 text-sm p-3 rounded-lg flex items-start gap-2">
+                    <Clock className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>
+                      Too many failed attempts. Please wait{' '}
+                      <span className="font-mono font-bold">{formatCountdown(countdown)}</span>
+                      {' '}before trying again.
+                    </span>
+                  </div>
+                )}
+
                 {submitError && (
                   <div className="bg-destructive/10 border border-destructive/30 text-destructive text-sm p-3 rounded-lg animate-shake">
                     {submitError}
@@ -148,11 +226,18 @@ export default function LoginPage() {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="login-input"
+                    onChange={(e) => {
+                      setFormData({ ...formData, email: e.target.value });
+                      if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: undefined }));
+                    }}
+                    className={cn('login-input', fieldErrors.email && 'border-destructive')}
                     placeholder="super_admin@gmail.com"
-                    required
                   />
+                  {fieldErrors.email && (
+                    <p className="mt-1.5 text-sm text-destructive flex items-center gap-1">
+                      <span aria-hidden="true">⚠</span> {fieldErrors.email}
+                    </p>
+                  )}
                 </div>
 
                 {/* Password */}
@@ -163,10 +248,12 @@ export default function LoginPage() {
                       id="password"
                       type={showPassword ? 'text' : 'password'}
                       value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="login-input pr-12"
+                      onChange={(e) => {
+                        setFormData({ ...formData, password: e.target.value });
+                        if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: undefined }));
+                      }}
+                      className={cn('login-input pr-12', fieldErrors.password && 'border-destructive')}
                       placeholder="Enter your password"
-                      required
                     />
                     <button
                       type="button"
@@ -176,6 +263,11 @@ export default function LoginPage() {
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
+                  {fieldErrors.password && (
+                    <p className="mt-1.5 text-sm text-destructive flex items-center gap-1">
+                      <span aria-hidden="true">⚠</span> {fieldErrors.password}
+                    </p>
+                  )}
                 </div>
 
                 {/* Remember me */}
@@ -187,7 +279,7 @@ export default function LoginPage() {
                 {/* Submit */}
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || countdown > 0}
                   className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold 
                     hover:opacity-90 active:scale-[0.98] transition-all duration-200 
                     disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
@@ -206,6 +298,11 @@ export default function LoginPage() {
                           </span>
                         ))}
                       </span>
+                    </>
+                  ) : countdown > 0 ? (
+                    <>
+                      <Clock className="w-5 h-5" />
+                      <span>Try again in {formatCountdown(countdown)}</span>
                     </>
                   ) : (
                     'Sign in'

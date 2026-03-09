@@ -15,8 +15,13 @@ const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
 
 // Security Configuration
 const SALT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS) || 12;
-const MAX_LOGIN_ATTEMPTS = parseInt(process.env.MAX_LOGIN_ATTEMPTS) || 5;
-const LOCKOUT_TIME = parseInt(process.env.LOCKOUT_TIME) || 30; // minutes
+// Progressive lockout: every ATTEMPTS_PER_ROUND failures triggers a lockout.
+// The first lockout lasts BASE_LOCKOUT_MINUTES; each subsequent round doubles the duration.
+// e.g. round 1 (3 failures) → 3 min, round 2 (3 more) → 6 min, round 3 → 12 min, …
+// The lockout duration is capped at MAX_LOCKOUT_MINUTES to prevent unreasonably long bans.
+const ATTEMPTS_PER_ROUND = parseInt(process.env.ATTEMPTS_PER_ROUND) || 3;
+const BASE_LOCKOUT_MINUTES = parseInt(process.env.BASE_LOCKOUT_MINUTES) || 3;
+const MAX_LOCKOUT_MINUTES = parseInt(process.env.MAX_LOCKOUT_MINUTES) || 120; // 2 hours
 
 // Helper function to generate secure tokens
 const generateSecureToken = () => {
@@ -95,20 +100,41 @@ const isAccountLocked = async (userId) => {
   return lockedUntil && new Date() < new Date(lockedUntil);
 };
 
-// Increment login attempts - handle missing columns gracefully
+// Increment login attempts - progressive lockout (doubles each round)
 const incrementLoginAttempts = async (userId) => {
   try {
+    // Step 1: Increment the attempt counter
     const result = await query(
       `UPDATE users 
-       SET login_attempts = COALESCE(login_attempts, 0) + 1,
-           locked_until = CASE 
-             WHEN COALESCE(login_attempts, 0) + 1 >= $2 THEN NOW() + INTERVAL '${LOCKOUT_TIME} minutes'
-             ELSE locked_until
-           END
+       SET login_attempts = COALESCE(login_attempts, 0) + 1
        WHERE id = $1
        RETURNING login_attempts, locked_until`,
-      [userId, MAX_LOGIN_ATTEMPTS]
+      [userId]
     );
+
+    if (!result.rows[0]) return null;
+
+    const attempts = result.rows[0].login_attempts;
+
+    // Step 2: Lock the account every ATTEMPTS_PER_ROUND failures
+    if (attempts % ATTEMPTS_PER_ROUND === 0) {
+      const round = attempts / ATTEMPTS_PER_ROUND;
+      // Duration doubles each round: 3min, 6min, 12min, 24min, … capped at MAX_LOCKOUT_MINUTES
+      const lockMinutes = Math.min(
+        BASE_LOCKOUT_MINUTES * Math.pow(2, round - 1),
+        MAX_LOCKOUT_MINUTES
+      );
+
+      const lockResult = await query(
+        `UPDATE users 
+         SET locked_until = NOW() + ($1 * INTERVAL '1 minute')
+         WHERE id = $2
+         RETURNING login_attempts, locked_until`,
+        [lockMinutes, userId]
+      );
+
+      return lockResult.rows[0];
+    }
 
     return result.rows[0];
   } catch (error) {

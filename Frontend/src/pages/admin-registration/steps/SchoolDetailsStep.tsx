@@ -34,7 +34,7 @@ export default function SchoolDetailsStep({ initialData, onSubmit, onBack }: Pro
     formData.email;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} noValidate className="space-y-6">
       {/* County */}
       <motion.div 
         className="space-y-2"

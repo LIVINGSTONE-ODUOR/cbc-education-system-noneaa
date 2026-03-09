@@ -78,7 +78,7 @@ export default function SchoolBasicInfoStep({ initialData, onSubmit, onBack }: P
     formData.levelsOffered.length > 0;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} noValidate className="space-y-6">
       {/* School Name */}
       <motion.div 
         className="space-y-2"
