@@ -43,7 +43,7 @@ const LOGIN_SKELETON_DURATION_MS = 6000;
 const SKELETON_FADE_START_MS = LOGIN_SKELETON_DURATION_MS - 1000; // fade-out begins 1 second before hide
 
 // Inactivity auto-logout settings
-const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;        // 30 minutes
+const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;        // 15 minutes
 const INACTIVITY_WARNING_MS = INACTIVITY_TIMEOUT_MS - 5 * 60 * 1000; // warn 5 min before logout
 const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'] as const;
 
