@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2, ArrowLeft, Building2, Shield, GraduationCap, Users, Check } from 'lucide-react';
 import loginBg from '@/assets/hero-bg.png';
 import PageLoader from '@/components/PageLoader';
+import { cn } from '@/lib/utils';
 
 type LoginUserType = 'admin' | 'super_admin' | 'teacher' | 'parent';
 
@@ -29,10 +30,25 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [userType, setUserType] = useState<LoginUserType>('admin');
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
+
+    const newFieldErrors: { email?: string; password?: string } = {};
+    if (!formData.email.trim()) {
+      newFieldErrors.email = 'Email address is required.';
+    }
+    if (!formData.password) {
+      newFieldErrors.password = 'Password is required.';
+    }
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
+      return;
+    }
+    setFieldErrors({});
+
     try {
       console.log('[LoginPage] Attempting login for:', formData.email, 'as', userType);
       await login(formData.email, formData.password, userType);
@@ -134,7 +150,7 @@ export default function LoginPage() {
                 <p className="text-muted-foreground mt-1">to access your account</p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} noValidate className="space-y-5">
                 {submitError && (
                   <div className="bg-destructive/10 border border-destructive/30 text-destructive text-sm p-3 rounded-lg animate-shake">
                     {submitError}
@@ -148,11 +164,18 @@ export default function LoginPage() {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="login-input"
+                    onChange={(e) => {
+                      setFormData({ ...formData, email: e.target.value });
+                      if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: undefined }));
+                    }}
+                    className={cn('login-input', fieldErrors.email && 'border-destructive')}
                     placeholder="super_admin@gmail.com"
-                    required
                   />
+                  {fieldErrors.email && (
+                    <p className="mt-1.5 text-sm text-destructive flex items-center gap-1">
+                      <span aria-hidden="true">⚠</span> {fieldErrors.email}
+                    </p>
+                  )}
                 </div>
 
                 {/* Password */}
@@ -163,10 +186,12 @@ export default function LoginPage() {
                       id="password"
                       type={showPassword ? 'text' : 'password'}
                       value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="login-input pr-12"
+                      onChange={(e) => {
+                        setFormData({ ...formData, password: e.target.value });
+                        if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: undefined }));
+                      }}
+                      className={cn('login-input pr-12', fieldErrors.password && 'border-destructive')}
                       placeholder="Enter your password"
-                      required
                     />
                     <button
                       type="button"
@@ -176,6 +201,11 @@ export default function LoginPage() {
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
+                  {fieldErrors.password && (
+                    <p className="mt-1.5 text-sm text-destructive flex items-center gap-1">
+                      <span aria-hidden="true">⚠</span> {fieldErrors.password}
+                    </p>
+                  )}
                 </div>
 
                 {/* Remember me */}

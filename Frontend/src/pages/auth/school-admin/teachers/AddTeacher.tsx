@@ -110,7 +110,7 @@ export default function AddTeacherPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <div className="grid gap-6 max-w-2xl">
           {/* Personal Information */}
           <Card>
