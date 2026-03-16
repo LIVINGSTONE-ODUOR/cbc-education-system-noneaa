@@ -359,25 +359,25 @@ export default function AboutPage() {
             <div className="space-y-12">
               {[
                 {
-                  year: '2020',
+                  year: '2023',
                   title: 'The Beginning',
                   description: 'Started with 5 pilot schools in Nairobi to test CBE assessment tools.',
                   icon: Rocket
                 },
                 {
-                  year: '2021',
+                  year: '2024',
                   title: 'Rapid Growth',
                   description: 'Expanded to 30+ schools across Nairobi, Mombasa, and Kisumu.',
                   icon: TrendingUp
                 },
                 {
-                  year: '2022',
+                  year: '2025',
                   title: 'Regional Expansion',
                   description: 'Reached 100+ schools with integrated reporting and analytics platform.',
                   icon: Globe
                 },
                 {
-                  year: '2024',
+                  year: '2026',
                   title: 'AI Innovation',
                   description: 'Launched AI-powered assessment tools and predictive analytics for student success.',
                   icon: Brain
