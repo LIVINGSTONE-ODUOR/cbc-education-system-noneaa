@@ -384,21 +384,12 @@ export default function HomePage() {
   const [selectedRole, setSelectedRole] = useState<Role>('Student');
   const [videoError, setVideoError] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const heroRef = useRef(null);
   const statsRef = useRef(null);
   const toolsRef = useRef(null);
   const isHeroInView = useInView(heroRef, { once: true });
   const isStatsInView = useInView(statsRef, { once: true });
   const isToolsInView = useInView(toolsRef, { once: true });
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const handleRoleClick = (role: Role) => {
     if (role === 'Student') {
@@ -580,16 +571,6 @@ export default function HomePage() {
           </motion.div>
         </div>
 
-        {/* Scroll Indicator */}
-        <motion.div
-          animate={{ y: [0, 10, 0] }}
-          transition={{ repeat: Infinity, duration: 2 }}
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-        >
-          <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
-            <div className="w-1 h-3 bg-white rounded-full mt-2" />
-          </div>
-        </motion.div>
       </section>
 
       {/* Quick Access Tools - Enhanced */}
