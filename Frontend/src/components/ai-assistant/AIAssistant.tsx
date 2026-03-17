@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import jarvisLogo from '@/assets/jarvis.png';
 
@@ -16,6 +16,7 @@ const PANEL_WIDTH = 380;
 const PANEL_HEIGHT_FALLBACK = 500;
 const GREETING_CHARS = Array.from(GREETING_TEXT);
 const TYPING_SPEED_MS = 30;
+const INPUT_MAX_HEIGHT_PX = 120;
 
 const SYSTEM_CONTEXT = `You are a helpful AI assistant for the Nonea CBE Education Platform. You strictly answer questions related to:
 1. The Kenyan Competency-Based Education (CBE) system
@@ -68,7 +69,7 @@ export default function AIAssistant() {
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const chatWindowRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const greetingStartedRef = useRef(false);
   const greetingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -94,6 +95,8 @@ export default function AIAssistant() {
       }, 600); // 600ms delay before showing the typing indicator
     } else {
       setShowTypingIndicator(false);
+      // Refocus the input once AI finishes responding
+      inputRef.current?.focus();
     }
 
     // Cleanup timeout on unmount or when isLoading changes
@@ -233,6 +236,18 @@ export default function AIAssistant() {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const autoResize = (el: HTMLTextAreaElement) => {
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, INPUT_MAX_HEIGHT_PX)}px`;
+  };
+
   return (
     <>
       {/* Floating Button */}
@@ -340,25 +355,31 @@ export default function AIAssistant() {
         </div>
 
         {/* Input */}
-        <form onSubmit={handleSendMessage} className="p-4 border-t border-border bg-card">
-          <div className="flex gap-2">
-            <Input
+        <form onSubmit={handleSendMessage} className="p-3 border-t border-border bg-card">
+          <div className="flex items-end gap-2 bg-background border border-border rounded-2xl px-3 py-2 focus-within:ring-2 focus-within:ring-primary/40 focus-within:border-primary transition-all">
+            <Textarea
               ref={inputRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about CBE..."
-              disabled={isLoading}
-              className="flex-1"
+              onChange={(e) => {
+                setInput(e.target.value);
+                autoResize(e.target);
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask about CBE... (Shift+Enter for new line)"
+              rows={1}
+              className="flex-1 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm leading-5 min-h-[36px] p-0 py-1 placeholder:text-muted-foreground/60"
+              style={{ maxHeight: INPUT_MAX_HEIGHT_PX }}
             />
-            <Button 
-              type="submit" 
-              size="icon" 
+            <Button
+              type="submit"
+              size="icon"
               disabled={!input.trim() || isLoading}
+              className="h-8 w-8 rounded-xl flex-shrink-0 mb-0.5"
             >
               <Send className="w-4 h-4" />
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-2 text-center">
+          <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
             Powered by Teksoft Team
           </p>
         </form>
