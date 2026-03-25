@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { toast } from '@/components/ui/sonner';
+import { AuthService } from '@/lib/auth';
 import {
   ArrowLeft,
   Save,
@@ -108,46 +110,34 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ studentId, onBack }) =>
 
   const handleSave = async () => {
     setIsSaving(true);
-    const branchId = localStorage.getItem('selectedBranch');
 
     const payload = {
-      full_name: `${student.firstName} ${student.middleName} ${student.lastName}`.trim(),
+      admissionNumber: student.admissionNumber,
+      firstName: student.firstName,
+      lastName: student.lastName,
+      middleName: student.middleName,
+      dateOfBirth: student.dateOfBirth,
       gender: student.gender,
-      date_of_birth: student.dateOfBirth,
-      admission_number: student.admissionNumber,
-      grade_level: student.gradeLevel,
-      special_needs: student.specialNeeds,
-      guardian_name: `${parent.firstName} ${parent.lastName}`.trim(),
-      guardian_phone: parent.phoneNumber,
-      guardian_email: parent.email,
-      guardian_relationship: parent.relationship,
-      guardian_national_id: parent.nationalId,
-      guardian_occupation: parent.occupation,
-      address: parent.address,
-      branch_id: branchId,
+      gradeLevel: student.gradeLevel,
+      specialNeeds: student.specialNeeds,
+      parentEmail: parent.email,
+      parentFirstName: parent.firstName,
+      parentLastName: parent.lastName,
+      parentPhoneNumber: parent.phoneNumber,
+      parentNationalId: parent.nationalId,
+      parentOccupation: parent.occupation,
+      parentRelationship: parent.relationship,
     };
 
     try {
-      console.log('Sending payload:', payload);
-      const response = await fetch('http://localhost:5000/api/students/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setLastSaved(new Date());
-        console.log('Student registered:', data);
-        alert('Student saved successfully');
-      } else {
-        console.error('Failed:', data);
-        alert('Failed to save student: ' + (data?.error || JSON.stringify(data)));
-      }
+      await AuthService.registerLearner(payload);
+      setLastSaved(new Date());
+      toast.success('Student saved successfully');
+      navigate('/school-admin/learners');
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save student. Please try again.';
       console.error('Save error:', error);
-      alert('Network or server error.');
+      toast.error(message);
     } finally {
       setIsSaving(false);
     }

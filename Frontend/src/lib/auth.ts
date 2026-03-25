@@ -220,7 +220,7 @@ export class AuthService {
 
   // Register Learner
   static async registerLearner(data: Record<string, unknown>): Promise<unknown> {
-    const response = await apiClient.post<ApiResponse>('/auth/register/learner', data);
+    const response = await apiClient.post<ApiResponse>('/register/learner', data);
     return unwrapResponse(response, 'Learner registration failed');
   }
 
