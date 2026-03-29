@@ -82,6 +82,7 @@ import DepartmentDetailsPage from "@/pages/auth/school-admin/teachers/department
 import CurriculumPage from "@/pages/auth/school-admin/Curriculum";
 import ReportsPage from "@/pages/auth/school-admin/Reports";
 import SettingsPage from "@/pages/auth/school-admin/Settings";
+import ProfileSettings from "@/pages/auth/school-admin/ProfileSettings";
 
 import NotFound from "./pages/website-pages/NotFound";
 import NoneaaPlatformPage from "@/pages/website-pages/Platform";
@@ -281,6 +282,7 @@ function AppRoutes() {
                 <Route path="curriculum" element={<CurriculumPage />} />
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
+                <Route path="settings/profile" element={<ProfileSettings />} />
                 <Route path="users" element={<UserManagement />} />
                 <Route path="demo" element={<ModernDashboard />} />
                 <Route path="learners/add" element={<AddLearnerPage />} />
