@@ -24,6 +24,7 @@ import {
   Receipt,
   Banknote,
   ChevronRight,
+  UserCircle,
 } from 'lucide-react';
 import { MenuSection } from '@/types/dashboard';
 
@@ -312,6 +313,12 @@ export const menuSections: MenuSection[] = [
         icon: Settings,
         href: "/school-admin/settings",
         submenu: [
+          {
+            id: "profile-settings",
+            label: "Profile Settings",
+            href: "/school-admin/settings/profile",
+            icon: UserCircle,
+          },
           {
             id: "general-settings",
             label: "General",
