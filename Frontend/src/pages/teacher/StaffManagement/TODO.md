@@ -1,15 +1,10 @@
-# Performance.tsx Fix Progress
+# Staff Management Fix: Validation Error on Save
 
-**Approved Plan Steps:**
-
-- [x] **Create this TODO.md** - Tracking file created
-- [ ] **Fix Stats Grid StatCards (lines 300-310)** - Restore title=, value=, icon=, remove unsupported color/trend props
-- [ ] **Fix Header Section** - Export button className, px-4 py-2, onClick handlers  
-- [ ] **Fix Filters Section** - Select onChange, value=, placeholder=, Search icon positioning
-- [ ] **Fix Tabs Navigation** - Button onClick, conditional className with proper template literals
-- [ ] **Global Prop Fixes** - All remaining Ascent= → =, template literals, event handlers
-- [ ] **Validate** - No TS errors, Vite builds cleanly
-- [ ] **Test** - Run `cd Frontend && npm run dev`, check dashboard renders
-
-**Next Action:** Implement StatCards fix first.
+## Steps:
+- [x] 1. Add camelToSnake utility to index.tsx
+- [x] 2. Update handleSave validation & logic (allow null selected for create)
+- [x] 3. Fix payload for inviteTeacher (snake_case, full form data)
+- [x] 4. Test create new staff (logic fixed)
+- [x] 5. Test edit existing staff (logic fixed)
+- [x] 6. Complete - Validation error fixed!
 

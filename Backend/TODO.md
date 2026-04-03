@@ -1,7 +1,9 @@
-# JWT Token Expiry Update TODO
+# Backend Teacher Update TODO (Synced with root TODO.md)
 
-- [x] Step 1: Change default JWT_EXPIRES_IN to '1h' in src/config/auth.js
-- [ ] Step 2: Restart backend server
-- [ ] Step 3: Test login API - verify expiresIn: '1h' in response
-- [ ] Complete
+## ✅ Backend teacher.controller.js Updated
+
+Now handling full StaffMember payload via extra_info JSONB merge.
+
+**Next:** Frontend API/types updates (root TODO steps 4-5).
+
 

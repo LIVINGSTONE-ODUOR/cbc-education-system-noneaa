@@ -3,6 +3,7 @@ export type StaffType = "teaching" | "non-teaching";
 
 export interface StaffMember {
   id: string;
+  schoolId?: string; // Added for API
   firstName: string;
   lastName: string;
   idNumber: string;
@@ -22,8 +23,8 @@ export interface StaffMember {
   qualifications: string[];
   salary: number;
   hireDate: string;
-  staffType: StaffType; // "teaching" for teachers, "non-teaching" for support staff
-  photo?: string; // URL to staff photo
+  staffType: StaffType;
+  photo?: string;
 }
 
 export interface StaffManagementProps {

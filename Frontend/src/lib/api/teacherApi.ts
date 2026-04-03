@@ -50,22 +50,24 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
 // ==================== Backend Response Types ====================
 export interface TeacherBackend {
   id: string;
-  extra_info: string | null;
+  tsc_number: string | null;
+  qualifications: string | null; // JSON-encoded array
+  date_joined: string | null;
+  is_active: boolean;
+  extra_info: string | null; // JSON: {designation, branch, salary, etc.}
+  created_at: string;
+  updated_at: string;
   user: {
     id: string;
     first_name: string;
     last_name: string;
     email: string;
     phone_number: string | null;
+    id_number?: string | null;
     status: string;
+    last_login?: string;
+    extra_info?: string | null;
   };
-  tsc_number: string | null;
-  qualifications: string | null; // JSON string or array
-  is_active: boolean;
-  date_joined: string | null;
-  created_at: string;
-  updated_at: string;
-  // assignments, etc.
 }
 
 export interface TeachersListResponse {
@@ -149,19 +151,10 @@ export const inviteTeacher = async (payload: {
  */
 export const updateTeacher = async (
   id: string,
-  payload: {
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    mobilePhone?: string;
-    tscNumber?: string;
-    qualifications?: string[];
-    dateJoined?: string;
-    isActive?: boolean;
-  },
+  payload: Partial<StaffMember>,  // Full StaffMember support
   schoolId?: string
-): Promise<ApiResponse<any>> => {
-  // Auto-detect schoolId from localStorage if not provided
+): Promise<ApiResponse<TeacherBackend>> => {
+  // Auto-detect schoolId from AuthContext/localStorage
   const effectiveSchoolId = schoolId || (typeof localStorage !== 'undefined' ? 
     JSON.parse(localStorage.getItem('cbe_user') || '{}')?.schoolId : null);
   
@@ -170,16 +163,19 @@ export const updateTeacher = async (
     url += `?school_id=${encodeURIComponent(effectiveSchoolId)}`;
   }
   
-// Log before conversion
   console.log('[DEBUG] updateTeacher RAW frontend payload:', payload);
-  // Convert camelCase to snake_case for backend
-  const snakePayload = camelToSnake(payload);
-  console.log('[DEBUG] updateTeacher payload:', { id, schoolId, original: payload, converted: snakePayload });
+  // Convert camelCase → snake_case (handles all StaffMember fields)
+  const snakePayload = camelToSnake(payload as Record<string, any>);
+  // Clean payload: ensure tsc_number is null if empty/undefined
+  const cleanPayload = {
+    ...snakePayload,
+    tsc_number: snakePayload.tsc_number || null,
+    qualifications: snakePayload.qualifications || []
+  };
+  console.log('[DEBUG] updateTeacher CLEAN payload:', { id, schoolId: effectiveSchoolId, original: payload, converted: cleanPayload });
   
-  const response = await fetch(url, getFetchOptions('PUT', snakePayload));
-  const data = await handleResponse(response);
-  // Backend doesn't return full teacher data, so return success only
-  return { success: true, message: 'Updated successfully', data: (data as any).data || null };
+  const response = await fetch(url, getFetchOptions('PUT', cleanPayload));
+  return handleResponse<ApiResponse<TeacherBackend>>(response);
 };
 
 

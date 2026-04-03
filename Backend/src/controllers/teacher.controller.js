@@ -124,7 +124,7 @@ const { schoolId: userSchoolId, role } = req.user;
     .insert({
       user_id: newUser.id,
       school_id,
-      tsc_number: tsc_number || 'TEMP-' + Date.now(),
+tsc_number: tsc_number || null, // Changed: now accepts NULL for optional TSC
       qualifications: qualifications || 'Pending',
       date_joined: date_joined || new Date().toISOString().split('T')[0],
       is_active: true,
@@ -320,6 +320,10 @@ const getTeacher = asyncHandler(async (req, res) => {
 // 4. PUT /api/v1/teachers/:id
 //    Update teacher profile (qualifications, TSC, date_joined, phone)
 // =============================================================================
+// =============================================================================
+// 4. PUT /api/v1/teachers/:id
+//    Update teacher profile (qualifications, TSC, date_joined, phone)
+// =============================================================================
 const updateTeacher = asyncHandler(async (req, res) => {
   const { school_id: user_school_id, role } = req.user;
   const { id } = req.params;
@@ -359,85 +363,150 @@ const updateTeacher = asyncHandler(async (req, res) => {
     });
   }
 
-  console.log('[DEBUG] updateTeacher req.body FULL:', req.body);
+  console.log('[DEBUG] updateTeacher FULL payload (snake_case):', req.body);
   
-  const { tsc_number, qualifications, date_joined, phone_number, first_name, last_name } = req.body;
+  // Full destructuring - handle all possible fields from frontend StaffMember (post-camelToSnake)
+  const {
+    tsc_number, qualifications, date_joined, phone_number, first_name, last_name,
+    id_number, designation, branch, email, job_status, contract_start, contract_end,
+    salary, county, location, teaching_subjects
+  } = req.body;
 
-  // Update teachers table
+  // ========== TEACHERS TABLE UPDATES ==========
   const teacherUpdates = {};
-  if (tsc_number !== undefined) teacherUpdates.tsc_number = tsc_number;
-  if (qualifications !== undefined) teacherUpdates.qualifications = qualifications;
-  console.log('[DEBUG] teacherUpdates prepared:', teacherUpdates);
-  if (date_joined !== undefined) teacherUpdates.date_joined = date_joined;
 
+  // Direct columns in teachers table
+  if (tsc_number !== undefined) teacherUpdates.tsc_number = tsc_number;
+  if (date_joined !== undefined) teacherUpdates.date_joined = date_joined;
+  if (qualifications !== undefined) {
+    teacherUpdates.qualifications = Array.isArray(qualifications) ? JSON.stringify(qualifications) : qualifications;
+  }
+  
+  // Direct columns that exist in teachers table
+  if (designation !== undefined) teacherUpdates.designation = designation;
+  if (branch !== undefined) teacherUpdates.branch = branch;
+  if (job_status !== undefined) teacherUpdates.job_status = job_status;
+  if (contract_start !== undefined) teacherUpdates.contract_start = contract_start;
+  if (contract_end !== undefined) teacherUpdates.contract_end = contract_end;
+  if (salary !== undefined) teacherUpdates.salary = parseFloat(salary);
+  if (county !== undefined) teacherUpdates.county = county;
+  if (location !== undefined) teacherUpdates.location = location;
+  if (id_number !== undefined) teacherUpdates.id_number = id_number;
+  
+  // Use subjects_taught instead of teaching_subjects (based on your schema)
+  if (teaching_subjects !== undefined) {
+    teacherUpdates.subjects_taught = Array.isArray(teaching_subjects) ? teaching_subjects : JSON.parse(teaching_subjects);
+  }
+
+  // Apply teachers updates
   if (Object.keys(teacherUpdates).length > 0) {
-    const cleanTeacherUpdates = { ...teacherUpdates, updated_at: new Date().toISOString() };
-    delete cleanTeacherUpdates.updated_by;
+    const cleanTeacherUpdates = { 
+      ...teacherUpdates, 
+      updated_at: new Date().toISOString(),
+      updated_by: req.user.id 
+    };
     
-    console.log('[DEBUG] Updating teachers table (clean):', cleanTeacherUpdates, 'teacher_id:', id);
-    const { error: updateErr, count } = await supabase
+    console.log('[DEBUG] Teachers UPDATE:', cleanTeacherUpdates);
+    const { error: updateErr, data: updatedData } = await supabase
       .from('teachers')
       .update(cleanTeacherUpdates)
       .eq('id', id)
       .select();
-      
+    
     if (updateErr) {
-      console.error('[ERROR] Teachers table update failed:', updateErr);
-      return res.status(500).json({ success: false, message: 'Failed to update teacher record', error: updateErr.message, details: updateErr });
+      console.error('[ERROR] Teachers update failed:', updateErr);
+      return res.status(500).json({ success: false, message: 'Failed to update teacher', error: updateErr.message });
     }
-    
-    if (count === 0) {
-      return res.status(404).json({ success: false, message: 'Teacher record not found for update' });
+    if (!updatedData || updatedData.length === 0) {
+      return res.status(404).json({ success: false, message: 'Teacher not found' });
     }
-    
-    console.log('[DEBUG] Teachers table updated successfully, rows affected:', count);
+    console.log('[DEBUG] Teachers updated:', updatedData);
   }
 
-  // Update users table (name, phone)
+  // ========== USERS TABLE UPDATES ==========
   const userUpdates = {};
   if (first_name !== undefined) userUpdates.first_name = first_name;
   if (last_name !== undefined) userUpdates.last_name = last_name;
   if (phone_number !== undefined) userUpdates.phone_number = phone_number;
-
-    if (Object.keys(userUpdates).length > 0) {
-    const cleanUserUpdates = { ...userUpdates, updated_at: new Date().toISOString() };
-    delete cleanUserUpdates.updated_by;
-    
-    console.log('[DEBUG] Updating users table (clean):', cleanUserUpdates, 'user_id:', existing.user_id);
-    const { error: userUpdateErr, count } = await supabase
-      .from('users')
-      .update(cleanUserUpdates)
-      .eq('id', existing.user_id)
-      .select();
-      
-    if (userUpdateErr) {
-      console.error('[ERROR] Users table update failed:', userUpdateErr);
-      return res.status(500).json({ success: false, message: 'Failed to update user profile', error: userUpdateErr.message, details: userUpdateErr });
-    }
-    
-    if (count === 0) {
-      console.warn('[WARN] No users rows affected for user_id:', existing.user_id);
-    }
-    
-    console.log('[DEBUG] Users table updated successfully, rows affected:', count);
+  
+  // Skip email updates for security
+  if (email !== undefined) {
+    console.warn('[WARN] Email update ignored for security');
   }
 
-  // Return updated profile (use same logic for consistency)
-  let updatedQuery = supabase
+  if (Object.keys(userUpdates).length > 0) {
+    const cleanUserUpdates = { 
+      ...userUpdates, 
+      updated_at: new Date().toISOString(),
+      updated_by: req.user.id 
+    };
+    
+    console.log('[DEBUG] Users UPDATE:', cleanUserUpdates);
+    const { error: userUpdateErr } = await supabase
+      .from('users')
+      .update(cleanUserUpdates)
+      .eq('id', existing.user_id);
+    
+    if (userUpdateErr) {
+      console.error('[ERROR] Users update failed:', userUpdateErr);
+      // Don't fail whole transaction - teachers already updated
+    } else {
+      console.log('[DEBUG] Users updated successfully');
+    }
+  }
+
+  // Return FULL updated profile
+  let finalQuery = supabase
     .from('teachers')
     .select(`
-      id, tsc_number, qualifications, date_joined, is_active, updated_at,
-      user:user_id ( id, first_name, last_name, email, phone_number, status )
+      id,
+      tsc_number,
+      qualifications,
+      date_joined,
+      is_active,
+      designation,
+      branch,
+      job_status,
+      contract_start,
+      contract_end,
+      salary,
+      county,
+      location,
+      subjects_taught,
+      id_number,
+      created_at,
+      updated_at,
+      user:user_id (
+        id,
+        first_name,
+        last_name,
+        email,
+        phone_number,
+        status,
+        last_login
+      )
     `)
     .eq('id', id);
 
+  // Only filter by school_id if NOT super_admin
   if (role !== 'super_admin' && effective_school_id) {
-    updatedQuery = updatedQuery.eq('school_id', effective_school_id);
+    finalQuery = finalQuery.eq('school_id', effective_school_id);
   }
 
-  const { data: updated } = await updatedQuery.single();
+  const { data: updated, error: fetchError } = await finalQuery.single();
 
-  res.json({ success: true, message: 'Teacher updated', data: updated });
+  if (fetchError || !updated) {
+    console.error('[DEBUG] Fetch error after update:', fetchError);
+    return res.status(404).json({ success: false, message: 'Updated teacher not found' });
+  }
+
+  console.log('[DEBUG] Returning updated teacher:', updated);
+
+  res.json({ 
+    success: true, 
+    message: 'Teacher profile updated successfully', 
+    data: updated 
+  });
 });
 
 

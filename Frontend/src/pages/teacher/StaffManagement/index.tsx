@@ -8,6 +8,15 @@ import {
   deleteTeacher, 
   mapBackendToStaffMember 
 } from "@/lib/api/teacherApi";
+
+const camelToSnake = (obj: Record<string, any>): Record<string, any> => {
+  return Object.fromEntries(
+    Object.entries(obj).map(([key, value]) => {
+      const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+      return [snakeKey, value];
+    })
+  );
+};
 import { DashboardView, ListView, FormView, DetailsView, PerformanceView } from "./components";
 
 
@@ -97,45 +106,46 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
   }, [refresh, refreshKey]);
 
   const handleSave = async () => {
-    // DEBUG: Validate selected before update
-    if (!selected || !selected.id) {
-      const msg = selected 
-        ? 'Invalid teacher ID. Please refresh the list.'
-        : 'No teacher selected for update. Create new instead.';
+    // Validate for update only
+    if (selected && !selected.id) {
+      const msg = 'Invalid teacher ID. Please refresh the list.';
       setToast(msg);
-      console.error('[DEBUG] handleSave validation failed:', { selected });
       return;
     }
 
     try {
-      console.log('[DEBUG] handleSave starting:', { 
-        teacherId: selected.id, 
-        formData: form,
-        userSchoolId: localStorage.getItem('cbe_school_id') // assuming stored somewhere
-      });
 
       const payload = {
-        firstName: form.firstName,
-        lastName: form.lastName,
+        first_name: form.firstName,
+        last_name: form.lastName,
         email: form.email,
-        mobilePhone: form.mobilePhone,
-        tscNumber: form.tscNumber,
-        qualifications: form.qualifications,
-      };
+        phone_number: form.mobilePhone || undefined,
+        tsc_number: form.tscNumber || undefined,
+        qualifications: form.qualifications || undefined,
+        designation: form.designation,
+        branch: form.branch,
+        id_number: form.idNumber,
+      } as Parameters<typeof inviteTeacher>[0];
       
-      if (selected) {
-        console.log('[DEBUG] Calling updateTeacher with ID:', selected.id, 'SchoolId:', schoolId);
+      console.log('[DEBUG] handleSave payload:', payload);
+
+      if (selected?.id) {
+        // Update existing
+        console.log('[DEBUG] Updating teacher:', selected.id);
         await updateTeacher(selected.id, payload, schoolId);
-        setToast("Staff record updated.");
+        setToast("Staff record updated successfully.");
       } else {
+        // Create new
+        console.log('[DEBUG] Creating new teacher');
         await inviteTeacher(payload);
-        setToast("New staff invited successfully. Check email.");
+        setToast("New staff member invited successfully. They will receive an email to complete registration.");
       }
+      
       setView("list");
       setRefreshKey(k => k + 1);
     } catch (err: any) {
-      console.error('[DEBUG] handleSave full error:', err);
-      setToast(`Save failed: ${err.message}`);
+      console.error('[DEBUG] handleSave error:', err);
+      setToast(`Operation failed: ${err.message}`);
     }
   };
 
@@ -191,8 +201,6 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
         onStaffTypeChange={setFStaffType}
         onRefresh={() => setRefreshKey(k => k + 1)}
         toast={toast}
-        loading={loading}
-        error={error}
       />
     );
   }
