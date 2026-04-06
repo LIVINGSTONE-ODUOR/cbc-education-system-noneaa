@@ -1,6 +1,14 @@
+// =============================================================================
+// learner.controller.js
+// Phase 3 — Learner Management
+//
+// Tables:  learners, classes, learner_enrollments, parents
+// Auth:    Bearer JWT → req.user.id / req.user.schoolId / req.user.role
+// =============================================================================
+
 const { createClient } = require('@supabase/supabase-js');
-const asyncHandler     = require('express-async-handler');
-const csv              = require('csv-parse/sync');   // npm i csv-parse
+const asyncHandler = require('express-async-handler');
+const csv = require('csv-parse/sync');
 
 // Supabase service-role client (bypasses RLS for admin operations)
 const supabase = createClient(
@@ -16,23 +24,17 @@ const GRADE_LEVELS = [
   'Grade 7', 'Grade 8', 'Grade 9',
 ];
 
-// ---------------------------------------------------------------------------
-// Helper: get supabase client scoped to the request JWT (respects RLS)
-// ---------------------------------------------------------------------------
-const getClient = (req) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
-  });
-};
+// Valid gender values
+const GENDERS = ['male', 'female'];
+
+// Valid nationalities
+const NATIONALITIES = ['Kenyan', 'Ugandan', 'Tanzanian', 'Rwandan', 'Burundian', 'South Sudanese', 'Other'];
 
 // ---------------------------------------------------------------------------
-// Helper: paginate
+// Helper: get school_id from req.user (handles both camelCase and snake_case)
 // ---------------------------------------------------------------------------
-const paginate = (query, page = 1, limit = 20) => {
-  const from = (page - 1) * limit;
-  const to = from + limit - 1;
-  return query.range(from, to);
+const getSchoolId = (req) => {
+  return req.user.schoolId || req.user.school_id;
 };
 
 // =============================================================================
@@ -40,22 +42,22 @@ const paginate = (query, page = 1, limit = 20) => {
 //    Register a new learner
 // =============================================================================
 const registerLearner = asyncHandler(async (req, res) => {
-  const { schoolId, role } = req.user;
+  const school_id = getSchoolId(req);
+  const { role } = req.user;
+
+  if (!['school_admin', 'super_admin', 'teacher'].includes(role)) {
+    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+  }
+
   const {
-    first_name,
-    last_name,
-    admission_number,
-    date_of_birth,
-    gender,
-    email,
-    phone,
-    address,
-    emergency_contact,
-    medical_info,
-    photo_url
+    first_name, last_name, middle_name,
+    admission_number, date_of_birth, gender,
+    email, photo_url, special_needs,
+    parent_id, birth_certificate_number,
+    nemis_number, admission_date, nationality
   } = req.body;
 
-  // Validate required fields
+  // Validation
   if (!first_name || !last_name || !admission_number || !date_of_birth || !gender) {
     return res.status(400).json({
       success: false,
@@ -63,11 +65,17 @@ const registerLearner = asyncHandler(async (req, res) => {
     });
   }
 
-  // Validate gender
-  if (!['Male', 'Female'].includes(gender)) {
+  if (!GENDERS.includes(gender.toLowerCase())) {
     return res.status(400).json({
       success: false,
-      message: 'Gender must be either Male or Female'
+      message: `Gender must be one of: ${GENDERS.join(', ')}`
+    });
+  }
+
+  if (nationality && !NATIONALITIES.includes(nationality)) {
+    return res.status(400).json({
+      success: false,
+      message: `Nationality must be one of: ${NATIONALITIES.join(', ')}`
     });
   }
 
@@ -76,8 +84,8 @@ const registerLearner = asyncHandler(async (req, res) => {
     .from('learners')
     .select('id')
     .eq('admission_number', admission_number)
-    .eq('school_id', schoolId)
-    .single();
+    .eq('school_id', school_id)
+    .maybeSingle();
 
   if (existing) {
     return res.status(409).json({
@@ -86,23 +94,58 @@ const registerLearner = asyncHandler(async (req, res) => {
     });
   }
 
-  // Create learner
+  // Check if NEMIS number is unique (if provided)
+  if (nemis_number) {
+    const { data: existingNemis } = await supabase
+      .from('learners')
+      .select('id')
+      .eq('nemis_number', nemis_number)
+      .maybeSingle();
+
+    if (existingNemis) {
+      return res.status(409).json({
+        success: false,
+        message: 'NEMIS number already exists for another learner'
+      });
+    }
+  }
+
+  // Check if email is unique (if provided)
+  if (email) {
+    const { data: existingEmail } = await supabase
+      .from('learners')
+      .select('id')
+      .eq('email', email.toLowerCase().trim())
+      .maybeSingle();
+
+    if (existingEmail) {
+      return res.status(409).json({
+        success: false,
+        message: 'Email already exists for another learner'
+      });
+    }
+  }
+
+  // Create learner with all columns
   const { data: learner, error } = await supabase
     .from('learners')
     .insert({
-      school_id: schoolId,
-      first_name,
-      last_name,
+      school_id,
+      first_name: first_name.trim(),
+      last_name: last_name.trim(),
+      middle_name: middle_name?.trim() || null,
       admission_number,
       date_of_birth,
-      gender,
-      email,
-      phone,
-      address,
-      emergency_contact,
-      medical_info,
-      photo_url,
-      created_by: req.user.id
+      gender: gender.toLowerCase(),
+      email: email?.trim() || null,
+      photo_url: photo_url || null,
+      special_needs: special_needs || null,
+      parent_id: parent_id || null,
+      birth_certificate_number: birth_certificate_number?.trim() || null,
+      nemis_number: nemis_number?.trim() || null,
+      admission_date: admission_date || new Date().toISOString().split('T')[0],
+      nationality: nationality || 'Kenyan',
+      is_active: true
     })
     .select()
     .single();
@@ -127,37 +170,30 @@ const registerLearner = asyncHandler(async (req, res) => {
 //    List learners for the school with pagination and filtering
 // =============================================================================
 const listLearners = asyncHandler(async (req, res) => {
-  const { schoolId } = req.user;
+  const school_id = getSchoolId(req);
+  const { role } = req.user;
 
-  // Log for debugging
-  console.log('[listLearners] schoolId:', schoolId);
-  console.log('[listLearners] user:', req.user);
-  console.log('[listLearners] query:', req.query);
-
-  if (!schoolId) {
+  if (!school_id && role !== 'super_admin') {
     return res.status(400).json({
       success: false,
-      message: 'School ID required. Please ensure you are logged in with a valid school admin account.'
+      message: 'School ID required'
     });
   }
 
   const {
-    page = 1,
-    limit = 20,
-    search,
-    gender,
-    grade_level, // Note: applied via subquery since on classes, not learners
-    is_active: statusFilter, // Match frontend param name
-    sort_by = 'first_name',
-    sort_order = 'asc'
+    page = 1, limit = 20,
+    search, gender, nationality, grade_level,
+    is_active, has_parent,
+    sort_by = 'first_name', sort_order = 'asc'
   } = req.query;
 
   const pageNum = parseInt(page);
   const limitNum = parseInt(limit);
-  const offset = (pageNum - 1) * limitNum;
+  const from = (pageNum - 1) * limitNum;
+  const to = from + limitNum - 1;
 
-  // Simplified query: LEFT JOIN to avoid inner join failures on missing enrollments/parents
-let query = supabase
+  // Build query with all columns
+  let query = supabase
     .from('learners')
     .select(`
       id,
@@ -167,119 +203,252 @@ let query = supabase
       middle_name,
       date_of_birth,
       gender,
+      email,
+      photo_url,
       special_needs,
       is_active,
+      parent_id,
+      birth_certificate_number,
+      nemis_number,
+      admission_date,
+      nationality,
       created_at,
-      school_id
-    `, { 
-      count: 'exact',
-      head: false 
-    })
-    .eq('school_id', schoolId)
-    .order(sort_by, { ascending: sort_order !== 'desc' })
-    .range(offset, offset + limitNum - 1);
+      updated_at
+    `, { count: 'exact' });
 
-  // Filters (applied before pagination)
-  if (statusFilter !== undefined) {
-    const isActive = statusFilter === 'true';
-    query = query.eq('is_active', isActive);
+  // Apply school filter (skip for super_admin)
+  if (role !== 'super_admin' && school_id) {
+    query = query.eq('school_id', school_id);
   }
 
-  if (gender && ['male', 'female'].includes(gender.toLowerCase())) {
-    query = query.eq('gender', gender.charAt(0).toUpperCase() + gender.slice(1));
+  // Apply filters
+  if (is_active !== undefined) {
+    query = query.eq('is_active', is_active === 'true');
+  }
+
+  if (gender) {
+    query = query.eq('gender', gender.toLowerCase());
+  }
+
+  if (nationality) {
+    query = query.eq('nationality', nationality);
+  }
+
+  if (has_parent === 'true') {
+    query = query.not('parent_id', 'is', null);
+  }
+  if (has_parent === 'false') {
+    query = query.is('parent_id', null);
   }
 
   if (search) {
-    query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,admission_number.ilike.%${search}%`);
+    const q = `%${search}%`;
+    query = query.or(
+      `first_name.ilike.${q},last_name.ilike.${q},admission_number.ilike.${q},email.ilike.${q},nemis_number.ilike.${q}`
+    );
   }
 
-  // Grade filter: filter learners currently enrolled in matching grade
+  // NEW: Filter by grade_level (derived from current enrollment class) - client-side since complex JOIN
   if (grade_level) {
-    query = query.filter('learner_enrollments', 'is', null); // Exclude unenrolled? Or include all
-    // More precise: post-filter or separate query if needed
+    console.log(`Grade level filter: ${grade_level} - Note: Applied client-side due to Supabase query complexity`);
   }
 
-  try {
-    const { data: learners, error, count } = await query;
+  // Add sorting
+  const validSort = ['first_name', 'last_name', 'admission_number', 'created_at', 'nemis_number'];
+  const sortField = validSort.includes(sort_by) ? sort_by : 'first_name';
+  query = query.order(sortField, { ascending: sort_order !== 'desc' });
 
-    if (error) {
-      console.error('[listLearners] Supabase error:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to fetch learners',
-        error: error.message,
-        details: error.details
-      });
-    }
+  // Add pagination
+  query = query.range(from, to);
 
-    // Post-process: flatten grade_level/stream_name from first active enrollment
-    const processedLearners = (learners || []).map(learner => ({
-      ...learner,
-      grade_level: learner.learner_enrollments?.[0]?.classes?.grade_level || null,
-      stream_name: learner.learner_enrollments?.[0]?.classes?.stream || null,
-      learner_parents: learner.learner_parents || []
-    }));
+  const { data: learners, error, count } = await query;
 
-    console.log(`[listLearners] Found ${processedLearners.length} learners`);
-
-    res.json({
-      success: true,
-      data: {
-        learners: processedLearners,
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
-          total: count || 0,
-          pages: Math.ceil((count || 0) / limitNum)
-        }
-      }
-    });
-  } catch (err) {
-    console.error('[listLearners] Unexpected error:', err);
-    res.status(500).json({
+  if (error) {
+    console.error('List learners error:', error);
+    return res.status(500).json({
       success: false,
-      message: 'Internal server error',
-      error: err.message
+      message: 'Failed to fetch learners',
+      error: error.message
     });
   }
+
+  // Get parent info for learners that have parent_id
+  const learnerIdsWithParent = (learners || []).filter(l => l.parent_id).map(l => l.parent_id);
+  let parentMap = {};
+
+  if (learnerIdsWithParent.length > 0) {
+    const { data: parents } = await supabase
+      .from('parents')
+      .select('id, first_name, last_name, email, phone_number, relationship')
+      .in('id', learnerIdsWithParent);
+
+    if (parents) {
+      parentMap = parents.reduce((acc, parent) => {
+        acc[parent.id] = parent;
+        return acc;
+      }, {});
+    }
+  }
+
+  // Get current enrollment for each learner
+  const learnerIds = (learners || []).map(l => l.id);
+  let enrollmentMap = {};
+
+  if (learnerIds.length > 0) {
+    const { data: enrollments } = await supabase
+      .from('learner_enrollments')
+      .select(`
+        learner_id,
+        class_id,
+        status,
+        classes!inner (
+          id,
+          grade_level,
+          stream_name
+        )
+      `)
+      .in('learner_id', learnerIds)
+      .eq('status', 'enrolled');
+
+    if (enrollments) {
+      enrollmentMap = enrollments.reduce((acc, enrollment) => {
+        acc[enrollment.learner_id] = {
+          class_id: enrollment.class_id,
+          grade_level: enrollment.classes?.grade_level,
+          stream_name: enrollment.classes?.stream_name
+        };
+        return acc;
+      }, {});
+    }
+  }
+
+  // Enrich learners with parent and enrollment data
+  const enrichedLearners = (learners || []).map(learner => ({
+    ...learner,
+    current_class: enrollmentMap[learner.id] || null,
+    parent: learner.parent_id ? parentMap[learner.parent_id] || null : null
+  }));
+
+  res.json({
+    success: true,
+    data: enrichedLearners,
+    pagination: {
+      page: pageNum,
+      limit: limitNum,
+      total: count || 0,
+      pages: Math.ceil((count || 0) / limitNum)
+    }
+  });
 });
 
 // =============================================================================
 // 3. GET /api/v1/learners/:id
-//    Get learner details with enrollment history
+//    Get learner details with enrollments and parent
 // =============================================================================
 const getLearner = asyncHandler(async (req, res) => {
-  const { schoolId } = req.user;
+  const school_id = getSchoolId(req);
+  const { role } = req.user;
   const { id } = req.params;
 
-  // Get learner details
-  const { data: learner, error: learnerError } = await supabase
+  // Build query with all columns
+  let query = supabase
     .from('learners')
     .select(`
-      *,
-      learner_enrollments(
-        id,
-        class_id,
-        status,
-        enrolled_at,
-        completed_at,
-        classes(id, name, grade_level, stream, academic_year_id)
-      )
+      id,
+      admission_number,
+      first_name,
+      last_name,
+      middle_name,
+      date_of_birth,
+      gender,
+      email,
+      photo_url,
+      special_needs,
+      is_active,
+      parent_id,
+      birth_certificate_number,
+      nemis_number,
+      admission_date,
+      nationality,
+      created_at,
+      updated_at
     `)
-    .eq('id', id)
-    .eq('school_id', schoolId)
-    .single();
+    .eq('id', id);
 
-  if (learnerError || !learner) {
+  // Apply school filter (skip for super_admin)
+  if (role !== 'super_admin' && school_id) {
+    query = query.eq('school_id', school_id);
+  }
+
+  const { data: learner, error } = await query.single();
+
+  if (error || !learner) {
     return res.status(404).json({
       success: false,
       message: 'Learner not found'
     });
   }
 
+  // Get parent info if exists
+  let parentInfo = null;
+  if (learner.parent_id) {
+    const { data: parent } = await supabase
+      .from('parents')
+      .select('id, first_name, last_name, email, phone_number, relationship, occupation')
+      .eq('id', learner.parent_id)
+      .single();
+    parentInfo = parent;
+  }
+
+  // Get enrollment history
+  const { data: enrollments } = await supabase
+    .from('learner_enrollments')
+    .select(`
+      id,
+      class_id,
+      academic_year_id,
+      term_id,
+      enrollment_date,
+      exit_date,
+      status,
+      exit_reason,
+      created_at
+    `)
+    .eq('learner_id', id)
+    .order('enrollment_date', { ascending: false });
+
+  // Get class details for each enrollment
+  const classIds = (enrollments || []).map(e => e.class_id).filter(Boolean);
+  let classMap = {};
+
+  if (classIds.length > 0) {
+    const { data: classes } = await supabase
+      .from('classes')
+      .select('id, grade_level, stream_name')
+      .in('id', classIds);
+
+    if (classes) {
+      classMap = classes.reduce((acc, cls) => {
+        acc[cls.id] = cls;
+        return acc;
+      }, {});
+    }
+  }
+
+  // Enrich enrollments with class data
+  const enrichedEnrollments = (enrollments || []).map(enrollment => ({
+    ...enrollment,
+    class: classMap[enrollment.class_id] || null
+  }));
+
   res.json({
     success: true,
-    data: learner
+    data: {
+      ...learner,
+      parent: parentInfo,
+      enrollments: enrichedEnrollments,
+      current_enrollment: enrichedEnrollments.find(e => e.status === 'enrolled') || null
+    }
   });
 });
 
@@ -288,8 +457,14 @@ const getLearner = asyncHandler(async (req, res) => {
 //    Update learner details
 // =============================================================================
 const updateLearner = asyncHandler(async (req, res) => {
-  const { schoolId, role } = req.user;
+  const school_id = getSchoolId(req);
+  const { role } = req.user;
   const { id } = req.params;
+
+  if (!['school_admin', 'super_admin', 'teacher'].includes(role)) {
+    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+  }
+
   const updates = req.body;
 
   // Remove fields that shouldn't be updated directly
@@ -297,24 +472,37 @@ const updateLearner = asyncHandler(async (req, res) => {
   delete updates.school_id;
   delete updates.created_at;
   delete updates.created_by;
+  delete updates.updated_by;
 
   // Validate gender if provided
-  if (updates.gender && !['Male', 'Female'].includes(updates.gender)) {
+  if (updates.gender && !GENDERS.includes(updates.gender.toLowerCase())) {
     return res.status(400).json({
       success: false,
-      message: 'Gender must be either Male or Female'
+      message: `Gender must be one of: ${GENDERS.join(', ')}`
+    });
+  }
+
+  // Validate nationality if provided
+  if (updates.nationality && !NATIONALITIES.includes(updates.nationality)) {
+    return res.status(400).json({
+      success: false,
+      message: `Nationality must be one of: ${NATIONALITIES.join(', ')}`
     });
   }
 
   // Check if admission number conflict (if updating admission_number)
   if (updates.admission_number) {
-    const { data: existing } = await supabase
+    let checkQuery = supabase
       .from('learners')
       .select('id')
       .eq('admission_number', updates.admission_number)
-      .eq('school_id', schoolId)
-      .neq('id', id)
-      .single();
+      .neq('id', id);
+
+    if (role !== 'super_admin' && school_id) {
+      checkQuery = checkQuery.eq('school_id', school_id);
+    }
+
+    const { data: existing } = await checkQuery.maybeSingle();
 
     if (existing) {
       return res.status(409).json({
@@ -324,13 +512,65 @@ const updateLearner = asyncHandler(async (req, res) => {
     }
   }
 
-  const { data: learner, error } = await supabase
+  // Check if NEMIS number conflict (if updating nemis_number)
+  if (updates.nemis_number) {
+    let checkQuery = supabase
+      .from('learners')
+      .select('id')
+      .eq('nemis_number', updates.nemis_number)
+      .neq('id', id);
+
+    const { data: existing } = await checkQuery.maybeSingle();
+
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        message: 'NEMIS number already exists for another learner'
+      });
+    }
+  }
+
+  // Check if email conflict (if updating email)
+  if (updates.email) {
+    let checkQuery = supabase
+      .from('learners')
+      .select('id')
+      .eq('email', updates.email.toLowerCase().trim())
+      .neq('id', id);
+
+    if (role !== 'super_admin' && school_id) {
+      checkQuery = checkQuery.eq('school_id', school_id);
+    }
+
+    const { data: existing } = await checkQuery.maybeSingle();
+
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        message: 'Email already exists for another learner'
+      });
+    }
+  }
+
+  // Normalize gender
+  if (updates.gender) {
+    updates.gender = updates.gender.toLowerCase();
+  }
+
+  updates.updated_at = new Date().toISOString();
+
+  // Build update query
+  let updateQuery = supabase
     .from('learners')
     .update(updates)
-    .eq('id', id)
-    .eq('school_id', schoolId)
-    .select()
-    .single();
+    .eq('id', id);
+
+  // Apply school filter (skip for super_admin)
+  if (role !== 'super_admin' && school_id) {
+    updateQuery = updateQuery.eq('school_id', school_id);
+  }
+
+  const { data: learner, error } = await updateQuery.select().single();
 
   if (error) {
     return res.status(500).json({
@@ -359,8 +599,13 @@ const updateLearner = asyncHandler(async (req, res) => {
 //    Soft delete learner (set is_active = false)
 // =============================================================================
 const deleteLearner = asyncHandler(async (req, res) => {
-  const { schoolId, role } = req.user;
+  const school_id = getSchoolId(req);
+  const { role } = req.user;
   const { id } = req.params;
+
+  if (!['school_admin', 'super_admin'].includes(role)) {
+    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+  }
 
   // Check if learner has active enrollments
   const { data: activeEnrollments } = await supabase
@@ -372,17 +617,25 @@ const deleteLearner = asyncHandler(async (req, res) => {
   if (activeEnrollments && activeEnrollments.length > 0) {
     return res.status(400).json({
       success: false,
-      message: 'Cannot delete learner with active enrollments. Please unenroll first.'
+      message: 'Cannot delete learner with active enrollments. Please withdraw first.'
     });
   }
 
-  const { data: learner, error } = await supabase
+  // Build update query
+  let updateQuery = supabase
     .from('learners')
-    .update({ is_active: false })
-    .eq('id', id)
-    .eq('school_id', schoolId)
-    .select()
-    .single();
+    .update({ 
+      is_active: false, 
+      updated_at: new Date().toISOString() 
+    })
+    .eq('id', id);
+
+  // Apply school filter (skip for super_admin)
+  if (role !== 'super_admin' && school_id) {
+    updateQuery = updateQuery.eq('school_id', school_id);
+  }
+
+  const { data: learner, error } = await updateQuery.select().single();
 
   if (error) {
     return res.status(500).json({
@@ -410,9 +663,17 @@ const deleteLearner = asyncHandler(async (req, res) => {
 //    Enroll learner in a class
 // =============================================================================
 const enrollLearner = asyncHandler(async (req, res) => {
-  const { schoolId, role } = req.user;
+  console.log('[DEBUG enrollLearner] START:', { 
+    learnerId: req.params.id, 
+    classId: req.body.class_id, 
+    schoolId: getSchoolId(req), 
+    user: req.user ? { role: req.user.role, schoolId: req.user.schoolId, school_id: req.user.school_id } : null 
+  });
+  
+  const school_id = getSchoolId(req);
+  const { role } = req.user;
   const { id } = req.params;
-  const { class_id, enrollment_date } = req.body;
+  const { class_id, enrollment_date, academic_year_id, term_id } = req.body;
 
   if (!class_id) {
     return res.status(400).json({
@@ -422,12 +683,17 @@ const enrollLearner = asyncHandler(async (req, res) => {
   }
 
   // Verify learner belongs to school
-  const { data: learner } = await supabase
+  let learnerQuery = supabase
     .from('learners')
-    .select('id, first_name, last_name')
-    .eq('id', id)
-    .eq('school_id', schoolId)
-    .single();
+    .select('id, first_name, last_name, is_active, school_id')
+    .eq('id', id);
+
+  if (role !== 'super_admin' && school_id) {
+    learnerQuery = learnerQuery.eq('school_id', school_id);
+  }
+
+  const { data: learner, error: learnerError } = await learnerQuery.single();
+  console.log('[DEBUG enrollLearner] Learner:', learner, 'Error:', learnerError);
 
   if (!learner) {
     return res.status(404).json({
@@ -436,13 +702,25 @@ const enrollLearner = asyncHandler(async (req, res) => {
     });
   }
 
+  if (!learner.is_active) {
+    return res.status(400).json({
+      success: false,
+      message: 'Cannot enroll inactive learner'
+    });
+  }
+
   // Verify class belongs to school
-  const { data: classData } = await supabase
+  let classQuery = supabase
     .from('classes')
-    .select('id, name, capacity')
-    .eq('id', class_id)
-    .eq('school_id', schoolId)
-    .single();
+    .select('id, grade_level, stream_name, capacity, school_id')
+    .eq('id', class_id);
+
+  if (role !== 'super_admin' && school_id) {
+    classQuery = classQuery.eq('school_id', school_id);
+  }
+
+  const { data: classData, error: classError } = await classQuery.single();
+  console.log('[DEBUG enrollLearner] Class:', classData, 'Error:', classError);
 
   if (!classData) {
     return res.status(404).json({
@@ -458,7 +736,7 @@ const enrollLearner = asyncHandler(async (req, res) => {
     .eq('class_id', class_id)
     .eq('status', 'enrolled');
 
-  if (enrolledCount >= classData.capacity) {
+  if (classData.capacity && enrolledCount >= classData.capacity) {
     return res.status(400).json({
       success: false,
       message: 'Class is at full capacity'
@@ -471,7 +749,7 @@ const enrollLearner = asyncHandler(async (req, res) => {
     .select('id, status')
     .eq('learner_id', id)
     .eq('class_id', class_id)
-    .single();
+    .maybeSingle();
 
   if (existingEnrollment) {
     if (existingEnrollment.status === 'enrolled') {
@@ -480,12 +758,15 @@ const enrollLearner = asyncHandler(async (req, res) => {
         message: 'Learner is already enrolled in this class'
       });
     } else {
-      // Re-enroll
+      // Re-enroll (update existing)
       const { data: enrollment, error } = await supabase
         .from('learner_enrollments')
         .update({
           status: 'enrolled',
-          enrolled_at: enrollment_date || new Date().toISOString()
+          enrollment_date: enrollment_date || new Date().toISOString().split('T')[0],
+          exit_date: null,
+          exit_reason: null,
+          updated_at: new Date().toISOString()
         })
         .eq('id', existingEnrollment.id)
         .select()
@@ -507,14 +788,32 @@ const enrollLearner = asyncHandler(async (req, res) => {
     }
   }
 
+  // Get academic_year_id if not provided
+  let finalAcademicYearId = academic_year_id;
+  if (!finalAcademicYearId) {
+    const { data: currentYear } = await supabase
+      .from('academic_years')
+      .select('id')
+      .eq('is_current', true)
+      .limit(1)
+      .single();
+    
+    if (currentYear) {
+      finalAcademicYearId = currentYear.id;
+    }
+  }
+
   // Create new enrollment
   const { data: enrollment, error } = await supabase
     .from('learner_enrollments')
     .insert({
       learner_id: id,
       class_id,
-      status: 'enrolled',
-      enrolled_at: enrollment_date || new Date().toISOString()
+      school_id: school_id,
+      academic_year_id: finalAcademicYearId,
+      term_id: term_id || null,
+      enrollment_date: enrollment_date || new Date().toISOString().split('T')[0],
+      status: 'enrolled'
     })
     .select()
     .single();
@@ -539,16 +838,21 @@ const enrollLearner = asyncHandler(async (req, res) => {
 //    Get learner enrollment history
 // =============================================================================
 const getEnrollmentHistory = asyncHandler(async (req, res) => {
-  const { schoolId } = req.user;
+  const school_id = getSchoolId(req);
+  const { role } = req.user;
   const { id } = req.params;
 
   // Verify learner belongs to school
-  const { data: learner } = await supabase
+  let learnerQuery = supabase
     .from('learners')
     .select('id')
-    .eq('id', id)
-    .eq('school_id', schoolId)
-    .single();
+    .eq('id', id);
+
+  if (role !== 'super_admin' && school_id) {
+    learnerQuery = learnerQuery.eq('school_id', school_id);
+  }
+
+  const { data: learner } = await learnerQuery.single();
 
   if (!learner) {
     return res.status(404).json({
@@ -561,13 +865,17 @@ const getEnrollmentHistory = asyncHandler(async (req, res) => {
     .from('learner_enrollments')
     .select(`
       id,
+      class_id,
+      academic_year_id,
+      term_id,
+      enrollment_date,
+      exit_date,
       status,
-      enrolled_at,
-      completed_at,
-      classes(id, name, grade_level, stream, academic_year_id)
+      exit_reason,
+      created_at
     `)
     .eq('learner_id', id)
-    .order('enrolled_at', { ascending: false });
+    .order('enrollment_date', { ascending: false });
 
   if (error) {
     return res.status(500).json({
@@ -577,237 +885,46 @@ const getEnrollmentHistory = asyncHandler(async (req, res) => {
     });
   }
 
-  res.json({
-    success: true,
-    data: enrollments || []
-  });
-});
+  // Get class details
+  const classIds = (enrollments || []).map(e => e.class_id).filter(Boolean);
+  let classMap = {};
 
-// =============================================================================
-// 8. POST /api/v1/learners/:id/promote
-//    Promote learner to next grade
-// =============================================================================
-const promoteLearner = asyncHandler(async (req, res) => {
-  const { schoolId, role } = req.user;
-  const { id } = req.params;
-  const { new_class_id, promotion_date } = req.body;
+  if (classIds.length > 0) {
+    const { data: classes } = await supabase
+      .from('classes')
+      .select('id, grade_level, stream_name')
+      .in('id', classIds);
 
-  if (!new_class_id) {
-    return res.status(400).json({
-      success: false,
-      message: 'new_class_id is required'
-    });
-  }
-
-  // Get current enrollment
-  const { data: currentEnrollment } = await supabase
-    .from('learner_enrollments')
-    .select(`
-      id,
-      class_id,
-      classes!inner(grade_level, school_id)
-    `)
-    .eq('learner_id', id)
-    .eq('status', 'enrolled')
-    .single();
-
-  if (!currentEnrollment) {
-    return res.status(400).json({
-      success: false,
-      message: 'Learner is not currently enrolled in any class'
-    });
-  }
-
-  if (currentEnrollment.classes.school_id !== schoolId) {
-    return res.status(403).json({
-      success: false,
-      message: 'Access denied'
-    });
-  }
-
-  // Complete current enrollment
-  await supabase
-    .from('learner_enrollments')
-    .update({
-      status: 'completed',
-      completed_at: promotion_date || new Date().toISOString()
-    })
-    .eq('id', currentEnrollment.id);
-
-  // Enroll in new class
-  const { data: newEnrollment, error } = await supabase
-    .from('learner_enrollments')
-    .insert({
-      learner_id: id,
-      class_id: new_class_id,
-      status: 'enrolled',
-      enrolled_at: promotion_date || new Date().toISOString()
-    })
-    .select()
-    .single();
-
-  if (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to promote learner',
-      error: error.message
-    });
-  }
-
-  res.json({
-    success: true,
-    message: 'Learner promoted successfully',
-    data: newEnrollment
-  });
-});
-
-// =============================================================================
-// 9. POST /api/v1/learners/:id/transfer
-//    Transfer learner to another class
-// =============================================================================
-const transferLearner = asyncHandler(async (req, res) => {
-  const { schoolId, role } = req.user;
-  const { id } = req.params;
-  const { new_class_id, transfer_date } = req.body;
-
-  if (!new_class_id) {
-    return res.status(400).json({
-      success: false,
-      message: 'new_class_id is required'
-    });
-  }
-
-  // Get current enrollment
-  const { data: currentEnrollment } = await supabase
-    .from('learner_enrollments')
-    .select('id, class_id')
-    .eq('learner_id', id)
-    .eq('status', 'enrolled')
-    .single();
-
-  if (!currentEnrollment) {
-    return res.status(400).json({
-      success: false,
-      message: 'Learner is not currently enrolled in any class'
-    });
-  }
-
-  // Complete current enrollment
-  await supabase
-    .from('learner_enrollments')
-    .update({
-      status: 'transferred',
-      completed_at: transfer_date || new Date().toISOString()
-    })
-    .eq('id', currentEnrollment.id);
-
-  // Enroll in new class
-  const { data: newEnrollment, error } = await supabase
-    .from('learner_enrollments')
-    .insert({
-      learner_id: id,
-      class_id: new_class_id,
-      status: 'enrolled',
-      enrolled_at: transfer_date || new Date().toISOString()
-    })
-    .select()
-    .single();
-
-  if (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to transfer learner',
-      error: error.message
-    });
-  }
-
-  res.json({
-    success: true,
-    message: 'Learner transferred successfully',
-    data: newEnrollment
-  });
-});
-
-// =============================================================================
-// 10. GET /api/v1/learners/:id/report-card
-//     Get learner report card
-// =============================================================================
-const getReportCard = asyncHandler(async (req, res) => {
-  const { schoolId } = req.user;
-  const { id } = req.params;
-  const { academic_year_id } = req.query;
-
-  // Verify learner belongs to school
-  const { data: learner } = await supabase
-    .from('learners')
-    .select('id, first_name, last_name, admission_number')
-    .eq('id', id)
-    .eq('school_id', schoolId)
-    .single();
-
-  if (!learner) {
-    return res.status(404).json({
-      success: false,
-      message: 'Learner not found'
-    });
-  }
-
-  // Get current enrollment
-  let query = supabase
-    .from('learner_enrollments')
-    .select(`
-      id,
-      class_id,
-      classes!inner(id, name, grade_level, stream, academic_year_id)
-    `)
-    .eq('learner_id', id)
-    .eq('status', 'enrolled');
-
-  if (academic_year_id) {
-    query = query.eq('classes.academic_year_id', academic_year_id);
-  }
-
-  const { data: enrollment } = await query.single();
-
-  if (!enrollment) {
-    return res.status(404).json({
-      success: false,
-      message: 'No active enrollment found for this learner'
-    });
-  }
-
-  // Get assessments for this learner in this class
-  const { data: assessments } = await supabase
-    .from('assessments')
-    .select(`
-      id,
-      subject_id,
-      assessment_type,
-      score,
-      max_score,
-      assessment_date,
-      subjects!inner(name, code)
-    `)
-    .eq('learner_id', id)
-    .eq('class_id', enrollment.class_id)
-    .order('assessment_date', { ascending: false });
-
-  res.json({
-    success: true,
-    data: {
-      learner,
-      class: enrollment.classes,
-      assessments: assessments || []
+    if (classes) {
+      classMap = classes.reduce((acc, cls) => {
+        acc[cls.id] = cls;
+        return acc;
+      }, {});
     }
+  }
+
+  const enrichedEnrollments = (enrollments || []).map(enrollment => ({
+    ...enrollment,
+    class: classMap[enrollment.class_id] || null
+  }));
+
+  res.json({
+    success: true,
+    data: enrichedEnrollments
   });
 });
 
 // =============================================================================
-// 11. POST /api/v1/learners/bulk-import
-//     Bulk import learners from CSV
+// 8. POST /api/v1/learners/bulk-import
+//    Bulk import learners from CSV
 // =============================================================================
 const bulkImportLearners = asyncHandler(async (req, res) => {
-  const { schoolId, role, id: userId } = req.user;
+  const school_id = getSchoolId(req);
+  const { role } = req.user;
+
+  if (!['school_admin', 'super_admin'].includes(role)) {
+    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+  }
 
   if (!req.file) {
     return res.status(400).json({
@@ -817,7 +934,6 @@ const bulkImportLearners = asyncHandler(async (req, res) => {
   }
 
   try {
-    // Parse CSV
     const csvData = req.file.buffer.toString('utf-8');
     const records = csv.parse(csvData, {
       columns: true,
@@ -830,33 +946,35 @@ const bulkImportLearners = asyncHandler(async (req, res) => {
       failed: []
     };
 
-    // Process each record
     for (const record of records) {
       try {
-        const learnerData = {
-          school_id: schoolId,
-          first_name: record.first_name,
-          last_name: record.last_name,
-          admission_number: record.admission_number,
-          date_of_birth: record.date_of_birth,
-          gender: record.gender,
-          email: record.email,
-          phone: record.phone,
-          address: record.address,
-          emergency_contact: record.emergency_contact,
-          medical_info: record.medical_info,
-          created_by: userId
-        };
-
         // Validate required fields
-        if (!learnerData.first_name || !learnerData.last_name || !learnerData.admission_number) {
+        if (!record.first_name || !record.last_name || !record.admission_number) {
           throw new Error('Missing required fields: first_name, last_name, admission_number');
         }
 
         // Validate gender
-        if (learnerData.gender && !['Male', 'Female'].includes(learnerData.gender)) {
-          throw new Error('Invalid gender. Must be Male or Female');
+        if (record.gender && !GENDERS.includes(record.gender.toLowerCase())) {
+          throw new Error(`Invalid gender: ${record.gender}. Must be male or female`);
         }
+
+        const learnerData = {
+          school_id,
+          first_name: record.first_name.trim(),
+          last_name: record.last_name.trim(),
+          middle_name: record.middle_name?.trim() || null,
+          admission_number: record.admission_number.trim(),
+          date_of_birth: record.date_of_birth,
+          gender: record.gender?.toLowerCase() || null,
+          email: record.email?.trim() || null,
+          photo_url: record.photo_url || null,
+          special_needs: record.special_needs || null,
+          birth_certificate_number: record.birth_certificate_number?.trim() || null,
+          nemis_number: record.nemis_number?.trim() || null,
+          admission_date: record.admission_date || new Date().toISOString().split('T')[0],
+          nationality: record.nationality || 'Kenyan',
+          is_active: true
+        };
 
         // Insert learner
         const { data: learner, error } = await supabase
@@ -898,6 +1016,63 @@ const bulkImportLearners = asyncHandler(async (req, res) => {
   }
 });
 
+// =============================================================================
+// 9. POST /api/v1/learners/:id/withdraw
+//    Withdraw learner from current class
+// =============================================================================
+const withdrawLearner = asyncHandler(async (req, res) => {
+  const school_id = getSchoolId(req);
+  const { role } = req.user;
+  const { id } = req.params;
+  const { exit_date, exit_reason } = req.body;
+
+  if (!['school_admin', 'super_admin'].includes(role)) {
+    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+  }
+
+  // Find current active enrollment
+  const { data: enrollment } = await supabase
+    .from('learner_enrollments')
+    .select('id')
+    .eq('learner_id', id)
+    .eq('status', 'enrolled')
+    .maybeSingle();
+
+  if (!enrollment) {
+    return res.status(404).json({
+      success: false,
+      message: 'No active enrollment found for this learner'
+    });
+  }
+
+  // Update enrollment status
+  const { error } = await supabase
+    .from('learner_enrollments')
+    .update({
+      status: 'withdrawn',
+      exit_date: exit_date || new Date().toISOString().split('T')[0],
+      exit_reason: exit_reason || 'Withdrawn',
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', enrollment.id);
+
+  if (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to withdraw learner',
+      error: error.message
+    });
+  }
+
+  res.json({
+    success: true,
+    message: 'Learner withdrawn successfully'
+  });
+});
+
+// =============================================================================
+// Export all functions
+// =============================================================================
 module.exports = {
   registerLearner,
   listLearners,
@@ -906,8 +1081,6 @@ module.exports = {
   deleteLearner,
   enrollLearner,
   getEnrollmentHistory,
-  promoteLearner,
-  transferLearner,
-  getReportCard,
   bulkImportLearners,
+  withdrawLearner
 };

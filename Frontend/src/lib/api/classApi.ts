@@ -84,8 +84,24 @@ export interface ApiResponse<T> {
   data: T;
 }
 
-export const getClasses = async (): Promise<ApiResponse<ClassesApiResponse>> => {
-  const response = await fetch(`${API_URL}/api/v1/classes`, getFetchOptions('GET'));
+export const getClasses = async (params: {
+  is_active?: string;
+  school_id?: string;
+  grade_level?: string;
+  page?: number;
+  limit?: number;
+} = {}): Promise<ApiResponse<ClassesApiResponse>> => {
+  const searchParams = new URLSearchParams();
+  if (params.is_active) searchParams.append('is_active', params.is_active);
+  if (params.school_id) searchParams.append('school_id', params.school_id);
+  if (params.grade_level) searchParams.append('grade_level', params.grade_level);
+  if (params.page) searchParams.append('page', params.page.toString());
+  if (params.limit) searchParams.append('limit', params.limit.toString());
+
+  const query = searchParams.toString();
+  const url = `${API_URL}/api/v1/classes${query ? `?${query}` : ''}`;
+
+  const response = await fetch(url, getFetchOptions('GET'));
   return handleResponse<ApiResponse<ClassesApiResponse>>(response);
 };
 

@@ -1,0 +1,1062 @@
+'use client';
+
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import {
+  Plus,
+  Search,
+  Download,
+  MoreHorizontal,
+  Eye,
+  Edit,
+  Loader2,
+  AlertCircle,
+  Users,
+  UserCheck,
+  User,
+  GraduationCap,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  RefreshCw,
+  Filter,
+  BookOpen,
+  Trash2,
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ui/use-toast';
+import { getLearners } from '@/lib/api/learnersApi';
+import type { Learner } from './Learners';
+import { cn } from '@/lib/utils';
+
+interface ParentInfo {
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+}
+
+interface LearnerParent {
+  parents: {
+    users: ParentInfo;
+  } | null;
+}
+
+interface Learner {
+  id: string;
+  admission_number: string;
+  first_name: string;
+  last_name: string;
+  middle_name: string | null;
+  date_of_birth: string | null;
+  grade_level: string;
+  stream_name: string | null;
+  gender: string;
+  special_needs: boolean | null;
+  is_active: boolean;
+  created_at: string;
+  learner_parents: LearnerParent[] | null;
+}
+
+interface FetchOptions {
+  search?: string;
+  grade_level?: string;
+  gender?: string;
+  is_active?: string;
+  page?: number;
+  pageSize?: number;
+  retryCount?: number;
+}
+
+interface ApiResponse {
+  students: Learner[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+interface CacheEntry {
+  data: ApiResponse;
+  timestamp: number;
+}
+
+const GRADES = [
+  'PP1',
+  'PP2',
+  'Grade 1',
+  'Grade 2',
+  'Grade 3',
+  'Grade 4',
+  'Grade 5',
+  'Grade 6',
+  'Grade 7',
+  'Grade 8',
+  'Grade 9',
+];
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const CACHE_DURATION = 5 * 60 * 1000;
+const RETRY_ATTEMPTS = 3;
+const RETRY_DELAY = 1000;
+
+const getPrimaryParent = (learnerParents: Learner['learner_parents']): ParentInfo | null => {
+  if (!learnerParents || learnerParents.length === 0) return null;
+  return learnerParents[0]?.parents?.users ?? null;
+};
+
+const getInitials = (firstName: string, lastName: string) =>
+  `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+
+const getAvatarColor = (id: string) => {
+  const colors = [
+    'bg-blue-100 text-blue-700',
+    'bg-purple-100 text-purple-700',
+    'bg-green-100 text-green-700',
+    'bg-pink-100 text-pink-700',
+    'bg-yellow-100 text-yellow-700',
+    'bg-indigo-100 text-indigo-700',
+    'bg-orange-100 text-orange-700',
+    'bg-cyan-100 text-cyan-700',
+  ];
+  return colors[id.charCodeAt(0) % colors.length];
+};
+
+const formatDateOfBirth = (dob: string): string => {
+  try {
+    return new Date(dob).toLocaleDateString('en-KE', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return 'Invalid date';
+  }
+};
+
+const getPaginationPages = (currentPage: number, totalPages: number): (number | '…')[] => {
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1).filter(
+    (p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1
+  );
+  return pages.reduce<(number | '…')[]>((acc, p, idx, arr) => {
+    if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push('…');
+    acc.push(p);
+    return acc;
+  }, []);
+};
+
+const exportToCsv = (students: Learner[]) => {
+  const headers = [
+    'Adm. No',
+    'First Name',
+    'Last Name',
+    'Grade',
+    'Stream',
+    'Gender',
+    'Date of Birth',
+    'Status',
+    'Guardian Name',
+    'Guardian Phone',
+  ];
+
+  const rows = students.map((s) => {
+    const parent = getPrimaryParent(s.learner_parents);
+    return [
+      s.admission_number,
+      s.first_name,
+      s.last_name,
+      s.grade_level,
+      s.stream_name ?? '',
+      s.gender,
+      s.date_of_birth ?? '',
+      s.is_active ? 'Active' : 'Inactive',
+      parent ? `${parent.first_name} ${parent.last_name}` : '',
+      parent?.phone_number ?? '',
+    ].map((v) => `"${String(v).replace(/"/g, '""')}"`);
+  });
+
+  const today = new Date().toISOString().split('T')[0];
+  const csv = [headers, ...rows].map((r) => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `learners_${today}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+class ApiCacheManager {
+  private cache = new Map<string, CacheEntry>();
+
+  generateKey(options: FetchOptions): string {
+    return JSON.stringify({
+      search: options.search || '',
+      grade_level: options.grade_level || '',
+      gender: options.gender || '',
+      is_active: options.is_active || '',
+      page: options.page || 1,
+      pageSize: options.pageSize || 1000,
+    });
+  }
+
+  get(options: FetchOptions): ApiResponse | null {
+    const key = this.generateKey(options);
+    const entry = this.cache.get(key);
+
+    if (entry && Date.now() - entry.timestamp < CACHE_DURATION) {
+      return entry.data;
+    }
+
+    if (entry) {
+      this.cache.delete(key);
+    }
+
+    return null;
+  }
+
+  set(options: FetchOptions, data: ApiResponse): void {
+    const key = this.generateKey(options);
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+    });
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+const apiCache = new ApiCacheManager();
+
+const retryWithBackoff = async (
+  fn: () => Promise<ApiResponse>,
+  attempt = 0
+): Promise<ApiResponse> => {
+  try {
+    return await fn();
+  } catch (error) {
+    if (attempt < RETRY_ATTEMPTS) {
+      const delay = RETRY_DELAY * Math.pow(2, attempt);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return retryWithBackoff(fn, attempt + 1);
+    }
+    throw error;
+  }
+};
+
+const StudentManagement = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const [students, setStudents] = useState<Learner[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedGrade, setSelectedGrade] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedGender, setSelectedGender] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [retrying, setRetrying] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const fetchStudents = useCallback(
+    async (forceRefresh = false) => {
+      try {
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
+
+        setLoading(true);
+        setError(null);
+        setRetrying(false);
+
+        if (!user?.schoolId) {
+          setError('School ID not found. Please login again.');
+          setLoading(false);
+          return;
+        }
+
+        const fetchOptions: FetchOptions = {
+          search: searchTerm || undefined,
+          grade_level: selectedGrade !== 'all' ? selectedGrade : undefined,
+          gender: selectedGender !== 'all' ? selectedGender : undefined,
+          is_active:
+            selectedStatus !== 'all'
+              ? selectedStatus === 'active'
+                ? 'true'
+                : 'false'
+              : undefined,
+          page: 1,
+          pageSize: 1000,
+        };
+
+        if (!forceRefresh) {
+          const cachedData = apiCache.get(fetchOptions);
+          if (cachedData) {
+            setStudents(cachedData.students);
+            setLastUpdated(new Date());
+            setLoading(false);
+            return;
+          }
+        }
+
+        const response = await retryWithBackoff(() =>
+          getLearners({
+            ...fetchOptions,
+            signal: abortControllerRef.current.signal,
+          })
+        );
+
+        if (!response.students || !Array.isArray(response.students)) {
+          throw new Error('Invalid response format from server');
+        }
+
+        setStudents(response.students);
+        apiCache.set(fetchOptions, response);
+        setLastUpdated(new Date());
+
+        toast({
+          title: 'Success',
+          description: `Loaded ${response.students.length} learners`,
+          duration: 2000,
+        });
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          console.log('Fetch request cancelled');
+          return;
+        }
+
+        console.error('Error fetching students:', err);
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to load students. Please try again.';
+        setError(errorMessage);
+
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+        setRetrying(false);
+      }
+    },
+    [user?.schoolId, searchTerm, selectedGrade, selectedStatus, selectedGender, toast]
+  );
+
+  useEffect(() => {
+    void fetchStudents();
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [fetchStudents]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedGrade, selectedStatus, selectedGender, pageSize]);
+
+  const filteredStudents = useMemo(
+    () =>
+      students.filter((student) => {
+        const fullName = `${student.first_name} ${student.last_name}`.toLowerCase();
+        const matchesSearch =
+          !searchTerm ||
+          fullName.includes(searchTerm.toLowerCase()) ||
+          student.admission_number.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesGrade = selectedGrade === 'all' || student.grade_level === selectedGrade;
+        const matchesStatus =
+          selectedStatus === 'all' ||
+          (selectedStatus === 'active' && student.is_active) ||
+          (selectedStatus === 'inactive' && !student.is_active);
+        const matchesGender =
+          selectedGender === 'all' || student.gender.toLowerCase() === selectedGender;
+        return matchesSearch && matchesGrade && matchesStatus && matchesGender;
+      }),
+    [students, searchTerm, selectedGrade, selectedStatus, selectedGender]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / pageSize));
+  const pagedStudents = filteredStudents.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  const totalStudents = students.length;
+  const activeStudents = students.filter((s) => s.is_active).length;
+  const inactiveStudents = totalStudents - activeStudents;
+  const maleStudents = students.filter((s) => s.gender.toLowerCase() === 'male').length;
+  const femaleStudents = students.filter((s) => s.gender.toLowerCase() === 'female').length;
+
+  const hasActiveFilters =
+    searchTerm || selectedGrade !== 'all' || selectedStatus !== 'all' || selectedGender !== 'all';
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedGrade('all');
+    setSelectedStatus('all');
+    setSelectedGender('all');
+    setShowFilters(false);
+  };
+
+  const handleRefresh = async () => {
+    setRetrying(true);
+    await fetchStudents(true);
+  };
+
+  if (loading && !students.length) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 animate-spin mx-auto text-orange-500" />
+          <p className="text-lg font-medium text-slate-900">Loading students...</p>
+          <p className="text-sm text-slate-500">This may take a moment...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !students.length) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Card className="max-w-md w-full border-red-200 bg-red-50">
+          <CardContent className="pt-6 text-center space-y-4">
+            <AlertCircle className="w-12 h-12 mx-auto text-red-600" />
+            <div>
+              <p className="font-semibold text-red-900 mb-1">Unable to Load Students</p>
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+            <div className="flex gap-2 justify-center">
+              <Button
+                onClick={() => void handleRefresh()}
+                disabled={retrying}
+                className="bg-red-600 hover:bg-red-700 text-white gap-2"
+              >
+                {retrying ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Retrying...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4" />
+                    Try Again
+                  </>
+                )}
+              </Button>
+              <Button onClick={() => navigate(-1)} variant="outline">
+                Go Back
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 p-4 md:p-6 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+              <GraduationCap className="w-6 h-6 text-white" />
+            </div>
+            All Students
+          </h1>
+          <p className="text-slate-600">
+            View and manage every enrolled learner across all grades and classes
+          </p>
+          {lastUpdated && (
+            <p className="text-xs text-slate-500">
+              Last updated: {lastUpdated.toLocaleTimeString('en-KE')}
+            </p>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void handleRefresh()}
+            disabled={loading || retrying}
+            className="border-slate-200 hover:bg-slate-100 gap-2 h-10"
+            title="Refresh data"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading || retrying ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportToCsv(filteredStudents)}
+            disabled={filteredStudents.length === 0}
+            className="border-slate-200 hover:bg-slate-100 gap-2 h-10"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Export CSV</span>
+          </Button>
+          <Button
+            onClick={() => navigate('/school-admin/learners/add')}
+            className="bg-orange-500 hover:bg-orange-600 text-white gap-2 h-10 px-4"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Add Student</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Error Alert for partial load */}
+      {error && students.length > 0 && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex gap-3 items-start">
+          <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm text-yellow-700 font-medium">Warning</p>
+            <p className="text-sm text-yellow-600 mt-1">{error}</p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => void handleRefresh()}
+            disabled={loading || retrying}
+            className="text-yellow-700 border-yellow-300 hover:bg-yellow-100 ml-2"
+          >
+            Retry
+          </Button>
+        </div>
+      )}
+
+      {/* Summary Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-600">Total Students</p>
+                <p className="text-3xl font-bold text-slate-900 mt-2">{totalStudents}</p>
+              </div>
+              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                <Users className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-600">Active</p>
+                <p className="text-3xl font-bold text-green-600 mt-2">{activeStudents}</p>
+              </div>
+              <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
+                <UserCheck className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-600">Boys</p>
+                <p className="text-3xl font-bold text-blue-600 mt-2">{maleStudents}</p>
+              </div>
+              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                <User className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-600">Girls</p>
+                <p className="text-3xl font-bold text-pink-600 mt-2">{femaleStudents}</p>
+              </div>
+              <div className="w-12 h-12 rounded-lg bg-pink-100 flex items-center justify-center">
+                <User className="w-6 h-6 text-pink-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Filters Card */}
+      <Card className="border-slate-200 bg-white">
+        <CardContent className="pt-6 pb-6 space-y-4">
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Input
+              placeholder="Search by student name or admission number..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-12 pr-10 h-11 bg-slate-50 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10"
+              disabled={loading}
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                aria-label="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Collapsible Filters */}
+          <div>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className={cn(
+                'gap-2 border-slate-200 text-slate-700 hover:bg-slate-100',
+                hasActiveFilters && 'border-orange-500 bg-orange-50 text-orange-700 hover:bg-orange-100'
+              )}
+              disabled={loading}
+            >
+              <Filter className="h-4 w-4" />
+              Advanced Filters
+              {hasActiveFilters && <span className="text-xs font-bold ml-1">●</span>}
+            </Button>
+          </div>
+
+          {/* Expandable Filter Panel */}
+          {showFilters && (
+            <div className="border-t border-slate-200 pt-4 space-y-3 bg-slate-50 p-4 -mx-6 mb-0 rounded-b-lg">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Status Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Status</label>
+                  <Select value={selectedStatus} onValueChange={setSelectedStatus} disabled={loading}>
+                    <SelectTrigger className="h-10 bg-white border-slate-200">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Grade Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Grade</label>
+                  <Select value={selectedGrade} onValueChange={setSelectedGrade} disabled={loading}>
+                    <SelectTrigger className="h-10 bg-white border-slate-200">
+                      <SelectValue placeholder="All Grades" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Grades</SelectItem>
+                      {GRADES.map((grade) => (
+                        <SelectItem key={grade} value={grade}>
+                          {grade}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Gender Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Gender</label>
+                  <Select value={selectedGender} onValueChange={setSelectedGender} disabled={loading}>
+                    <SelectTrigger className="h-10 bg-white border-slate-200">
+                      <SelectValue placeholder="All Genders" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Genders</SelectItem>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Clear Filters Button */}
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="border-orange-300 text-orange-700 hover:bg-orange-50 gap-2"
+                  disabled={loading}
+                >
+                  <X className="h-4 w-4" />
+                  Clear All Filters
+                </Button>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Students Table Card */}
+      <Card className="border-slate-200 bg-white overflow-hidden">
+        <CardHeader className="pb-3 border-b border-slate-200 bg-slate-50">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-orange-600" />
+                Student Directory
+              </CardTitle>
+              <CardDescription className="mt-1">
+                Showing{' '}
+                <span className="font-semibold text-slate-900">{filteredStudents.length}</span> of{' '}
+                <span className="font-semibold text-slate-900">{totalStudents}</span> students
+                {hasActiveFilters && (
+                  <span className="ml-2 text-orange-600">
+                    ({((filteredStudents.length / totalStudents) * 100).toFixed(0)}% filtered)
+                  </span>
+                )}
+              </CardDescription>
+            </div>
+
+            {/* Page Size Selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-600">Per page:</span>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(v) => setPageSize(Number(v))}
+                disabled={loading}
+              >
+                <SelectTrigger className="w-24 h-9 border-slate-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAGE_SIZE_OPTIONS.map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-0 relative">
+          {loading && students.length > 0 && (
+            <div className="absolute inset-0 bg-white/50 flex items-center justify-center rounded-lg z-10">
+              <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+            </div>
+          )}
+
+          {pagedStudents.length > 0 ? (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-slate-50 border-b border-slate-200">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="font-semibold text-slate-700 h-12">#</TableHead>
+                    <TableHead className="font-semibold text-slate-700 h-12">Student</TableHead>
+                    <TableHead className="font-semibold text-slate-700 h-12">Adm. No</TableHead>
+                    <TableHead className="font-semibold text-slate-700 h-12">Grade / Class</TableHead>
+                    <TableHead className="font-semibold text-slate-700 h-12">Gender</TableHead>
+                    <TableHead className="font-semibold text-slate-700 h-12">Guardian</TableHead>
+                    <TableHead className="font-semibold text-slate-700 h-12">Phone</TableHead>
+                    <TableHead className="font-semibold text-slate-700 h-12">Status</TableHead>
+                    <TableHead className="font-semibold text-slate-700 h-12 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pagedStudents.map((student, idx) => {
+                    const parent = getPrimaryParent(student.learner_parents);
+                    const rowNumber = (currentPage - 1) * pageSize + idx + 1;
+                    return (
+                      <TableRow
+                        key={student.id}
+                        className={cn(
+                          'border-b border-slate-100 hover:bg-orange-50/50 transition-colors',
+                          idx % 2 === 0 && 'bg-white',
+                          idx % 2 === 1 && 'bg-slate-50'
+                        )}
+                      >
+                        {/* Row Number */}
+                        <TableCell className="text-slate-500 text-sm font-medium py-4">
+                          {rowNumber}
+                        </TableCell>
+
+                        {/* Student Info */}
+                        <TableCell className="py-4">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={cn(
+                                'w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm',
+                                getAvatarColor(student.id)
+                              )}
+                            >
+                              {getInitials(student.first_name, student.last_name)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-slate-900 truncate">
+                                {student.first_name}
+                                {student.middle_name ? ` ${student.middle_name}` : ''} {student.last_name}
+                              </p>
+                              {student.date_of_birth && (
+                                <p className="text-xs text-slate-500">
+                                  {formatDateOfBirth(student.date_of_birth)}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* Admission Number */}
+                        <TableCell className="py-4 font-mono text-sm font-medium text-slate-700">
+                          {student.admission_number}
+                        </TableCell>
+
+                        {/* Grade / Stream */}
+                        <TableCell className="py-4">
+                          <div>
+                            <p className="font-medium text-slate-900">{student.grade_level}</p>
+                            {student.stream_name && (
+                              <p className="text-xs text-slate-500">{student.stream_name}</p>
+                            )}
+                          </div>
+                        </TableCell>
+
+                        {/* Gender */}
+                        <TableCell className="py-4 capitalize text-slate-700 text-sm">
+                          {student.gender}
+                        </TableCell>
+
+                        {/* Guardian */}
+                        <TableCell className="py-4">
+                          {parent ? (
+                            <div className="flex items-center gap-2">
+                              <Users className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                              <span className="text-sm text-slate-700 truncate max-w-[140px]">
+                                {parent.first_name} {parent.last_name}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-slate-400 italic">Not assigned</span>
+                          )}
+                        </TableCell>
+
+                        {/* Phone */}
+                        <TableCell className="py-4 text-sm text-slate-600">
+                          {parent?.phone_number || '—'}
+                        </TableCell>
+
+                        {/* Status */}
+                        <TableCell className="py-4">
+                          <Badge
+                            className={cn(
+                              'font-medium',
+                              student.is_active
+                                ? 'bg-green-100 text-green-800 hover:bg-green-100'
+                                : 'bg-slate-100 text-slate-700 hover:bg-slate-100'
+                            )}
+                          >
+                            {student.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+
+                        {/* Actions */}
+                        <TableCell className="py-4 text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 hover:bg-orange-100 hover:text-orange-600"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  navigate(`/school-admin/learners/profile?id=${student.id}`)
+                                }
+                                className="gap-2 cursor-pointer"
+                              >
+                                <Eye className="h-4 w-4" />
+                                View Profile
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  navigate(`/school-admin/learners/add?edit=${student.id}`)
+                                }
+                                className="gap-2 cursor-pointer"
+                              >
+                                <Edit className="h-4 w-4" />
+                                Edit Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  navigate(`/school-admin/learners/classes?student=${student.id}`)
+                                }
+                                className="gap-2 cursor-pointer"
+                              >
+                                <BookOpen className="h-4 w-4" />
+                                View Classes
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="gap-2 cursor-pointer text-red-600 hover:bg-red-50">
+                                <Trash2 className="h-4 w-4" />
+                                Deactivate
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-16 px-6">
+              <div className="space-y-3">
+                <GraduationCap className="h-12 w-12 mx-auto text-slate-300" />
+                <p className="text-slate-700 font-medium text-lg">
+                  {hasActiveFilters ? 'No students match your filters.' : 'No students enrolled yet.'}
+                </p>
+                <p className="text-slate-500 text-sm">
+                  {hasActiveFilters
+                    ? 'Try adjusting your search terms or filters.'
+                    : 'Get started by enrolling your first student.'}
+                </p>
+                {!hasActiveFilters && (
+                  <Button
+                    onClick={() => navigate('/school-admin/learners/add')}
+                    className="mt-4 bg-orange-500 hover:bg-orange-600 text-white gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Enroll First Student
+                  </Button>
+                )}
+                {hasActiveFilters && (
+                  <Button
+                    variant="outline"
+                    onClick={clearFilters}
+                    className="mt-4 border-slate-300 text-slate-700"
+                  >
+                    Clear Filters
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Pagination */}
+      {filteredStudents.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-600 bg-white rounded-lg p-4 border border-slate-200">
+          <p>
+            Showing{' '}
+            <span className="font-semibold text-slate-900">
+              {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredStudents.length)}
+            </span>{' '}
+            of{' '}
+            <span className="font-semibold text-slate-900">{filteredStudents.length}</span> student
+            {filteredStudents.length !== 1 ? 's' : ''}
+            {inactiveStudents > 0 && (
+              <span className="ml-2 text-slate-500">({inactiveStudents} inactive)</span>
+            )}
+          </p>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1 || loading}
+              className="border-slate-200 gap-1"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+
+            <div className="flex items-center gap-1">
+              {getPaginationPages(currentPage, totalPages).map((item, idx) =>
+                item === '…' ? (
+                  <span key={`ellipsis-${idx}`} className="px-2 text-slate-500">
+                    …
+                  </span>
+                ) : (
+                  <Button
+                    key={item}
+                    variant={currentPage === item ? 'default' : 'outline'}
+                    size="sm"
+                    className="w-8 h-8 p-0 text-xs"
+                    onClick={() => setCurrentPage(item as number)}
+                    disabled={loading}
+                  >
+                    {item}
+                  </Button>
+                )
+              )}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages || loading}
+              className="border-slate-200 gap-1"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default StudentManagement;

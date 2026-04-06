@@ -171,13 +171,8 @@ const listClasses = asyncHandler(async (req, res) => {
 
   if (academic_year_id) {
     query = query.eq('academic_year_id', academic_year_id);
-  } else {
-    // Filter to current academic year by default
-    const current = await getCurrentAcademicYear(schoolId);
-    if (current) {
-      query = query.eq('academic_year_id', current.id);
-    }
   }
+  // No default filter - return ALL classes for the school
 
   if (grade_level) {
     query = query.eq('grade_level', grade_level);
@@ -204,11 +199,36 @@ const listClasses = asyncHandler(async (req, res) => {
     return res.status(500).json({ success: false, message: 'Failed to fetch classes', error: error.message });
   }
 
+  const totalQuery = supabase
+    .from('classes')
+    .select('*', { count: 'exact', head: true })
+    .eq('school_id', schoolId)
+    .eq('is_active', true);
+
+  if (academic_year_id) {
+    totalQuery.eq('academic_year_id', academic_year_id);
+  }
+  if (grade_level) {
+    totalQuery.eq('grade_level', grade_level);
+  }
+  if (is_active !== undefined) {
+    totalQuery.eq('is_active', is_active === 'true');
+  }
+  if (branch_id) {
+    totalQuery.eq('branch_id', branch_id);
+  }
+
+  const { count: total_count } = await totalQuery;
+
   return res.json({
     success: true,
     data: {
       classes: classes || [],
-      pagination: { page: parseInt(page), limit: parseInt(limit) },
+      pagination: { 
+        page: parseInt(page), 
+        limit: parseInt(limit),
+        total_count: total_count || 0
+      },
     },
   });
 });

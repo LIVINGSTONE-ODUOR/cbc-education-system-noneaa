@@ -10,21 +10,33 @@ const {
   deleteLearner,
   enrollLearner,
   getEnrollmentHistory,
-  promoteLearner,
-  transferLearner,
-  getReportCard,
   bulkImportLearners,
+  withdrawLearner,
 } = require('../controllers/learner.controller');
+const { uploadLearnerPhoto } = require('../controllers/learnerPhoto.controller');
 
-// Memory storage — CSV is small enough, no need for disk
-const upload = multer({
+// Photo upload multer (images, 5MB)
+const photoUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },   // 5 MB max
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
   fileFilter: (_req, file, cb) => {
-    if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
+    if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
-      cb(new Error('Only CSV files are allowed'), false);
+      cb(new Error('Only image files allowed'), false);
+    }
+  },
+});
+
+// CSV upload multer
+const csvUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype === 'text/csv' || file.originalname.toLowerCase().endsWith('.csv')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only CSV files allowed'), false);
     }
   },
 });
@@ -32,37 +44,43 @@ const upload = multer({
 // All learner routes require authentication
 router.use(authenticate);
 
-// POST /bulk-import
-router.post('/bulk-import', upload.single('file'), bulkImportLearners);
+// POST /api/v1/learners/upload-photo
+router.post('/upload-photo', authenticate, photoUpload.single('file'), uploadLearnerPhoto);
 
-// POST /
+// =============================================================================
+// Bulk Operations
+// =============================================================================
+// POST /api/v1/learners/bulk-import
+router.post('/bulk-import', authenticate, csvUpload.single('file'), bulkImportLearners);
+
+// =============================================================================
+// Basic CRUD
+// =============================================================================
+// POST /api/v1/learners
 router.post('/', registerLearner);
 
-// GET /
+// GET /api/v1/learners
 router.get('/', listLearners);
 
-// GET /:id
+// GET /api/v1/learners/:id
 router.get('/:id', getLearner);
 
-// PUT /:id
+// PUT /api/v1/learners/:id
 router.put('/:id', updateLearner);
 
-// DELETE /:id
+// DELETE /api/v1/learners/:id
 router.delete('/:id', deleteLearner);
 
-// POST /:id/enroll
+// =============================================================================
+// Enrollment Management
+// =============================================================================
+// POST /api/v1/learners/:id/enroll
 router.post('/:id/enroll', enrollLearner);
 
-// GET /:id/enrollments
+// GET /api/v1/learners/:id/enrollments
 router.get('/:id/enrollments', getEnrollmentHistory);
 
-// POST /:id/promote
-router.post('/:id/promote', promoteLearner);
-
-// POST /:id/transfer
-router.post('/:id/transfer', transferLearner);
-
-// GET /:id/report-card
-router.get('/:id/report-card', getReportCard);
+// POST /api/v1/learners/:id/withdraw
+router.post('/:id/withdraw', withdrawLearner);
 
 module.exports = router;

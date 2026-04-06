@@ -70,6 +70,9 @@ app.use('/api/v1/fee-structure', require('./routes/feeStructure.routes'));
 app.use('/api/v1/ai', require('./routes/ai.routes'));
 app.use('/api/v1/ai-assistant', require('./routes/aiAssistant.routes'));
 
+// Parents API routes  
+app.use('/api/v1/parents', require('./routes/parent.routes'));
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({

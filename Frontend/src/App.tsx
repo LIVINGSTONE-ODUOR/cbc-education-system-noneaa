@@ -52,18 +52,18 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import  DashboardWidgets  from "./pages/school-admin/learners/DashboardWidgets";
 import TeachersListPage from "@/pages/auth/school-admin/teachers/TeachersList";
 import AddTeacherPage from "@/pages/auth/school-admin/teachers/AddTeacher";
-import LearnersListPage from "@/pages/auth/school-admin/learners/LearnersList";
-import AddLearnerPage from "./pages/school-admin/learners/AddLearner";
+import Learnerlistpage from "@/pages/auth/school-admin/learners/Learners";
+import AddLearnerPage from "./pages/auth/school-admin/learners/AddLearner";
 import FeeManagement from "./pages/school-admin/learners/FeesManagent/FeeManagement";
-import LearnerProfile from "./pages/school-admin/learners/LearnerProfile";
 import Assessments from "./pages/school-admin/Assessment";
 import AdminAttendance from "./pages/teacher/StaffAttendance";
 import Calendar from "./pages/Calendar/Calendar";
 import Classes from "./pages/ClassesManagement/ClassManagement";
+import Student from "./pages/auth/school-admin/learners/LearnerProfile";
 
 // ✅ Student Management Page
-import StudentManagement from "./pages/school-admin/learners/Learners";
-import StudentClasses from "./pages/school-admin/learners/StudentClasses";
+import StudentManagement from "@/pages/auth/school-admin/learners/Learners";
+import StudentClasses from "./pages/auth/school-admin/learners/StudentClasses";
 
 import EducationalResourcesPage from "./pages/website-pages/Educationalresourcespage";
 import SystemStatusPage from "@/pages/website-pages/SystemStatusPage";
@@ -278,7 +278,7 @@ function AppRoutes() {
                 {/* Learners */}
                 <Route path="learners/all" element={<StudentManagement />} />
                 <Route path="learners/classes" element={<StudentClasses />} />
-                <Route path="learners/manage" element={<StudentManagement />} />
+                <Route path="learners/list" element={<StudentManagement />} />
 
                 {/* Other Admin Pages */}
                 <Route path="curriculum" element={<CurriculumPage />} />
@@ -288,7 +288,7 @@ function AppRoutes() {
                 <Route path="users" element={<UserManagement />} />
                 <Route path="demo" element={<ModernDashboard />} />
                 <Route path="learners/add" element={<AddLearnerPage />} />
-                <Route path="learners/profile" element={<LearnerProfile/>} />
+                <Route path="learners/profile" element={<Student/>} />
                 <Route path="fee-management/" element={<FeeManagement onBack={() => window.history.back()} />} />
                 <Route path="assessments/" element={<Assessments/>} />
                 <Route path="staff-attendance/" element={<AdminAttendance/>} />

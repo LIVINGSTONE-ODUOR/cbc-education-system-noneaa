@@ -1,5 +1,3 @@
--- Migration: Academic year + terms foundation and AI assistant persistence
--- Date: 2026-03-06
 
 BEGIN;
 

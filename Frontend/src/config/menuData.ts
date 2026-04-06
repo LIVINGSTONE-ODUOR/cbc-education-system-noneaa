@@ -46,15 +46,9 @@ export const menuSections: MenuSection[] = [
         badge: 2,
         submenu: [
           {
-            id: "all-students",
-            label: "All Students",
-            href: "/school-admin/learners",
-            icon: ListChecks,
-          },
-          {
             id: "manage-students",
-            label: "Student Management",
-            href: "/school-admin/learners/manage",
+            label: "Student List",
+            href: "/school-admin/learners/list",
             icon: UserCog,
           },
           {
