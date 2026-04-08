@@ -11,6 +11,7 @@ if (process.env.VERCEL !== "1") {
     console.log(`📝 Environment: ${process.env.NODE_ENV || "development"}`);
     console.log(`🔗 Local: http://localhost:${PORT}`);
     console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+    console.log(`🔗 CORS Allowed Origins: Configured for GitHub Codespaces`);
   });
 } else {
   console.log("📦 Running in Vercel serverless mode");
