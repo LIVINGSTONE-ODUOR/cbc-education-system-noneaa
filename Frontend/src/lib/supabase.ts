@@ -4,32 +4,41 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Validate environment variables
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Supabase configuration missing. Please check your .env file.');
+const missing: string[] = [];
+if (!supabaseUrl) missing.push('VITE_SUPABASE_URL');
+if (!supabaseAnonKey) missing.push('VITE_SUPABASE_ANON_KEY');
+
+if (missing.length > 0) {
+  console.error(
+    `[supabase] Supabase configuration missing: ${missing.join(', ')}. ` +
+      `Set these in Frontend/.env and restart the dev server.`
+  );
 }
 
-// Create the Supabase client with optimized settings for faster performance
-// Note: autoRefreshToken is disabled to prevent CORS errors when using backend authentication
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-    detectSessionInUrl: false,
-    flowType: 'pkce',
-  },
-  db: {
-    schema: 'public',
-  },
-  global: {
-    // Enable request timeout for faster error handling
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'X-Client-Info': 'cbc-education-system/1.0.0',
-    },
-  },
-});
+// Create the Supabase client with optimized settings for faster performance.
+// If env vars are missing, export null so the app doesn't crash on boot.
+export const supabase =
+  missing.length > 0
+    ? null
+    : createClient(supabaseUrl as string, supabaseAnonKey as string, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+          flowType: 'pkce',
+        },
+        db: {
+          schema: 'public',
+        },
+        global: {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-Client-Info': 'cbc-education-system/1.0.0',
+          },
+        },
+      });
+
 
 // User types based on the database schema
 export interface DatabaseUser {

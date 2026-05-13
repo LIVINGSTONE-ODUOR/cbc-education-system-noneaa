@@ -26,6 +26,11 @@ export const uploadStaffPhoto = async (base64Image: string, staffId: string): Pr
     const fileName = `staff-photos/${staffId}-${timestamp}.jpg`;
     console.log('[DEBUG] Uploading to:', fileName);
 
+    if (!supabase) {
+      console.error('[uploadStaffPhoto] Supabase is not configured (missing VITE_SUPABASE_URL/ANON_KEY).');
+      return null;
+    }
+
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
       .from('staff-images')
@@ -61,6 +66,11 @@ export const uploadStaffPhoto = async (base64Image: string, staffId: string): Pr
  */
 export const deleteStaffPhoto = async (photoUrl: string): Promise<boolean> => {
   try {
+    if (!supabase) {
+      console.error('[deleteStaffPhoto] Supabase is not configured (missing VITE_SUPABASE_URL/ANON_KEY).');
+      return false;
+    }
+
     // Extract filename from URL
     const urlParts = photoUrl.split('/');
     const fileName = urlParts[urlParts.length - 1];

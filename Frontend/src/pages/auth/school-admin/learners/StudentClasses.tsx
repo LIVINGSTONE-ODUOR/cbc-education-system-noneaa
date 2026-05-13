@@ -266,7 +266,7 @@ const StudentClasses: React.FC = () => {
                   <TabsTrigger
                     key={p.term}
                     value={p.term}
-                    className="rounded-md data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-orange-300 data-[state=active]:shadow-sm"
+                    className="rounded-md data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-blue-300 data-[state=active]:shadow-sm"
                   >
                     {p.term}
                   </TabsTrigger>
@@ -353,7 +353,7 @@ const StudentClasses: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
               <BookOpen className="h-6 w-6 text-white" />
             </div>
             <div>
@@ -369,7 +369,7 @@ const StudentClasses: React.FC = () => {
             variant={viewMode === 'grid' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setViewMode('grid')}
-            className={`gap-2 ${viewMode === 'grid' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'text-slate-600 hover:text-slate-900'}`}
+            className={`gap-2 ${viewMode === 'grid' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'text-slate-600 hover:text-slate-900'}`}
           >
             <Grid3x3 className="h-4 w-4" />
             <span className="hidden sm:inline">Grid</span>
@@ -378,7 +378,7 @@ const StudentClasses: React.FC = () => {
             variant={viewMode === 'list' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setViewMode('list')}
-            className={`gap-2 ${viewMode === 'list' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'text-slate-600 hover:text-slate-900'}`}
+            className={`gap-2 ${viewMode === 'list' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'text-slate-600 hover:text-slate-900'}`}
           >
             <List className="h-4 w-4" />
             <span className="hidden sm:inline">List</span>
@@ -390,7 +390,7 @@ const StudentClasses: React.FC = () => {
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <div className="text-center space-y-4">
-            <Loader2 className="h-12 w-12 animate-spin mx-auto text-orange-500" />
+            <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-600" />
             <p className="text-slate-600 font-medium">Loading classes...</p>
           </div>
         </div>
@@ -559,3 +559,4 @@ const StudentClasses: React.FC = () => {
 };
 
 export default StudentClasses;
+

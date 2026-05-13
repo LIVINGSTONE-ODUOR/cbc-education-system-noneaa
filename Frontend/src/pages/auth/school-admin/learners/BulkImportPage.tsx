@@ -853,7 +853,7 @@ const BulkImportPage = () => {
                   'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors',
                   file
                     ? 'border-green-300 bg-green-50'
-                    : 'border-slate-300 bg-slate-50 hover:border-orange-400 hover:bg-orange-50'
+                    : 'border-slate-300 bg-slate-50 hover:border-blue-400 hover:bg-blue-50'
                 )}
                 onClick={() => fileInputRef.current?.click()}
               >
@@ -900,7 +900,7 @@ const BulkImportPage = () => {
                 <Button
                   onClick={handleValidate}
                   disabled={isValidating}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white gap-2"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2"
                 >
                   {isValidating ? (
                     <>
@@ -984,7 +984,7 @@ const BulkImportPage = () => {
                 {(successCount + warningCount) > 0 && (
                   <Button
                     onClick={() => setShowImportDialog(true)}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white gap-2"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2"
                   >
                     <Upload className="h-4 w-4" />
                     Import {successCount + warningCount} Students
@@ -1016,9 +1016,9 @@ const BulkImportPage = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
-                  <p className="text-sm text-orange-700 font-medium">Total Students</p>
-                  <p className="text-3xl font-bold text-orange-600 mt-1">
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <p className="text-sm text-blue-700 font-medium">Total Students</p>
+                  <p className="text-3xl font-bold text-blue-600 mt-1">
                     {importingRecords.length}
                   </p>
                 </div>
@@ -1111,7 +1111,7 @@ const BulkImportPage = () => {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleImport}
-                className="bg-orange-600 hover:bg-orange-700"
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 Start Import
               </AlertDialogAction>
@@ -1256,7 +1256,7 @@ const BulkImportPage = () => {
                     setShowResultsDialog(false);
                     navigate('/school-admin/learners');
                   }}
-                  className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   View All Students
                 </Button>
@@ -1270,3 +1270,4 @@ const BulkImportPage = () => {
 };
 
 export default BulkImportPage;
+

@@ -21,7 +21,11 @@ import FeeStructuresTab from './FeeStructure';
 import DefaultersTab from './Defaulters';
 import AnalyticsTab from './Analytics';
 
-const FeeManagement = () => {
+export interface FeeManagementProps {
+  onBack?: () => void;
+}
+
+const FeeManagement: React.FC<FeeManagementProps> = ({ onBack }) => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [paymentForm, setPaymentForm] = useState({
     studentAdmNo: '', amount: '', method: 'M-Pesa', remarks: '',

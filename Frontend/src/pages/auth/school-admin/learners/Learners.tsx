@@ -507,7 +507,7 @@ const StudentManagement = () => {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 animate-spin mx-auto text-orange-500" />
+          <Loader2 className="w-12 h-12 animate-spin mx-auto text-blue-600" />
           <p className="text-lg font-medium text-slate-900">Loading students...</p>
           <p className="text-sm text-slate-500">This may take a moment...</p>
         </div>
@@ -559,7 +559,7 @@ const StudentManagement = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-3xl md:text-4xl font-bold text-slate-900 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
               <GraduationCap className="w-6 h-6 text-white" />
             </div>
             All Students
@@ -602,14 +602,14 @@ const StudentManagement = () => {
             variant="outline"
             size="sm"
             onClick={() => navigate('/school-admin/learners/bulk-import')}
-            className="border-slate-200 hover:bg-slate-100 gap-2 h-10 border-orange-300 text-orange-700 hover:bg-orange-50"
+            className="border-slate-200 hover:bg-slate-100 gap-2 h-10 border-blue-300 text-blue-700 hover:bg-blue-50"
           >
             <Upload className="h-4 w-4" />
             <span className="hidden sm:inline">Bulk Import</span>
           </Button>
           <Button
             onClick={() => navigate('/school-admin/learners/add')}
-            className="bg-orange-500 hover:bg-orange-600 text-white gap-2 h-10 px-4"
+            className="bg-blue-600 hover:bg-blue-700 text-white gap-2 h-10 px-4"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Add Student</span>
@@ -706,7 +706,7 @@ const StudentManagement = () => {
               placeholder="Search by student name or admission number..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 pr-10 h-11 bg-slate-50 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10"
+              className="pl-12 pr-10 h-11 bg-slate-50 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
               disabled={loading}
             />
             {searchTerm && (
@@ -727,7 +727,7 @@ const StudentManagement = () => {
               onClick={() => setShowFilters(!showFilters)}
               className={cn(
                 'gap-2 border-slate-200 text-slate-700 hover:bg-slate-100',
-                hasActiveFilters && 'border-orange-500 bg-orange-50 text-orange-700 hover:bg-orange-100'
+                hasActiveFilters && 'border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100'
               )}
               disabled={loading}
             >
@@ -796,7 +796,7 @@ const StudentManagement = () => {
                   variant="outline"
                   size="sm"
                   onClick={clearFilters}
-                  className="border-orange-300 text-orange-700 hover:bg-orange-50 gap-2"
+                  className="border-blue-300 text-blue-700 hover:bg-blue-50 gap-2"
                   disabled={loading}
                 >
                   <X className="h-4 w-4" />
@@ -814,7 +814,7 @@ const StudentManagement = () => {
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-orange-600" />
+                <BookOpen className="h-5 w-5 text-blue-600" />
                 Student Directory
               </CardTitle>
               <CardDescription className="mt-1">
@@ -822,7 +822,7 @@ const StudentManagement = () => {
                 <span className="font-semibold text-slate-900">{filteredStudents.length}</span> of{' '}
                 <span className="font-semibold text-slate-900">{totalStudents}</span> students
                 {hasActiveFilters && (
-                  <span className="ml-2 text-orange-600">
+                  <span className="ml-2 text-blue-600">
                     ({((filteredStudents.length / totalStudents) * 100).toFixed(0)}% filtered)
                   </span>
                 )}
@@ -855,7 +855,7 @@ const StudentManagement = () => {
         <CardContent className="p-0 relative">
           {loading && students.length > 0 && (
             <div className="absolute inset-0 bg-white/50 flex items-center justify-center rounded-lg z-10">
-              <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
             </div>
           )}
 
@@ -882,7 +882,7 @@ const StudentManagement = () => {
                       <TableRow
                         key={student.id}
                         className={cn(
-                          'border-b border-slate-100 hover:bg-orange-50/50 transition-colors',
+                          'border-b border-slate-100 hover:bg-blue-50/50 transition-colors',
                           idx % 2 === 0 && 'bg-white',
                           idx % 2 === 1 && 'bg-slate-50'
                         )}
@@ -984,7 +984,7 @@ const StudentManagement = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 hover:bg-orange-100 hover:text-orange-600"
+                                className="h-8 w-8 hover:bg-blue-100 hover:text-blue-600"
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
@@ -1055,7 +1055,7 @@ const StudentManagement = () => {
                   <div className="flex gap-2 justify-center">
                     <Button
                       onClick={() => navigate('/school-admin/learners/add')}
-                      className="mt-4 bg-orange-500 hover:bg-orange-600 text-white gap-2"
+                      className="mt-4 bg-blue-600 hover:bg-blue-700 text-white gap-2"
                     >
                       <Plus className="h-4 w-4" />
                       Add Student
@@ -1063,7 +1063,7 @@ const StudentManagement = () => {
                     <Button
                       onClick={() => navigate('/school-admin/learners/bulk-import')}
                       variant="outline"
-                      className="mt-4 gap-2 border-orange-300 text-orange-700"
+                      className="mt-4 gap-2 border-blue-300 text-blue-700"
                     >
                       <Upload className="h-4 w-4" />
                       Bulk Import
@@ -1171,3 +1171,4 @@ const StudentManagement = () => {
 };
 
 export default StudentManagement;
+

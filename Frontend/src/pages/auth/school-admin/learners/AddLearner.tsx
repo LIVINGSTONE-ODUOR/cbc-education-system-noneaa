@@ -586,7 +586,7 @@ export default function AddLearnerPage() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 animate-spin mx-auto text-orange-500" />
+          <Loader2 className="w-12 h-12 animate-spin mx-auto text-blue-600" />
           <p className="text-lg font-medium text-slate-900">Loading learner details...</p>
           <p className="text-sm text-slate-500">Please wait while we fetch the information...</p>
         </div>
@@ -635,7 +635,7 @@ export default function AddLearnerPage() {
                 className={cn(
                   'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
                   activeTab === 'student'
-                    ? 'border-orange-500 text-orange-600 bg-orange-50'
+                    ? 'border-blue-500 text-blue-600 bg-blue-50'
                     : 'border-transparent text-slate-600 hover:text-slate-900'
                 )}
               >
@@ -648,7 +648,7 @@ export default function AddLearnerPage() {
                 className={cn(
                   'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
                   activeTab === 'academic'
-                    ? 'border-orange-500 text-orange-600 bg-orange-50'
+                    ? 'border-blue-500 text-blue-600 bg-blue-50'
                     : 'border-transparent text-slate-600 hover:text-slate-900'
                 )}
               >
@@ -661,7 +661,7 @@ export default function AddLearnerPage() {
                 className={cn(
                   'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
                   activeTab === 'guardian'
-                    ? 'border-orange-500 text-orange-600 bg-orange-50'
+                    ? 'border-blue-500 text-blue-600 bg-blue-50'
                     : 'border-transparent text-slate-600 hover:text-slate-900'
                 )}
               >
@@ -674,7 +674,7 @@ export default function AddLearnerPage() {
                 className={cn(
                   'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
                   activeTab === 'health'
-                    ? 'border-orange-500 text-orange-600 bg-orange-50'
+                    ? 'border-blue-500 text-blue-600 bg-blue-50'
                     : 'border-transparent text-slate-600 hover:text-slate-900'
                 )}
               >
@@ -687,7 +687,7 @@ export default function AddLearnerPage() {
                 className={cn(
                   'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
                   activeTab === 'documents'
-                    ? 'border-orange-500 text-orange-600 bg-orange-50'
+                    ? 'border-blue-500 text-blue-600 bg-blue-50'
                     : 'border-transparent text-slate-600 hover:text-slate-900'
                 )}
               >
@@ -700,7 +700,7 @@ export default function AddLearnerPage() {
                 className={cn(
                   'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
                   activeTab === 'notes'
-                    ? 'border-orange-500 text-orange-600 bg-orange-50'
+                    ? 'border-blue-500 text-blue-600 bg-blue-50'
                     : 'border-transparent text-slate-600 hover:text-slate-900'
                 )}
               >
@@ -742,7 +742,7 @@ export default function AddLearnerPage() {
                   {expandedSections['student'] && (
                     <CardContent className="pt-6 space-y-6 bg-white">
                       {/* Photo Upload */}
-                      <div className="bg-slate-50 rounded-lg p-6 border-2 border-dashed border-slate-300 hover:border-orange-500 transition-colors">
+                      <div className="bg-slate-50 rounded-lg p-6 border-2 border-dashed border-slate-300 hover:border-blue-500 transition-colors">
                         <div className="flex flex-col items-center justify-center">
                           {learnerData.profilePhoto ? (
                             <div className="relative">
@@ -766,7 +766,7 @@ export default function AddLearnerPage() {
                           )}
                           <Label
                             htmlFor="profilePhoto"
-                            className="text-sm font-semibold text-slate-700 cursor-pointer hover:text-orange-600 mt-2"
+                            className="text-sm font-semibold text-slate-700 cursor-pointer hover:text-blue-600 mt-2"
                           >
                             {learnerData.profilePhoto ? 'Change Photo' : 'Upload Photo'}
                           </Label>
@@ -795,7 +795,7 @@ export default function AddLearnerPage() {
                           required
                           disabled={isEditMode}
                           className={cn(
-                            'h-11 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10',
+                            'h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10',
                             validationErrors.admissionNumber && 'border-red-500',
                             isEditMode && 'bg-slate-100 cursor-not-allowed'
                           )}
@@ -825,7 +825,7 @@ export default function AddLearnerPage() {
                             onChange={handleLearnerChange}
                             required
                             className={cn(
-                              'h-11 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10',
+                              'h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10',
                               validationErrors.firstName && 'border-red-500'
                             )}
                           />
@@ -846,7 +846,7 @@ export default function AddLearnerPage() {
                             placeholder="Michael"
                             value={learnerData.middleName}
                             onChange={handleLearnerChange}
-                            className="h-11 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10"
+                            className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
                           />
                         </div>
                         <div className="space-y-2">
@@ -861,7 +861,7 @@ export default function AddLearnerPage() {
                             onChange={handleLearnerChange}
                             required
                             className={cn(
-                              'h-11 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10',
+                              'h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10',
                               validationErrors.lastName && 'border-red-500'
                             )}
                           />
@@ -888,7 +888,7 @@ export default function AddLearnerPage() {
                             onChange={handleLearnerChange}
                             required
                             className={cn(
-                              'h-11 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10',
+                              'h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10',
                               validationErrors.dateOfBirth && 'border-red-500'
                             )}
                           />
@@ -914,7 +914,7 @@ export default function AddLearnerPage() {
                           >
                             <SelectTrigger
                               className={cn(
-                                'h-11 border-slate-200 focus:border-orange-500',
+                                'h-11 border-slate-200 focus:border-blue-500',
                                 validationErrors.gender && 'border-red-500'
                               )}
                             >
@@ -954,7 +954,7 @@ export default function AddLearnerPage() {
                               placeholder="123456789ABC"
                               value={learnerData.birthCertificateNumber}
                               onChange={handleLearnerChange}
-                              className="h-10 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10"
+                              className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
                             />
                           </div>
 
@@ -971,7 +971,7 @@ export default function AddLearnerPage() {
                               placeholder="NEMIS123456"
                               value={learnerData.nemisNumber}
                               onChange={handleLearnerChange}
-                              className="h-10 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10"
+                              className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
                             />
                           </div>
 
@@ -987,7 +987,7 @@ export default function AddLearnerPage() {
                               name="nationality"
                               value={learnerData.nationality}
                               onChange={handleLearnerChange}
-                              className="h-10 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10"
+                              className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
                             />
                           </div>
                         </div>
@@ -1036,7 +1036,7 @@ export default function AddLearnerPage() {
                           <Select value={selectedClassId} onValueChange={handleClassChange}>
                             <SelectTrigger
                               className={cn(
-                                'h-11 border-slate-200 focus:border-orange-500',
+                                'h-11 border-slate-200 focus:border-blue-500',
                                 validationErrors.gradeLevel && 'border-red-500'
                               )}
                               disabled={classesLoading}
@@ -1075,7 +1075,7 @@ export default function AddLearnerPage() {
                             value={learnerData.academicYear}
                             onChange={handleLearnerChange}
                             required
-                            className="h-11 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10"
+                            className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
                           />
                         </div>
                       </div>
@@ -1092,7 +1092,7 @@ export default function AddLearnerPage() {
                               }))
                             }
                           >
-                            <SelectTrigger className="h-11 border-slate-200 focus:border-orange-500">
+                            <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -1113,7 +1113,7 @@ export default function AddLearnerPage() {
                             type="date"
                             value={learnerData.admissionDate}
                             onChange={handleLearnerChange}
-                            className="h-11 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10"
+                            className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
                           />
                         </div>
                       </div>
@@ -1128,7 +1128,7 @@ export default function AddLearnerPage() {
                           placeholder="Name of previous school attended"
                           value={learnerData.previousSchool}
                           onChange={handleLearnerChange}
-                          className="h-11 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10"
+                          className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
                         />
                       </div>
 
@@ -1142,7 +1142,7 @@ export default function AddLearnerPage() {
                           placeholder="East, West, etc."
                           value={learnerData.streamName}
                           onChange={handleLearnerChange}
-                          className="h-11 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10"
+                          className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
                           disabled
                         />
                         <p className="text-xs text-slate-500">Auto-populated from selected class</p>
@@ -1196,7 +1196,7 @@ export default function AddLearnerPage() {
                             onChange={handleParentChange}
                             required
                             className={cn(
-                              'h-11 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10',
+                              'h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10',
                               validationErrors.parentFirstName && 'border-red-500'
                             )}
                           />
@@ -1219,7 +1219,7 @@ export default function AddLearnerPage() {
                             onChange={handleParentChange}
                             required
                             className={cn(
-                              'h-11 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10',
+                              'h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10',
                               validationErrors.parentLastName && 'border-red-500'
                             )}
                           />
@@ -1245,7 +1245,7 @@ export default function AddLearnerPage() {
                           onChange={handleParentChange}
                           required
                           className={cn(
-                            'h-11 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10',
+                            'h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10',
                             validationErrors.parentEmail && 'border-red-500'
                           )}
                         />
@@ -1274,7 +1274,7 @@ export default function AddLearnerPage() {
                             onChange={handleParentChange}
                             required
                             className={cn(
-                              'h-11 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10',
+                              'h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10',
                               validationErrors.parentPhone && 'border-red-500'
                             )}
                           />
@@ -1295,7 +1295,7 @@ export default function AddLearnerPage() {
                             placeholder="12345678"
                             value={parentData.nationalId}
                             onChange={handleParentChange}
-                            className="h-11 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10"
+                            className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
                           />
                         </div>
                       </div>
@@ -1322,7 +1322,7 @@ export default function AddLearnerPage() {
                           >
                             <SelectTrigger
                               className={cn(
-                                'h-11 border-slate-200 focus:border-orange-500',
+                                'h-11 border-slate-200 focus:border-blue-500',
                                 validationErrors.parentRelationship && 'border-red-500'
                               )}
                             >
@@ -1351,7 +1351,7 @@ export default function AddLearnerPage() {
                             placeholder="Teacher, Engineer, etc."
                             value={parentData.occupation}
                             onChange={handleParentChange}
-                            className="h-11 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10"
+                            className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
                           />
                         </div>
                       </div>
@@ -1399,7 +1399,7 @@ export default function AddLearnerPage() {
                           id="specialNeeds"
                           name="specialNeeds"
                           placeholder="Describe any special educational needs, physical limitations, or other requirements..."
-                          className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm font-sans outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 transition-all resize-none"
+                          className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm font-sans outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all resize-none"
                           rows={3}
                           value={learnerData.specialNeeds}
                           onChange={handleLearnerChange}
@@ -1414,7 +1414,7 @@ export default function AddLearnerPage() {
                           id="medicalConditions"
                           name="medicalConditions"
                           placeholder="List any chronic medical conditions, medications, or treatments..."
-                          className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm font-sans outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 transition-all resize-none"
+                          className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm font-sans outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all resize-none"
                           rows={3}
                           value={learnerData.medicalConditions}
                           onChange={handleLearnerChange}
@@ -1429,7 +1429,7 @@ export default function AddLearnerPage() {
                           id="allergies"
                           name="allergies"
                           placeholder="List any known allergies and reactions..."
-                          className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm font-sans outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 transition-all resize-none"
+                          className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm font-sans outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all resize-none"
                           rows={3}
                           value={learnerData.allergies}
                           onChange={handleLearnerChange}
@@ -1459,7 +1459,7 @@ export default function AddLearnerPage() {
                     <textarea
                       id="notes"
                       placeholder="Add any additional notes about the student..."
-                      className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm font-sans outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 transition-all resize-none"
+                      className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm font-sans outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all resize-none"
                       rows={6}
                       value={documentsData.notes}
                       onChange={(e) =>
@@ -1486,7 +1486,7 @@ export default function AddLearnerPage() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="bg-orange-500 hover:bg-orange-600 text-white gap-2 h-11 px-6"
+                  className="bg-blue-600 hover:bg-blue-700 text-white gap-2 h-11 px-6"
                 >
                   {isLoading ? (
                     <>
@@ -1508,3 +1508,4 @@ export default function AddLearnerPage() {
     </div>
   );
 }
+
