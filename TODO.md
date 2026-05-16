@@ -1,11 +1,9 @@
-# TODO (blackboxai)
+# TODO
 
-## Backend: Teachers endpoint (fix 500)
-- [ ] Add dev logging + include Supabase error details in `listTeachers` responses
-- [ ] Implement fallback query in `listTeachers` if complex nested joins fail
-- [ ] Ensure `listTeachers` returns consistent success payload shape
+- [ ] Inspect Vercel + proxy routing configs (Frontend `vercel.json`, Frontend `vite.config.ts`, Backend `vercel.json`) to confirm `/api/v1/*` is served from same origin.
+- [x] Fix/harden backend CORS logic in `Backend/src/app.js` and ensure preflight handling matches the CORS middleware behavior.
+- [x] Backend CORS/preflight logic updated to use a single allow decision + origin normalization.
+- [ ] Re-test login from `https://cbc-education-system-a478.vercel.app` ensuring preflight succeeds and POST `/api/v1/login` returns 200.
 
-## Frontend: Environment warnings (after backend is fixed)
-- [ ] Add/verify `Frontend/.env` values: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
-- [ ] Ensure `VITE_API_URL`/proxy resolves to backend correctly in dev
+
 

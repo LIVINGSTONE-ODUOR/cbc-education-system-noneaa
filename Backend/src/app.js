@@ -48,7 +48,14 @@ const defaultOrigins = [
 ];
 
 // Function to check if origin matches dynamic host patterns (Codespaces / Vercel / Render)
+const normalizeOrigin = (origin) => {
+  if (!origin) return '';
+  // Trim whitespace and remove any trailing slash to prevent subtle mismatches
+  return String(origin).trim().replace(/\/$/, '');
+};
+
 const isAllowedDynamicOrigin = (origin) => {
+  origin = normalizeOrigin(origin);
   if (!origin) return false;
   const patterns = [
     /^https:\/\/[a-zA-Z0-9\-]+\.app\.github\.dev$/,
@@ -62,13 +69,21 @@ const isAllowedDynamicOrigin = (origin) => {
   return patterns.some(pattern => pattern.test(origin));
 };
 
-// Merge and remove duplicates
-const allowedOrigins = [...new Set([...envOrigins, ...defaultOrigins])];
+// Merge and remove duplicates (and normalize for exact matching)
+const allowedOrigins = [...new Set([...envOrigins, ...defaultOrigins].map(normalizeOrigin))];
 
 // Log CORS configuration on startup
 console.log('[CORS] Configuration loaded');
 console.log('[CORS] Allowed origins:', allowedOrigins);
 console.log('[CORS] Dynamic host pattern matching enabled (Codespaces / Vercel / Render)');
+
+const isOriginAllowed = (origin) => {
+  origin = normalizeOrigin(origin);
+  if (!origin) return false;
+  if (allowedOrigins.includes(origin)) return true;
+  if (isAllowedDynamicOrigin(origin)) return true;
+  return false;
+};
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -77,29 +92,23 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // Check if origin is explicitly allowed
-    if (allowedOrigins.includes(origin)) {
-      console.log('[CORS] ✅ Allowed (explicit):', origin);
+    if (isOriginAllowed(origin)) {
+      const normalized = normalizeOrigin(origin);
+      console.log('[CORS] ✅ Allowed origin:', normalized);
       return callback(null, true);
     }
 
-    // Check if origin matches dynamic host patterns (Codespaces, Vercel, Render)
-    if (isAllowedDynamicOrigin(origin)) {
-      console.log('[CORS] ✅ Allowed (dynamic host pattern):', origin);
-      return callback(null, true);
-    }
-
-    // Log blocked requests for debugging
-    console.warn('[CORS] ❌ Blocked request from origin:', origin);
+    const normalized = normalizeOrigin(origin);
+    console.warn('[CORS] ❌ Blocked request from origin:', normalized);
     console.warn('[CORS] Allowed origins are:', allowedOrigins);
-    
-    return callback(new Error(`CORS policy: Origin ${origin} not allowed`));
+
+    return callback(new Error(`CORS policy: Origin ${normalized} not allowed`));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
   allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
+    'Content-Type',
+    'Authorization',
     'X-Requested-With',
     'Accept',
     'Origin',
@@ -115,18 +124,22 @@ app.use(cors({
 app.options('*', (req, res) => {
   const origin = req.headers.origin;
   console.log('[CORS] Handling preflight request from origin:', origin);
-  
-  if (!origin || allowedOrigins.includes(origin) || isAllowedDynamicOrigin(origin)) {
-    res.header('Access-Control-Allow-Origin', origin || '*');
+
+  // Keep logic consistent with the main cors middleware decision
+  if (!origin || isOriginAllowed(origin)) {
+    res.header('Access-Control-Allow-Origin', normalizeOrigin(origin) || '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+    res.header(
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cookie, Set-Cookie'
+    );
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Max-Age', '86400'); // 24 hours
-    res.sendStatus(200);
-  } else {
-    console.warn('[CORS] Preflight blocked for origin:', origin);
-    res.sendStatus(403);
+    return res.sendStatus(200);
   }
+
+  console.warn('[CORS] Preflight blocked for origin:', normalizeOrigin(origin));
+  return res.sendStatus(403);
 });
 
 app.use(morgan('combined')); // HTTP request logging
