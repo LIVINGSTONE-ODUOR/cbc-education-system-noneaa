@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import EducationalResourcesPage from './Educationalresourcespage';
+
 import {
   GraduationCap,
   ChevronDown,
@@ -737,9 +737,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      
-      {/* Enhanced Testimonials Section */}
-      <EducationalResourcesPage/>
 
       {/* Enhanced CTA Section */}
       <section className="py-24 relative overflow-hidden">
