@@ -1,22 +1,41 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EducationalResourcesPage from './Educationalresourcespage';
 import {
   GraduationCap,
+  ChevronDown,
+  Menu,
+  X,
   Users,
+  TrendingUp,
   BookOpen,
+  Clock,
   LayoutGrid,
   Target,
   ClipboardCheck,
   Upload,
+  Quote,
+  MapPin,
   Mail,
+  Phone,
+  Facebook,
+  Twitter,
+  Linkedin,
+  Instagram,
   ArrowRight,
   Sparkles,
+  Star,
   CheckCircle,
   Play,
+  Award,
+  Target as TargetIcon,
+  BarChart3,
+  Lightbulb,
   Shield,
   Zap,
   Globe,
@@ -24,18 +43,90 @@ import {
   Heart,
   MousePointerClick,
   Brain,
-  Users2,
-  Video,
-  DollarSign,
+  GitBranch,
+  Network,
+  LineChart,
+  PieChart,
   Calendar,
+  Bell,
+  Search,
+  Download,
+  Cloud,
+  Lock,
+  Unlock,
+  Eye,
+  Users2,
+  BookMarked,
+  Notebook,
+  School,
+  BrainCircuit,
+  Target as TargetVariant,
+  CircuitBoard,
+  Cpu,
+  Database,
+  Server,
+  Workflow,
+  GitPullRequest,
+  Layers,
+  Filter,
+  Settings,
+  UserPlus,
+  FileText,
+  Video,
+  Music,
+  Image,
+  FileCode,
+  FileSpreadsheet,
+  Presentation,
+  Code,
+  Terminal,
+  Palette,
+  DollarSign,
 } from 'lucide-react';
 import heroVideo from '@/assets/teacher-teaching.mp4';
-import { motion, useInView } from 'framer-motion';
+import heroBg from '@/assets/hero-bg.png';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { motion, useAnimation, useInView } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 const roles = ['Student', 'Teacher', 'Parent', 'Admin'] as const;
 type Role = typeof roles[number];
 
+const stats = [
+  {
+    icon: Users,
+    value: '150+',
+    label: 'PARTNER SCHOOLS',
+    change: '+12%',
+    trend: 'up',
+  },
+  {
+    icon: TrendingUp,
+    value: '92%',
+    label: 'MASTERY GROWTH RATE',
+    change: '+8%',
+    trend: 'up',
+  },
+  {
+    icon: GraduationCap,
+    value: '1.2M',
+    label: 'SUBMISSIONS EVALUATED',
+    change: '+23%',
+    trend: 'up',
+  },
+  {
+    icon: Clock,
+    value: '4h',
+    label: 'AVG. FEEDBACK TIME',
+    change: '-35%',
+    trend: 'down',
+  },
+];
 
 const tools = [
   {
@@ -95,27 +186,209 @@ const steps = [
   },
 ];
 
+const workflows = [
+  {
+    icon: Users,
+    title: 'Identify Goals',
+    description: 'Students view their competency map and select their next learning target.',
+    link: { text: 'View Map', href: '/curriculum' },
+    gradient: 'bg-gradient-to-br from-emerald-400 to-emerald-600',
+    features: ['Competency mapping', 'Goal setting', 'Progress visualization'],
+  },
+  {
+    icon: BookOpen,
+    title: 'Engage & Submit',
+    description: 'Access resources and upload evidence of mastery directly to the teacher.',
+    link: { text: 'Upload Evidence', href: '/upload' },
+    gradient: 'bg-gradient-to-br from-blue-400 to-blue-600',
+    features: ['Resource library', 'Submission portal', 'File management'],
+  },
+  {
+    icon: ClipboardCheck,
+    title: 'Review Mastery',
+    description: 'Teachers evaluate evidence against rubrics and update progress heatmaps.',
+    link: { text: 'See Progress', href: '/progress' },
+    gradient: 'bg-gradient-to-br from-purple-400 to-purple-600',
+    features: ['Rubric scoring', 'Feedback tools', 'Progress tracking'],
+  },
+];
 
+const testimonials = [
+  {
+    quote: "Nonea has completely transformed how we track student growth. The heatmaps give us a level of insight we never had with traditional grading.",
+    author: 'Jere Jenkins',
+    role: 'Principal, Oakwood Academy',
+    avatar: 'SJ',
+    rating: 5,
+    schoolLogo: '🏫',
+  },
+  {
+    quote: "As a parent, I finally understand exactly what my child is learning. The clarity provided by the sub-strands and outcomes is incredible.",
+    author: 'John Johnte',
+    role: 'Parent of 7th Grader',
+    avatar: 'DM',
+    rating: 5,
+    schoolLogo: '👨‍👩‍👧',
+  },
+];
 
+const platformLinks = [
+  { label: 'Curriculum Management', href: '/curriculum', icon: BookMarked },
+  { label: 'Progress Tracking', href: '/progress', icon: LineChart },
+  { label: 'Assessment Tools', href: '/assessments', icon: ClipboardCheck },
+  { label: 'Analytics Dashboard', href: '/analytics', icon: PieChart },
+  { label: 'Resource Library', href: '/resources', icon: Database },
+];
 
+const resourceLinks = [
+  { label: 'CBE Methodology', href: '/methodology', icon: BrainCircuit },
+  { label: 'Teacher Resources', href: '/teacher/resources', icon: Users2 },
+  { label: 'Parent Guides', href: '/guides', icon: Notebook },
+  { label: 'Success Stories', href: '/stories', icon: Award },
+  { label: 'System Status', href: '/status', icon: Server },
+];
+
+const AnimatedCounter = ({ value, duration = 2000 }: { value: string; duration?: number }) => {
+  const [count, setCount] = useState(0);
+  const numericValue = parseFloat(value.replace(/[^0-9.]/g, ''));
+  const suffix = value.replace(/[0-9.]/g, '');
+
+  useEffect(() => {
+    let start = 0;
+    const end = numericValue;
+    const increment = end / (duration / 16);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) {
+        setCount(end);
+        clearInterval(timer);
+      } else {
+        setCount(start);
+      }
+    }, 16);
+
+    return () => clearInterval(timer);
+  }, [numericValue, duration]);
+
+  return (
+    <span className="font-bold">
+      {suffix === '%' ? count.toFixed(0) : count.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+      {suffix}
+    </span>
+  );
+};
+
+const FloatingElement = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => (
+  <motion.div
+    initial={{ y: 20, opacity: 0 }}
+    animate={{ y: [0, -10, 0], opacity: 1 }}
+    transition={{
+      duration: 3,
+      delay,
+      repeat: Infinity,
+      repeatType: 'reverse',
+      ease: 'easeInOut',
+    }}
+  >
+    {children}
+  </motion.div>
+);
 
 const GlowingCard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={cn('relative group', className)}>
-    <div className="relative bg-card rounded-xl p-8 border border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300">
+    <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-xl blur opacity-30 group-hover:opacity-70 transition duration-500 group-hover:duration-200 animate-pulse" />
+    <div className="relative bg-card rounded-xl p-8 border border-border/50">
       {children}
     </div>
   </div>
 );
 
+const ParticleBackground = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles: Array<{
+      x: number;
+      y: number;
+      size: number;
+      speedX: number;
+      speedY: number;
+      color: string;
+    }> = [];
+
+    const colors = ['#60a5fa', '#34d399', '#a855f7', '#f59e0b'];
+
+    for (let i = 0; i < 50; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 2 + 0.5,
+        speedX: Math.random() * 0.5 - 0.25,
+        speedY: Math.random() * 0.5 - 0.25,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      particles.forEach((particle) => {
+        particle.x += particle.speedX;
+        particle.y += particle.speedY;
+
+        if (particle.x > canvas.width) particle.x = 0;
+        if (particle.x < 0) particle.x = canvas.width;
+        if (particle.y > canvas.height) particle.y = 0;
+        if (particle.y < 0) particle.y = canvas.height;
+
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        ctx.fillStyle = particle.color;
+        ctx.fill();
+      });
+
+      requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="fixed inset-0 pointer-events-none z-0 opacity-20"
+      style={{ mixBlendMode: 'screen' }}
+    />
+  );
+};
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState<Role>('Student');
   const [videoError, setVideoError] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const heroRef = useRef(null);
+  const statsRef = useRef(null);
   const toolsRef = useRef(null);
   const isHeroInView = useInView(heroRef, { once: true });
+  const isStatsInView = useInView(statsRef, { once: true });
   const isToolsInView = useInView(toolsRef, { once: true });
 
   const handleRoleClick = (role: Role) => {
@@ -131,11 +404,21 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background via-secondary/20 to-background">
+      <ParticleBackground />
 
+      
+      {/* Animated Background Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-1/3 right-1/3 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-500" />
+      </div>
+
+      {/* Enhanced Navbar with Glass Morphism */}
       <Header/>
       
-      {/* Hero Section */}
+      {/* Hero Section with Enhanced Effects */}
       <section ref={heroRef} className="relative min-h-screen flex items-center pt-16 overflow-hidden">
         {/* Background with Gradient Overlay */}
         <div className="absolute inset-0">
@@ -159,6 +442,17 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-br from-blue-900/70 via-slate-900/70 to-emerald-900/70" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-background/20 to-background/80" />
         </div>
+
+        {/* Floating Elements */}
+        <FloatingElement delay={0}>
+          <div className="absolute top-20 left-10 w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/30" />
+        </FloatingElement>
+        <FloatingElement delay={0.2}>
+          <div className="absolute top-40 right-20 w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500/30" />
+        </FloatingElement>
+        <FloatingElement delay={0.4}>
+          <div className="absolute bottom-40 left-1/4 w-10 h-10 rounded-full bg-purple-500/20 border border-purple-500/30" />
+        </FloatingElement>
 
         {/* Content */}
         <div className="relative container mx-auto px-4 lg:px-8 py-20">
@@ -187,7 +481,7 @@ export default function HomePage() {
               Track progress, manage curriculum, and achieve excellence through personalized pathways.
             </p>
 
-            {/* Role Selector */}
+            {/* Role Selector with Glow Effect */}
             <div className="mb-10">
               <p className="text-sm font-medium text-white/70 mb-4 tracking-wider flex items-center gap-2">
                 <MousePointerClick className="w-4 h-4" />
@@ -220,7 +514,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* CTA Buttons */}
+            {/* CTA Buttons with Animation */}
             <div className="flex flex-wrap gap-4">
               <motion.div
                 whileHover={{ scale: 1.05 }}
@@ -279,8 +573,9 @@ export default function HomePage() {
 
       </section>
 
-      {/* Quick Access Tools */}
+      {/* Quick Access Tools - Enhanced */}
       <section ref={toolsRef} className="py-24 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-secondary/10 to-transparent" />
         <div className="container mx-auto px-4 lg:px-8 relative">
           <motion.div
             initial={{ y: 50, opacity: 0 }}
@@ -353,34 +648,34 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-20 md:py-28 bg-blue-600">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
-            {[
-              { number: '150+', label: 'Schools Transformed' },
-              { number: '50K+', label: 'Students Impacted' },
-              { number: '98%', label: 'Teacher Satisfaction' },
-              { number: '24/7', label: 'System Uptime' },
-            ].map((stat, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <div className="text-4xl md:text-5xl font-bold mb-2">
-                  {stat.number}
-                </div>
-                <p className="text-sm md:text-base text-blue-100">{stat.label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Animated Stats Section */}
+              <section className="py-20 md:py-32 bg-blue-600">
+                      <div className="max-w-6xl mx-auto px-6">
+                        <div className="grid md:grid-cols-4 gap-8 text-center text-white">
+                          {[
+                            { number: '150+', label: 'Schools Transformed' },
+                            { number: '50K+', label: 'Students Impacted' },
+                            { number: '98%', label: 'Teacher Satisfaction' },
+                            { number: '24/7', label: 'System Uptime' }
+                          ].map((stat, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              whileInView={{ opacity: 1, scale: 1 }}
+                              viewport={{ once: true }}
+                              transition={{ delay: index * 0.1 }}
+                            >
+                              <div className="text-5xl font-bold mb-2">
+                                {stat.number}
+                              </div>
+                              <p className="text-base text-blue-100">{stat.label}</p>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    </section>
 
-      {/* Foundation Section */}
+      {/* Foundation Section with Interactive Cards */}
       <section className="py-24 relative">
         <div className="container mx-auto px-4 lg:px-8">
           <motion.div
@@ -442,10 +737,13 @@ export default function HomePage() {
         </div>
       </section>
 
+      
+      {/* Enhanced Testimonials Section */}
       <EducationalResourcesPage/>
 
-      {/* CTA Section */}
+      {/* Enhanced CTA Section */}
       <section className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-emerald-500/5" />
         <div className="container mx-auto px-4 lg:px-8 relative">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
@@ -593,6 +891,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Enhanced Footer */}
       <Footer/>
      
     </div>
