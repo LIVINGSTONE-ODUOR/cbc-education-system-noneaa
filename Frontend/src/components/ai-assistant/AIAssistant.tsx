@@ -36,30 +36,55 @@ Key CBE information:
 - Core competencies include: Communication, Collaboration, Critical Thinking, Creativity, Citizenship, Digital Literacy, Learning to Learn, Self-Efficacy
 - Assessment is continuous and formative, focusing on competency development`;
 
-// Configure backend AI endpoint.
-// The backend mounts the AI routes at /api/v1/ai, so the chat endpoint is /api/v1/ai/ai-chat.
-// Auto-fix legacy env values that omit the /v1 segment.
+// Gemini API configuration
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
+const GEMINI_MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.0-flash';
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+// Backend AI endpoint (fallback if Gemini key not set)
 const normalizeAiEndpoint = (raw?: string) => {
   const fallback = '/api/v1/ai/ai-chat';
   if (!raw) return fallback;
-
   const trimmed = raw.trim();
   if (!trimmed) return fallback;
-
-  // Backward compat: /api/ai-chat → /api/v1/ai/ai-chat
   if (/\/api\/ai-chat$/.test(trimmed)) {
     return trimmed.replace(/\/api\/ai-chat$/, '/api/v1/ai/ai-chat');
   }
-
-  // Backward compat: /api/ai/ai-chat (missing v1) → /api/v1/ai/ai-chat
   if (/\/api\/ai\/ai-chat$/.test(trimmed) && !/\/api\/v1\/ai\/ai-chat$/.test(trimmed)) {
     return trimmed.replace(/\/api\/ai\/ai-chat$/, '/api/v1/ai/ai-chat');
   }
-
   return trimmed;
 };
 
 const AI_API_ENDPOINT = normalizeAiEndpoint(import.meta.env.VITE_AI_API_ENDPOINT);
+
+async function callGemini(messages: { role: string; content: string }[], systemPrompt: string): Promise<string> {
+  const contents = messages.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }],
+  }));
+
+  const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents,
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 1024,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Gemini API error: ${response.status} - ${err}`);
+  }
+
+  const data = await response.json();
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text || 'I apologize, but I could not generate a response. Please try again.';
+}
 
 export default function AIAssistant() {
   const [isOpen, setIsOpen] = useState(true);
@@ -197,40 +222,46 @@ export default function AIAssistant() {
     setIsLoading(true);
 
     try {
-      const accessToken = localStorage.getItem('cbe_access_token');
+      const allMessages = [...messages, userMessage].map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
 
-      // Option 1: Connect to your own backend
-      const response = await fetch(AI_API_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify({
-          messages: [...messages, userMessage].map(m => ({
-            role: m.role,
-            content: m.content
-          })),
-          systemPrompt: SYSTEM_CONTEXT
-        }),
-      });
+      let reply: string;
 
-      if (!response.ok) {
-        throw new Error('ASSISTANT_OFFLINE');
+      if (GEMINI_API_KEY) {
+        reply = await callGemini(allMessages, SYSTEM_CONTEXT);
+      } else {
+        const accessToken = localStorage.getItem('cbe_access_token');
+        const response = await fetch(AI_API_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+          body: JSON.stringify({
+            messages: allMessages,
+            systemPrompt: SYSTEM_CONTEXT,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('ASSISTANT_OFFLINE');
+        }
+
+        const data = await response.json();
+        reply =
+          data?.data?.reply ||
+          data?.message ||
+          data?.content ||
+          data?.data?.message ||
+          'I apologize, but I encountered an issue. Please try again.';
       }
 
-      const data = await response.json();
-      const reply =
-        data?.data?.reply ||
-        data?.message ||
-        data?.content ||
-        data?.data?.message ||
-        'I apologize, but I encountered an issue. Please try again.';
-      
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: reply
+        content: reply,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -239,7 +270,7 @@ export default function AIAssistant() {
       const fallbackMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Assistant is currently offline, please contact our team directly if you have any queries. In the meantime, feel free to explore the platform or check our documentation for information about this platform.'
+        content: 'Assistant is currently offline. Please contact our team directly if you have any queries.',
       };
       setMessages(prev => [...prev, fallbackMessage]);
     } finally {
