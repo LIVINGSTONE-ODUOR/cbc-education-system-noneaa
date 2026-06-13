@@ -29,6 +29,7 @@ import NoneaaPlatformPage from "@/pages/website-pages/Platform";
 import ClientsPage from '@/pages/website-pages/ClientsPage';
 import Feature from "@/pages/website-pages/Features";
 import TeamMembersPage from '@/pages/website-pages/TeamPage';
+import CareersPage from '@/pages/website-pages/CareersPage';
 
 // Admin Registration
 import AdminRegistrationPage from "@/pages/admin-registration";
@@ -177,6 +178,7 @@ function AppRoutes() {
       <Route path="/admin-register" element={<AdminRegistrationPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/features" element={<Feature />} />
+      <Route path="/careers" element={<CareersPage />} />
 
       {/* ── Demo Routes ── */}
       <Route path="/dashboard-demo" element={<ModernDashboard />} />
