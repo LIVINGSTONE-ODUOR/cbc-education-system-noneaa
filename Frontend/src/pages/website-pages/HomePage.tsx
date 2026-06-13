@@ -551,18 +551,18 @@ export default function HomePage() {
               </motion.div>
             </div>
 
-            {/* Social Proof */}
+            {/* Trust Badges */}
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={isHeroInView ? { y: 0, opacity: 1 } : {}}
               transition={{ delay: 0.6 }}
               className="mt-12 pt-8 border-t border-white/20"
             >
-              <p className="text-sm text-white/70 mb-4">Trusted by 150+ schools across Kenya</p>
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 opacity-80">
-                {['Greenfield Academy', 'Lakeview Primary', 'Coastal Junior School', 'Highlands School Group', 'Sunrise Academy'].map((name) => (
+              <p className="text-sm text-white/70 mb-4">Trusted by leading educational institutions</p>
+              <div className="flex flex-wrap items-center gap-6 opacity-70">
+                {['Google for Education', 'Microsoft Education', 'Apple Distinguished Schools', 'IB World Schools'].map((name) => (
                   <div key={name} className="flex items-center gap-2">
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
                     <span className="text-white/90 text-sm">{name}</span>
                   </div>
                 ))}
@@ -587,13 +587,13 @@ export default function HomePage() {
               <Zap className="w-4 h-4 text-blue-500" />
               <span className="text-sm font-medium text-primary">Powerful Features</span>
             </div>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
               Everything You Need in{' '}
               <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
                 One Platform
               </span>
             </h2>
-            <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
               Streamline your competency-based education workflow with our comprehensive suite of tools.
             </p>
           </motion.div>
@@ -649,29 +649,31 @@ export default function HomePage() {
       </section>
 
       {/* Animated Stats Section */}
-      <section className="py-20 md:py-32 bg-blue-600">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
-            {[
-              { number: '150+', label: 'Schools Transformed' },
-              { number: '50K+', label: 'Students Impacted' },
-              { number: '98%', label: 'Teacher Satisfaction' },
-              { number: '24/7', label: 'System Uptime' },
-            ].map((stat, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <div className="text-3xl md:text-5xl font-bold mb-2">{stat.number}</div>
-                <p className="text-sm md:text-base text-blue-100">{stat.label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+              <section className="py-20 md:py-32 bg-blue-600">
+                      <div className="max-w-6xl mx-auto px-6">
+                        <div className="grid md:grid-cols-4 gap-8 text-center text-white">
+                          {[
+                            { number: '150+', label: 'Schools Transformed' },
+                            { number: '50K+', label: 'Students Impacted' },
+                            { number: '98%', label: 'Teacher Satisfaction' },
+                            { number: '24/7', label: 'System Uptime' }
+                          ].map((stat, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              whileInView={{ opacity: 1, scale: 1 }}
+                              viewport={{ once: true }}
+                              transition={{ delay: index * 0.1 }}
+                            >
+                              <div className="text-5xl font-bold mb-2">
+                                {stat.number}
+                              </div>
+                              <p className="text-base text-blue-100">{stat.label}</p>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    </section>
 
       {/* Foundation Section with Interactive Cards */}
       <section className="py-24 relative">
@@ -687,13 +689,13 @@ export default function HomePage() {
               <Target className="w-4 h-4 text-purple-500" />
               <span className="text-sm font-medium text-primary">Our Methodology</span>
             </div>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
               The Foundation of{' '}
               <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                 Mastery Learning
               </span>
             </h2>
-            <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Our CBE system shifts the focus from "time spent in class" to "demonstrated mastery of skills."
             </p>
           </motion.div>
@@ -753,18 +755,18 @@ export default function HomePage() {
             <div className="bg-gradient-to-br from-card via-card to-card/90 rounded-3xl border border-border/50 shadow-2xl overflow-hidden">
               <div className="grid md:grid-cols-2 gap-0">
                 {/* Left - Content */}
-                <div className="p-6 sm:p-12 md:p-16">
+                <div className="p-12 md:p-16">
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border border-blue-500/20 mb-6">
                     <Rocket className="w-4 h-4 text-blue-500" />
                     <span className="text-sm font-medium text-primary">Get Started Today</span>
                   </div>
-                  <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
+                  <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
                     Ready to Transform{' '}
                     <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
                       Your School?
                     </span>
                   </h2>
-                  <p className="text-base sm:text-xl text-muted-foreground mb-8 leading-relaxed">
+                  <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
                     Join hundreds of schools moving towards a mastery-first future with Nonea.
                     Start your journey today with a personalized demo.
                   </p>
