@@ -73,7 +73,7 @@ const HeroSection = () => {
     text: descriptionText,
     speed: 15,
     delay: 1500,
-    repeat: false,
+    repeat: true,
   });
 
   const containerVariants = {
@@ -113,7 +113,23 @@ const HeroSection = () => {
         transition={{ duration: 1 }}
       />
 
-
+      {/* Animated background elements */}
+      <motion.div
+        className="absolute top-20 right-20 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"
+        animate={{
+          scale: [1, 1.1, 1],
+          opacity: [0.3, 0.5, 0.3],
+        }}
+        transition={{ duration: 8, repeat: Infinity }}
+      />
+      <motion.div
+        className="absolute bottom-20 left-20 w-64 h-64 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none"
+        animate={{
+          scale: [1.1, 1, 1.1],
+          opacity: [0.4, 0.2, 0.4],
+        }}
+        transition={{ duration: 10, repeat: Infinity, delay: 1 }}
+      />
 
       <div className="max-w-6xl mx-auto px-6 relative z-10">
         <motion.div
@@ -145,7 +161,7 @@ const HeroSection = () => {
 
           {/* Animated Heading with Typewriter Effect */}
           <motion.div variants={itemVariants} className="mb-6">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
+            <h1 className="text-xl font-bold leading-tight">
               <motion.span
                 className="inline-block"
                 initial={{ opacity: 0, y: 10 }}
@@ -153,6 +169,14 @@ const HeroSection = () => {
                 transition={{ duration: 0.6, delay: 0.4 }}
               >
                 {typedHeading}
+              </motion.span>
+              <motion.span
+                className="inline-block"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8 }}
+              >
+                <span className="animate-pulse text-cyan-400 ml-1">|</span>
               </motion.span>
             </h1>
           </motion.div>
@@ -163,6 +187,14 @@ const HeroSection = () => {
             className="text-lg text-slate-300 mb-8 max-w-2xl leading-relaxed"
           >
             {typedDescription}
+            <motion.span
+              className="inline-block"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              <span className="animate-pulse text-cyan-400 ml-1">|</span>
+            </motion.span>
           </motion.p>
 
           {/* Animated Buttons */}
