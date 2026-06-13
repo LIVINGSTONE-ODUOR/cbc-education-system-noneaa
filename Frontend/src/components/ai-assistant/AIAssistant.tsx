@@ -36,19 +36,30 @@ Key CBE information:
 - Core competencies include: Communication, Collaboration, Critical Thinking, Creativity, Citizenship, Digital Literacy, Learning to Learn, Self-Efficacy
 - Assessment is continuous and formative, focusing on competency development`;
 
-// Configure backend AI endpoint. Auto-fix legacy "/api/ai-chat" values.
+// Configure backend AI endpoint.
+// The backend mounts the AI routes at /api/v1/ai, so the chat endpoint is /api/v1/ai/ai-chat.
+// Auto-fix legacy env values that omit the /v1 segment.
 const normalizeAiEndpoint = (raw?: string) => {
-  const fallback = '/api/ai/ai-chat';
+  const fallback = '/api/v1/ai/ai-chat';
   if (!raw) return fallback;
 
   const trimmed = raw.trim();
   if (!trimmed) return fallback;
 
-  // Backward compatibility for old env values
-  return trimmed.replace(/\/api\/ai-chat$/, '/api/ai/ai-chat');
+  // Backward compat: /api/ai-chat → /api/v1/ai/ai-chat
+  if (/\/api\/ai-chat$/.test(trimmed)) {
+    return trimmed.replace(/\/api\/ai-chat$/, '/api/v1/ai/ai-chat');
+  }
+
+  // Backward compat: /api/ai/ai-chat (missing v1) → /api/v1/ai/ai-chat
+  if (/\/api\/ai\/ai-chat$/.test(trimmed) && !/\/api\/v1\/ai\/ai-chat$/.test(trimmed)) {
+    return trimmed.replace(/\/api\/ai\/ai-chat$/, '/api/v1/ai/ai-chat');
+  }
+
+  return trimmed;
 };
 
-const AI_API_ENDPOINT = normalizeAiEndpoint(import.meta.env.VITE_AI_API_ENDPOINT || '/api/ai/ai-chat');
+const AI_API_ENDPOINT = normalizeAiEndpoint(import.meta.env.VITE_AI_API_ENDPOINT);
 
 export default function AIAssistant() {
   const [isOpen, setIsOpen] = useState(true);
