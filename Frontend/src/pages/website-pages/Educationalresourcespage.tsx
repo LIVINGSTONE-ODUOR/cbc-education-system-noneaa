@@ -93,9 +93,9 @@ export default function EducationalResourcesPage() {
   const featuredArticles = articlesData.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-40">
+      <div className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-16">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-teal-500 rounded-lg flex items-center justify-center">
@@ -158,7 +158,7 @@ export default function EducationalResourcesPage() {
                 <div className="p-6 flex flex-col flex-grow">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-xs font-semibold text-teal-600 uppercase tracking-widest">
-                      {article.category}
+                      {filters.find(f => f.id === article.category)?.label || article.category}
                     </span>
                     <span className="text-xs text-slate-500">{article.date}</span>
                   </div>
