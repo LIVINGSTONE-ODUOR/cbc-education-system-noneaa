@@ -17,8 +17,7 @@ import { useTypewriter } from '@/hooks/use-typewriter';
  * Accent: Emerald (#10b981)
  */
 
-// Standardized Font Sizes
-// Removed custom fontSize object - using Tailwind typography scale directly
+
 
 // Reusable Card Component
 const Card = ({ children, className = '' }) => (
@@ -185,7 +184,7 @@ const HeroSection = () => {
           {/* Description with staggered animation */}
           <motion.p
             variants={itemVariants}
-            className={`${fontSize.lg} text-slate-300 mb-8 max-w-2xl leading-relaxed`}
+            className="text-lg text-slate-300 mb-8 max-w-2xl leading-relaxed"
           >
             {typedDescription}
             <motion.span
@@ -265,10 +264,10 @@ export default function AboutPage() {
                 <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-6">
                   <Target className="w-6 h-6 text-blue-600" />
                 </div>
-                <h3 className={`${fontSize['2xl']} font-bold text-slate-900 mb-4`}>
+                <h3 className="text-2xl font-bold text-slate-900 mb-4">
                   Our Mission
                 </h3>
-                <p className={`${fontSize.base} text-slate-600 leading-relaxed mb-6`}>
+                <p className="text-base text-slate-600 leading-relaxed mb-6">
                   To empower educators with intelligent tools that facilitate personalized, mastery-based learning 
                   at scale. We believe the CBE curriculum is the bridge to building a more skilled, innovative workforce for Africa.
                 </p>
@@ -287,7 +286,7 @@ export default function AboutPage() {
                       className="flex items-center gap-3 text-slate-700"
                     >
                       <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                      <span className={fontSize.sm}>{item}</span>
+                      <span className="text-sm">{item}</span>
                     </motion.li>
                   ))}
                 </ul>
@@ -300,10 +299,10 @@ export default function AboutPage() {
                 <div className="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center mb-6">
                   <Sparkles className="w-6 h-6 text-emerald-600" />
                 </div>
-                <h3 className={`${fontSize['2xl']} font-bold text-slate-900 mb-4`}>
+                <h3 className="text-2xl font-bold text-slate-900 mb-4">
                   Our Vision
                 </h3>
-                <p className={`${fontSize.base} text-slate-600 leading-relaxed mb-6`}>
+                <p className="text-base text-slate-600 leading-relaxed mb-6">
                   A future where every African student has access to world-class, personalized education that 
                   recognizes and develops their unique competencies and potential, regardless of socioeconomic background.
                 </p>
@@ -322,7 +321,7 @@ export default function AboutPage() {
                       className="flex items-center gap-3 text-slate-700"
                     >
                       <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                      <span className={fontSize.sm}>{item}</span>
+                      <span className="text-sm">{item}</span>
                     </motion.li>
                   ))}
                 </ul>
@@ -389,10 +388,10 @@ export default function AboutPage() {
                     <div className={`w-5/12 ${isLeft ? 'text-right' : 'text-left'}`}>
                       <Card className="p-6">
                         <span className="text-blue-600 font-bold text-xl">{milestone.year}</span>
-                        <h3 className={`${fontSize.xl} font-bold text-slate-900 mt-2 mb-2`}>
+                        <h3 className="text-xl font-bold text-slate-900 mt-2 mb-2">
                           {milestone.title}
                         </h3>
-                        <p className={`${fontSize.sm} text-slate-600`}>
+                        <p className="text-sm text-slate-600">
                           {milestone.description}
                         </p>
                       </Card>
@@ -469,10 +468,10 @@ export default function AboutPage() {
                     >
                       <Icon className="w-6 h-6 text-blue-600" />
                     </motion.div>
-                    <h3 className={`${fontSize.lg} font-bold text-slate-900 mb-2`}>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">
                       {value.title}
                     </h3>
-                    <p className={`${fontSize.sm} text-slate-600 leading-relaxed`}>
+                    <p className="text-sm text-slate-600 leading-relaxed">
                       {value.description}
                     </p>
                   </Card>
@@ -503,10 +502,10 @@ export default function AboutPage() {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
               >
-                <div className={`${fontSize['5xl']} font-bold mb-2`}>
+                <div className="text-5xl font-bold mb-2">
                   {stat.number}
                 </div>
-                <p className={`${fontSize.base} text-blue-100`}>{stat.label}</p>
+                <p className="text-base text-blue-100">{stat.label}</p>
               </motion.div>
             ))}
           </div>
@@ -522,10 +521,10 @@ export default function AboutPage() {
             viewport={{ once: true }}
             className="bg-gradient-to-r from-blue-600 to-emerald-600 rounded-2xl p-12 text-center text-white"
           >
-            <h2 className={`${fontSize['4xl']} font-bold mb-4`}>
+            <h2 className="text-4xl font-bold mb-4">
               Ready to Transform Your School?
             </h2>
-            <p className={`${fontSize.lg} text-blue-100 mb-8 max-w-2xl mx-auto`}>
+            <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
               Join 10+ schools across Kenya already using Noneaa to improve CBE implementation 
               and student outcomes.
             </p>
