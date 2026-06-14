@@ -40,20 +40,20 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-between mb-8">
-      <div className="flex items-center gap-4">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div className="flex items-center gap-4 min-w-0">
         {view !== "dashboard" && (
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-xl hover:bg-gray-100 text-gray-600"
+            className="rounded-xl hover:bg-gray-100 text-gray-600 flex-shrink-0"
             onClick={onBack}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
         )}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{getTitle()}</h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">{getTitle()}</h1>
           <p className="text-sm text-gray-600 mt-1 font-medium">
             {getDescription()}
           </p>

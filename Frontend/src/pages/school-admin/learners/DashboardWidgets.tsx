@@ -236,7 +236,7 @@ const DashboardWidgets = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="p-6 space-y-6">
+      <div className="p-2 sm:p-4 md:p-6 space-y-6">
         {/* Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
@@ -324,14 +324,14 @@ const DashboardWidgets = () => {
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="flex justify-center gap-4 mt-4">
+                  <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-4">
                     {assessmentDistribution.map((item) => (
                       <div key={item.name} className="flex items-center gap-2">
                         <div
-                          className="w-3 h-3 rounded-full"
+                          className="w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: item.color }}
                         />
-                        <span className="text-sm text-muted-foreground">{item.name}</span>
+                        <span className="text-xs sm:text-sm text-muted-foreground">{item.name}</span>
                       </div>
                     ))}
                   </div>
