@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Eye, EyeOff, Loader2, ArrowLeft, Building2, Shield, GraduationCap, Users, Check, CheckCircle2, Clock, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, Building2, Shield, GraduationCap, Users, Check, CheckCircle2, Clock, Sparkles } from 'lucide-react';
 import PageLoader from '@/components/PageLoader';
 import { cn } from '@/lib/utils';
 
@@ -358,8 +358,7 @@ export default function LoginPage() {
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Signing in...</span>
+                      <span>Please wait...</span>
                     </>
                   ) : countdown > 0 ? (
                     <>
