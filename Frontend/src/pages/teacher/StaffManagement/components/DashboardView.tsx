@@ -226,11 +226,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           }}
         />
 
-        <div className="relative px-6 py-8 space-y-6">
+        <div className="relative px-4 sm:px-6 py-6 sm:py-8 space-y-6">
           {/* Header */}
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-4 mb-2">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-2">
                 {onBack && (
                   <Button 
                     variant="outline" 
@@ -242,13 +242,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <span className="font-medium">Back</span>
                   </Button>
                 )}
-                <h1 className="text-3xl font-bold text-foreground">Staff Management</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Staff Management</h1>
               </div>
               <p className="text-sm text-muted-foreground">
                 Manage teaching and non-teaching staff records, allocations, and performance
               </p>
             </div>
-            <Button onClick={onCreate} className="flex-shrink-0" size="lg">
+            <Button onClick={onCreate} className="flex-shrink-0 w-full sm:w-auto" size="lg">
               <UserPlus className="w-4 h-4 mr-2" />
               Register Staff
             </Button>
@@ -426,7 +426,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {filteredStaff.slice(0, 8).map((s) => (
                 <div
                   key={s.id}
-                  className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-muted/40 transition-colors cursor-pointer group"
+                  className="flex items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 hover:bg-muted/40 transition-colors cursor-pointer group"
                   onClick={onViewList}
                 >
                   {/* Staff Info */}

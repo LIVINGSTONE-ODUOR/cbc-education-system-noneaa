@@ -658,12 +658,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <div
         className={cn(
           'flex flex-col flex-1 min-w-0 w-full transition-all duration-300 ease-in-out',
-          collapsed ? 'ml-20 md:ml-20' : 'ml-64 md:ml-64',
-          'lg:ml-0', // Reset margin for large screens to use absolute sidebar
+          'ml-0',
+          collapsed ? 'lg:ml-20' : 'lg:ml-64',
         )}
-        style={{
-          marginLeft: collapsed ? '80px' : '256px',
-        }}
       >
         {/* Header */}
         <Header
@@ -684,9 +681,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         />
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto w-full min-w-0">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden w-full min-w-0">
           <div className="animate-fade-in min-h-full">
-            <div className={cn('w-full h-full px-4 md:px-6 lg:px-8 py-6 md:py-8', theme.main.text)}>
+            <div className={cn('w-full h-full px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8', theme.main.text)}>
               {children}
             </div>
           </div>

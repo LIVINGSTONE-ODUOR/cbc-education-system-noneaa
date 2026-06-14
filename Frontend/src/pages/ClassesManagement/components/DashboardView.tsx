@@ -62,16 +62,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="space-y-8">
       {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-3xl bg-white border border-gray-200 shadow-sm">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-gray-200 shadow-sm">
         <div className={cn("absolute inset-0 opacity-5 bg-gradient-to-br", GRADIENTS.primary)} />
-        <div className="relative p-8 sm:p-12">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
-            <div className="flex items-start gap-4 flex-1">
-              <div className={cn("p-3 rounded-2xl bg-gradient-to-br text-white shadow-md", GRADIENTS.primary)}>
-                <School className="h-8 w-8" />
+        <div className="relative p-4 sm:p-8 md:p-12">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-8">
+            <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
+              <div className={cn("p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-gradient-to-br text-white shadow-md flex-shrink-0", GRADIENTS.primary)}>
+                <School className="h-6 w-6 sm:h-8 sm:w-8" />
               </div>
-              <div className="flex-1">
-                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
                   Classes Management
                 </h1>
                 <p className="text-sm sm:text-base text-gray-600 mb-4">
@@ -144,16 +144,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           },
         ].map((stat) => (
           <Card key={stat.label} className="rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all bg-white">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2">
                     {stat.label}
                   </p>
-                  <p className="text-4xl font-bold text-gray-900">{stat.value}</p>
+                  <p className="text-2xl sm:text-4xl font-bold text-gray-900">{stat.value}</p>
                 </div>
-                <div className={cn("p-3 rounded-xl bg-gradient-to-br text-white shadow-md", stat.gradient)}>
-                  <stat.icon className="h-6 w-6" />
+                <div className={cn("p-2 sm:p-3 rounded-xl bg-gradient-to-br text-white shadow-md flex-shrink-0", stat.gradient)}>
+                  <stat.icon className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
               </div>
             </CardContent>
@@ -173,7 +173,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Capacity Utilization
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6 space-y-4">
+          <CardContent className="p-4 sm:p-6 space-y-4">
             <div className="flex justify-between">
               <span className="text-sm font-semibold text-gray-700">Overall Enrollment</span>
               <span className="text-sm font-bold text-gray-900">
@@ -210,7 +210,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Branch Distribution
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6 space-y-3">
+          <CardContent className="p-4 sm:p-6 space-y-3">
             {branches.map((branch) => {
               const branchClasses = classes.filter((c) => c.branch?.name === branch);
               const branchEnrollment = branchClasses.reduce(
@@ -271,7 +271,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             View all <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </CardHeader>
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {GRADE_LEVELS.slice(0, 9).map((grade) => {
               const gradeClasses = classes.filter(
