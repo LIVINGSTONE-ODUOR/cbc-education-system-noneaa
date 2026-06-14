@@ -17,9 +17,7 @@ import {
 import PageLoader from '@/components/PageLoader';
 
 const getApiUrl = () => {
-  // Production: always use relative path → proxied by Vercel, no CORS
   if (import.meta.env.PROD) return '';
-  // Development: use VITE_API_URL if set, otherwise fall back to Vite proxy
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
   return '';
 };
@@ -34,53 +32,43 @@ const STEPS = [
     title: 'Basic Info',
     subtitle: 'School identity & details',
     cardTitle: 'Tell us about your school',
-    cardDesc:  'Enter your school information to get started with CBE Noneaa',
+    cardDesc: 'Enter your school information to get started with CBE Noneaa',
     icon: GraduationCap,
-    gradient: 'linear-gradient(135deg,#3b82f6,#6366f1)',
     color: '#3b82f6',
-    soft: '#eff6ff',
-    border: '#bfdbfe',
   },
   {
     number: 2,
     title: 'Location & Contact',
     subtitle: 'Where to find your school',
     cardTitle: 'School Location & Contact',
-    cardDesc:  'Help parents and teachers locate and reach your school',
+    cardDesc: 'Help parents and teachers locate and reach your school',
     icon: MapPin,
-    gradient: 'linear-gradient(135deg,#10b981,#059669)',
     color: '#10b981',
-    soft: '#f0fdf4',
-    border: '#bbf7d0',
   },
   {
     number: 3,
     title: 'Admin Account',
     subtitle: 'Create administrator access',
     cardTitle: 'Create Administrator Account',
-    cardDesc:  'Set up your secure admin credentials to access the portal',
+    cardDesc: 'Set up your secure admin credentials to access the portal',
     icon: UserCog,
-    gradient: 'linear-gradient(135deg,#8b5cf6,#7c3aed)',
     color: '#8b5cf6',
-    soft: '#faf5ff',
-    border: '#ddd6fe',
   },
 ];
 
 const TRUST_ITEMS = [
-  { icon: Lock,     label: 'End-to-end encrypted' },
-  { icon: Shield,   label: 'Kenya MoE Approved'   },
-  { icon: Globe,    label: 'CBE Compliant'         },
-  { icon: Sparkles, label: 'KNEC Aligned'          },
+  { icon: Lock, label: 'End-to-end encrypted' },
+  { icon: Shield, label: 'Kenya MoE Approved' },
+  { icon: Globe, label: 'CBE Compliant' },
+  { icon: Sparkles, label: 'KNEC Aligned' },
 ];
 
-/* ─── Types ───────────────────────────────────────────── */
 export default function AdminRegistrationPage() {
-  const navigate   = useNavigate();
-  const { toast }  = useToast();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [isLoading,   setIsLoading]   = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [step1Data, setStep1Data] = useState<SchoolRegistrationStep1>({
     name: '', code: '', schoolType: undefined, levelsOffered: [],
@@ -102,7 +90,6 @@ export default function AdminRegistrationPage() {
     setStep3Data(d); await handleFinalSubmit(d);
   };
 
-  // Map frontend LevelOffered values to backend expected values
   const mapLevelToBackend = (level: string): string => {
     const levelMap: Record<string, string> = {
       'Pre-Primary': 'ecde',
@@ -117,46 +104,35 @@ export default function AdminRegistrationPage() {
   const handleFinalSubmit = async (s3: SchoolRegistrationStep3 = step3Data) => {
     setIsLoading(true);
     try {
-      // Map the first selected level to backend format
-      const backendLevel = step1Data.levelsOffered[0] 
+      const backendLevel = step1Data.levelsOffered[0]
         ? mapLevelToBackend(step1Data.levelsOffered[0])
         : 'primary';
 
       const payload = {
-        // School fields from Step 1
         school_name: step1Data.name,
         school_code: step1Data.code,
         school_type: step1Data.schoolType || 'private',
         level: backendLevel,
         year_established: step1Data.yearEstablished ? parseInt(step1Data.yearEstablished) : null,
-        
-        // Location fields from Step 2
         county: step2Data.county,
         sub_county: step2Data.subCounty,
         ward: step2Data.ward,
         physical_address: step2Data.physicalAddress,
         postal_address: step2Data.postalAddress,
         phone_number: step2Data.phoneNumber,
-        // Use 'email' for school contact (backend now accepts 'school_email' as alternative)
         school_email: step2Data.email,
         website: step2Data.website || null,
-        
-        // Admin fields from Step 3
         admin_name: s3.fullName,
         admin_email: s3.email,
         password: s3.password,
         tsc_number: s3.tscNo || null,
-        // Role field (optional)
         role: s3.role || 'school_admin',
-        // National ID or Passport
         national_id: s3.nationalIdOrPassport || null,
         passport_number: s3.nationalIdOrPassport || null,
-        // Username (derived from email if not provided)
         username: s3.username || s3.email.split('@')[0],
-        // Appointment date (use current date if not provided)
         appointment_date: new Date().toISOString().split('T')[0],
       };
-      const res    = await fetch(`${AUTH_API_URL}/v1/register/school-admin`, {
+      const res = await fetch(`${AUTH_API_URL}/v1/register/school-admin`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
@@ -173,315 +149,448 @@ export default function AdminRegistrationPage() {
   };
 
   const active = STEPS[currentStep - 1];
-  const pct    = ((currentStep - 1) / (STEPS.length - 1)) * 100;
 
   return (
     <>
       <PageLoader />
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
-        .ar-root, .ar-root * { box-sizing: border-box; font-family: 'Outfit','Segoe UI',sans-serif; }
+        .reg-root, .reg-root * { box-sizing: border-box; }
 
-        /* ── PAGE ── same slate gradient preserved */
-        .ar-page {
+        .reg-page {
           min-height: 100vh;
-          background: linear-gradient(160deg, #f1f5f9 0%, #e2e8f0 50%, #f8fafc 100%);
-          position: relative; overflow-x: hidden;
+          background: #f8fafc;
+          position: relative;
+          overflow-x: hidden;
         }
 
-        /* Subtle dot mesh */
-        .ar-page::before {
-          content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
-          background-image: radial-gradient(circle, rgba(100,116,139,0.07) 1px, transparent 1px);
-          background-size: 28px 28px;
-        }
-
-        /* Soft ambient orbs */
-        .ar-orb {
-          position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0;
-          animation: orbDrift 18s ease-in-out infinite;
-        }
-        .ar-orb-1 { width: 600px; height: 600px; top: -200px; right: -100px; background: rgba(99,102,241,0.07); }
-        .ar-orb-2 { width: 500px; height: 500px; bottom: -100px; left: -120px; background: rgba(16,185,129,0.05); animation-delay: 7s; }
-        @keyframes orbDrift { 0%,100%{transform:translate(0,0);}50%{transform:translate(20px,-20px);} }
-
-        /* ══════════════ HEADER ══════════════ */
-        .ar-header {
-          position: sticky; top: 0; z-index: 100;
-          background: #0f172a;
-          border-bottom: 1px solid rgba(255,255,255,0.06);
-          box-shadow: 0 4px 24px rgba(0,0,0,0.25);
-        }
-        .ar-header-inner {
-          max-width: 1200px; margin: 0 auto; padding: 0 32px;
-          height: 66px; display: flex; align-items: center; justify-content: space-between;
-        }
-
-        /* Logo */
-        .ar-logo { display: flex; align-items: center; gap: 12px; }
-        .ar-logo-icon {
-          width: 40px; height: 40px; border-radius: 11px;
-          background: linear-gradient(135deg, #3b82f6, #6366f1);
-          display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 4px 14px rgba(59,130,246,0.45); flex-shrink: 0;
-        }
-        .ar-logo-name { font-size: 16px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
-        .ar-logo-sub  { font-size: 11px; color: rgba(255,255,255,0.35); font-weight: 400; margin-top: 1px; }
-
-        /* Header right */
-        .ar-header-right { display: flex; align-items: center; gap: 12px; }
-        .ar-header-step-txt { font-size: 12px; color: rgba(255,255,255,0.35); font-weight: 500; }
-        .ar-header-badge {
-          display: flex; align-items: center; gap: 7px;
-          padding: 6px 14px; border-radius: 20px;
-          background: rgba(34,197,94,0.12);
-          border: 1px solid rgba(34,197,94,0.25);
-          font-size: 12px; font-weight: 700; color: #4ade80;
-        }
-        .ar-badge-dot {
-          width: 6px; height: 6px; border-radius: 50%; background: #22c55e;
-          animation: badgePulse 2s ease-in-out infinite;
-        }
-        @keyframes badgePulse { 0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.4);opacity:0.6;} }
-
-        /* ══════════════ PROGRESS TRACK ══════════════ */
-        .ar-progress {
-          background: #fff;
-          border-bottom: 1px solid #e2e8f0;
-          box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-        }
-        .ar-progress-inner {
-          max-width: 720px; margin: 0 auto; padding: 28px 24px;
-          display: flex; align-items: flex-start; justify-content: center;
-          gap: 0;
-        }
-
-        .ar-step-col {
-          display: flex; flex-direction: column; align-items: center; gap: 10px;
-          flex-shrink: 0;
-        }
-
-        /* Step circle */
-        .ar-step-circle {
-          width: 52px; height: 52px; border-radius: 50%;
-          display: flex; align-items: center; justify-content: center;
-          position: relative; transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
-        }
-        .ar-step-circle.done {
-          background: linear-gradient(135deg,#10b981,#059669);
-          box-shadow: 0 6px 18px rgba(16,185,129,0.35);
-        }
-        .ar-step-circle.active {
-          box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-          transform: scale(1.1);
-        }
-        .ar-step-circle.pending {
-          background: #f1f5f9; border: 2px solid #e2e8f0;
-        }
-
-        /* Outer ring for active */
-        .ar-step-circle.active::after {
+        /* Subtle top gradient accent */
+        .reg-page::before {
           content: '';
-          position: absolute; inset: -5px; border-radius: 50%;
-          border: 2px solid rgba(99,102,241,0.3);
-          animation: circleRing 2.5s ease-in-out infinite;
-        }
-        @keyframes circleRing { 0%,100%{opacity:0.7;transform:scale(1);}50%{opacity:0;transform:scale(1.25);} }
-
-        /* Step labels */
-        .ar-step-info { text-align: center; }
-        .ar-step-name { font-size: 12px; font-weight: 700; color: #0f172a; white-space: nowrap; }
-        .ar-step-name.pending { color: #94a3b8; }
-        .ar-step-sub  { font-size: 10px; color: #94a3b8; margin-top: 2px; white-space: nowrap; }
-
-        /* Connector */
-        .ar-conn {
-          flex: 0 0 72px; height: 2px; margin: 25px 6px 0;
-          background: #e2e8f0; border-radius: 2px;
-          position: relative; overflow: hidden;
-        }
-        .ar-conn-fill {
-          position: absolute; left: 0; top: 0; height: 100%;
-          background: linear-gradient(90deg,#10b981,#059669);
-          transition: width 0.55s cubic-bezier(0.4,0,0.2,1); border-radius: 2px;
+          position: fixed;
+          top: 0; left: 0; right: 0;
+          height: 400px;
+          background: linear-gradient(180deg, #eef2ff 0%, transparent 100%);
+          pointer-events: none;
+          z-index: 0;
         }
 
-        /* ══════════════ MAIN BODY ══════════════ */
-        .ar-body { position: relative; z-index: 1; padding: 40px 24px 80px; }
-        .ar-body-inner { max-width: 700px; margin: 0 auto; }
-
-        /* Step hero header */
-        .ar-hero {
-          display: flex; align-items: flex-start; gap: 18px;
-          margin-bottom: 28px;
-          animation: heroIn 0.45s cubic-bezier(0.22,1,0.36,1) both;
+        /* ── HEADER ── */
+        .reg-header {
+          position: sticky;
+          top: 0;
+          z-index: 100;
+          background: rgba(255,255,255,0.85);
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          border-bottom: 1px solid rgba(0,0,0,0.06);
         }
-        @keyframes heroIn { from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);} }
-
-        .ar-hero-icon {
-          width: 58px; height: 58px; border-radius: 18px;
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        .reg-header-inner {
+          max-width: 1100px;
+          margin: 0 auto;
+          padding: 0 24px;
+          height: 64px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
         }
-        .ar-hero-pill {
-          display: inline-flex; align-items: center; gap: 5px;
-          padding: 4px 12px; border-radius: 20px;
-          font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
-          margin-bottom: 7px;
+        .reg-logo {
+          display: flex;
+          align-items: center;
+          gap: 10px;
         }
-        .ar-hero-title { font-size: 26px; font-weight: 800; color: #0f172a; letter-spacing: -0.6px; line-height: 1.2; }
-        .ar-hero-desc  { font-size: 13px; color: #64748b; margin-top: 4px; font-weight: 400; max-width: 420px; }
+        .reg-logo-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #4f46e5, #7c3aed);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 8px rgba(79,70,229,0.3);
+        }
+        .reg-logo-text {
+          font-size: 15px;
+          font-weight: 700;
+          color: #1e293b;
+          letter-spacing: -0.3px;
+        }
+        .reg-logo-sub {
+          font-size: 11px;
+          color: #94a3b8;
+          font-weight: 400;
+        }
+        .reg-header-badge {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 14px;
+          border-radius: 20px;
+          background: #f0fdf4;
+          border: 1px solid #bbf7d0;
+          font-size: 12px;
+          font-weight: 600;
+          color: #16a34a;
+        }
+        .reg-badge-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #22c55e;
+          animation: dotPulse 2s ease-in-out infinite;
+        }
+        @keyframes dotPulse { 0%,100%{opacity:1;}50%{opacity:0.4;} }
 
-        /* ══════════════ CARD ══════════════ */
-        .ar-card {
+        /* ── STEPPER ── */
+        .reg-stepper-wrap {
+          position: relative;
+          z-index: 1;
           background: #fff;
-          border-radius: 24px;
-          border: 1px solid rgba(0,0,0,0.07);
-          overflow: hidden;
-          box-shadow:
-            0 0 0 1px rgba(255,255,255,0.7) inset,
-            0 4px 8px rgba(0,0,0,0.04),
-            0 20px 48px rgba(0,0,0,0.09),
-            0 40px 80px rgba(0,0,0,0.06);
-          animation: cardIn 0.5s cubic-bezier(0.22,1,0.36,1) 0.1s both;
+          border-bottom: 1px solid #f1f5f9;
         }
-        @keyframes cardIn { from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);} }
-
-        /* Colorful top bar */
-        .ar-card-bar {
-          height: 4px;
-          background: #f1f5f9;
-          position: relative; overflow: hidden;
+        .reg-stepper {
+          max-width: 620px;
+          margin: 0 auto;
+          padding: 32px 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
-        .ar-card-bar-track {
-          height: 100%;
-          transition: width 0.55s cubic-bezier(0.4,0,0.2,1);
+        .reg-step-node {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+          position: relative;
+          z-index: 1;
+        }
+        .reg-step-circle {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          font-weight: 700;
+          transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
           position: relative;
         }
-        .ar-card-bar-track::after {
+        .reg-step-circle.completed {
+          background: #10b981;
+          color: #fff;
+          box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+        }
+        .reg-step-circle.active {
+          background: #4f46e5;
+          color: #fff;
+          box-shadow: 0 4px 16px rgba(79,70,229,0.35);
+          transform: scale(1.08);
+        }
+        .reg-step-circle.active::after {
           content: '';
-          position: absolute; right: -1px; top: -2px;
-          width: 8px; height: 8px; border-radius: 50%;
-          background: inherit;
-          box-shadow: 0 0 8px currentColor;
+          position: absolute;
+          inset: -4px;
+          border-radius: 50%;
+          border: 2px solid rgba(79,70,229,0.2);
+          animation: ringPulse 2.5s ease-in-out infinite;
+        }
+        @keyframes ringPulse { 0%,100%{opacity:0.6;transform:scale(1);}50%{opacity:0;transform:scale(1.2);} }
+        .reg-step-circle.pending {
+          background: #f1f5f9;
+          color: #94a3b8;
+          border: 2px solid #e2e8f0;
+        }
+        .reg-step-label {
+          text-align: center;
+        }
+        .reg-step-title {
+          font-size: 12px;
+          font-weight: 600;
+          color: #1e293b;
+          letter-spacing: -0.1px;
+        }
+        .reg-step-title.pending { color: #94a3b8; }
+        .reg-step-subtitle {
+          font-size: 10px;
+          color: #94a3b8;
+          margin-top: 1px;
+        }
+        .reg-step-connector {
+          flex: 0 0 80px;
+          height: 2px;
+          background: #e2e8f0;
+          margin: 0 8px;
+          margin-bottom: 32px;
+          border-radius: 2px;
+          position: relative;
+          overflow: hidden;
+        }
+        .reg-step-connector-fill {
+          position: absolute;
+          left: 0;
+          top: 0;
+          height: 100%;
+          background: #10b981;
+          border-radius: 2px;
+          transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
         }
 
-        /* Card section header */
-        .ar-card-head {
-          padding: 26px 32px 20px;
-          border-bottom: 1px solid #f1f5f9;
-          display: flex; align-items: center; justify-content: space-between;
+        /* ── CONTENT AREA ── */
+        .reg-content {
+          position: relative;
+          z-index: 1;
+          max-width: 680px;
+          margin: 0 auto;
+          padding: 40px 24px 80px;
         }
-        .ar-card-head-title { font-size: 17px; font-weight: 700; color: #0f172a; letter-spacing: -0.2px; }
-        .ar-card-head-desc  { font-size: 13px; color: #64748b; margin-top: 3px; }
-        .ar-card-step-badge {
-          padding: 6px 16px; border-radius: 20px;
-          font-size: 12px; font-weight: 800; letter-spacing: 0.3px;
+
+        /* Step header */
+        .reg-step-header {
+          display: flex;
+          align-items: flex-start;
+          gap: 16px;
+          margin-bottom: 24px;
+        }
+        .reg-step-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        .reg-step-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 3px 10px;
+          border-radius: 12px;
+          font-size: 11px;
+          font-weight: 600;
+          background: #eef2ff;
+          color: #4f46e5;
+          border: 1px solid #c7d2fe;
+          margin-bottom: 6px;
+        }
+        .reg-step-heading {
+          font-size: 22px;
+          font-weight: 800;
+          color: #0f172a;
+          letter-spacing: -0.5px;
+          line-height: 1.2;
+        }
+        .reg-step-desc {
+          font-size: 14px;
+          color: #64748b;
+          margin-top: 4px;
+          line-height: 1.5;
+        }
+
+        /* ── FORM CARD ── */
+        .reg-card {
+          background: #fff;
+          border-radius: 20px;
+          border: 1px solid #e2e8f0;
+          overflow: hidden;
+          box-shadow:
+            0 1px 3px rgba(0,0,0,0.04),
+            0 8px 32px rgba(0,0,0,0.06);
+        }
+
+        /* Thin accent bar at top of card */
+        .reg-card-accent {
+          height: 3px;
+          background: #e2e8f0;
+          position: relative;
+          overflow: hidden;
+        }
+        .reg-card-accent-fill {
+          position: absolute;
+          left: 0;
+          top: 0;
+          height: 100%;
+          border-radius: 0 3px 3px 0;
+          transition: width 0.5s ease;
+        }
+
+        .reg-card-header {
+          padding: 24px 28px 20px;
+          border-bottom: 1px solid #f1f5f9;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .reg-card-title {
+          font-size: 16px;
+          font-weight: 700;
+          color: #1e293b;
+          letter-spacing: -0.2px;
+        }
+        .reg-card-subtitle {
+          font-size: 13px;
+          color: #64748b;
+          margin-top: 2px;
+        }
+        .reg-card-counter {
+          padding: 6px 14px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 700;
+          flex-shrink: 0;
+          background: #f8fafc;
+          color: #64748b;
+          border: 1px solid #e2e8f0;
+        }
+
+        .reg-card-body {
+          padding: 28px 28px 32px;
+        }
+
+        /* ── HELP SECTION ── */
+        .reg-help {
+          margin-top: 20px;
+          background: #fff;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          padding: 16px 20px;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+        }
+        .reg-help-icon {
+          width: 38px;
+          height: 38px;
+          border-radius: 10px;
+          background: #eef2ff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           flex-shrink: 0;
         }
-
-        /* Card body */
-        .ar-card-body { padding: 28px 32px 32px; }
-
-        /* ══════════════ BOTTOM AREA ══════════════ */
-        /* Help card */
-        .ar-help {
-          margin-top: 20px;
-          background: rgba(255,255,255,0.75);
-          border: 1px solid rgba(226,232,240,0.8);
-          border-radius: 16px; padding: 18px 20px;
-          display: flex; align-items: center; gap: 14px;
-          backdrop-filter: blur(8px);
-          box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        .reg-help-title {
+          font-size: 13px;
+          font-weight: 600;
+          color: #1e293b;
         }
-        .ar-help-icon {
-          width: 40px; height: 40px; border-radius: 12px;
-          background: linear-gradient(135deg,#dbeafe,#ede9fe);
-          display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        .reg-help-sub {
+          font-size: 12px;
+          color: #64748b;
+          margin-top: 1px;
         }
-        .ar-help-title  { font-size: 13px; font-weight: 700; color: #0f172a; }
-        .ar-help-sub    { font-size: 12px; color: #64748b; margin-top: 2px; }
-        .ar-help-btn    {
-          margin-left: auto; flex-shrink: 0;
-          display: inline-flex; align-items: center; gap: 5px;
-          padding: 8px 16px; border-radius: 10px;
-          background: #f0f9ff; border: 1px solid #bae6fd;
-          font-size: 12px; font-weight: 700; color: #0284c7;
-          text-decoration: none; transition: all 0.18s;
+        .reg-help-btn {
+          margin-left: auto;
+          flex-shrink: 0;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 8px 16px;
+          border-radius: 10px;
+          background: #f0f9ff;
+          border: 1px solid #bae6fd;
+          font-size: 12px;
+          font-weight: 600;
+          color: #0284c7;
+          text-decoration: none;
+          transition: all 0.15s;
           font-family: inherit;
+          cursor: pointer;
         }
-        .ar-help-btn:hover { background: #e0f2fe; border-color: #7dd3fc; }
-
-        /* Trust strip */
-        .ar-trust {
-          margin-top: 20px; display: flex; align-items: center;
-          justify-content: center; gap: 6px; flex-wrap: wrap;
-        }
-        .ar-trust-item {
-          display: flex; align-items: center; gap: 5px;
-          padding: 5px 12px; border-radius: 20px;
-          background: rgba(255,255,255,0.7);
-          border: 1px solid rgba(226,232,240,0.7);
-          font-size: 11px; color: #64748b; font-weight: 600;
-          backdrop-filter: blur(4px);
+        .reg-help-btn:hover {
+          background: #e0f2fe;
+          border-color: #7dd3fc;
         }
 
-        /* Responsive */
+        /* ── TRUST BADGES ── */
+        .reg-trust {
+          margin-top: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .reg-trust-item {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 5px 12px;
+          border-radius: 20px;
+          background: #fff;
+          border: 1px solid #e2e8f0;
+          font-size: 11px;
+          color: #64748b;
+          font-weight: 500;
+        }
+
+        /* ── RESPONSIVE ── */
         @media (max-width: 640px) {
-          .ar-conn { flex: 0 0 28px; }
-          .ar-step-info { display: none; }
-          .ar-card-head { flex-direction: column; align-items: flex-start; gap: 8px; }
-          .ar-card-head, .ar-card-body { padding-left: 20px; padding-right: 20px; }
-          .ar-hero-title { font-size: 20px; }
-          .ar-help { display: none; }
+          .reg-step-connector { flex: 0 0 24px; }
+          .reg-step-label { display: none; }
+          .reg-step-connector { margin-bottom: 0; }
+          .reg-card-header, .reg-card-body { padding-left: 20px; padding-right: 20px; }
+          .reg-step-heading { font-size: 18px; }
+          .reg-content { padding: 24px 16px 60px; }
+          .reg-help { display: none; }
         }
       `}</style>
 
-      <div className="ar-root">
-        <div className="ar-page">
+      <div className="reg-root">
+        <div className="reg-page">
 
-          {/* Ambience */}
-          <div className="ar-orb ar-orb-1" />
-          <div className="ar-orb ar-orb-2" />
+          {/* ═══ HEADER ═══ */}
+          <header className="reg-header">
+            <div className="reg-header-inner">
+              <div className="reg-logo">
+                <div className="reg-logo-icon">
+                  <GraduationCap size={18} color="#fff" />
+                </div>
+                <div>
+                  <div className="reg-logo-text">CBE Noneaa</div>
+                  <div className="reg-logo-sub">School Registration</div>
+                </div>
+              </div>
+              <div className="reg-header-badge">
+                <span className="reg-badge-dot" />
+                Secure Registration
+              </div>
+            </div>
+          </header>
 
-          {/* ════ HEADER ════ */}
-          
-
-          {/* ════ STEP PROGRESS ════ */}
-          <div className="ar-progress">
-            <div className="ar-progress-inner">
+          {/* ═══ STEPPER ═══ */}
+          <div className="reg-stepper-wrap">
+            <div className="reg-stepper">
               {STEPS.map((step, i) => {
-                const Icon   = step.icon;
-                const status = currentStep > step.number ? 'done'
-                             : currentStep === step.number ? 'active' : 'pending';
+                const Icon = step.icon;
+                const status = currentStep > step.number ? 'completed'
+                  : currentStep === step.number ? 'active' : 'pending';
 
                 return (
                   <React.Fragment key={step.number}>
-                    {/* Step node */}
-                    <div className="ar-step-col">
-                      <div className={`ar-step-circle ${status}`}
-                        style={status === 'active' ? { background: step.gradient } : undefined}
-                      >
-                        {status === 'done'
-                          ? <Check size={22} color="#fff" strokeWidth={2.5} />
-                          : <Icon size={20} color={status === 'active' ? '#fff' : '#94a3b8'} />
+                    <div className="reg-step-node">
+                      <div className={`reg-step-circle ${status}`}>
+                        {status === 'completed'
+                          ? <Check size={18} strokeWidth={2.5} />
+                          : status === 'active'
+                            ? <Icon size={18} />
+                            : <span>{step.number}</span>
                         }
                       </div>
-                      <div className="ar-step-info">
-                        <div className={`ar-step-name${status === 'pending' ? ' pending' : ''}`}>
+                      <div className="reg-step-label">
+                        <div className={`reg-step-title${status === 'pending' ? ' pending' : ''}`}>
                           {step.title}
                         </div>
-                        <div className="ar-step-sub">{step.subtitle}</div>
+                        <div className="reg-step-subtitle">{step.subtitle}</div>
                       </div>
                     </div>
 
-                    {/* Connector */}
                     {i < STEPS.length - 1 && (
-                      <div className="ar-conn">
+                      <div className="reg-step-connector">
                         <div
-                          className="ar-conn-fill"
+                          className="reg-step-connector-fill"
                           style={{ width: currentStep > step.number ? '100%' : '0%' }}
                         />
                       </div>
@@ -492,140 +601,135 @@ export default function AdminRegistrationPage() {
             </div>
           </div>
 
-          {/* ════ BODY ════ */}
-          <main className="ar-body">
-            <div className="ar-body-inner">
+          {/* ═══ MAIN CONTENT ═══ */}
+          <main className="reg-content">
 
-              {/* Hero header */}
-              <div className="ar-hero">
+            {/* Step header */}
+            <motion.div
+              className="reg-step-header"
+              key={`header-${currentStep}`}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div
+                className="reg-step-icon"
+                style={{ background: `linear-gradient(135deg, ${active.color}, ${active.color}dd)` }}
+              >
+                <active.icon size={22} color="#fff" />
+              </div>
+              <div>
+                <div className="reg-step-badge">
+                  <Sparkles size={10} />
+                  Step {currentStep} of {STEPS.length}
+                </div>
+                <div className="reg-step-heading">{active.cardTitle}</div>
+                <div className="reg-step-desc">{active.cardDesc}</div>
+              </div>
+            </motion.div>
+
+            {/* Form card */}
+            <motion.div
+              className="reg-card"
+              key={`card-${currentStep}`}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
+            >
+              {/* Accent bar */}
+              <div className="reg-card-accent">
                 <div
-                  className="ar-hero-icon"
-                  style={{ background: active.gradient }}
-                >
-                  <active.icon size={26} color="#fff" />
-                </div>
+                  className="reg-card-accent-fill"
+                  style={{
+                    width: `${(currentStep / STEPS.length) * 100}%`,
+                    background: `linear-gradient(90deg, ${active.color}, ${active.color}aa)`,
+                  }}
+                />
+              </div>
+
+              {/* Card header */}
+              <div className="reg-card-header">
                 <div>
-                  <div
-                    className="ar-hero-pill"
-                    style={{
-                      background: active.soft,
-                      color: active.color,
-                      border: `1px solid ${active.border}`,
-                    }}
-                  >
-                    <Sparkles size={11} />
-                    Step {currentStep} of {STEPS.length}
-                  </div>
-                  <div className="ar-hero-title">{active.cardTitle}</div>
-                  <div className="ar-hero-desc">{active.cardDesc}</div>
+                  <div className="reg-card-title">{active.cardTitle}</div>
+                  <div className="reg-card-subtitle">{active.cardDesc}</div>
+                </div>
+                <div className="reg-card-counter">
+                  {currentStep}/{STEPS.length}
                 </div>
               </div>
 
-              {/* Card */}
-              <div className="ar-card">
-                {/* Colour progress bar */}
-                <div className="ar-card-bar">
-                  <div
-                    className="ar-card-bar-track"
-                    style={{
-                      width: `${Math.max(pct, currentStep === 1 ? 8 : pct)}%`,
-                      background: active.gradient,
-                    }}
-                  />
-                </div>
-
-                {/* Card header */}
-                <div className="ar-card-head">
-                  <div>
-                    <div className="ar-card-head-title">{active.cardTitle}</div>
-                    <div className="ar-card-head-desc">{active.cardDesc}</div>
-                  </div>
-                  <div
-                    className="ar-card-step-badge"
-                    style={{
-                      background: active.soft,
-                      color: active.color,
-                      border: `1px solid ${active.border}`,
-                    }}
-                  >
-                    {currentStep}/{STEPS.length}
-                  </div>
-                </div>
-
-                {/* Form content with framer-motion */}
-                <div className="ar-card-body">
-                  <AnimatePresence mode="wait">
-                    {currentStep === 1 && (
-                      <motion.div key="s1"
-                        initial={{ opacity: 0, x: 22 }} animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -22 }} transition={{ duration: 0.26, ease: [0.22,1,0.36,1] }}
-                      >
-                        <SchoolBasicInfoStep
-                          initialData={step1Data}
-                          onSubmit={handleStep1Submit}
-                          onBack={() => navigate('/')}
-                        />
-                      </motion.div>
-                    )}
-                    {currentStep === 2 && (
-                      <motion.div key="s2"
-                        initial={{ opacity: 0, x: 22 }} animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -22 }} transition={{ duration: 0.26, ease: [0.22,1,0.36,1] }}
-                      >
-                        <SchoolDetailsStep
-                          initialData={step2Data}
-                          onSubmit={handleStep2Submit}
-                          onBack={() => setCurrentStep(1)}
-                        />
-                      </motion.div>
-                    )}
-                    {currentStep === 3 && (
-                      <motion.div key="s3"
-                        initial={{ opacity: 0, x: 22 }} animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -22 }} transition={{ duration: 0.26, ease: [0.22,1,0.36,1] }}
-                      >
-                        <AdminDetailsStep
-                          initialData={step3Data}
-                          onSubmit={handleStep3Submit}
-                          onBack={() => setCurrentStep(2)}
-                          isLoading={isLoading}
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+              {/* Form body */}
+              <div className="reg-card-body">
+                <AnimatePresence mode="wait">
+                  {currentStep === 1 && (
+                    <motion.div key="s1"
+                      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <SchoolBasicInfoStep
+                        initialData={step1Data}
+                        onSubmit={handleStep1Submit}
+                        onBack={() => navigate('/')}
+                      />
+                    </motion.div>
+                  )}
+                  {currentStep === 2 && (
+                    <motion.div key="s2"
+                      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <SchoolDetailsStep
+                        initialData={step2Data}
+                        onSubmit={handleStep2Submit}
+                        onBack={() => setCurrentStep(1)}
+                      />
+                    </motion.div>
+                  )}
+                  {currentStep === 3 && (
+                    <motion.div key="s3"
+                      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <AdminDetailsStep
+                        initialData={step3Data}
+                        onSubmit={handleStep3Submit}
+                        onBack={() => setCurrentStep(2)}
+                        isLoading={isLoading}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
+            </motion.div>
 
-              {/* Help card */}
-              <div className="ar-help">
-                <div className="ar-help-icon">
-                  <Mail size={18} style={{ color: '#3b82f6' }} />
-                </div>
-                <div>
-                  <div className="ar-help-title">Need assistance?</div>
-                  <div className="ar-help-sub">Our team is available Mon–Fri, 8am–6pm EAT</div>
-                </div>
-                <a href="mailto:support@cbenoneaa.ac.ke" className="ar-help-btn">
-                  Contact support <ChevronRight size={13} />
-                </a>
+            {/* Help section */}
+            <div className="reg-help">
+              <div className="reg-help-icon">
+                <Mail size={16} style={{ color: '#4f46e5' }} />
               </div>
-
-              {/* Trust row */}
-              <div className="ar-trust">
-                {TRUST_ITEMS.map(item => {
-                  const Icon = item.icon;
-                  return (
-                    <div className="ar-trust-item" key={item.label}>
-                      <Icon size={11} style={{ color: '#22c55e' }} />
-                      {item.label}
-                    </div>
-                  );
-                })}
+              <div>
+                <div className="reg-help-title">Need assistance?</div>
+                <div className="reg-help-sub">Our team is available Mon-Fri, 8am-6pm EAT</div>
               </div>
-
+              <a href="mailto:support@cbenoneaa.ac.ke" className="reg-help-btn">
+                Contact support <ChevronRight size={12} />
+              </a>
             </div>
-          </main>
 
+            {/* Trust badges */}
+            <div className="reg-trust">
+              {TRUST_ITEMS.map(item => {
+                const Icon = item.icon;
+                return (
+                  <div className="reg-trust-item" key={item.label}>
+                    <Icon size={11} style={{ color: '#10b981' }} />
+                    {item.label}
+                  </div>
+                );
+              })}
+            </div>
+
+          </main>
         </div>
       </div>
     </>
