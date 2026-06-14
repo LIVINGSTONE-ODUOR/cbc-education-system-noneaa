@@ -62,12 +62,12 @@ const competencyCoverage = [
 ];
 
 const curriculumAreas = [
-  { title: 'Language Activities', grades: 'Pre-Primary 1 & 2', strands: ['Listening & Speaking', 'Reading', 'Writing', 'Book & Print Awareness'], color: 'bg-blue-50 border-blue-200', iconBg: 'bg-blue-100 text-blue-600' },
-  { title: 'Mathematics', grades: 'Grade 1–9', strands: ['Numbers', 'Measurement', 'Geometry', 'Data Handling & Probability'], color: 'bg-emerald-50 border-emerald-200', iconBg: 'bg-emerald-100 text-emerald-600' },
-  { title: 'Integrated Science', grades: 'Grade 4–9', strands: ['Living Things & Environment', 'Materials & Energy', 'Earth & Space', 'Health & Safety'], color: 'bg-purple-50 border-purple-200', iconBg: 'bg-purple-100 text-purple-600' },
-  { title: 'Social Studies', grades: 'Grade 4–9', strands: ['Citizenship', 'People & Population', 'Culture & Society', 'Resources & Economic Activities'], color: 'bg-amber-50 border-amber-200', iconBg: 'bg-amber-100 text-amber-600' },
-  { title: 'Creative Arts & Sports', grades: 'Grade 1–9', strands: ['Performing Arts', 'Visual Arts', 'Physical Education', 'Swimming'], color: 'bg-rose-50 border-rose-200', iconBg: 'bg-rose-100 text-rose-600' },
-  { title: 'Religious Education', grades: 'Grade 1–9', strands: ['CRE / IRE / HRE', 'Moral Values', 'Community Service', 'Spiritual Growth'], color: 'bg-cyan-50 border-cyan-200', iconBg: 'bg-cyan-100 text-cyan-600' },
+  { title: 'Language Activities', grades: 'Pre-Primary 1 & 2', strands: ['Listening & Speaking', 'Reading', 'Writing', 'Book & Print Awareness'], color: 'bg-blue-50 border-blue-800', iconBg: 'bg-blue-900/30 text-blue-600' },
+  { title: 'Mathematics', grades: 'Grade 1–9', strands: ['Numbers', 'Measurement', 'Geometry', 'Data Handling & Probability'], color: 'bg-emerald-50 border-emerald-800', iconBg: 'bg-emerald-900/30 text-emerald-600' },
+  { title: 'Integrated Science', grades: 'Grade 4–9', strands: ['Living Things & Environment', 'Materials & Energy', 'Earth & Space', 'Health & Safety'], color: 'bg-purple-50 border-purple-800', iconBg: 'bg-purple-900/30 text-purple-600' },
+  { title: 'Social Studies', grades: 'Grade 4–9', strands: ['Citizenship', 'People & Population', 'Culture & Society', 'Resources & Economic Activities'], color: 'bg-amber-50 border-amber-200', iconBg: 'bg-amber-900/30 text-amber-600' },
+  { title: 'Creative Arts & Sports', grades: 'Grade 1–9', strands: ['Performing Arts', 'Visual Arts', 'Physical Education', 'Swimming'], color: 'bg-rose-50 border-rose-200', iconBg: 'bg-rose-900/30 text-rose-600' },
+  { title: 'Religious Education', grades: 'Grade 1–9', strands: ['CRE / IRE / HRE', 'Moral Values', 'Community Service', 'Spiritual Growth'], color: 'bg-cyan-50 border-cyan-200', iconBg: 'bg-cyan-900/30 text-cyan-600' },
 ];
 
 const gradeLevels = [
@@ -102,7 +102,7 @@ export default function CurriculumPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-900">
       <Header />
 
       {/* ── Hero ─────────────────────────────────────────────── */}
@@ -131,7 +131,7 @@ export default function CurriculumPage() {
                 Organize, track, and assess every learning area, strand, and sub-strand — from Pre-Primary to Senior Secondary. Built for the 2-6-3-3-3 structure.
               </motion.p>
               <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-white text-blue-900 hover:bg-blue-50" asChild>
+                <Button size="lg" className="bg-slate-800 text-blue-900 hover:bg-blue-50" asChild>
                   <Link to="/get-started">Get Started Free <ArrowRight className="w-4 h-4 ml-2" /></Link>
                 </Button>
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
@@ -161,7 +161,7 @@ export default function CurriculumPage() {
       </section>
 
       {/* ── Stats Bar ────────────────────────────────────────── */}
-      <section className="bg-gray-50 py-12">
+      <section className="bg-slate-800/50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
@@ -176,10 +176,10 @@ export default function CurriculumPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="text-center p-6 rounded-xl bg-white shadow-sm"
+                className="text-center p-6 rounded-xl bg-slate-800 shadow-sm"
               >
                 <stat.icon className="w-8 h-8 text-blue-600 mx-auto mb-3" />
-                <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                <p className="text-3xl font-bold text-white">{stat.value}</p>
                 <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
               </motion.div>
             ))}
@@ -192,8 +192,8 @@ export default function CurriculumPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">2-6-3-3-3 Structure</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">CBC Grade Level Structure</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">CBC Grade Level Structure</h2>
+            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
               Kenya&apos;s CBC organizes learners from Pre-Primary through Senior Secondary, each with defined learning areas and pathways.
             </p>
           </motion.div>
@@ -211,7 +211,7 @@ export default function CurriculumPage() {
                   <div className={`w-12 h-12 bg-gradient-to-br ${item.color} rounded-xl flex items-center justify-center text-white mx-auto mb-3 group-hover:scale-110 transition-transform`}>
                     <GraduationCap className="w-6 h-6" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 text-sm mb-1">{item.level}</h3>
+                  <h3 className="font-semibold text-white text-sm mb-1">{item.level}</h3>
                   <p className="text-xs text-muted-foreground mb-1">{item.grades} • {item.age}</p>
                   <p className="text-xs font-medium text-blue-600">
                     {typeof item.areas === 'number' ? `${item.areas} Learning Areas` : item.areas}
@@ -221,7 +221,7 @@ export default function CurriculumPage() {
             </div>
 
             {/* Grade Distribution Pie Chart */}
-            <motion.div variants={scaleIn} className="bg-white rounded-2xl shadow-lg border p-6">
+            <motion.div variants={scaleIn} className="bg-slate-800 rounded-2xl shadow-lg border p-6">
               <p className="text-sm font-medium text-gray-500 mb-4">Grade Level Distribution</p>
               <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
@@ -248,12 +248,12 @@ export default function CurriculumPage() {
       </AnimatedSection>
 
       {/* ── Learning Areas & Strands ─────────────────────────── */}
-      <AnimatedSection className="py-20 bg-gray-50">
+      <AnimatedSection className="py-20 bg-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">KICD Aligned</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Learning Areas & Strands</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Learning Areas & Strands</h2>
+            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
               Every learning area is organized into strands and sub-strands. NONEAA tracks competency at every level of the curriculum hierarchy.
             </p>
           </motion.div>
@@ -269,11 +269,11 @@ export default function CurriculumPage() {
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${area.iconBg} group-hover:scale-110 transition-transform`}>
                   <BookOpen className="w-5 h-5" />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1">{area.title}</h3>
+                <h3 className="font-semibold text-white mb-1">{area.title}</h3>
                 <p className="text-xs text-muted-foreground mb-3">{area.grades}</p>
                 <div className="space-y-2">
                   {area.strands.map((strand) => (
-                    <div key={strand} className="flex items-center gap-2 text-sm text-gray-700">
+                    <div key={strand} className="flex items-center gap-2 text-sm text-slate-200">
                       <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
                       {strand}
                     </div>
@@ -293,10 +293,10 @@ export default function CurriculumPage() {
               <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">
                 Competency Integration
               </motion.p>
-              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
+              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-white mb-6">
                 Every Subject Maps to Core Competencies
               </motion.h2>
-              <motion.p variants={fadeUp} custom={2} className="text-lg text-gray-600 mb-8">
+              <motion.p variants={fadeUp} custom={2} className="text-lg text-slate-300 mb-8">
                 CBE isn&apos;t just about subjects — it&apos;s about developing competencies. Our curriculum management system maps every learning activity to the 7 core competencies, so you can see exactly how your curriculum develops the whole learner.
               </motion.p>
               <div className="space-y-4">
@@ -307,15 +307,15 @@ export default function CurriculumPage() {
                   { text: 'Visual reports for curriculum audits and KICD reviews', icon: BarChart3 },
                 ].map((item, i) => (
                   <motion.div key={i} variants={fadeUp} custom={3 + i} className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 flex-shrink-0 mt-0.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-900/30 flex-shrink-0 mt-0.5">
                       <item.icon className="w-4 h-4 text-indigo-600" />
                     </div>
-                    <p className="text-gray-700">{item.text}</p>
+                    <p className="text-slate-200">{item.text}</p>
                   </motion.div>
                 ))}
               </div>
             </div>
-            <motion.div variants={scaleIn} className="bg-white rounded-2xl shadow-lg border p-6">
+            <motion.div variants={scaleIn} className="bg-slate-800 rounded-2xl shadow-lg border p-6">
               <p className="text-sm font-medium text-gray-500 mb-4">Competency Coverage Across Curriculum (%)</p>
               <ResponsiveContainer width="100%" height={320}>
                 <RadarChart data={competencyCoverage}>
@@ -331,10 +331,10 @@ export default function CurriculumPage() {
       </AnimatedSection>
 
       {/* ── Strand & Sub-Strand Detail Chart ─────────────────── */}
-      <AnimatedSection className="py-20 bg-gray-50">
+      <AnimatedSection className="py-20 bg-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div variants={scaleIn} className="order-2 lg:order-1 bg-white rounded-2xl shadow-lg border p-6">
+            <motion.div variants={scaleIn} className="order-2 lg:order-1 bg-slate-800 rounded-2xl shadow-lg border p-6">
               <p className="text-sm font-medium text-gray-500 mb-4">Strands & Sub-Strands per Learning Area</p>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={learningAreaDistribution} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
@@ -351,10 +351,10 @@ export default function CurriculumPage() {
               <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
                 Granular Organization
               </motion.p>
-              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
+              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-white mb-6">
                 Every Strand. Every Sub-Strand. Tracked.
               </motion.h2>
-              <motion.p variants={fadeUp} custom={2} className="text-lg text-gray-600 mb-8">
+              <motion.p variants={fadeUp} custom={2} className="text-lg text-slate-300 mb-8">
                 Don&apos;t just track &ldquo;Mathematics&rdquo; — track Numbers, Geometry, Measurement, and Data Handling separately. When a learner struggles, you know <em>exactly</em> where they need support.
               </motion.p>
               <div className="space-y-3">
@@ -366,7 +366,7 @@ export default function CurriculumPage() {
                 ].map((text, i) => (
                   <motion.div key={i} variants={fadeUp} custom={3 + i} className="flex items-start gap-3">
                     <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-gray-700">{text}</p>
+                    <p className="text-slate-200">{text}</p>
                   </motion.div>
                 ))}
               </div>
@@ -380,31 +380,31 @@ export default function CurriculumPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Platform Capabilities</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">What You Can Do with NONEAA</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">What You Can Do with NONEAA</h2>
+            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
               Practical tools for teachers and administrators to manage the CBC curriculum day-to-day.
             </p>
           </motion.div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { title: 'Strand & Sub-Strand Tracking', desc: 'Organize learning areas by strands and sub-strands as defined by KICD. Track progress at every level of the curriculum hierarchy.', icon: Layers, color: 'bg-blue-100 text-blue-600' },
-              { title: 'Competency Level Assessment', desc: 'Record learner competencies using the 4-level scale: Exceeding, Meeting, Approaching, and Below Expectations.', icon: Target, color: 'bg-purple-100 text-purple-600' },
-              { title: 'Progress Reports', desc: 'Generate term-end reports showing each learner\'s competency levels across all learning areas and indicators.', icon: BarChart3, color: 'bg-green-100 text-green-600' },
-              { title: 'Rubric Customization', desc: 'Use KICD-aligned rubrics or create custom assessment criteria for formative and summative assessments.', icon: FileText, color: 'bg-amber-100 text-amber-600' },
-              { title: 'Teacher Allocation', desc: 'Assign teachers to specific learning areas and grade levels. Teachers only see the subjects and classes assigned to them.', icon: Users, color: 'bg-rose-100 text-rose-600' },
-              { title: 'Learning Outcomes Mapping', desc: 'Map each assessment to specific learning outcomes so you always know what competencies are being measured.', icon: Lightbulb, color: 'bg-indigo-100 text-indigo-600' },
+              { title: 'Strand & Sub-Strand Tracking', desc: 'Organize learning areas by strands and sub-strands as defined by KICD. Track progress at every level of the curriculum hierarchy.', icon: Layers, color: 'bg-blue-900/30 text-blue-600' },
+              { title: 'Competency Level Assessment', desc: 'Record learner competencies using the 4-level scale: Exceeding, Meeting, Approaching, and Below Expectations.', icon: Target, color: 'bg-purple-900/30 text-purple-600' },
+              { title: 'Progress Reports', desc: 'Generate term-end reports showing each learner\'s competency levels across all learning areas and indicators.', icon: BarChart3, color: 'bg-green-900/30 text-green-600' },
+              { title: 'Rubric Customization', desc: 'Use KICD-aligned rubrics or create custom assessment criteria for formative and summative assessments.', icon: FileText, color: 'bg-amber-900/30 text-amber-600' },
+              { title: 'Teacher Allocation', desc: 'Assign teachers to specific learning areas and grade levels. Teachers only see the subjects and classes assigned to them.', icon: Users, color: 'bg-rose-900/30 text-rose-600' },
+              { title: 'Learning Outcomes Mapping', desc: 'Map each assessment to specific learning outcomes so you always know what competencies are being measured.', icon: Lightbulb, color: 'bg-indigo-900/30 text-indigo-600' },
             ].map((feature, i) => (
               <motion.div
                 key={feature.title}
                 variants={fadeUp}
                 custom={i + 1}
-                className="p-6 rounded-2xl border bg-white hover:shadow-lg transition-shadow group"
+                className="p-6 rounded-2xl border bg-slate-800 hover:shadow-lg transition-shadow group"
               >
                 <div className={`flex h-12 w-12 items-center justify-center rounded-xl mb-4 ${feature.color} group-hover:scale-110 transition-transform`}>
                   <feature.icon className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600 text-sm">{feature.desc}</p>
+                <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
+                <p className="text-slate-300 text-sm">{feature.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -412,25 +412,25 @@ export default function CurriculumPage() {
       </AnimatedSection>
 
       {/* ── Why Schools Choose NONEAA ──────────────────────── */}
-      <AnimatedSection className="py-20 bg-gray-50">
+      <AnimatedSection className="py-20 bg-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wide mb-3">The Difference</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Why Schools Choose NONEAA for Curriculum</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Why Schools Choose NONEAA for Curriculum</h2>
           </motion.div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { title: 'Set Up in Under 1 Hour', desc: 'Pre-loaded with the full KICD curriculum. Just select your grade levels and start.', icon: Clock, color: 'bg-blue-100 text-blue-600' },
-              { title: 'Always Up to Date', desc: 'When KICD updates the curriculum, we update the system — automatically.', icon: Zap, color: 'bg-amber-100 text-amber-600' },
-              { title: 'Teacher-Friendly', desc: 'Simple interface that teachers can learn in minutes, not days.', icon: Sparkles, color: 'bg-purple-100 text-purple-600' },
-              { title: 'Data-Driven', desc: 'Make curriculum decisions backed by real assessment data, not guesswork.', icon: TrendingUp, color: 'bg-emerald-100 text-emerald-600' },
+              { title: 'Set Up in Under 1 Hour', desc: 'Pre-loaded with the full KICD curriculum. Just select your grade levels and start.', icon: Clock, color: 'bg-blue-900/30 text-blue-600' },
+              { title: 'Always Up to Date', desc: 'When KICD updates the curriculum, we update the system — automatically.', icon: Zap, color: 'bg-amber-900/30 text-amber-600' },
+              { title: 'Teacher-Friendly', desc: 'Simple interface that teachers can learn in minutes, not days.', icon: Sparkles, color: 'bg-purple-900/30 text-purple-600' },
+              { title: 'Data-Driven', desc: 'Make curriculum decisions backed by real assessment data, not guesswork.', icon: TrendingUp, color: 'bg-emerald-900/30 text-emerald-600' },
             ].map((item, i) => (
-              <motion.div key={item.title} variants={fadeUp} custom={i + 1} className="p-6 rounded-2xl border bg-white text-center hover:shadow-lg transition-shadow group">
+              <motion.div key={item.title} variants={fadeUp} custom={i + 1} className="p-6 rounded-2xl border bg-slate-800 text-center hover:shadow-lg transition-shadow group">
                 <div className={`flex h-14 w-14 items-center justify-center rounded-xl mx-auto mb-4 ${item.color} group-hover:scale-110 transition-transform`}>
                   <item.icon className="w-7 h-7" />
                 </div>
-                <h3 className="text-base font-semibold text-gray-900 mb-2">{item.title}</h3>
-                <p className="text-sm text-gray-600">{item.desc}</p>
+                <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
+                <p className="text-sm text-slate-300">{item.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -449,7 +449,7 @@ export default function CurriculumPage() {
               Whether you&apos;re a single school or a school group, NONEAA scales to your needs. Set up learning areas, assign teachers, and begin tracking competencies in under an hour.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="bg-white text-blue-700 hover:bg-blue-50" asChild>
+              <Button size="lg" className="bg-slate-800 text-blue-700 hover:bg-blue-50" asChild>
                 <Link to="/get-started">Get Started Free <ArrowRight className="w-4 h-4 ml-2" /></Link>
               </Button>
               <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>

@@ -76,14 +76,14 @@ export default function GetStartedPage() {
               <Shield className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">CBE Education System</h1>
-              <p className="text-gray-600 text-sm">Transforming Education Together</p>
+              <h1 className="text-2xl font-bold text-white">CBE Education System</h1>
+              <p className="text-slate-300 text-sm">Transforming Education Together</p>
             </div>
           </div>
           <Button 
             variant="outline" 
             onClick={() => navigate('/')}
-            className="border-gray-300 text-gray-700 hover:bg-gray-50"
+            className="border-slate-600 text-slate-200 hover:bg-slate-800"
           >
             Back to Home
           </Button>
@@ -102,8 +102,8 @@ export default function GetStartedPage() {
                   <Sparkles className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-4xl lg:text-5xl font-bold text-gray-900">Get Started Today</h2>
-                  <p className="text-gray-600 text-lg">Join hundreds of schools transforming their education management</p>
+                  <h2 className="text-4xl lg:text-5xl font-bold text-white">Get Started Today</h2>
+                  <p className="text-slate-300 text-lg">Join hundreds of schools transforming their education management</p>
                 </div>
               </div>
             </div>
@@ -120,11 +120,11 @@ export default function GetStartedPage() {
                 { icon: MessageSquare, label: 'Communication', color: 'from-gray-200 to-gray-300' },
                 { icon: Award, label: 'Quality Assured', color: 'from-gray-100 to-gray-200' }
               ].map((benefit, index) => (
-                <div key={index} className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl p-4 hover:bg-white transition-all">
+                <div key={index} className="bg-white/80 backdrop-blur-sm border border-slate-700 rounded-xl p-4 hover:bg-white transition-all">
                   <div className={`w-10 h-10 bg-gradient-to-br ${benefit.color} rounded-lg flex items-center justify-center mb-3`}>
                     <benefit.icon className="w-6 h-6 text-white" />
                   </div>
-                  <p className="text-gray-800 font-semibold text-sm">{benefit.label}</p>
+                  <p className="text-slate-100 font-semibold text-sm">{benefit.label}</p>
                 </div>
               ))}
             </div>
@@ -136,33 +136,33 @@ export default function GetStartedPage() {
                 { number: '50K+', label: 'Students', icon: GraduationCap },
                 { number: '99.9%', label: 'Uptime', icon: Shield }
               ].map((stat, index) => (
-                <div key={index} className="bg-gradient-to-r from-gray-100 to-gray-200 border border-gray-300 rounded-lg p-4 text-center">
+                <div key={index} className="bg-gradient-to-r from-gray-100 to-gray-200 border border-slate-600 rounded-lg p-4 text-center">
                   <div className="flex items-center justify-center gap-2 mb-2">
-                    <stat.icon className="w-5 h-5 text-gray-600" />
-                    <span className="text-2xl font-bold text-gray-900">{stat.number}</span>
+                    <stat.icon className="w-5 h-5 text-slate-300" />
+                    <span className="text-2xl font-bold text-white">{stat.number}</span>
                   </div>
-                  <p className="text-xs text-gray-600">{stat.label}</p>
+                  <p className="text-xs text-slate-300">{stat.label}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Right Side - Registration Form */}
-          <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-xl p-8">
+          <div className="bg-white/80 backdrop-blur-sm border border-slate-700 rounded-2xl shadow-xl p-8">
             <div className="space-y-6">
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Join Our Platform</h3>
-                <p className="text-gray-600">Start your journey with CBE Education System</p>
+                <h3 className="text-2xl font-bold text-white mb-2">Join Our Platform</h3>
+                <p className="text-slate-300">Start your journey with CBE Education System</p>
               </div>
 
               {/* User Type Selection */}
-              <div className="flex gap-4 bg-gray-50 rounded-xl p-2">
+              <div className="flex gap-4 bg-slate-800/50 rounded-xl p-2">
                 <button
                   onClick={() => setIsSchoolAdmin(true)}
                   className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
                     isSchoolAdmin 
                       ? 'bg-gradient-to-r from-gray-800 to-gray-900 text-white shadow-lg' 
-                      : 'text-gray-500 hover:text-gray-700'
+                      : 'text-gray-500 hover:text-slate-200'
                   }`}
                 >
                   <div className="flex items-center justify-center gap-2">
@@ -175,7 +175,7 @@ export default function GetStartedPage() {
                   className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
                     !isSchoolAdmin 
                       ? 'bg-gradient-to-r from-gray-700 to-gray-800 text-white shadow-lg' 
-                      : 'text-gray-500 hover:text-gray-700'
+                      : 'text-gray-500 hover:text-slate-200'
                   }`}
                 >
                   <div className="flex items-center justify-center gap-2">
@@ -190,26 +190,26 @@ export default function GetStartedPage() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="schoolName" className="text-gray-700">School Name *</Label>
+                      <Label htmlFor="schoolName" className="text-slate-200">School Name *</Label>
                       <Input
                         id="schoolName"
                         name="schoolName"
                         value={formData.schoolName}
                         onChange={handleChange}
                         required
-                        className="bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                        className="bg-slate-800 border-slate-600 text-white placeholder-gray-400"
                         placeholder="e.g., Sunshine Academy"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="schoolCode" className="text-gray-700">School Code *</Label>
+                      <Label htmlFor="schoolCode" className="text-slate-200">School Code *</Label>
                       <Input
                         id="schoolCode"
                         name="schoolCode"
                         value={formData.schoolCode}
                         onChange={handleChange}
                         required
-                        className="bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                        className="bg-slate-800 border-slate-600 text-white placeholder-gray-400"
                         placeholder="e.g., 12345"
                       />
                     </div>
@@ -217,19 +217,19 @@ export default function GetStartedPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="adminName" className="text-gray-700">Admin Name *</Label>
+                      <Label htmlFor="adminName" className="text-slate-200">Admin Name *</Label>
                       <Input
                         id="adminName"
                         name="adminName"
                         value={formData.adminName}
                         onChange={handleChange}
                         required
-                        className="bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                        className="bg-slate-800 border-slate-600 text-white placeholder-gray-400"
                         placeholder="e.g., John Doe"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="adminEmail" className="text-gray-700">Admin Email *</Label>
+                      <Label htmlFor="adminEmail" className="text-slate-200">Admin Email *</Label>
                       <Input
                         id="adminEmail"
                         name="adminEmail"
@@ -237,7 +237,7 @@ export default function GetStartedPage() {
                         value={formData.adminEmail}
                         onChange={handleChange}
                         required
-                        className="bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                        className="bg-slate-800 border-slate-600 text-white placeholder-gray-400"
                         placeholder="admin@school.edu"
                       />
                     </div>
@@ -245,7 +245,7 @@ export default function GetStartedPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="adminPassword" className="text-gray-700">Password *</Label>
+                      <Label htmlFor="adminPassword" className="text-slate-200">Password *</Label>
                       <div className="relative">
                         <Input
                           id="adminPassword"
@@ -254,20 +254,20 @@ export default function GetStartedPage() {
                           value={formData.adminPassword}
                           onChange={handleChange}
                           required
-                          className="bg-white border-gray-300 text-gray-900 placeholder-gray-400 pr-10"
+                          className="bg-slate-800 border-slate-600 text-white placeholder-gray-400 pr-10"
                           placeholder="Create a strong password"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-slate-300"
                         >
                           {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         </button>
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="confirmPassword" className="text-gray-700">Confirm Password *</Label>
+                      <Label htmlFor="confirmPassword" className="text-slate-200">Confirm Password *</Label>
                       <div className="relative">
                         <Input
                           id="confirmPassword"
@@ -276,13 +276,13 @@ export default function GetStartedPage() {
                           value={formData.confirmPassword}
                           onChange={handleChange}
                           required
-                          className="bg-white border-gray-300 text-gray-900 placeholder-gray-400 pr-10"
+                          className="bg-slate-800 border-slate-600 text-white placeholder-gray-400 pr-10"
                           placeholder="Confirm your password"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-slate-300"
                         >
                           {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         </button>
@@ -292,7 +292,7 @@ export default function GetStartedPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="contactPhone" className="text-gray-700">Contact Phone *</Label>
+                      <Label htmlFor="contactPhone" className="text-slate-200">Contact Phone *</Label>
                       <Input
                         id="contactPhone"
                         name="contactPhone"
@@ -300,18 +300,18 @@ export default function GetStartedPage() {
                         value={formData.contactPhone}
                         onChange={handleChange}
                         required
-                        className="bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                        className="bg-slate-800 border-slate-600 text-white placeholder-gray-400"
                         placeholder="+254 7XX XXX XXX"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="schoolType" className="text-gray-700">School Type *</Label>
+                      <Label htmlFor="schoolType" className="text-slate-200">School Type *</Label>
                       <select
                         id="schoolType"
                         name="schoolType"
                         value={formData.schoolType}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                        className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-gray-400"
                       >
                         <option value="Primary">Primary School</option>
                         <option value="Secondary">Secondary School</option>
@@ -322,37 +322,37 @@ export default function GetStartedPage() {
 
                   <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="yearEstablished" className="text-gray-700">Year Established</Label>
+                      <Label htmlFor="yearEstablished" className="text-slate-200">Year Established</Label>
                       <Input
                         id="yearEstablished"
                         name="yearEstablished"
                         type="number"
                         value={formData.yearEstablished}
                         onChange={handleChange}
-                        className="bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                        className="bg-slate-800 border-slate-600 text-white placeholder-gray-400"
                         placeholder="e.g., 2005"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="studentCount" className="text-gray-700">Student Count</Label>
+                      <Label htmlFor="studentCount" className="text-slate-200">Student Count</Label>
                       <Input
                         id="studentCount"
                         name="studentCount"
                         type="number"
                         value={formData.studentCount}
                         onChange={handleChange}
-                        className="bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                        className="bg-slate-800 border-slate-600 text-white placeholder-gray-400"
                         placeholder="e.g., 500"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="county" className="text-gray-700">County</Label>
+                      <Label htmlFor="county" className="text-slate-200">County</Label>
                       <Input
                         id="county"
                         name="county"
                         value={formData.county}
                         onChange={handleChange}
-                        className="bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                        className="bg-slate-800 border-slate-600 text-white placeholder-gray-400"
                         placeholder="e.g., Nairobi"
                       />
                     </div>
@@ -360,39 +360,39 @@ export default function GetStartedPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="subCounty" className="text-gray-700">Sub-County</Label>
+                      <Label htmlFor="subCounty" className="text-slate-200">Sub-County</Label>
                       <Input
                         id="subCounty"
                         name="subCounty"
                         value={formData.subCounty}
                         onChange={handleChange}
-                        className="bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                        className="bg-slate-800 border-slate-600 text-white placeholder-gray-400"
                         placeholder="e.g., Westlands"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="ward" className="text-gray-700">Ward</Label>
+                      <Label htmlFor="ward" className="text-slate-200">Ward</Label>
                       <Input
                         id="ward"
                         name="ward"
                         value={formData.ward}
                         onChange={handleChange}
-                        className="bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                        className="bg-slate-800 border-slate-600 text-white placeholder-gray-400"
                         placeholder="e.g., Parklands"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3 text-gray-600 text-sm">
+                    <div className="flex items-center gap-3 text-slate-300 text-sm">
                       <CheckCircle2 className="w-5 h-5 text-green-600" />
                       <span>Ministry of Education compliant</span>
                     </div>
-                    <div className="flex items-center gap-3 text-gray-600 text-sm">
-                      <Shield className="w-5 h-5 text-gray-600" />
+                    <div className="flex items-center gap-3 text-slate-300 text-sm">
+                      <Shield className="w-5 h-5 text-slate-300" />
                       <span>Secure data protection</span>
                     </div>
-                    <div className="flex items-center gap-3 text-gray-600 text-sm">
+                    <div className="flex items-center gap-3 text-slate-300 text-sm">
                       <Zap className="w-5 h-5 text-yellow-600" />
                       <span>24/7 technical support</span>
                     </div>
@@ -416,19 +416,19 @@ export default function GetStartedPage() {
                     <div className="w-16 h-16 bg-gradient-to-br from-gray-700 to-gray-800 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
                       <Users className="w-8 h-8 text-white" />
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900">Join as Teacher or Parent</h3>
-                    <p className="text-gray-600">Connect with your school's CBE Education System</p>
+                    <h3 className="text-2xl font-bold text-white">Join as Teacher or Parent</h3>
+                    <p className="text-slate-300">Connect with your school's CBE Education System</p>
                   </div>
 
                   <div className="space-y-4">
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h4 className="text-gray-800 font-semibold mb-2">For Teachers:</h4>
-                      <p className="text-gray-600 text-sm">Contact your school administrator to get access to the teacher portal. They will provide you with login credentials and guide you through the setup process.</p>
+                    <div className="bg-slate-800/50 rounded-lg p-4">
+                      <h4 className="text-slate-100 font-semibold mb-2">For Teachers:</h4>
+                      <p className="text-slate-300 text-sm">Contact your school administrator to get access to the teacher portal. They will provide you with login credentials and guide you through the setup process.</p>
                     </div>
                     
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h4 className="text-gray-800 font-semibold mb-2">For Parents:</h4>
-                      <p className="text-gray-600 text-sm">Your school will provide you with access to the parent portal. Contact the school administration to get your login details and start monitoring your child's progress.</p>
+                    <div className="bg-slate-800/50 rounded-lg p-4">
+                      <h4 className="text-slate-100 font-semibold mb-2">For Parents:</h4>
+                      <p className="text-slate-300 text-sm">Your school will provide you with access to the parent portal. Contact the school administration to get your login details and start monitoring your child's progress.</p>
                     </div>
                   </div>
 
@@ -437,26 +437,26 @@ export default function GetStartedPage() {
                       <div className="w-10 h-10 bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg flex items-center justify-center mx-auto mb-2">
                         <Target className="w-5 h-5 text-white" />
                       </div>
-                      <p className="text-xs text-gray-600">Easy Access</p>
+                      <p className="text-xs text-slate-300">Easy Access</p>
                     </div>
                     <div className="text-center">
                       <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg flex items-center justify-center mx-auto mb-2">
                         <MessageSquare className="w-5 h-5 text-white" />
                       </div>
-                      <p className="text-xs text-gray-600">Communication</p>
+                      <p className="text-xs text-slate-300">Communication</p>
                     </div>
                     <div className="text-center">
                       <div className="w-10 h-10 bg-gradient-to-br from-gray-600 to-gray-700 rounded-lg flex items-center justify-center mx-auto mb-2">
                         <BookOpen className="w-5 h-5 text-white" />
                       </div>
-                      <p className="text-xs text-gray-600">Resources</p>
+                      <p className="text-xs text-slate-300">Resources</p>
                     </div>
                   </div>
 
                   <Button 
                     onClick={() => navigate('/contact')}
                     variant="outline"
-                    className="w-full py-3 border-gray-300 text-gray-700 hover:bg-gray-50"
+                    className="w-full py-3 border-slate-600 text-slate-200 hover:bg-slate-800"
                   >
                     Contact Us for Assistance
                   </Button>
@@ -468,10 +468,10 @@ export default function GetStartedPage() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 container mx-auto px-4 py-8 border-t border-gray-200">
+      <footer className="relative z-10 container mx-auto px-4 py-8 border-t border-slate-700">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
           <div>
-            <h4 className="text-gray-800 font-semibold mb-2">Quick Links</h4>
+            <h4 className="text-slate-100 font-semibold mb-2">Quick Links</h4>
             <div className="space-y-2 text-gray-500 text-sm">
               <div>• Features</div>
               <div>• Pricing</div>
@@ -479,7 +479,7 @@ export default function GetStartedPage() {
             </div>
           </div>
           <div>
-            <h4 className="text-gray-800 font-semibold mb-2">Support</h4>
+            <h4 className="text-slate-100 font-semibold mb-2">Support</h4>
             <div className="space-y-2 text-gray-500 text-sm">
               <div>• Help Center</div>
               <div>• Technical Support</div>
@@ -487,7 +487,7 @@ export default function GetStartedPage() {
             </div>
           </div>
           <div>
-            <h4 className="text-gray-800 font-semibold mb-2">Contact</h4>
+            <h4 className="text-slate-100 font-semibold mb-2">Contact</h4>
             <div className="space-y-2 text-gray-500 text-sm">
               <div>• support@cbe.edu</div>
               <div>• +254 700 000 000</div>
@@ -495,7 +495,7 @@ export default function GetStartedPage() {
             </div>
           </div>
         </div>
-        <div className="border-t border-gray-200 mt-8 pt-8 text-center text-gray-500 text-sm">
+        <div className="border-t border-slate-700 mt-8 pt-8 text-center text-gray-500 text-sm">
           © 2026 CBE Education System • All Rights Reserved • Ministry of Education Licensed
         </div>
       </footer>

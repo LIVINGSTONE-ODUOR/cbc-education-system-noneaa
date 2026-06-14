@@ -114,7 +114,7 @@ export default function CareersPage() {
       </section>
 
       {/* Values */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-slate-800/50">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div {...fadeInUp} className="text-center mb-16">
             <h2 className="text-2xl font-bold text-foreground mb-4">Why work with us</h2>
@@ -131,7 +131,7 @@ export default function CareersPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="bg-white rounded-xl border border-gray-200 p-6 text-center shadow-sm hover:shadow-md transition-shadow"
+                className="bg-slate-800 rounded-xl border border-slate-700 p-6 text-center shadow-sm hover:shadow-md transition-shadow"
               >
                 <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
                   <v.icon className="w-6 h-6 text-blue-600" />
@@ -162,7 +162,7 @@ export default function CareersPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row md:items-center gap-4"
+                className="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row md:items-center gap-4"
               >
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-foreground mb-1">{job.title}</h3>

@@ -57,7 +57,7 @@ export default function SecurityPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-900">
       <Header />
 
       {/* Hero */}
@@ -86,13 +86,13 @@ export default function SecurityPage() {
       </section>
 
       {/* Stats Bar */}
-      <section className="bg-gray-50 py-12">
+      <section className="bg-slate-800/50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {stats.map((stat, i) => (
-              <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }} className="text-center p-6 rounded-xl bg-white shadow-sm">
+              <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }} className="text-center p-6 rounded-xl bg-slate-800 shadow-sm">
                 <stat.icon className="w-8 h-8 text-emerald-600 mx-auto mb-3" />
-                <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                <p className="text-3xl font-bold text-white">{stat.value}</p>
                 <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
               </motion.div>
             ))}
@@ -105,21 +105,21 @@ export default function SecurityPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wide mb-3">Defense in Depth</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Multiple Layers of Protection</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Multiple Layers of Protection</h2>
+            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
               Your data is protected by six interconnected security layers — each one designed to prevent, detect, and respond to threats.
             </p>
           </motion.div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {securityLayers.map((layer, i) => (
-              <motion.div key={layer.title} variants={fadeUp} custom={i + 1} className="bg-white rounded-2xl border shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all group">
+              <motion.div key={layer.title} variants={fadeUp} custom={i + 1} className="bg-slate-800 rounded-2xl border-slate-700 shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all group">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${layer.color} text-white mb-4 group-hover:scale-110 transition-transform`}>
                   <layer.icon className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">{layer.title}</h3>
+                <h3 className="text-lg font-semibold text-white mb-3">{layer.title}</h3>
                 <ul className="space-y-2">
                   {layer.items.map((item, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
+                    <li key={idx} className="flex items-start gap-2 text-sm text-slate-300">
                       <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
                       {item}
                     </li>
@@ -132,11 +132,11 @@ export default function SecurityPage() {
       </AnimatedSection>
 
       {/* Security Architecture Visual */}
-      <AnimatedSection className="py-20 bg-gray-50">
+      <AnimatedSection className="py-20 bg-slate-800/50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Architecture</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">How We Protect Your Data</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">How We Protect Your Data</h2>
           </motion.div>
           <div className="space-y-4">
             {[
@@ -168,19 +168,19 @@ export default function SecurityPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wide mb-3">Best Practices</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Security Beyond Technology</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Security Beyond Technology</h2>
+            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
               Security is about people and processes too — not just technology.
             </p>
           </motion.div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {practices.map((p, i) => (
-              <motion.div key={p.title} variants={fadeUp} custom={i + 1} className="bg-white rounded-2xl border shadow-sm p-6 text-center hover:shadow-lg transition-shadow group">
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 mx-auto mb-4 group-hover:scale-110 transition-transform">
+              <motion.div key={p.title} variants={fadeUp} custom={i + 1} className="bg-slate-800 rounded-2xl border-slate-700 shadow-sm p-6 text-center hover:shadow-lg transition-shadow group">
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-900/30 text-emerald-600 mx-auto mb-4 group-hover:scale-110 transition-transform">
                   <p.icon className="w-7 h-7" />
                 </div>
-                <h3 className="text-base font-semibold text-gray-900 mb-2">{p.title}</h3>
-                <p className="text-sm text-gray-600">{p.desc}</p>
+                <h3 className="text-base font-semibold text-white mb-2">{p.title}</h3>
+                <p className="text-sm text-slate-300">{p.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -188,10 +188,10 @@ export default function SecurityPage() {
       </AnimatedSection>
 
       {/* Certifications */}
-      <AnimatedSection className="py-16 bg-gray-50">
+      <AnimatedSection className="py-16 bg-slate-800/50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Compliance & Certifications</h2>
+            <h2 className="text-2xl font-bold text-white mb-4">Compliance & Certifications</h2>
           </motion.div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
@@ -200,9 +200,9 @@ export default function SecurityPage() {
               { name: 'SOC 2 Type II', desc: 'Security & availability certified' },
               { name: 'ISO 27001', desc: 'Information security management' },
             ].map((cert, i) => (
-              <motion.div key={cert.name} variants={fadeUp} custom={i + 1} className="bg-white rounded-xl border p-4 text-center hover:shadow-md transition-shadow">
+              <motion.div key={cert.name} variants={fadeUp} custom={i + 1} className="bg-slate-800 rounded-xl border p-4 text-center hover:shadow-md transition-shadow">
                 <Shield className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
-                <p className="font-semibold text-sm text-gray-900">{cert.name}</p>
+                <p className="font-semibold text-sm text-white">{cert.name}</p>
                 <p className="text-xs text-muted-foreground mt-1">{cert.desc}</p>
               </motion.div>
             ))}
@@ -214,20 +214,20 @@ export default function SecurityPage() {
       <AnimatedSection className="py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-6">
-            <motion.div variants={fadeUp} custom={0} className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200 p-8">
+            <motion.div variants={fadeUp} custom={0} className="bg-gradient-to-br from-emerald-950/30 to-teal-950/30 rounded-2xl border border-emerald-800 p-8">
               <Fingerprint className="w-10 h-10 text-emerald-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Report a Vulnerability</h3>
-              <p className="text-sm text-gray-600 mb-6">
+              <h3 className="text-xl font-bold text-white mb-3">Report a Vulnerability</h3>
+              <p className="text-sm text-slate-300 mb-6">
                 Found a security issue? We take all reports seriously and respond within 48 hours. Responsible disclosure is rewarded.
               </p>
-              <div className="flex items-center gap-3 text-sm text-gray-700">
+              <div className="flex items-center gap-3 text-sm text-slate-200">
                 <Mail className="w-4 h-4 text-emerald-600" /> security@noneaa.com
               </div>
             </motion.div>
-            <motion.div variants={fadeUp} custom={1} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 p-8">
+            <motion.div variants={fadeUp} custom={1} className="bg-gradient-to-br from-blue-950/30 to-indigo-950/30 rounded-2xl border border-blue-800 p-8">
               <Clock className="w-10 h-10 text-blue-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Security Questions?</h3>
-              <p className="text-sm text-gray-600 mb-6">
+              <h3 className="text-xl font-bold text-white mb-3">Security Questions?</h3>
+              <p className="text-sm text-slate-300 mb-6">
                 Need more details about our security practices? Our security team is happy to answer questions and provide documentation.
               </p>
               <Button className="bg-blue-600 hover:bg-blue-700 text-white" asChild>

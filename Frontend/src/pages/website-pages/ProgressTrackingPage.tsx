@@ -73,7 +73,7 @@ export default function ProgressTrackingPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-900">
       <Header />
 
       {/* Hero */}
@@ -102,7 +102,7 @@ export default function ProgressTrackingPage() {
                 Track academic performance across all subjects, terms, and competencies with beautiful visualizations that make data actionable.
               </motion.p>
               <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-white text-blue-900 hover:bg-blue-50" asChild>
+                <Button size="lg" className="bg-slate-800 text-blue-900 hover:bg-blue-50" asChild>
                   <Link to="/get-started">Start Tracking <ArrowRight className="w-4 h-4 ml-2" /></Link>
                 </Button>
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
@@ -134,7 +134,7 @@ export default function ProgressTrackingPage() {
       </section>
 
       {/* Stats Bar */}
-      <section className="bg-gray-50 py-12">
+      <section className="bg-slate-800/50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
@@ -149,10 +149,10 @@ export default function ProgressTrackingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="text-center p-6 rounded-xl bg-white shadow-sm"
+                className="text-center p-6 rounded-xl bg-slate-800 shadow-sm"
               >
                 <stat.icon className="w-8 h-8 text-blue-600 mx-auto mb-3" />
-                <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                <p className="text-3xl font-bold text-white">{stat.value}</p>
                 <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
               </motion.div>
             ))}
@@ -168,10 +168,10 @@ export default function ProgressTrackingPage() {
               <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
                 Subject Analytics
               </motion.p>
-              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
+              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-white mb-6">
                 Track Performance Across Every Subject
               </motion.h2>
-              <motion.p variants={fadeUp} custom={2} className="text-lg text-gray-600 mb-8">
+              <motion.p variants={fadeUp} custom={2} className="text-lg text-slate-300 mb-8">
                 See how learners perform across Mathematics, English, Science, Kiswahili, and more. Compare term-over-term growth and identify subjects that need extra attention.
               </motion.p>
               <div className="space-y-4">
@@ -181,15 +181,15 @@ export default function ProgressTrackingPage() {
                   { text: 'Generate individual learner progress reports', icon: GraduationCap },
                 ].map((item, i) => (
                   <motion.div key={i} variants={fadeUp} custom={3 + i} className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 flex-shrink-0 mt-0.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-900/30 flex-shrink-0 mt-0.5">
                       <item.icon className="w-4 h-4 text-blue-600" />
                     </div>
-                    <p className="text-gray-700">{item.text}</p>
+                    <p className="text-slate-200">{item.text}</p>
                   </motion.div>
                 ))}
               </div>
             </div>
-            <motion.div variants={scaleIn} className="bg-white rounded-2xl shadow-lg border p-6">
+            <motion.div variants={scaleIn} className="bg-slate-800 rounded-2xl shadow-lg border p-6">
               <p className="text-sm font-medium text-gray-500 mb-4">Subject Performance — Term Comparison</p>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={subjectTrends} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
@@ -208,10 +208,10 @@ export default function ProgressTrackingPage() {
       </AnimatedSection>
 
       {/* Feature: Competency Growth */}
-      <AnimatedSection className="py-20 bg-gray-50">
+      <AnimatedSection className="py-20 bg-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div variants={scaleIn} className="order-2 lg:order-1 bg-white rounded-2xl shadow-lg border p-6">
+            <motion.div variants={scaleIn} className="order-2 lg:order-1 bg-slate-800 rounded-2xl shadow-lg border p-6">
               <p className="text-sm font-medium text-gray-500 mb-4">CBE Competency Growth Over the Year</p>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={competencyGrowth} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
@@ -230,10 +230,10 @@ export default function ProgressTrackingPage() {
               <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">
                 Competency Mapping
               </motion.p>
-              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
+              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-white mb-6">
                 Beyond Grades — Track Real Competencies
               </motion.h2>
-              <motion.p variants={fadeUp} custom={2} className="text-lg text-gray-600 mb-8">
+              <motion.p variants={fadeUp} custom={2} className="text-lg text-slate-300 mb-8">
                 CBE isn&apos;t just about marks. Our system tracks the 7 core competencies defined by KICD — Communication, Critical Thinking, Creativity, Digital Literacy, and more — giving you a holistic view of each learner&apos;s development.
               </motion.p>
               <div className="space-y-4">
@@ -243,10 +243,10 @@ export default function ProgressTrackingPage() {
                   { text: 'Compare competency growth across classes and grades', icon: Layers },
                 ].map((item, i) => (
                   <motion.div key={i} variants={fadeUp} custom={3 + i} className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 flex-shrink-0 mt-0.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-900/30 flex-shrink-0 mt-0.5">
                       <item.icon className="w-4 h-4 text-purple-600" />
                     </div>
-                    <p className="text-gray-700">{item.text}</p>
+                    <p className="text-slate-200">{item.text}</p>
                   </motion.div>
                 ))}
               </div>
@@ -260,31 +260,31 @@ export default function ProgressTrackingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Why Schools Choose Us</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Progress Tracking That Makes a Difference</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Progress Tracking That Makes a Difference</h2>
+            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
               Every feature is designed to help teachers, parents, and administrators understand and support each learner&apos;s journey.
             </p>
           </motion.div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { title: 'Real-Time Updates', desc: 'Scores and assessments sync instantly. Parents can check progress from their phones anytime.', icon: Zap, color: 'bg-blue-100 text-blue-600' },
-              { title: 'Smart Alerts', desc: 'Get notified when a learner\'s performance drops below threshold in any subject or competency.', icon: Shield, color: 'bg-red-100 text-red-600' },
-              { title: 'Visual Reports', desc: 'Beautiful, easy-to-read charts and graphs that turn complex data into clear insights.', icon: BarChart3, color: 'bg-purple-100 text-purple-600' },
-              { title: 'Term Comparisons', desc: 'Compare performance across Term 1, 2, and 3 to see trends and measure improvement.', icon: TrendingUp, color: 'bg-green-100 text-green-600' },
-              { title: 'Individual Focus', desc: 'Drill down to any learner to see their complete academic journey and competency profile.', icon: GraduationCap, color: 'bg-amber-100 text-amber-600' },
-              { title: 'Attendance Integration', desc: 'Correlate attendance patterns with academic performance to identify at-risk learners.', icon: Clock, color: 'bg-indigo-100 text-indigo-600' },
+              { title: 'Real-Time Updates', desc: 'Scores and assessments sync instantly. Parents can check progress from their phones anytime.', icon: Zap, color: 'bg-blue-900/30 text-blue-600' },
+              { title: 'Smart Alerts', desc: 'Get notified when a learner\'s performance drops below threshold in any subject or competency.', icon: Shield, color: 'bg-red-900/30 text-red-600' },
+              { title: 'Visual Reports', desc: 'Beautiful, easy-to-read charts and graphs that turn complex data into clear insights.', icon: BarChart3, color: 'bg-purple-900/30 text-purple-600' },
+              { title: 'Term Comparisons', desc: 'Compare performance across Term 1, 2, and 3 to see trends and measure improvement.', icon: TrendingUp, color: 'bg-green-900/30 text-green-600' },
+              { title: 'Individual Focus', desc: 'Drill down to any learner to see their complete academic journey and competency profile.', icon: GraduationCap, color: 'bg-amber-900/30 text-amber-600' },
+              { title: 'Attendance Integration', desc: 'Correlate attendance patterns with academic performance to identify at-risk learners.', icon: Clock, color: 'bg-indigo-900/30 text-indigo-600' },
             ].map((feature, i) => (
               <motion.div
                 key={feature.title}
                 variants={fadeUp}
                 custom={i}
-                className="p-6 rounded-2xl border bg-white hover:shadow-lg transition-shadow group"
+                className="p-6 rounded-2xl border bg-slate-800 hover:shadow-lg transition-shadow group"
               >
                 <div className={`flex h-12 w-12 items-center justify-center rounded-xl mb-4 ${feature.color} group-hover:scale-110 transition-transform`}>
                   <feature.icon className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600 text-sm">{feature.desc}</p>
+                <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
+                <p className="text-slate-300 text-sm">{feature.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -302,7 +302,7 @@ export default function ProgressTrackingPage() {
               Join hundreds of Kenyan schools using NONEAA to monitor, analyze, and improve student outcomes.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="bg-white text-blue-700 hover:bg-blue-50" asChild>
+              <Button size="lg" className="bg-slate-800 text-blue-700 hover:bg-blue-50" asChild>
                 <Link to="/get-started">Get Started Free <ArrowRight className="w-4 h-4 ml-2" /></Link>
               </Button>
               <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>

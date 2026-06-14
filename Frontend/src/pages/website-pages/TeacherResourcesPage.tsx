@@ -68,7 +68,7 @@ export default function TeacherResourcesPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-900">
       <Header />
 
       {/* Hero */}
@@ -97,7 +97,7 @@ export default function TeacherResourcesPage() {
                 Lesson plans, assessment templates, training videos, and a community of CBC educators — all in one place. Free for all registered teachers.
               </motion.p>
               <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-white text-amber-900 hover:bg-amber-50" asChild>
+                <Button size="lg" className="bg-slate-800 text-amber-900 hover:bg-amber-50" asChild>
                   <Link to="/get-started">Access Resources <ArrowRight className="w-4 h-4 ml-2" /></Link>
                 </Button>
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
@@ -110,7 +110,7 @@ export default function TeacherResourcesPage() {
       </section>
 
       {/* Stats */}
-      <section className="bg-gray-50 py-12">
+      <section className="bg-slate-800/50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
@@ -125,10 +125,10 @@ export default function TeacherResourcesPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="text-center p-6 rounded-xl bg-white shadow-sm"
+                className="text-center p-6 rounded-xl bg-slate-800 shadow-sm"
               >
                 <stat.icon className="w-8 h-8 text-amber-600 mx-auto mb-3" />
-                <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                <p className="text-3xl font-bold text-white">{stat.value}</p>
                 <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
               </motion.div>
             ))}
@@ -138,11 +138,11 @@ export default function TeacherResourcesPage() {
 
       {/* Resources Sections */}
       {resources.map((section, sectionIdx) => (
-        <AnimatedSection key={section.category} className={sectionIdx % 2 === 0 ? 'py-20' : 'py-20 bg-gray-50'}>
+        <AnimatedSection key={section.category} className={sectionIdx % 2 === 0 ? 'py-20' : 'py-20 bg-slate-800/50'}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div variants={fadeUp} custom={0} className="mb-12">
               <p className="text-sm font-semibold text-amber-600 uppercase tracking-wide mb-2">{section.category}</p>
-              <h2 className="text-3xl font-bold text-gray-900">{section.category} Resources</h2>
+              <h2 className="text-3xl font-bold text-white">{section.category} Resources</h2>
             </motion.div>
             <div className="grid md:grid-cols-3 gap-8">
               {section.items.map((item, i) => (
@@ -150,16 +150,16 @@ export default function TeacherResourcesPage() {
                   key={item.title}
                   variants={fadeUp}
                   custom={i + 1}
-                  className="bg-white rounded-2xl p-6 shadow-sm border hover:shadow-lg hover:-translate-y-1 transition-all group"
+                  className="bg-slate-800 rounded-2xl p-6 shadow-sm border hover:shadow-lg hover:-translate-y-1 transition-all group"
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-600 group-hover:scale-110 transition-transform">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-900/30 text-amber-600 group-hover:scale-110 transition-transform">
                       <item.icon className="w-6 h-6" />
                     </div>
                     <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full">{item.downloads}</span>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>
-                  <p className="text-sm text-gray-600 mb-4">{item.desc}</p>
+                  <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
+                  <p className="text-sm text-slate-300 mb-4">{item.desc}</p>
                   <Button variant="ghost" size="sm" className="text-amber-600 hover:text-amber-700 p-0">
                     Learn more <ArrowRight className="w-3 h-3 ml-1" />
                   </Button>
@@ -175,21 +175,21 @@ export default function TeacherResourcesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-amber-600 uppercase tracking-wide mb-3">Why Teachers Love Us</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Save Time. Teach Better. Grow Together.</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Save Time. Teach Better. Grow Together.</h2>
           </motion.div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { title: 'Save 10+ Hours/Week', desc: 'Pre-made lesson plans and auto-generated schemes of work free up time for actual teaching.', icon: Clock, color: 'bg-blue-100 text-blue-600' },
-              { title: 'KICD Aligned', desc: 'All resources are aligned to the official KICD curriculum designs — no guessing.', icon: CheckCircle, color: 'bg-green-100 text-green-600' },
-              { title: 'Always Updated', desc: 'Resources are updated whenever KICD issues new guidelines or curriculum changes.', icon: Zap, color: 'bg-purple-100 text-purple-600' },
-              { title: 'Peer Support', desc: 'Join a community of 3,500+ teachers sharing strategies and success stories.', icon: Users, color: 'bg-rose-100 text-rose-600' },
+              { title: 'Save 10+ Hours/Week', desc: 'Pre-made lesson plans and auto-generated schemes of work free up time for actual teaching.', icon: Clock, color: 'bg-blue-900/30 text-blue-600' },
+              { title: 'KICD Aligned', desc: 'All resources are aligned to the official KICD curriculum designs — no guessing.', icon: CheckCircle, color: 'bg-green-900/30 text-green-600' },
+              { title: 'Always Updated', desc: 'Resources are updated whenever KICD issues new guidelines or curriculum changes.', icon: Zap, color: 'bg-purple-900/30 text-purple-600' },
+              { title: 'Peer Support', desc: 'Join a community of 3,500+ teachers sharing strategies and success stories.', icon: Users, color: 'bg-rose-900/30 text-rose-600' },
             ].map((feature, i) => (
-              <motion.div key={feature.title} variants={fadeUp} custom={i} className="p-6 rounded-2xl border bg-white text-center hover:shadow-lg transition-shadow group">
+              <motion.div key={feature.title} variants={fadeUp} custom={i} className="p-6 rounded-2xl border bg-slate-800 text-center hover:shadow-lg transition-shadow group">
                 <div className={`flex h-14 w-14 items-center justify-center rounded-xl mx-auto mb-4 ${feature.color} group-hover:scale-110 transition-transform`}>
                   <feature.icon className="w-7 h-7" />
                 </div>
-                <h3 className="text-base font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-sm text-gray-600">{feature.desc}</p>
+                <h3 className="text-base font-semibold text-white mb-2">{feature.title}</h3>
+                <p className="text-sm text-slate-300">{feature.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -197,27 +197,27 @@ export default function TeacherResourcesPage() {
       </AnimatedSection>
 
       {/* Testimonials */}
-      <AnimatedSection className="py-20 bg-gray-50">
+      <AnimatedSection className="py-20 bg-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-amber-600 uppercase tracking-wide mb-3">Teacher Testimonials</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Hear From Fellow Educators</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Hear From Fellow Educators</h2>
           </motion.div>
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((t, i) => (
-              <motion.div key={t.name} variants={fadeUp} custom={i + 1} className="bg-white rounded-2xl p-6 shadow-sm border">
+              <motion.div key={t.name} variants={fadeUp} custom={i + 1} className="bg-slate-800 rounded-2xl p-6 shadow-sm border">
                 <div className="flex gap-1 mb-4">
                   {Array.from({ length: t.rating }).map((_, j) => (
                     <Star key={j} className="w-4 h-4 text-amber-400 fill-amber-400" />
                   ))}
                 </div>
-                <p className="text-gray-700 mb-6 italic">&ldquo;{t.quote}&rdquo;</p>
+                <p className="text-slate-200 mb-6 italic">&ldquo;{t.quote}&rdquo;</p>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-amber-900/30 flex items-center justify-center">
                     <GraduationCap className="w-5 h-5 text-amber-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">{t.name}</p>
+                    <p className="text-sm font-semibold text-white">{t.name}</p>
                     <p className="text-xs text-muted-foreground">{t.role}</p>
                   </div>
                 </div>
@@ -239,7 +239,7 @@ export default function TeacherResourcesPage() {
               Access all resources for free when you sign up. Join thousands of teachers already making CBC work.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="bg-white text-amber-700 hover:bg-amber-50" asChild>
+              <Button size="lg" className="bg-slate-800 text-amber-700 hover:bg-amber-50" asChild>
                 <Link to="/get-started">Get Started Free <ArrowRight className="w-4 h-4 ml-2" /></Link>
               </Button>
               <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>

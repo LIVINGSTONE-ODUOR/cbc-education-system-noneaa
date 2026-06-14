@@ -121,7 +121,7 @@ export default function PrivacyPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-900">
       <Header />
 
       {/* Hero */}
@@ -150,23 +150,23 @@ export default function PrivacyPage() {
       </section>
 
       {/* Principles Grid */}
-      <AnimatedSection className="py-20 bg-gray-50">
+      <AnimatedSection className="py-20 bg-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Our Commitment</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Privacy Principles We Live By</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Privacy Principles We Live By</h2>
+            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
               These principles guide every decision we make about your data.
             </p>
           </motion.div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {principles.map((p, i) => (
-              <motion.div key={p.title} variants={fadeUp} custom={i + 1} className="bg-white rounded-2xl p-6 border shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all group">
+              <motion.div key={p.title} variants={fadeUp} custom={i + 1} className="bg-slate-800 rounded-2xl p-6 border-slate-700 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all group">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${p.color} text-white mb-4 group-hover:scale-110 transition-transform`}>
                   <p.icon className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{p.title}</h3>
-                <p className="text-sm text-gray-600">{p.desc}</p>
+                <h3 className="text-lg font-semibold text-white mb-2">{p.title}</h3>
+                <p className="text-sm text-slate-300">{p.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -175,21 +175,21 @@ export default function PrivacyPage() {
 
       {/* Policy Sections */}
       {sections.map((section, sIdx) => (
-        <AnimatedSection key={section.title} className={sIdx % 2 === 0 ? 'py-16' : 'py-16 bg-gray-50'}>
+        <AnimatedSection key={section.title} className={sIdx % 2 === 0 ? 'py-16' : 'py-16 bg-slate-800/50'}>
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <motion.div variants={fadeUp} custom={0} className={`bg-white rounded-2xl border-l-4 ${section.color} border shadow-sm p-8`}>
+            <motion.div variants={fadeUp} custom={0} className={`bg-slate-800 rounded-2xl border-l-4 ${section.color} border-slate-700 shadow-sm p-8`}>
               <div className="flex items-center gap-3 mb-6">
-                <section.icon className="w-6 h-6 text-gray-700" />
-                <h2 className="text-2xl font-bold text-gray-900">{section.title}</h2>
+                <section.icon className="w-6 h-6 text-slate-200" />
+                <h2 className="text-2xl font-bold text-white">{section.title}</h2>
               </div>
               <div className="space-y-6">
                 {section.subsections.map((sub) => (
                   <div key={sub.subtitle}>
-                    <h4 className="font-semibold text-gray-900 mb-2">{sub.subtitle}</h4>
-                    {sub.desc && <p className="text-sm text-gray-600 mb-3">{sub.desc}</p>}
+                    <h4 className="font-semibold text-white mb-2">{sub.subtitle}</h4>
+                    {sub.desc && <p className="text-sm text-slate-300 mb-3">{sub.desc}</p>}
                     <ul className="space-y-2">
                       {sub.items.map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
+                        <li key={idx} className="flex items-start gap-2 text-sm text-slate-300">
                           <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
                           {item}
                         </li>
@@ -207,34 +207,34 @@ export default function PrivacyPage() {
       <AnimatedSection className="py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-6">
-            <motion.div variants={fadeUp} custom={0} className="bg-white rounded-2xl border shadow-sm p-6">
+            <motion.div variants={fadeUp} custom={0} className="bg-slate-800 rounded-2xl border-slate-700 shadow-sm p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-amber-900/30 flex items-center justify-center">
                   <Database className="w-5 h-5 text-amber-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Data Retention</h3>
+                <h3 className="text-lg font-semibold text-white">Data Retention</h3>
               </div>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-sm text-slate-300 mb-3">
                 We retain your personal data only as long as necessary to provide our services and comply with legal obligations.
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <ul className="space-y-2 text-sm text-slate-300">
                 <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />Account data: retained while your account is active</li>
                 <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />Academic records: retained per school policy and regulations</li>
                 <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />Usage logs: retained for 12 months</li>
                 <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />Deleted data: permanently purged within 30 days</li>
               </ul>
             </motion.div>
-            <motion.div variants={fadeUp} custom={1} className="bg-white rounded-2xl border shadow-sm p-6">
+            <motion.div variants={fadeUp} custom={1} className="bg-slate-800 rounded-2xl border-slate-700 shadow-sm p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-indigo-900/30 flex items-center justify-center">
                   <Bell className="w-5 h-5 text-indigo-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Cookies & Tracking</h3>
+                <h3 className="text-lg font-semibold text-white">Cookies & Tracking</h3>
               </div>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-sm text-slate-300 mb-3">
                 We use cookies to keep you logged in and improve your experience. We do not use advertising or tracking cookies.
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <ul className="space-y-2 text-sm text-slate-300">
                 <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />Essential cookies: login session and security</li>
                 <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />Preference cookies: language and UI settings</li>
                 <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />Analytics: anonymized usage statistics only</li>
@@ -246,17 +246,17 @@ export default function PrivacyPage() {
       </AnimatedSection>
 
       {/* Children's Privacy */}
-      <AnimatedSection className="py-16 bg-gray-50">
+      <AnimatedSection className="py-16 bg-slate-800/50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div variants={fadeUp} custom={0} className="bg-white rounded-2xl border shadow-sm p-8 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-rose-100 flex items-center justify-center mx-auto mb-4">
+          <motion.div variants={fadeUp} custom={0} className="bg-slate-800 rounded-2xl border-slate-700 shadow-sm p-8 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-rose-900/30 flex items-center justify-center mx-auto mb-4">
               <Users className="w-7 h-7 text-rose-600" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">Children&apos;s Privacy</h3>
-            <p className="text-gray-600 max-w-2xl mx-auto mb-4">
+            <h3 className="text-2xl font-bold text-white mb-4">Children&apos;s Privacy</h3>
+            <p className="text-slate-300 max-w-2xl mx-auto mb-4">
               As an educational platform, we take extra care with student data. All learner data is managed through school administrator and parent accounts. Students under 18 cannot create accounts independently.
             </p>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+            <p className="text-slate-300 max-w-2xl mx-auto">
               We comply with the Kenya Children Act 2022 and international standards for protecting minors&apos; data in educational settings.
             </p>
           </motion.div>
@@ -266,18 +266,18 @@ export default function PrivacyPage() {
       {/* Contact */}
       <AnimatedSection className="py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div variants={fadeUp} custom={0} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 p-8">
+          <motion.div variants={fadeUp} custom={0} className="bg-gradient-to-br from-blue-950/30 to-indigo-950/30 rounded-2xl border border-blue-800 p-8">
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Questions About Your Privacy?</h3>
-                <p className="text-gray-600 mb-6">
+                <h3 className="text-2xl font-bold text-white mb-4">Questions About Your Privacy?</h3>
+                <p className="text-slate-300 mb-6">
                   If you have any questions about this Privacy Policy or how we handle your data, our Data Protection Officer is here to help.
                 </p>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-sm text-gray-700">
+                  <div className="flex items-center gap-3 text-sm text-slate-200">
                     <Mail className="w-4 h-4 text-blue-600" /> privacy@noneaa.com
                   </div>
-                  <div className="flex items-center gap-3 text-sm text-gray-700">
+                  <div className="flex items-center gap-3 text-sm text-slate-200">
                     <Globe className="w-4 h-4 text-blue-600" /> www.noneaa.com/privacy
                   </div>
                 </div>
