@@ -45,8 +45,8 @@ import {
   Brain,
   GitBranch,
   Network,
-  LineChart,
-  PieChart,
+  LineChart as LineChartIcon,
+  PieChart as PieChartIcon,
   Calendar,
   Bell,
   Search,
@@ -300,9 +300,9 @@ const testimonials = [
 
 const platformLinks = [
   { label: 'Curriculum Management', href: '/curriculum', icon: BookMarked },
-  { label: 'Progress Tracking', href: '/progress', icon: LineChart },
+  { label: 'Progress Tracking', href: '/progress', icon: LineChartIcon },
   { label: 'Assessment Tools', href: '/assessments', icon: ClipboardCheck },
-  { label: 'Analytics Dashboard', href: '/analytics', icon: PieChart },
+  { label: 'Analytics Dashboard', href: '/analytics', icon: PieChartIcon },
   { label: 'Resource Library', href: '/resources', icon: Database },
 ];
 

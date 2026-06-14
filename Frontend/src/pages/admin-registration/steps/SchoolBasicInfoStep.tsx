@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -159,7 +158,10 @@ export default function SchoolBasicInfoStep({ initialData, onSubmit, onBack }: P
           {levelOptions.map((level, index) => (
             <motion.div
               key={level}
-              className={`flex items-center gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+              role="checkbox"
+              aria-checked={formData.levelsOffered.includes(level)}
+              tabIndex={0}
+              className={`flex items-center gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 select-none ${
                 formData.levelsOffered.includes(level)
                   ? 'border-indigo-500 bg-indigo-50 shadow-sm shadow-indigo-100'
                   : 'border-gray-100 bg-gray-50 hover:border-gray-200 hover:bg-white'
@@ -168,16 +170,22 @@ export default function SchoolBasicInfoStep({ initialData, onSubmit, onBack }: P
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.25, delay: 0.25 + index * 0.04 }}
               onClick={() => handleLevelToggle(level)}
+              onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); handleLevelToggle(level); } }}
             >
-              <Checkbox
-                id={level}
-                checked={formData.levelsOffered.includes(level)}
-                onCheckedChange={() => handleLevelToggle(level)}
-                className="data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
-              />
-              <Label htmlFor={level} className="text-sm font-medium cursor-pointer flex-1 text-gray-700">
+              <div className={`h-4 w-4 shrink-0 rounded-sm border flex items-center justify-center transition-colors ${
+                formData.levelsOffered.includes(level)
+                  ? 'bg-indigo-600 border-indigo-600 text-white'
+                  : 'border-gray-300 bg-white'
+              }`}>
+                {formData.levelsOffered.includes(level) && (
+                  <svg width="10" height="10" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11.4669 3.72684C11.7558 3.91574 11.8369 4.30308 11.648 4.59198L7.39799 11.092C7.29783 11.2452 7.13556 11.3467 6.95402 11.3699C6.77247 11.3931 6.58989 11.3354 6.45446 11.2124L3.70446 8.71241C3.44905 8.48022 3.43023 8.08494 3.66242 7.82953C3.89461 7.57412 4.28989 7.5553 4.5453 7.78749L6.75292 9.79441L10.6018 3.90792C10.7907 3.61902 11.178 3.53795 11.4669 3.72684Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+              <span className="text-sm font-medium cursor-pointer flex-1 text-gray-700">
                 {level}
-              </Label>
+              </span>
             </motion.div>
           ))}
         </div>
