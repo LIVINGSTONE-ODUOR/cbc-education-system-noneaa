@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Sparkles, Bot, User, ArrowDown } from 'lucide-react';
+import { X, Send, User, ArrowDown } from 'lucide-react';
+import annaAvatar from '@/assets/anna.png';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -271,10 +272,8 @@ export default function AIAssistant() {
               {/* Pulse ring */}
               <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-blue-500 rounded-full animate-ping opacity-20" />
               {/* Button */}
-              <div className="relative w-14 h-14 bg-gradient-to-br from-violet-600 via-blue-600 to-indigo-700 rounded-full shadow-lg shadow-blue-500/25 flex items-center justify-center overflow-hidden">
-                {/* Shimmer effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <Sparkles className="w-6 h-6 text-white relative z-10" />
+              <div className="relative w-14 h-14 rounded-full shadow-lg shadow-blue-500/25 overflow-hidden ring-2 ring-violet-400/50">
+                <img src={annaAvatar} alt="Anna" className="w-full h-full object-cover" />
               </div>
               {/* Label */}
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
@@ -306,9 +305,7 @@ export default function AIAssistant() {
               <div className="relative flex items-center gap-3">
                 {/* Avatar */}
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/30">
-                    <Bot className="w-5 h-5 text-white" />
-                  </div>
+                  <img src={annaAvatar} alt="Anna" className="w-10 h-10 rounded-full object-cover ring-2 ring-white/30" />
                   <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-indigo-600" />
                 </div>
 
@@ -345,9 +342,7 @@ export default function AIAssistant() {
                 >
                   {/* Assistant avatar */}
                   {message.role === 'assistant' && (
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center flex-shrink-0 mt-1">
-                      <Bot className="w-3.5 h-3.5 text-white" />
-                    </div>
+                    <img src={annaAvatar} alt="Anna" className="w-7 h-7 rounded-full object-cover flex-shrink-0 mt-1" />
                   )}
 
                   <div className={cn("max-w-[78%] flex flex-col", message.role === 'user' ? "items-end" : "items-start")}>
@@ -385,9 +380,7 @@ export default function AIAssistant() {
               {/* Typing indicator */}
               {isLoading && (
                 <div className="flex gap-2.5 justify-start">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-3.5 h-3.5 text-white" />
-                  </div>
+                  <img src={annaAvatar} alt="Anna" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
                   <div className="bg-white shadow-sm border border-gray-100 rounded-2xl rounded-bl-md px-4 py-3">
                     <div className="flex items-center gap-1">
                       <div className="flex gap-1">
