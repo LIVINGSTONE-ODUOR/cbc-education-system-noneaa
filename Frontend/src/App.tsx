@@ -95,6 +95,11 @@ import SettingsPage from "./pages/auth/school-admin/Settings/Settings";
 import ProfileSettings from "./pages/auth/school-admin/Settings/ProfileSettings";
 
 import NotFound from "./pages/website-pages/NotFound";
+import BlogPage from "./pages/website-pages/BlogPage";
+import BlogPostPage from "./pages/website-pages/BlogPostPage";
+import OwnerLoginPage from "./pages/website-pages/OwnerLoginPage";
+import BlogAdminPage from "./pages/website-pages/BlogAdminPage";
+import { BlogProvider } from "@/contexts/BlogContext";
 
 const queryClient = new QueryClient();
 
@@ -188,6 +193,10 @@ function AppRoutes() {
       <Route path="/admin-register" element={<AdminRegistrationPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/features" element={<Feature />} />
+      <Route path="/blog" element={<BlogPage />} />
+      <Route path="/blog/:id" element={<BlogPostPage />} />
+      <Route path="/owner/login" element={<OwnerLoginPage />} />
+      <Route path="/owner/blog-admin" element={<BlogAdminPage />} />
       <Route path="/careers" element={<CareersPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/testimonials" element={<TestimonialsPage />} />
@@ -329,19 +338,21 @@ const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <SchoolSettingsProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <ScrollToTop />
-              <NavigationSpinner />
-              <AppRoutes />
-              <AIAssistant />
-              <CookieBanner />
-            </BrowserRouter>
-          </TooltipProvider>
-        </SchoolSettingsProvider>
+        <BlogProvider>
+          <SchoolSettingsProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <ScrollToTop />
+                <NavigationSpinner />
+                <AppRoutes />
+                <AIAssistant />
+                <CookieBanner />
+              </BrowserRouter>
+            </TooltipProvider>
+          </SchoolSettingsProvider>
+        </BlogProvider>
       </AuthProvider>
     </QueryClientProvider>
   </ErrorBoundary>

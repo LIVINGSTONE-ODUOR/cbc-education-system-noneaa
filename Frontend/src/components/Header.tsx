@@ -168,6 +168,7 @@ export default function Header() {
               { label: 'Features', to: '/features' },
               { label: 'About', to: '/about' },
               { label: 'Careers', to: '/careers' },
+              { label: 'Blogs', to: '/blog' },
               { label: 'Contact', to: '/contact' },
             ].map((item) => (
               <Link
@@ -268,6 +269,7 @@ export default function Header() {
                   { label: 'Features', to: '/features' },
                   { label: 'About', to: '/about' },
                   { label: 'Careers', to: '/careers' },
+                  { label: 'Blogs', to: '/blog' },
                   { label: 'Contact', to: '/contact' },
                 ].map((item) => (
                   <Link
