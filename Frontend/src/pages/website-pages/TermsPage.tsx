@@ -1,468 +1,268 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Scale, Shield, AlertTriangle } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { motion, useInView } from 'framer-motion';
+import {
+  FileText, Scale, Shield, AlertTriangle, ArrowRight,
+  CheckCircle, Users, BookOpen, CreditCard, Lock,
+  Globe, Gavel, Ban, RefreshCw, Mail,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { motion } from 'framer-motion';
 
-const cardVariants = {
+const fadeUp = {
   hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0 },
+  visible: (i: number) => ({
+    opacity: 1, y: 0,
+    transition: { delay: i * 0.12, duration: 0.6, ease: 'easeOut' },
+  }),
 };
 
-export default function TermsPage() {
+const highlights = [
+  { title: 'Fair & Transparent', desc: 'Our terms are written in plain language — no hidden clauses or legal tricks.', icon: Scale, color: 'from-blue-500 to-blue-600' },
+  { title: 'Education First', desc: 'Every policy is designed to support schools, teachers, parents, and learners.', icon: BookOpen, color: 'from-purple-500 to-purple-600' },
+  { title: 'Data Ownership', desc: 'Schools and users retain ownership of all educational data they create.', icon: Shield, color: 'from-emerald-500 to-emerald-600' },
+  { title: 'Flexible Plans', desc: 'Upgrade, downgrade, or cancel your subscription at any time without penalty.', icon: RefreshCw, color: 'from-amber-500 to-amber-600' },
+];
+
+const sections = [
+  {
+    icon: Scale,
+    title: '1. Acceptance of Terms',
+    color: 'border-l-blue-500',
+    content: [
+      'By accessing and using the Noneaa Africa / CBETrack platform ("Service"), you accept and agree to be bound by the terms and provisions of this agreement.',
+      'These Terms of Service apply to all users of the Service, including school administrators, teachers, parents, students, and any other visitors or contributors.',
+      'If you do not agree to these terms, please do not use this Service. Continued use constitutes acceptance of any updates to these terms.',
+    ],
+  },
+  {
+    icon: BookOpen,
+    title: '2. Description of Service',
+    color: 'border-l-purple-500',
+    content: [
+      'Noneaa Africa provides a comprehensive Competency-Based Curriculum (CBE) management platform that includes:',
+    ],
+    items: [
+      'Student progress tracking and competency-based assessment',
+      'Curriculum management aligned with KICD standards',
+      'Teacher evaluation and classroom management tools',
+      'Parent communication portal and progress monitoring',
+      'Administrative dashboards, fee management, and reporting',
+      'Data analytics and performance insights',
+    ],
+  },
+  {
+    icon: Users,
+    title: '3. User Accounts',
+    color: 'border-l-green-500',
+    subsections: [
+      { subtitle: 'Account Creation', text: 'To access certain features, you must create an account through your school administrator. You are responsible for maintaining the confidentiality of your credentials and all activities under your account.' },
+      { subtitle: 'Account Responsibilities', text: 'You agree to provide accurate, current, and complete information during registration and keep it updated. Notify us immediately of any unauthorized access to your account.' },
+      { subtitle: 'Account Termination', text: 'We reserve the right to suspend or terminate accounts that violate these terms. Schools may request account closure at any time, and we will export data before deletion upon request.' },
+    ],
+  },
+  {
+    icon: Ban,
+    title: '4. Acceptable Use Policy',
+    color: 'border-l-amber-500',
+    content: ['You agree not to use the Service to:'],
+    items: [
+      'Violate any applicable laws or regulations',
+      'Infringe on the rights of others',
+      'Transmit harmful, offensive, or inappropriate content',
+      'Attempt to gain unauthorized access to our systems',
+      'Interfere with the proper functioning of the Service',
+      'Use the Service for any unauthorized commercial purpose',
+      'Share account credentials or allow unauthorized access',
+      'Scrape, crawl, or extract data in bulk from the platform',
+    ],
+  },
+  {
+    icon: Lock,
+    title: '5. Intellectual Property',
+    color: 'border-l-indigo-500',
+    content: [
+      'The Service and its original content, features, and functionality are the exclusive property of Noneaa Africa and its licensors, protected by copyright, trademark, and other laws.',
+      'Educational content created by users (lesson plans, assessments, reports) remains the intellectual property of the creating school or teacher. Noneaa Africa does not claim ownership of user-generated educational content.',
+    ],
+  },
+  {
+    icon: CreditCard,
+    title: '6. Payment & Subscription',
+    color: 'border-l-emerald-500',
+    subsections: [
+      { subtitle: 'Billing', text: 'Paid plans are billed on a per-term or annual basis. Prices are displayed in KES and are inclusive of applicable taxes unless stated otherwise.' },
+      { subtitle: 'Refunds', text: 'We offer a 14-day refund window from the start of a new subscription. After 14 days, the current billing period is non-refundable, but you may cancel to prevent future charges.' },
+      { subtitle: 'Free Tier', text: 'We offer a free tier with limited features. Schools can upgrade at any time. No credit card is required for the free tier.' },
+    ],
+  },
+  {
+    icon: AlertTriangle,
+    title: '7. Limitation of Liability',
+    color: 'border-l-rose-500',
+    content: [
+      'To the maximum extent permitted by Kenyan law, Noneaa Africa shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service.',
+      'Our total liability for any claim related to the Service shall not exceed the amount you paid us in the 12 months preceding the claim.',
+      'We do not guarantee uninterrupted access to the Service. Planned maintenance windows will be communicated in advance.',
+    ],
+  },
+  {
+    icon: Gavel,
+    title: '8. Governing Law',
+    color: 'border-l-gray-500',
+    content: [
+      'These Terms shall be governed by and construed in accordance with the laws of the Republic of Kenya, without regard to its conflict of law provisions.',
+      'Any disputes arising from these Terms shall be resolved through arbitration in Nairobi, Kenya, under the Arbitration Act of Kenya, before resorting to court proceedings.',
+    ],
+  },
+  {
+    icon: RefreshCw,
+    title: '9. Changes to Terms',
+    color: 'border-l-cyan-500',
+    content: [
+      'We may update these Terms from time to time. When we make significant changes, we will notify users via email and display a prominent notice on the platform at least 30 days before the changes take effect.',
+      'Your continued use of the Service after changes become effective constitutes acceptance of the revised Terms.',
+    ],
+  },
+];
+
+function AnimatedSection({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-60px' });
   return (
-    <div className="min-h-screen bg-background">
+    <div ref={ref} className={className}>
+      <motion.div initial="hidden" animate={isInView ? 'visible' : 'hidden'} variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } }}>
+        {children}
+      </motion.div>
+    </div>
+  );
+}
+
+export default function TermsPage() {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+
+  return (
+    <div className="min-h-screen bg-white">
       <Header />
-      {/* Hero Section */}
-      <section className="py-20 bg-primary/5">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <FileText className="w-16 h-16 text-primary mx-auto mb-6" />
+
+      {/* Hero */}
+      <section className="relative min-h-[60vh] flex items-center overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-950 to-indigo-950" />
+        <motion.div className="absolute top-20 left-16 w-72 h-72 bg-purple-500/15 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.3, 0.15] }} transition={{ duration: 6, repeat: Infinity }} />
+        <motion.div className="absolute bottom-10 right-10 w-60 h-60 bg-indigo-500/15 rounded-full blur-3xl" animate={{ scale: [1, 1.15, 1], opacity: [0.1, 0.25, 0.1] }} transition={{ duration: 5, repeat: Infinity, delay: 1.5 }} />
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+          <motion.div initial="hidden" animate="visible">
+            <motion.div variants={fadeUp} custom={0} className="flex justify-center mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-purple-500/20 flex items-center justify-center border border-purple-400/30">
+                <FileText className="w-8 h-8 text-purple-400" />
+              </div>
             </motion.div>
-            <motion.h1
-              className="text-4xl md:text-5xl font-bold text-foreground mb-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-            >
+            <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
               Terms of Service
             </motion.h1>
-            <motion.p
-              className="text-xl text-muted-foreground mb-8"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.25 }}
-            >
-              Please read these terms carefully before using our Competency-Based Education platform.
+            <motion.p variants={fadeUp} custom={2} className="text-lg text-purple-200 mb-6 max-w-2xl mx-auto">
+              Please read these terms carefully before using our Competency-Based Education platform. We&apos;ve written them in plain language so you know exactly what to expect.
             </motion.p>
-            <motion.p
-              className="text-sm text-muted-foreground"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.35 }}
-            >
-              Last updated: January 2026
+            <motion.p variants={fadeUp} custom={3} className="text-sm text-purple-300/70">
+              Last updated: June 2026
             </motion.p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Highlights */}
+      <section className="bg-gray-50 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {highlights.map((h, i) => (
+              <motion.div key={h.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }} className="text-center p-6 rounded-xl bg-white shadow-sm">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${h.color} text-white mx-auto mb-3`}>
+                  <h.icon className="w-6 h-6" />
+                </div>
+                <h3 className="font-semibold text-gray-900 text-sm mb-1">{h.title}</h3>
+                <p className="text-xs text-muted-foreground">{h.desc}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Main Content */}
-      <section className="py-20">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="max-w-4xl mx-auto space-y-8">
-            {/* Acceptance of Terms */}
-            <motion.div
-              variants={cardVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Scale className="w-5 h-5" />
-                    Acceptance of Terms
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="prose prose-sm max-w-none">
-                  <p>
-                    By accessing and using the Noneaa Africa platform ("Service"), you accept and agree to be bound by the terms
-                    and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
-                  </p>
-                  <p>
-                    These Terms of Service apply to all users of the Service, including without limitation users who are browsers,
-                    vendors, customers, merchants, and/or contributors of content.
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
+      {/* Terms Sections */}
+      <div className="py-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          {sections.map((section) => (
+            <AnimatedSection key={section.title}>
+              <motion.div variants={fadeUp} custom={0} className={`bg-white rounded-2xl border-l-4 ${section.color} border shadow-sm p-8`}>
+                <div className="flex items-center gap-3 mb-5">
+                  <section.icon className="w-6 h-6 text-gray-700" />
+                  <h2 className="text-xl font-bold text-gray-900">{section.title}</h2>
+                </div>
 
-            {/* Description of Service */}
-            <motion.div
-              variants={cardVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="w-5 h-5" />
-                    Description of Service
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Noneaa Africa provides a comprehensive Competency-Based Curriculum (CBE) platform that includes:
-                  </p>
-                  <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                    <li>Student progress tracking and assessment management</li>
-                    <li>Curriculum mapping and learning objective alignment</li>
-                    <li>Teacher evaluation and feedback tools</li>
-                    <li>Parent communication and progress monitoring</li>
-                    <li>Administrative dashboard and reporting features</li>
-                    <li>Data analytics and performance insights</li>
+                {section.content && (
+                  <div className="space-y-3 mb-4">
+                    {section.content.map((para, idx) => (
+                      <p key={idx} className="text-sm text-gray-600 leading-relaxed">{para}</p>
+                    ))}
+                  </div>
+                )}
+
+                {section.items && (
+                  <ul className="space-y-2 mb-4">
+                    {section.items.map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
+                        <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                        {item}
+                      </li>
+                    ))}
                   </ul>
-                </CardContent>
-              </Card>
-            </motion.div>
+                )}
 
-            {/* User Accounts */}
-            <motion.div
-              variants={cardVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>User Accounts</CardTitle>
-                </CardHeader>
-                <CardContent>
+                {section.subsections && (
                   <div className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold mb-2">Account Creation</h4>
-                      <p className="text-sm text-muted-foreground">
-                        To access certain features of the Service, you must create an account. You are responsible for maintaining
-                        the confidentiality of your account credentials and for all activities that occur under your account.
-                      </p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold mb-2">Account Responsibilities</h4>
-                      <p className="text-sm text-muted-foreground">
-                        You agree to provide accurate, current, and complete information during the registration process and to
-                        update such information to keep it accurate, current, and complete.
-                      </p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold mb-2">Account Termination</h4>
-                      <p className="text-sm text-muted-foreground">
-                        We reserve the right to terminate or suspend your account and access to the Service at our sole discretion,
-                        without prior notice, for conduct that we believe violates these Terms or is harmful to other users,
-                        us, or third parties, or for any other reason.
-                      </p>
-                    </div>
+                    {section.subsections.map((sub) => (
+                      <div key={sub.subtitle}>
+                        <h4 className="font-semibold text-gray-900 mb-1">{sub.subtitle}</h4>
+                        <p className="text-sm text-gray-600 leading-relaxed">{sub.text}</p>
+                      </div>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Acceptable Use */}
-            <motion.div
-              variants={cardVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Acceptable Use Policy</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    You agree not to use the Service to:
-                  </p>
-                  <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                    <li>Violate any applicable laws or regulations</li>
-                    <li>Infringe on the rights of others</li>
-                    <li>Transmit harmful, offensive, or inappropriate content</li>
-                    <li>Attempt to gain unauthorized access to our systems</li>
-                    <li>Interfere with the proper functioning of the Service</li>
-                    <li>Use the Service for any commercial purpose without authorization</li>
-                    <li>Share account credentials or allow unauthorized access</li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Intellectual Property */}
-            <motion.div
-              variants={cardVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Intellectual Property Rights</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    The Service and its original content, features, and functionality are and will remain the exclusive property
-                    of Noneaa Africa and its licensors. The Service is protected by copyright, trademark, and other laws.
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    You may not duplicate, copy, or reuse any portion of the HTML/CSS, JavaScript, visual design elements, or concepts
-                    without express written permission from us.
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Privacy Policy */}
-            <motion.div
-              variants={cardVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Privacy Policy</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Your privacy is important to us. Please review our Privacy Policy, which also governs your use of the Service,
-                    to understand our practices regarding the collection and use of your personal information.
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Data and Content */}
-            <motion.div
-              variants={cardVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Data and Content</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold mb-2">User-Generated Content</h4>
-                      <p className="text-sm text-muted-foreground">
-                        You retain ownership of any content you submit, post, or display on or through the Service. By submitting
-                        content, you grant us a worldwide, non-exclusive, royalty-free license to use, display, and distribute
-                        your content in connection with the Service.
-                      </p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold mb-2">Educational Data</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Student assessment data, progress tracking, and educational records are handled in accordance with
-                        applicable privacy laws and our educational data management policies.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Disclaimers */}
-            <motion.div
-              variants={cardVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Disclaimers and Limitations</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold mb-2">Service Availability</h4>
-                      <p className="text-sm text-muted-foreground">
-                        The Service is provided on an "as is" and "as available" basis. We do not warrant that the Service will
-                        be uninterrupted, timely, secure, or error-free.
-                      </p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold mb-2">Educational Use</h4>
-                      <p className="text-sm text-muted-foreground">
-                        While we strive to provide accurate and helpful educational tools, the Service is not a substitute
-                        for professional educational advice, assessment, or instruction.
-                      </p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold mb-2">Limitation of Liability</h4>
-                      <p className="text-sm text-muted-foreground">
-                        In no event shall Noneaa Africa be liable for any indirect, incidental, special, consequential,
-                        or punitive damages arising out of or related to your use of the Service.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Termination */}
-            <motion.div
-              variants={cardVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Termination</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    We may terminate or suspend your account and access to the Service immediately, without prior notice or
-                    liability, for any reason whatsoever, including without limitation if you breach the Terms.
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-4">
-                    Upon termination, your right to use the Service will cease immediately. All provisions of the Terms which
-                    by their nature should survive termination shall survive, including ownership provisions, warranty disclaimers,
-                    and limitations of liability.
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Governing Law */}
-            <motion.div
-              variants={cardVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Governing Law</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    These Terms shall be interpreted and governed by the laws of Kenya, without regard to conflict of law provisions. 
-                    Our failure to enforce any right or provision of these Terms will not be considered a waiver of those rights.
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Changes to Terms */}
-            <motion.div
-              variants={cardVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Changes to Terms</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision
-                    is material, we will try to provide at least 30 days notice prior to any new terms taking effect.
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-4">
-                    By continuing to access or use our Service after those revisions become effective, you agree to be bound
-                    by the revised terms. If you do not agree to the new terms, please stop using the Service.
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Contact Information */}
-            <motion.div
-              variants={cardVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Contact Information</CardTitle>
-                  <CardDescription>
-                    If you have any questions about these Terms of Service, please contact us:
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-semibold mb-2">Email</h4>
-                      <p className="text-sm text-muted-foreground">legal@noneaa.com</p>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-2">Phone</h4>
-                      <p className="text-sm text-muted-foreground">+254 111 276 271</p>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-2">Address</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Noneaa Africa<br />
-                        Nairobi, Kenya
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-2">Legal Department</h4>
-                      <p className="text-sm text-muted-foreground">legal@noneaa.com</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Severability */}
-            <motion.div
-              variants={cardVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5" />
-                    Severability
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    If any provision of these Terms is held to be invalid or unenforceable by a court, the remaining provisions
-                    of these Terms will remain in effect. These Terms constitute the entire agreement between us regarding our
-                    Service, and supersede and replace any prior agreements we might have between us regarding the Service.
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
+                )}
+              </motion.div>
+            </AnimatedSection>
+          ))}
         </div>
-      </section>
+      </div>
+
+      {/* Contact */}
+      <AnimatedSection className="py-16 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div variants={fadeUp} custom={0} className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-200 p-8">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Have Questions About Our Terms?</h3>
+                <p className="text-gray-600 mb-6">
+                  We believe in clarity. If anything in these terms is unclear, reach out and we&apos;ll explain it in plain language.
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 text-sm text-gray-700">
+                    <Mail className="w-4 h-4 text-purple-600" /> legal@noneaa.com
+                  </div>
+                  <div className="flex items-center gap-3 text-sm text-gray-700">
+                    <Globe className="w-4 h-4 text-purple-600" /> www.noneaa.com/terms
+                  </div>
+                </div>
+              </div>
+              <div className="text-center md:text-right">
+                <Button size="lg" className="bg-purple-600 hover:bg-purple-700 text-white" asChild>
+                  <Link to="/contact">Contact Us <ArrowRight className="w-4 h-4 ml-2" /></Link>
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </AnimatedSection>
+
       <Footer />
     </div>
   );
