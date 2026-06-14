@@ -496,6 +496,62 @@ const StudentManagement = () => {
     return gradeOrder.filter((g) => data[g]).map((g) => data[g]);
   }, [students]);
 
+  const schoolGenderPercent = useMemo(() => {
+    if (totalStudents === 0) return { boysPercent: 0, girlsPercent: 0 };
+    return {
+      boysPercent: Math.round((maleStudents / totalStudents) * 100),
+      girlsPercent: Math.round((femaleStudents / totalStudents) * 100),
+    };
+  }, [maleStudents, femaleStudents, totalStudents]);
+
+  const gradeGenderPercent = useMemo(() => {
+    const data: { grade: string; boys: number; girls: number; total: number; boysPercent: number; girlsPercent: number }[] = [];
+    const counts: Record<string, { boys: number; girls: number; total: number }> = {};
+    students.forEach((s) => {
+      const grade = s.grade_level || 'Unknown';
+      if (!counts[grade]) counts[grade] = { boys: 0, girls: 0, total: 0 };
+      counts[grade].total++;
+      if (s.gender.toLowerCase() === 'male') counts[grade].boys++;
+      else if (s.gender.toLowerCase() === 'female') counts[grade].girls++;
+    });
+    const gradeOrder = ['PP1', 'PP2', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9'];
+    gradeOrder.forEach((g) => {
+      if (counts[g]) {
+        const c = counts[g];
+        data.push({
+          grade: g,
+          boys: c.boys,
+          girls: c.girls,
+          total: c.total,
+          boysPercent: Math.round((c.boys / c.total) * 100),
+          girlsPercent: Math.round((c.girls / c.total) * 100),
+        });
+      }
+    });
+    return data;
+  }, [students]);
+
+  const streamGenderPercent = useMemo(() => {
+    const counts: Record<string, { boys: number; girls: number; total: number }> = {};
+    students.forEach((s) => {
+      const stream = s.stream_name?.trim() || 'No Stream';
+      if (!counts[stream]) counts[stream] = { boys: 0, girls: 0, total: 0 };
+      counts[stream].total++;
+      if (s.gender.toLowerCase() === 'male') counts[stream].boys++;
+      else if (s.gender.toLowerCase() === 'female') counts[stream].girls++;
+    });
+    return Object.entries(counts)
+      .map(([stream, c]) => ({
+        stream,
+        boys: c.boys,
+        girls: c.girls,
+        total: c.total,
+        boysPercent: Math.round((c.boys / c.total) * 100),
+        girlsPercent: Math.round((c.girls / c.total) * 100),
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [students]);
+
   const hasActiveFilters =
     searchTerm || selectedGrade !== 'all' || selectedStatus !== 'all' || selectedGender !== 'all';
 
@@ -901,6 +957,121 @@ const StudentManagement = () => {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Gender Percentage Breakdown */}
+      {totalStudents > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Per School */}
+          <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="h-6 w-6 rounded-md bg-blue-100 flex items-center justify-center">
+                  <Users className="h-3.5 w-3.5 text-blue-600" />
+                </div>
+                Gender % — School
+              </CardTitle>
+              <CardDescription className="text-xs">Overall gender percentage across the school</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4 space-y-3">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-600 font-medium">Boys</span>
+                  <span className="font-bold text-blue-600">{schoolGenderPercent.boysPercent}% ({maleStudents})</span>
+                </div>
+                <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                  <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${schoolGenderPercent.boysPercent}%` }} />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-600 font-medium">Girls</span>
+                  <span className="font-bold text-pink-600">{schoolGenderPercent.girlsPercent}% ({femaleStudents})</span>
+                </div>
+                <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                  <div className="h-full rounded-full bg-pink-500 transition-all" style={{ width: `${schoolGenderPercent.girlsPercent}%` }} />
+                </div>
+              </div>
+              <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500 text-center">
+                Total: {totalStudents} students
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Per Class (Grade) */}
+          <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="h-6 w-6 rounded-md bg-purple-100 flex items-center justify-center">
+                  <GraduationCap className="h-3.5 w-3.5 text-purple-600" />
+                </div>
+                Gender % — Per Class
+              </CardTitle>
+              <CardDescription className="text-xs">Boys and girls percentage in each grade</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4">
+              {gradeGenderPercent.length > 0 ? (
+                <div className="space-y-2.5 max-h-[240px] overflow-y-auto pr-1">
+                  {gradeGenderPercent.map((g) => (
+                    <div key={g.grade} className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-700">{g.grade}</span>
+                        <span className="text-[10px] text-slate-400">{g.total} students</span>
+                      </div>
+                      <div className="flex h-2 w-full rounded-full overflow-hidden bg-slate-100">
+                        <div className="h-full bg-blue-500 transition-all" style={{ width: `${g.boysPercent}%` }} title={`Boys: ${g.boysPercent}%`} />
+                        <div className="h-full bg-pink-500 transition-all" style={{ width: `${g.girlsPercent}%` }} title={`Girls: ${g.girlsPercent}%`} />
+                      </div>
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-blue-600 font-medium">Boys {g.boysPercent}% ({g.boys})</span>
+                        <span className="text-pink-600 font-medium">Girls {g.girlsPercent}% ({g.girls})</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 text-center py-6">No class data</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Per Stream */}
+          <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="h-6 w-6 rounded-md bg-emerald-100 flex items-center justify-center">
+                  <BookOpen className="h-3.5 w-3.5 text-emerald-600" />
+                </div>
+                Gender % — Per Stream
+              </CardTitle>
+              <CardDescription className="text-xs">Boys and girls percentage in each stream</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4">
+              {streamGenderPercent.length > 0 ? (
+                <div className="space-y-2.5 max-h-[240px] overflow-y-auto pr-1">
+                  {streamGenderPercent.map((s) => (
+                    <div key={s.stream} className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-700">{s.stream}</span>
+                        <span className="text-[10px] text-slate-400">{s.total} students</span>
+                      </div>
+                      <div className="flex h-2 w-full rounded-full overflow-hidden bg-slate-100">
+                        <div className="h-full bg-blue-500 transition-all" style={{ width: `${s.boysPercent}%` }} title={`Boys: ${s.boysPercent}%`} />
+                        <div className="h-full bg-pink-500 transition-all" style={{ width: `${s.girlsPercent}%` }} title={`Girls: ${s.girlsPercent}%`} />
+                      </div>
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-blue-600 font-medium">Boys {s.boysPercent}% ({s.boys})</span>
+                        <span className="text-pink-600 font-medium">Girls {s.girlsPercent}% ({s.girls})</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 text-center py-6">No stream data</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Search and Filters Card */}
