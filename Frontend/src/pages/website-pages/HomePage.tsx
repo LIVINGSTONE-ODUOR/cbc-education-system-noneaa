@@ -101,86 +101,86 @@ const stats = [
   {
     icon: Users,
     value: '150+',
-    label: 'PARTNER SCHOOLS',
+    label: 'SCHOOLS USING NONEAA',
     change: '+12%',
     trend: 'up',
   },
   {
     icon: TrendingUp,
-    value: '92%',
-    label: 'MASTERY GROWTH RATE',
+    value: '50K+',
+    label: 'STUDENTS TRACKED',
     change: '+8%',
     trend: 'up',
   },
   {
     icon: GraduationCap,
     value: '1.2M',
-    label: 'SUBMISSIONS EVALUATED',
+    label: 'ASSESSMENTS COMPLETED',
     change: '+23%',
     trend: 'up',
   },
   {
     icon: Clock,
-    value: '4h',
-    label: 'AVG. FEEDBACK TIME',
-    change: '-35%',
-    trend: 'down',
+    value: '24/7',
+    label: 'SYSTEM AVAILABILITY',
+    change: '99.9%',
+    trend: 'up',
   },
 ];
 
 const tools = [
   {
     icon: LayoutGrid,
-    title: 'Personal Dashboard',
-    description: 'Get a high-level overview of your current goals, notifications, and immediate tasks.',
+    title: 'Curriculum Management',
+    description: 'Organise all CBC learning areas, strands, and sub-strands. Assign teachers to subjects and track coverage across Pre-Primary to Senior Secondary.',
     gradient: 'from-blue-500 to-cyan-500',
-    features: ['Real-time updates', 'Custom widgets', 'Progress tracking'],
-  },
-  {
-    icon: BookOpen,
-    title: 'Curriculum Explorer',
-    description: 'Navigate through strands and sub-strands to understand learning outcomes and mastery requirements.',
-    gradient: 'from-emerald-500 to-teal-500',
-    features: ['Interactive maps', 'Learning paths', 'Resource library'],
+    features: ['Learning areas & strands', 'Teacher allocation', 'KICD-aligned structure'],
   },
   {
     icon: ClipboardCheck,
-    title: 'Assessments',
-    description: 'Review detailed rubrics, complete assignments, and receive actionable feedback from teachers.',
+    title: 'Assessment & Grading',
+    description: 'Create rubrics, record formative and summative assessments, and grade students on the 4-level competency scale (Exceeding, Meeting, Approaching, Below).',
+    gradient: 'from-emerald-500 to-teal-500',
+    features: ['Rubric builder', 'Competency-level scoring', 'Term-end reports'],
+  },
+  {
+    icon: BarChart3,
+    title: 'Progress Tracking',
+    description: 'View each student\'s competency levels across all subjects with heatmaps and progress dashboards. Parents can see their child\'s standing in real time.',
     gradient: 'from-purple-500 to-pink-500',
-    features: ['AI-powered grading', 'Rubric builder', 'Peer review'],
+    features: ['Competency heatmaps', 'Parent access portal', 'Growth analytics'],
   },
   {
     icon: Upload,
-    title: 'Evidence Upload',
-    description: 'Easily submit projects, videos, and documents to prove your mastery of specific competencies.',
+    title: 'Evidence & Submissions',
+    description: 'Students upload projects, documents, and videos as proof of mastery. Teachers review submissions and provide feedback directly on the platform.',
     gradient: 'from-orange-500 to-red-500',
-    features: ['Multi-format support', 'Cloud storage', 'Version control'],
+    features: ['File uploads (PDF, video, images)', 'Teacher feedback', 'Submission history'],
   },
 ];
 
 const steps = [
   {
     number: '01',
-    title: 'Set Clear Outcomes',
-    description: 'Every lesson is mapped to specific competencies, so students know exactly what they need to master.',
-    icon: Target,
+    title: 'For Teachers',
+    description: 'Manage your classes, create assessments with rubrics, score students on competency levels, and generate term reports — all from one dashboard.',
+    icon: Users,
     color: 'text-blue-500',
     bg: 'bg-blue-500/10',
   },
   {
     number: '02',
-    title: 'Personalized Pace',
-    description: 'Students move forward when they prove mastery, ensuring no one is left behind or held back.',
-    icon: Zap,
+    title: 'For Parents',
+    description: 'See exactly where your child stands across every learning area. Track their competency levels, view teacher feedback, and monitor progress over time.',
+    icon: Heart,
     color: 'text-emerald-500',
     bg: 'bg-emerald-500/10',
   },
   {
     number: '03',
-    title: 'Evidence-Based Growth',
-    description: 'Real-world projects and assessments provide a rich portfolio of what a student can actually do.',
-    icon: Brain,
+    title: 'For School Admins',
+    description: 'Oversee curriculum implementation across the entire school. Manage teacher assignments, view school-wide analytics, and generate compliance reports.',
+    icon: Shield,
     color: 'text-purple-500',
     bg: 'bg-purple-500/10',
   },
@@ -468,17 +468,17 @@ export default function HomePage() {
             </div>
 
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.2] mb-6">
-              National Optimized Network for Education{' '}
+              The School Management Platform for{' '}
               <span className="relative inline-block">
                 <span className="relative z-10 bg-gradient-to-r from-blue-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                  Achievement & Administration
+                  Kenya's CBC Curriculum
                 </span>
                 <div className="absolute -inset-2 bg-gradient-to-r from-blue-500/20 to-emerald-500/20 blur-xl" />
               </span>
             </h1>
             
             <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-2xl leading-relaxed">
-              Track progress, manage curriculum, and achieve excellence through personalized pathways.
+              Noneaa helps schools manage curriculum, assess students using competency levels, track progress across all learning areas, and keep parents informed — from Pre-Primary to Senior Secondary.
             </p>
 
             {/* Role Selector with Glow Effect */}
@@ -558,9 +558,9 @@ export default function HomePage() {
               transition={{ delay: 0.6 }}
               className="mt-12 pt-8 border-t border-white/20"
             >
-              <p className="text-sm text-white/70 mb-4">Trusted by leading educational institutions</p>
+              <p className="text-sm text-white/70 mb-4">Built for Kenyan schools implementing CBC</p>
               <div className="flex flex-wrap items-center gap-6 opacity-70">
-                {['Google for Education', 'Microsoft Education', 'Apple Distinguished Schools', 'IB World Schools'].map((name) => (
+                {['KICD-Aligned', 'Pre-Primary to Grade 12', '4-Level Competency Scale', 'Parent & Teacher Portals'].map((name) => (
                   <div key={name} className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-emerald-400" />
                     <span className="text-white/90 text-sm">{name}</span>
@@ -585,16 +585,16 @@ export default function HomePage() {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border border-blue-500/20 mb-4">
               <Zap className="w-4 h-4 text-blue-500" />
-              <span className="text-sm font-medium text-primary">Powerful Features</span>
+              <span className="text-sm font-medium text-primary">Platform Features</span>
             </div>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Everything You Need in{' '}
+              What Noneaa{' '}
               <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                One Platform
+                Does for Your School
               </span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Streamline your competency-based education workflow with our comprehensive suite of tools.
+              Four core modules that cover everything from curriculum setup to parent communication.
             </p>
           </motion.div>
 
@@ -648,15 +648,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Animated Stats Section */}
+      {/* Stats Section */}
               <section className="py-20 md:py-32 bg-blue-600">
                       <div className="max-w-6xl mx-auto px-6">
-                        <div className="grid md:grid-cols-4 gap-8 text-center text-white">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
                           {[
-                            { number: '150+', label: 'Schools Transformed' },
-                            { number: '50K+', label: 'Students Impacted' },
-                            { number: '98%', label: 'Teacher Satisfaction' },
-                            { number: '24/7', label: 'System Uptime' }
+                            { number: '150+', label: 'Schools on Noneaa' },
+                            { number: '50K+', label: 'Students Tracked' },
+                            { number: '8', label: 'Learning Areas Covered' },
+                            { number: 'PP1–G12', label: 'Full Grade Range' }
                           ].map((stat, index) => (
                             <motion.div
                               key={index}
@@ -665,10 +665,10 @@ export default function HomePage() {
                               viewport={{ once: true }}
                               transition={{ delay: index * 0.1 }}
                             >
-                              <div className="text-5xl font-bold mb-2">
+                              <div className="text-4xl md:text-5xl font-bold mb-2">
                                 {stat.number}
                               </div>
-                              <p className="text-base text-blue-100">{stat.label}</p>
+                              <p className="text-sm md:text-base text-blue-100">{stat.label}</p>
                             </motion.div>
                           ))}
                         </div>
@@ -687,16 +687,16 @@ export default function HomePage() {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 mb-4">
               <Target className="w-4 h-4 text-purple-500" />
-              <span className="text-sm font-medium text-primary">Our Methodology</span>
+              <span className="text-sm font-medium text-primary">Built for Every Role</span>
             </div>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              The Foundation of{' '}
+              One Platform,{' '}
               <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Mastery Learning
+                Every Stakeholder
               </span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Our CBE system shifts the focus from "time spent in class" to "demonstrated mastery of skills."
+              Teachers, parents, and administrators each get their own dashboard tailored to what they need.
             </p>
           </motion.div>
 
@@ -723,12 +723,6 @@ export default function HomePage() {
                     </div>
                     <h3 className={`text-2xl font-bold ${step.color} mb-4`}>{step.title}</h3>
                     <p className="text-muted-foreground leading-relaxed">{step.description}</p>
-                    <div className="mt-6 pt-6 border-t border-border/50">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <ArrowRight className="w-4 h-4" />
-                        <span>Learn more about this step</span>
-                      </div>
-                    </div>
                   </div>
                 </motion.div>
               );
@@ -758,14 +752,13 @@ export default function HomePage() {
                     <span className="text-sm font-medium text-primary">Get Started Today</span>
                   </div>
                   <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-                    Ready to Transform{' '}
+                    Get Your School{' '}
                     <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                      Your School?
+                      On Noneaa
                     </span>
                   </h2>
                   <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-                    Join hundreds of schools moving towards a mastery-first future with Nonea.
-                    Start your journey today with a personalized demo.
+                    Set up takes under an hour. Add your teachers, import your classes, and start tracking competencies across every learning area.
                   </p>
                   
                   <div className="grid sm:grid-cols-2 gap-4 mb-8">
@@ -836,9 +829,9 @@ export default function HomePage() {
                 <div className="bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-emerald-500/10 p-12 md:p-16 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-500/20 to-emerald-500/20 rounded-full blur-3xl" />
                   <div className="relative z-10">
-                    <h3 className="text-2xl font-bold text-foreground mb-4">Request a Personalized Demo</h3>
+                    <h3 className="text-2xl font-bold text-foreground mb-4">Book a Free Demo</h3>
                     <p className="text-muted-foreground mb-8">
-                      See how Nonea fits your school's unique curriculum needs
+                      We'll walk you through the platform with your school's actual subjects and classes.
                     </p>
                     
                     <div className="space-y-4">
