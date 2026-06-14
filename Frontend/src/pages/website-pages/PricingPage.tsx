@@ -80,7 +80,7 @@ export default function PricingPage() {
   const [isAnnual, setIsAnnual] = useState(true);
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-white">
       <Header />
 
       {/* Hero */}
@@ -108,7 +108,7 @@ export default function PricingPage() {
                 onClick={() => setIsAnnual(!isAnnual)}
                 className={`relative w-12 h-6 rounded-full transition-colors ${isAnnual ? 'bg-blue-600' : 'bg-slate-300'}`}
               >
-                <div className={`absolute top-0.5 w-5 h-5 bg-slate-800 rounded-full shadow transition-transform ${isAnnual ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isAnnual ? 'translate-x-6' : 'translate-x-0.5'}`} />
               </button>
               <span className={`text-sm font-medium ${isAnnual ? 'text-slate-900' : 'text-slate-500'}`}>
                 Annual <span className="text-emerald-600 font-semibold">(Save 17%)</span>
@@ -205,7 +205,7 @@ export default function PricingPage() {
               const Icon = item.icon;
               return (
                 <div key={item.title} className="text-center">
-                  <div className="w-12 h-12 bg-blue-900/30 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4">
                     <Icon className="w-6 h-6 text-blue-600" />
                   </div>
                   <h3 className="font-semibold text-slate-900 mb-2">{item.title}</h3>

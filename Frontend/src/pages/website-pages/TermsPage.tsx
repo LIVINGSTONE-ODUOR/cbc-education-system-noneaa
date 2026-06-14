@@ -143,7 +143,7 @@ export default function TermsPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-white">
       <Header />
 
       {/* Hero */}
@@ -172,15 +172,15 @@ export default function TermsPage() {
       </section>
 
       {/* Highlights */}
-      <section className="bg-slate-800/50 py-12">
+      <section className="bg-gray-50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {highlights.map((h, i) => (
-              <motion.div key={h.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }} className="text-center p-6 rounded-xl bg-slate-800 shadow-sm">
+              <motion.div key={h.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }} className="text-center p-6 rounded-xl bg-white shadow-sm">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${h.color} text-white mx-auto mb-3`}>
                   <h.icon className="w-6 h-6" />
                 </div>
-                <h3 className="font-semibold text-white text-sm mb-1">{h.title}</h3>
+                <h3 className="font-semibold text-gray-900 text-sm mb-1">{h.title}</h3>
                 <p className="text-xs text-muted-foreground">{h.desc}</p>
               </motion.div>
             ))}
@@ -193,16 +193,16 @@ export default function TermsPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           {sections.map((section) => (
             <AnimatedSection key={section.title}>
-              <motion.div variants={fadeUp} custom={0} className={`bg-slate-800 rounded-2xl border-l-4 ${section.color} border-slate-700 shadow-sm p-8`}>
+              <motion.div variants={fadeUp} custom={0} className={`bg-white rounded-2xl border-l-4 ${section.color} border shadow-sm p-8`}>
                 <div className="flex items-center gap-3 mb-5">
-                  <section.icon className="w-6 h-6 text-slate-200" />
-                  <h2 className="text-xl font-bold text-white">{section.title}</h2>
+                  <section.icon className="w-6 h-6 text-gray-700" />
+                  <h2 className="text-xl font-bold text-gray-900">{section.title}</h2>
                 </div>
 
                 {section.content && (
                   <div className="space-y-3 mb-4">
                     {section.content.map((para, idx) => (
-                      <p key={idx} className="text-sm text-slate-300 leading-relaxed">{para}</p>
+                      <p key={idx} className="text-sm text-gray-600 leading-relaxed">{para}</p>
                     ))}
                   </div>
                 )}
@@ -210,7 +210,7 @@ export default function TermsPage() {
                 {section.items && (
                   <ul className="space-y-2 mb-4">
                     {section.items.map((item, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm text-slate-300">
+                      <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
                         <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
                         {item}
                       </li>
@@ -222,8 +222,8 @@ export default function TermsPage() {
                   <div className="space-y-4">
                     {section.subsections.map((sub) => (
                       <div key={sub.subtitle}>
-                        <h4 className="font-semibold text-white mb-1">{sub.subtitle}</h4>
-                        <p className="text-sm text-slate-300 leading-relaxed">{sub.text}</p>
+                        <h4 className="font-semibold text-gray-900 mb-1">{sub.subtitle}</h4>
+                        <p className="text-sm text-gray-600 leading-relaxed">{sub.text}</p>
                       </div>
                     ))}
                   </div>
@@ -235,20 +235,20 @@ export default function TermsPage() {
       </div>
 
       {/* Contact */}
-      <AnimatedSection className="py-16 bg-slate-800/50">
+      <AnimatedSection className="py-16 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div variants={fadeUp} custom={0} className="bg-gradient-to-br from-purple-950/30 to-indigo-950/30 rounded-2xl border border-purple-800 p-8">
+          <motion.div variants={fadeUp} custom={0} className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-200 p-8">
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div>
-                <h3 className="text-2xl font-bold text-white mb-4">Have Questions About Our Terms?</h3>
-                <p className="text-slate-300 mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Have Questions About Our Terms?</h3>
+                <p className="text-gray-600 mb-6">
                   We believe in clarity. If anything in these terms is unclear, reach out and we&apos;ll explain it in plain language.
                 </p>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-sm text-slate-200">
+                  <div className="flex items-center gap-3 text-sm text-gray-700">
                     <Mail className="w-4 h-4 text-purple-600" /> legal@noneaa.com
                   </div>
-                  <div className="flex items-center gap-3 text-sm text-slate-200">
+                  <div className="flex items-center gap-3 text-sm text-gray-700">
                     <Globe className="w-4 h-4 text-purple-600" /> www.noneaa.com/terms
                   </div>
                 </div>

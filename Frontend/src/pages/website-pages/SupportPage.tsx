@@ -164,7 +164,7 @@ const supportChannels = [
     response: "Typically < 2 minutes",
     hours: "Mon-Fri, 8AM-6PM EAT",
     action: "Start Chat",
-    color: "from-blue-950/300 to-cyan-500",
+    color: "from-blue-500 to-cyan-500",
     popular: true
   },
   {
@@ -174,7 +174,7 @@ const supportChannels = [
     response: "Immediate",
     hours: "Mon-Fri, 9AM-5PM EAT",
     action: "Call Now",
-    color: "from-purple-950/300 to-pink-500"
+    color: "from-purple-500 to-pink-500"
   },
   {
     icon: Mail,
@@ -183,7 +183,7 @@ const supportChannels = [
     response: "< 4 hours",
     hours: "24/7 support",
     action: "Send Email",
-    color: "from-emerald-950/300 to-teal-500"
+    color: "from-emerald-500 to-teal-500"
   },
   {
     icon: BookOpen,
@@ -250,15 +250,15 @@ const FeatureCard = ({ feature, index }: { feature: SupportFeature; index: numbe
       whileHover={{ y: -5 }}
       className="group"
     >
-      <Card className="h-full border border-slate-700 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-300 hover:shadow-lg">
+      <Card className="h-full border border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-300 hover:shadow-lg">
         <CardContent className="p-6">
           <div className={`w-14 h-14 rounded-xl ${feature.bg} flex items-center justify-center mb-4`}>
             <Icon className={`w-7 h-7 ${feature.color}`} />
           </div>
-          <h3 className="text-lg font-semibold text-white dark:text-white mb-2">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             {feature.title}
           </h3>
-          <p className="text-sm text-slate-300 dark:text-gray-400">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             {feature.description}
           </p>
         </CardContent>
@@ -278,11 +278,11 @@ const SupportChannelCard = ({ channel, index }: { channel: SupportChannel; index
       className="relative"
     >
       {channel.popular && (
-        <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-10 bg-gradient-to-r from-blue-950/300 to-cyan-500 text-white px-3 py-1">
+        <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-10 bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-3 py-1">
           Most Popular
         </Badge>
       )}
-      <Card className="h-full border border-slate-700 dark:border-gray-800 overflow-hidden">
+      <Card className="h-full border border-gray-200 dark:border-gray-800 overflow-hidden">
         <div className={`h-2 bg-gradient-to-r ${channel.color}`} />
         <CardContent className="p-6">
           <div className="flex items-center gap-4 mb-4">
@@ -290,10 +290,10 @@ const SupportChannelCard = ({ channel, index }: { channel: SupportChannel; index
               <Icon className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white dark:text-white">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {channel.title}
               </h3>
-              <p className="text-sm text-slate-300 dark:text-gray-400">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {channel.description}
               </p>
             </div>
@@ -302,11 +302,11 @@ const SupportChannelCard = ({ channel, index }: { channel: SupportChannel; index
           <div className="space-y-3 mb-6">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500 dark:text-gray-400">Response time:</span>
-              <span className="font-medium text-white dark:text-white">{channel.response}</span>
+              <span className="font-medium text-gray-900 dark:text-white">{channel.response}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500 dark:text-gray-400">Availability:</span>
-              <span className="font-medium text-white dark:text-white">{channel.hours}</span>
+              <span className="font-medium text-gray-900 dark:text-white">{channel.hours}</span>
             </div>
           </div>
           
@@ -324,14 +324,14 @@ const FAQItem = ({ faq, index, category }: { faq: FAQQuestion; index: number; ca
   const [isHelpful, setIsHelpful] = useState<boolean | null>(null);
   
   return (
-    <AccordionItem value={`${category.id}-${index}`} className="border-b border-slate-700 dark:border-gray-800">
+    <AccordionItem value={`${category.id}-${index}`} className="border-b border-gray-200 dark:border-gray-800">
       <AccordionTrigger className="py-4 text-left hover:no-underline group">
         <div className="flex items-start gap-4">
-          <div className={`w-8 h-8 rounded-lg ${category.bg} flex items-center justify-center flex-shrink-0 group-data-[state=open]:bg-blue-900/30 dark:group-data-[state=open]:bg-blue-900/20`}>
+          <div className={`w-8 h-8 rounded-lg ${category.bg} flex items-center justify-center flex-shrink-0 group-data-[state=open]:bg-blue-100 dark:group-data-[state=open]:bg-blue-900/20`}>
             <category.icon className={`w-4 h-4 ${category.color} group-data-[state=open]:text-blue-600 dark:group-data-[state=open]:text-blue-400`} />
           </div>
           <div className="text-left">
-            <h4 className="font-medium text-white dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
+            <h4 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
               {faq.question}
             </h4>
             <div className="flex flex-wrap gap-2 mt-2">
@@ -345,7 +345,7 @@ const FAQItem = ({ faq, index, category }: { faq: FAQQuestion; index: number; ca
         </div>
       </AccordionTrigger>
       <AccordionContent className="pb-6 pl-12">
-        <p className="text-slate-300 dark:text-gray-300 mb-4">{faq.answer}</p>
+        <p className="text-gray-600 dark:text-gray-300 mb-4">{faq.answer}</p>
         
         <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
           <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -420,7 +420,7 @@ export default function SupportPage() {
       {/* Enhanced Hero Section */}
       <section className="relative pt-24 pb-20 overflow-hidden">
         {/* Background Elements */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-950/30 via-white to-emerald-950/30 dark:from-blue-950/20 dark:via-gray-900 dark:to-emerald-950/20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-emerald-50 dark:from-blue-950/20 dark:via-gray-900 dark:to-emerald-950/20" />
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent" />
         
         <div className="container mx-auto px-4 relative z-10">
@@ -435,7 +435,7 @@ export default function SupportPage() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-950/300/10 to-emerald-950/300/10 border border-blue-500/20 backdrop-blur-sm mb-8"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border border-blue-500/20 backdrop-blur-sm mb-8"
             >
               <Sparkles className="w-4 h-4 text-blue-500" />
               <span className="text-sm font-medium text-blue-700 dark:text-blue-300 uppercase tracking-wide">
@@ -448,7 +448,7 @@ export default function SupportPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-4xl md:text-6xl font-bold text-white dark:text-white mb-6 leading-tight"
+              className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight"
             >
               We're Here to{' '}
               <span className="bg-gradient-to-r from-blue-600 via-emerald-500 to-cyan-500 bg-clip-text text-transparent">
@@ -461,7 +461,7 @@ export default function SupportPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="text-xl text-slate-300 dark:text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed"
+              className="text-xl text-gray-600 dark:text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed"
             >
               Get expert support for the Noneaa platform. From setup to daily operations, 
               our team is dedicated to your success in education technology.
@@ -485,8 +485,8 @@ export default function SupportPage() {
               className="max-w-2xl mx-auto"
             >
               <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-emerald-950/300 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500" />
-                <div className="relative bg-slate-800 dark:bg-gray-800 rounded-2xl p-2 border border-slate-700 dark:border-gray-700 shadow-lg">
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-emerald-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500" />
+                <div className="relative bg-white dark:bg-gray-800 rounded-2xl p-2 border border-gray-200 dark:border-gray-700 shadow-lg">
                   <div className="flex items-center gap-2">
                     <Search className="w-5 h-5 text-gray-400 ml-4" />
                     <Input
@@ -505,16 +505,16 @@ export default function SupportPage() {
               
               {/* Quick Links */}
               <div className="flex flex-wrap justify-center gap-3 mt-6">
-                <Badge variant="secondary" className="cursor-pointer hover:bg-blue-900/30 dark:hover:bg-blue-900">
+                <Badge variant="secondary" className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900">
                   Student Management
                 </Badge>
-                <Badge variant="secondary" className="cursor-pointer hover:bg-blue-900/30 dark:hover:bg-blue-900">
+                <Badge variant="secondary" className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900">
                   Gradebook Setup
                 </Badge>
-                <Badge variant="secondary" className="cursor-pointer hover:bg-blue-900/30 dark:hover:bg-blue-900">
+                <Badge variant="secondary" className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900">
                   Parent Portal
                 </Badge>
-                <Badge variant="secondary" className="cursor-pointer hover:bg-blue-900/30 dark:hover:bg-blue-900">
+                <Badge variant="secondary" className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900">
                   Technical Issues
                 </Badge>
               </div>
@@ -534,10 +534,10 @@ export default function SupportPage() {
             className="mb-16"
           >
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-white dark:text-white mb-4">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
                 Why Choose Noneaa Support?
               </h2>
-              <p className="text-slate-300 dark:text-gray-400 max-w-2xl mx-auto">
+              <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
                 Our dedicated support team combines technical expertise with educational 
                 experience to provide you with the best assistance.
               </p>
@@ -560,10 +560,10 @@ export default function SupportPage() {
           >
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
               <div>
-                <h2 className="text-3xl font-bold text-white dark:text-white mb-2">
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                   Get Help Your Way
                 </h2>
-                <p className="text-slate-300 dark:text-gray-400">
+                <p className="text-gray-600 dark:text-gray-400">
                   Choose the support channel that works best for you
                 </p>
               </div>
@@ -589,10 +589,10 @@ export default function SupportPage() {
           >
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
               <div>
-                <h2 className="text-3xl font-bold text-white dark:text-white mb-2">
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                   Frequently Asked Questions
                 </h2>
-                <p className="text-slate-300 dark:text-gray-400">
+                <p className="text-gray-600 dark:text-gray-400">
                   Quick answers to common questions
                 </p>
               </div>
@@ -619,14 +619,14 @@ export default function SupportPage() {
 
             <div className="space-y-6">
               {faqSections.map((category, catIndex) => (
-                <Card key={catIndex} className="border border-slate-700 dark:border-gray-800">
+                <Card key={catIndex} className="border border-gray-200 dark:border-gray-800">
                   <CardHeader>
                     <div className="flex items-center gap-3">
                       <div className={`w-12 h-12 rounded-xl ${category.bg} flex items-center justify-center`}>
                         <category.icon className={`w-6 h-6 ${category.color}`} />
                       </div>
                       <div>
-                        <CardTitle className="text-xl font-bold text-white dark:text-white">
+                        <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
                           {category.title}
                         </CardTitle>
                         <CardDescription>
@@ -661,10 +661,10 @@ export default function SupportPage() {
             className="mb-16"
           >
             <div className="text-center mb-10">
-              <h2 className="text-3xl font-bold text-white dark:text-white mb-3">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
                 Learning Resources
               </h2>
-              <p className="text-slate-300 dark:text-gray-400 max-w-2xl mx-auto">
+              <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
                 Explore our library of tutorials, guides, and templates to master the Noneaa platform
               </p>
             </div>
@@ -680,19 +680,19 @@ export default function SupportPage() {
                     transition={{ delay: index * 0.1 }}
                     whileHover={{ y: -5 }}
                   >
-                    <Card className="h-full border border-slate-700 dark:border-gray-800 hover:shadow-lg transition-all duration-300 cursor-pointer group">
+                    <Card className="h-full border border-gray-200 dark:border-gray-800 hover:shadow-lg transition-all duration-300 cursor-pointer group">
                       <CardContent className="p-6">
                         <div className={`w-14 h-14 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                           <Icon className={`w-7 h-7 ${resource.color}`} />
                         </div>
-                        <h3 className="text-lg font-semibold text-white dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                           {resource.title}
                         </h3>
-                        <p className="text-sm text-slate-300 dark:text-gray-400 mb-4">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                           {resource.description}
                         </p>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-slate-200 dark:text-gray-300">
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             {resource.count}
                           </span>
                           <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
@@ -713,64 +713,64 @@ export default function SupportPage() {
             transition={{ delay: 0.4 }}
           >
             <div className="relative">
-              <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 to-emerald-950/300 rounded-3xl blur opacity-20" />
-              <Card className="relative bg-slate-800 dark:bg-gray-900 rounded-3xl border border-slate-700 dark:border-gray-800 overflow-hidden">
+              <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 to-emerald-500 rounded-3xl blur opacity-20" />
+              <Card className="relative bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 overflow-hidden">
                 <div className="grid lg:grid-cols-2">
                   {/* Left Side - Information */}
-                  <div className="bg-gradient-to-br from-blue-950/30 to-emerald-950/30 dark:from-blue-950/30 dark:to-emerald-950/30 p-8 lg:p-12">
+                  <div className="bg-gradient-to-br from-blue-50 to-emerald-50 dark:from-blue-950/30 dark:to-emerald-950/30 p-8 lg:p-12">
                     <div className="h-full flex flex-col justify-center">
-                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-950/300/10 to-emerald-950/300/10 border border-blue-500/20 mb-6 w-fit">
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border border-blue-500/20 mb-6 w-fit">
                         <Send className="w-4 h-4 text-blue-500" />
                         <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
                           Submit a Request
                         </span>
                       </div>
                       
-                      <h2 className="text-3xl font-bold text-white dark:text-white mb-4">
+                      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
                         Still Need Help?
                       </h2>
-                      <p className="text-slate-300 dark:text-gray-300 mb-8">
+                      <p className="text-gray-600 dark:text-gray-300 mb-8">
                         Our team of experts will personally assist you with any questions or issues.
                       </p>
                       
                       <div className="space-y-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-950/300/10 to-emerald-950/300/10 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/10 to-emerald-500/10 flex items-center justify-center">
                             <Clock className="w-5 h-5 text-blue-500" />
                           </div>
                           <div>
-                            <div className="font-medium text-white dark:text-white">
+                            <div className="font-medium text-gray-900 dark:text-white">
                               Fast Response
                             </div>
-                            <div className="text-sm text-slate-300 dark:text-gray-400">
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
                               Typically within 2 hours
                             </div>
                           </div>
                         </div>
                         
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-950/300/10 to-emerald-950/300/10 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/10 to-emerald-500/10 flex items-center justify-center">
                             <Shield className="w-5 h-5 text-blue-500" />
                           </div>
                           <div>
-                            <div className="font-medium text-white dark:text-white">
+                            <div className="font-medium text-gray-900 dark:text-white">
                               Secure & Confidential
                             </div>
-                            <div className="text-sm text-slate-300 dark:text-gray-400">
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
                               Your information is protected
                             </div>
                           </div>
                         </div>
                         
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-950/300/10 to-emerald-950/300/10 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/10 to-emerald-500/10 flex items-center justify-center">
                             <Users className="w-5 h-5 text-blue-500" />
                           </div>
                           <div>
-                            <div className="font-medium text-white dark:text-white">
+                            <div className="font-medium text-gray-900 dark:text-white">
                               Expert Assistance
                             </div>
-                            <div className="text-sm text-slate-300 dark:text-gray-400">
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
                               Certified education specialists
                             </div>
                           </div>
@@ -964,7 +964,7 @@ export default function SupportPage() {
                     <div className="flex flex-col sm:flex-row gap-4">
                       <Button 
                         size="lg"
-                        className="bg-slate-800 text-red-600 hover:bg-white/90 px-8 py-6 rounded-xl font-semibold shadow-lg"
+                        className="bg-white text-red-600 hover:bg-white/90 px-8 py-6 rounded-xl font-semibold shadow-lg"
                       >
                         <Phone className="w-5 h-5 mr-2" />
                         1-800-EDU-HELP

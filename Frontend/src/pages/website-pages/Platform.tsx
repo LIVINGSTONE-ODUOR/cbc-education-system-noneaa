@@ -272,7 +272,7 @@ const NoneaaPlatformPage = () => {
               </p>
               <a
                 href="#book-demo-form"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-slate-800 text-blue-700 font-semibold rounded-xl hover:bg-blue-50 transition-all duration-300"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-700 font-semibold rounded-xl hover:bg-blue-50 transition-all duration-300"
               >
                 Book a Demo
                 <ArrowRight className="w-5 h-5" />
@@ -312,7 +312,7 @@ const NoneaaPlatformPage = () => {
                   transition={{ duration: 0.5, delay: index * 0.05 }}
                   className="rounded-2xl bg-white/80 backdrop-blur-sm border border-white/60 p-6 shadow-lg hover:shadow-xl transition-all"
                 >
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-r from-blue-950/300 to-teal-500 flex items-center justify-center text-white mb-4">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 flex items-center justify-center text-white mb-4">
                     <benefit.icon className="w-5 h-5" />
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-2">{benefit.title}</h3>
@@ -504,7 +504,7 @@ const NoneaaPlatformPage = () => {
             <h2 className="text-4xl font-bold text-slate-900 text-center mb-10">Frequently Asked Questions</h2>
             <div className="space-y-4">
               {faqs.map((faq, index) => (
-                <div key={faq.question} className="bg-slate-800 border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div key={faq.question} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                   <button
                     onClick={() => setActiveFaq(activeFaq === index ? null : index)}
                     className="w-full flex items-center justify-between px-5 py-4 text-left"

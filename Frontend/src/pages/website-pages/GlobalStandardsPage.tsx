@@ -40,25 +40,25 @@ const standards = [
   {
     category: 'Educational Standards',
     items: [
-      { title: 'KICD Curriculum Alignment', desc: 'Fully aligned with Kenya Institute of Curriculum Development guidelines. Every learning area, strand, and sub-strand maps directly to the official curriculum designs.', icon: BookOpen, color: 'bg-blue-900/30 text-blue-600' },
-      { title: 'UNESCO Education Framework', desc: 'Supports the UNESCO International Bureau of Education framework for competency-based learning and sustainable development.', icon: Globe, color: 'bg-cyan-900/30 text-cyan-600' },
-      { title: 'SDG 4: Quality Education', desc: 'Aligned with the United Nations Sustainable Development Goal 4, ensuring inclusive and equitable quality education for all.', icon: Target, color: 'bg-green-900/30 text-green-600' },
+      { title: 'KICD Curriculum Alignment', desc: 'Fully aligned with Kenya Institute of Curriculum Development guidelines. Every learning area, strand, and sub-strand maps directly to the official curriculum designs.', icon: BookOpen, color: 'bg-blue-100 text-blue-600' },
+      { title: 'UNESCO Education Framework', desc: 'Supports the UNESCO International Bureau of Education framework for competency-based learning and sustainable development.', icon: Globe, color: 'bg-cyan-100 text-cyan-600' },
+      { title: 'SDG 4: Quality Education', desc: 'Aligned with the United Nations Sustainable Development Goal 4, ensuring inclusive and equitable quality education for all.', icon: Target, color: 'bg-green-100 text-green-600' },
     ],
   },
   {
     category: 'Data & Security Standards',
     items: [
-      { title: 'GDPR Compliant', desc: 'Student and staff data is handled in compliance with the General Data Protection Regulation, ensuring privacy and data rights.', icon: Shield, color: 'bg-purple-900/30 text-purple-600' },
-      { title: 'Kenya Data Protection Act', desc: 'Full compliance with the Kenya Data Protection Act 2019, protecting personal data of all school stakeholders.', icon: Lock, color: 'bg-red-900/30 text-red-600' },
-      { title: 'SOC 2 Type II', desc: 'Our infrastructure meets SOC 2 Type II compliance standards for security, availability, and confidentiality of data.', icon: Server, color: 'bg-gray-100 text-slate-300' },
+      { title: 'GDPR Compliant', desc: 'Student and staff data is handled in compliance with the General Data Protection Regulation, ensuring privacy and data rights.', icon: Shield, color: 'bg-purple-100 text-purple-600' },
+      { title: 'Kenya Data Protection Act', desc: 'Full compliance with the Kenya Data Protection Act 2019, protecting personal data of all school stakeholders.', icon: Lock, color: 'bg-red-100 text-red-600' },
+      { title: 'SOC 2 Type II', desc: 'Our infrastructure meets SOC 2 Type II compliance standards for security, availability, and confidentiality of data.', icon: Server, color: 'bg-gray-100 text-gray-600' },
     ],
   },
   {
     category: 'Accessibility Standards',
     items: [
-      { title: 'WCAG 2.1 AA', desc: 'Our platform meets Web Content Accessibility Guidelines 2.1 Level AA, ensuring usability for people with diverse abilities.', icon: Users, color: 'bg-amber-900/30 text-amber-600' },
-      { title: 'Mobile-First Design', desc: 'Optimized for mobile devices commonly used in Kenyan schools. Works on low-bandwidth connections and affordable smartphones.', icon: Zap, color: 'bg-indigo-900/30 text-indigo-600' },
-      { title: 'Multi-Language Support', desc: 'Interface available in English and Kiswahili, with support for local language content in learning materials.', icon: MapPin, color: 'bg-rose-900/30 text-rose-600' },
+      { title: 'WCAG 2.1 AA', desc: 'Our platform meets Web Content Accessibility Guidelines 2.1 Level AA, ensuring usability for people with diverse abilities.', icon: Users, color: 'bg-amber-100 text-amber-600' },
+      { title: 'Mobile-First Design', desc: 'Optimized for mobile devices commonly used in Kenyan schools. Works on low-bandwidth connections and affordable smartphones.', icon: Zap, color: 'bg-indigo-100 text-indigo-600' },
+      { title: 'Multi-Language Support', desc: 'Interface available in English and Kiswahili, with support for local language content in learning materials.', icon: MapPin, color: 'bg-rose-100 text-rose-600' },
     ],
   },
 ];
@@ -86,7 +86,7 @@ export default function GlobalStandardsPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-white">
       <Header />
 
       {/* Hero */}
@@ -115,7 +115,7 @@ export default function GlobalStandardsPage() {
                 NONEAA meets international education, data protection, and accessibility standards. Your school&apos;s data is secure, your processes are compliant, and your learners get world-class tools.
               </motion.p>
               <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-slate-800 text-blue-900 hover:bg-blue-50" asChild>
+                <Button size="lg" className="bg-white text-blue-900 hover:bg-blue-50" asChild>
                   <Link to="/get-started">Get Started <ArrowRight className="w-4 h-4 ml-2" /></Link>
                 </Button>
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
@@ -146,7 +146,7 @@ export default function GlobalStandardsPage() {
       </section>
 
       {/* Certifications Bar */}
-      <section className="bg-slate-800/50 py-12">
+      <section className="bg-gray-50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {certifications.map((cert, i) => (
@@ -156,10 +156,10 @@ export default function GlobalStandardsPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="text-center p-6 rounded-xl bg-slate-800 shadow-sm"
+                className="text-center p-6 rounded-xl bg-white shadow-sm"
               >
                 <cert.icon className="w-8 h-8 text-blue-600 mx-auto mb-3" />
-                <p className="text-base font-bold text-white">{cert.name}</p>
+                <p className="text-base font-bold text-gray-900">{cert.name}</p>
                 <p className="text-xs text-muted-foreground mt-1">{cert.desc}</p>
               </motion.div>
             ))}
@@ -169,11 +169,11 @@ export default function GlobalStandardsPage() {
 
       {/* Standards Sections */}
       {standards.map((section, sectionIdx) => (
-        <AnimatedSection key={section.category} className={sectionIdx % 2 === 0 ? 'py-20' : 'py-20 bg-slate-800/50'}>
+        <AnimatedSection key={section.category} className={sectionIdx % 2 === 0 ? 'py-20' : 'py-20 bg-gray-50'}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div variants={fadeUp} custom={0} className="mb-12">
               <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-2">{section.category}</p>
-              <h2 className="text-3xl font-bold text-white">{section.category}</h2>
+              <h2 className="text-3xl font-bold text-gray-900">{section.category}</h2>
             </motion.div>
             <div className="grid md:grid-cols-3 gap-8">
               {section.items.map((item, i) => (
@@ -181,13 +181,13 @@ export default function GlobalStandardsPage() {
                   key={item.title}
                   variants={fadeUp}
                   custom={i + 1}
-                  className="bg-slate-800 rounded-2xl p-6 shadow-sm border hover:shadow-lg hover:-translate-y-1 transition-all group"
+                  className="bg-white rounded-2xl p-6 shadow-sm border hover:shadow-lg hover:-translate-y-1 transition-all group"
                 >
                   <div className={`flex h-12 w-12 items-center justify-center rounded-xl mb-4 ${item.color} group-hover:scale-110 transition-transform`}>
                     <item.icon className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
-                  <p className="text-sm text-slate-300">{item.desc}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>
+                  <p className="text-sm text-gray-600">{item.desc}</p>
                 </motion.div>
               ))}
             </div>
@@ -203,10 +203,10 @@ export default function GlobalStandardsPage() {
               <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
                 Why Standards Matter
               </motion.p>
-              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-white mb-6">
+              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
                 Trust Built on Transparency
               </motion.h2>
-              <motion.p variants={fadeUp} custom={2} className="text-lg text-slate-300 mb-8">
+              <motion.p variants={fadeUp} custom={2} className="text-lg text-gray-600 mb-8">
                 When you choose NONEAA, you choose a platform that holds itself to the highest standards — not because it&apos;s required, but because your learners deserve it.
               </motion.p>
               <div className="space-y-4">
@@ -218,19 +218,19 @@ export default function GlobalStandardsPage() {
                   { text: 'Dedicated data protection officer', icon: Lock },
                 ].map((item, i) => (
                   <motion.div key={i} variants={fadeUp} custom={3 + i} className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-900/30 flex-shrink-0 mt-0.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 flex-shrink-0 mt-0.5">
                       <item.icon className="w-4 h-4 text-blue-600" />
                     </div>
-                    <p className="text-slate-200">{item.text}</p>
+                    <p className="text-gray-700">{item.text}</p>
                   </motion.div>
                 ))}
               </div>
             </div>
-            <motion.div variants={fadeUp} custom={2} className="bg-gradient-to-br from-blue-950/30 to-indigo-950/30 rounded-3xl p-8 border border-blue-800">
+            <motion.div variants={fadeUp} custom={2} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 border border-blue-200">
               <div className="text-center space-y-6">
                 <Globe className="w-16 h-16 text-blue-600 mx-auto" />
-                <h3 className="text-2xl font-bold text-white">Trusted by 250+ Schools</h3>
-                <p className="text-slate-300">
+                <h3 className="text-2xl font-bold text-gray-900">Trusted by 250+ Schools</h3>
+                <p className="text-gray-600">
                   Schools across Kenya trust NONEAA to manage their academic data securely and in compliance with national and international standards.
                 </p>
                 <div className="grid grid-cols-3 gap-4 pt-4">
@@ -263,7 +263,7 @@ export default function GlobalStandardsPage() {
               Empower your school with a platform that meets world-class standards while being built specifically for Kenyan education.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="bg-slate-800 text-blue-900 hover:bg-blue-50" asChild>
+              <Button size="lg" className="bg-white text-blue-900 hover:bg-blue-50" asChild>
                 <Link to="/get-started">Get Started Free <ArrowRight className="w-4 h-4 ml-2" /></Link>
               </Button>
               <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
