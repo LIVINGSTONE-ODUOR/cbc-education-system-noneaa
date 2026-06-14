@@ -1,40 +1,62 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPin, Phone, Mail, Building2, ChevronDown, CreditCard,
-  Clock, Users, GraduationCap, HeadphonesIcon, MessageSquare, Shield
+  Clock, Users, GraduationCap, HeadphonesIcon, MessageSquare, Shield,
+  ArrowRight, Send, CheckCircle2, Sparkles, Globe, Zap, Star
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
+/* ─────────── Animation Variants ─────────── */
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } },
+};
+
+const stagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
+};
+
+/* ─────────── Data ─────────── */
 const contactInfo = [
   {
     icon: Phone,
     label: "Phone Support",
     value: "+254 111 276 271",
     subtext: "Mon–Fri, 8AM–6PM EAT",
-    href: "tel:+254111276271"
+    href: "tel:+254111276271",
+    color: 'blue',
   },
   {
     icon: Mail,
     label: "Email Support",
     value: "contact@noneaa.com",
     subtext: "We respond within 24 hours",
-    href: "mailto:contact@noneaa.com"
+    href: "mailto:contact@noneaa.com",
+    color: 'emerald',
   },
   {
     icon: MapPin,
     label: "Headquarters",
     value: "Westlands, Nairobi",
     subtext: "Kenya",
-    href: "#"
+    href: "#",
+    color: 'purple',
   },
   {
     icon: Building2,
     label: "Regional Offices",
     value: "Mombasa, Kisumu, Nakuru",
     subtext: "3 locations across Kenya",
-    href: "#"
+    href: "#",
+    color: 'amber',
   }
 ];
 
@@ -42,59 +64,71 @@ const supportOptions = [
   {
     icon: GraduationCap,
     title: "Schools & Institutions",
-    description: "Looking to implement CBE in your school? We'll walk you through onboarding, training, and setup."
+    description: "Looking to implement CBE in your school? We'll walk you through onboarding, training, and setup.",
+    color: 'blue',
   },
   {
     icon: HeadphonesIcon,
     title: "Technical Support",
-    description: "Experiencing issues with the platform? Our technical team can help troubleshoot and resolve problems quickly."
+    description: "Experiencing issues with the platform? Our technical team can help troubleshoot and resolve problems quickly.",
+    color: 'rose',
   },
   {
     icon: Users,
     title: "Partnership Inquiries",
-    description: "Interested in collaborating? We work with NGOs, government bodies, and education partners across East Africa."
+    description: "Interested in collaborating? We work with NGOs, government bodies, and education partners across East Africa.",
+    color: 'emerald',
   },
   {
     icon: MessageSquare,
     title: "General Inquiries",
-    description: "Have questions about our pricing, features, or how Noneaa works? We're happy to help."
+    description: "Have questions about our pricing, features, or how NONEAA works? We're happy to help.",
+    color: 'purple',
   }
 ];
 
 const faqs = [
   {
-    question: "How does Noneaa help with CBE assessment?",
-    answer: "Noneaa provides comprehensive CBE assessment tools that track learner competencies, generate detailed reports, and help teachers identify areas where students need additional support. Our platform aligns with Kenya's CBC curriculum framework."
+    question: "How does NONEAA help with CBE assessment?",
+    answer: "NONEAA provides comprehensive CBE assessment tools that track learner competencies across all 7 CBC areas, generate detailed reports, and help teachers identify where students need additional support. Our platform aligns fully with Kenya's KICD curriculum framework."
   },
   {
-    question: "Is Noneaa available on mobile devices?",
-    answer: "Yes. Noneaa is fully responsive and works on mobile devices, tablets, and desktops. Teachers and parents can access student data and manage assessments from anywhere with an internet connection."
+    question: "Is NONEAA available on mobile devices?",
+    answer: "Yes. NONEAA is fully responsive and works on mobile devices, tablets, and desktops. It also works offline and syncs when internet is available — designed for Kenyan school realities."
   },
   {
-    question: "How much does Noneaa cost?",
+    question: "How much does NONEAA cost?",
     answer: "We offer flexible pricing plans tailored to schools of all sizes — from single-stream primary schools to large multi-campus institutions. Contact our sales team for a custom quote based on your student count and feature needs."
   },
   {
     question: "Do you provide training for teachers?",
-    answer: "Yes. Every onboarding includes comprehensive training for administrators and teachers. We offer both in-person workshops and virtual training sessions, plus ongoing support documentation and video guides."
+    answer: "Yes. Every onboarding includes comprehensive training for administrators and teachers. We offer both in-person workshops and virtual training sessions, plus ongoing support via WhatsApp, documentation, and video guides."
   },
   {
     question: "Is my school data secure?",
-    answer: "Absolutely. We use enterprise-grade encryption, comply with Kenya's Data Protection Act (2019), and maintain SOC 2 aligned practices. All data is stored in secure cloud infrastructure with regular backups and strict access controls."
+    answer: "Absolutely. We use enterprise-grade encryption, comply with Kenya's Data Protection Act (KDPA), and maintain SOC 2 aligned practices. All data is stored in secure cloud infrastructure with regular backups and strict access controls."
   },
   {
-    question: "How long does it take to set up Noneaa for my school?",
+    question: "How long does it take to set up NONEAA for my school?",
     answer: "Most schools are fully onboarded within 1–2 weeks. This includes data migration, staff training, and curriculum configuration. Larger institutions with complex requirements may take 3–4 weeks."
   }
 ];
 
 const paymentMethods = [
-  { name: "M-Pesa", color: "bg-green-50 border-green-200" },
-  { name: "Visa", color: "bg-blue-50 border-blue-200" },
-  { name: "Mastercard", color: "bg-red-50 border-red-200" },
-  { name: "PayPal", color: "bg-indigo-50 border-indigo-200" },
-  { name: "Bank Transfer", color: "bg-slate-50 border-slate-200" }
+  { name: "M-Pesa", color: "from-green-500 to-green-600" },
+  { name: "Visa", color: "from-blue-500 to-blue-600" },
+  { name: "Mastercard", color: "from-red-500 to-orange-500" },
+  { name: "PayPal", color: "from-indigo-500 to-indigo-600" },
+  { name: "Bank Transfer", color: "from-slate-500 to-slate-600" }
 ];
+
+const colorMap: Record<string, { bg: string; iconBg: string; text: string; border: string }> = {
+  blue: { bg: 'bg-blue-50', iconBg: 'bg-blue-100', text: 'text-blue-600', border: 'border-blue-200' },
+  emerald: { bg: 'bg-emerald-50', iconBg: 'bg-emerald-100', text: 'text-emerald-600', border: 'border-emerald-200' },
+  purple: { bg: 'bg-purple-50', iconBg: 'bg-purple-100', text: 'text-purple-600', border: 'border-purple-200' },
+  amber: { bg: 'bg-amber-50', iconBg: 'bg-amber-100', text: 'text-amber-600', border: 'border-amber-200' },
+  rose: { bg: 'bg-rose-50', iconBg: 'bg-rose-100', text: 'text-rose-600', border: 'border-rose-200' },
+};
 
 type ContactErrors = {
   fullName?: string;
@@ -199,330 +233,502 @@ export default function ContactPage() {
     <div className="min-h-screen bg-[#e8edf5]">
       <Header />
 
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('/Gemini_Generated_Image_jrstonjrstonjrst.png')" }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/85 via-slate-900/80 to-blue-900/75" />
+      {/* ===== HERO SECTION ===== */}
+      <section className="relative min-h-[60vh] flex items-center overflow-hidden text-white">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950" />
 
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-            className="max-w-2xl"
-          >
-            <span className="inline-block text-sm font-semibold text-blue-300 uppercase tracking-wider mb-4">
-              Contact Us
-            </span>
-            <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-6">
-              Let's Build Better Education Together
-            </h1>
-            <p className="text-lg text-slate-300 leading-relaxed">
-              Whether you're a school looking to implement competency-based education, a partner interested in collaboration, or a user needing support — the Noneaa team is here to help.
-            </p>
-          </motion.div>
+        {/* Animated orbs */}
+        <motion.div className="absolute top-10 right-20 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 8, repeat: Infinity }} />
+        <motion.div className="absolute bottom-10 left-10 w-72 h-72 bg-cyan-500/15 rounded-full blur-3xl" animate={{ scale: [1.1, 1, 1.1], opacity: [0.3, 0.15, 0.3] }} transition={{ duration: 10, repeat: Infinity, delay: 1 }} />
+        <motion.div className="absolute top-1/2 left-1/3 w-56 h-56 bg-purple-500/10 rounded-full blur-3xl" animate={{ scale: [1, 1.3, 1], opacity: [0.1, 0.25, 0.1] }} transition={{ duration: 12, repeat: Infinity, delay: 2 }} />
+
+        <div className="max-w-7xl mx-auto px-6 relative z-10 w-full py-20">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }}>
+              <motion.div className="flex items-center gap-3 mb-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+                <div className="h-px w-10 bg-blue-400" />
+                <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Get in Touch</span>
+              </motion.div>
+
+              <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-6">
+                Let's Build Better<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">Education Together</span>
+              </h1>
+
+              <p className="text-lg text-slate-300 mb-8 leading-relaxed max-w-xl">
+                Whether you're a school looking to implement CBC, a partner interested in collaboration, or a user needing support — the NONEAA team is here to help you succeed.
+              </p>
+
+              {/* Quick stats */}
+              <div className="grid grid-cols-3 gap-6">
+                {[
+                  { num: '<24hrs', label: 'Email Response' },
+                  { num: '24/7', label: 'System Uptime' },
+                  { num: '98%', label: 'Satisfaction' },
+                ].map((s, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 + i * 0.15 }} className="text-center">
+                    <div className="text-2xl font-bold text-white">{s.num}</div>
+                    <div className="text-sm text-slate-400">{s.label}</div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Right side — contact cards */}
+            <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.3 }} className="hidden lg:grid grid-cols-2 gap-4">
+              {contactInfo.map((info, i) => {
+                const Icon = info.icon;
+                return (
+                  <motion.a
+                    key={i}
+                    href={info.href}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 + i * 0.1 }}
+                    whileHover={{ y: -4, scale: 1.02 }}
+                    className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-5 hover:bg-white/10 transition-all group"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center mb-3 group-hover:bg-white/20 transition-colors">
+                      <Icon className="w-5 h-5 text-blue-300" />
+                    </div>
+                    <div className="font-semibold text-white text-sm">{info.value}</div>
+                    <div className="text-xs text-slate-400 mt-1">{info.subtext}</div>
+                  </motion.a>
+                );
+              })}
+            </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Contact Info Bar */}
-      <section className="bg-slate-50 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 py-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {contactInfo.map((info, index) => {
+      {/* ===== CONTACT INFO BAR (mobile) ===== */}
+      <section className="lg:hidden bg-[#dfe5f0] border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="grid grid-cols-2 gap-4">
+            {contactInfo.map((info, i) => {
               const Icon = info.icon;
+              const c = colorMap[info.color];
               return (
-                <a
-                  key={index}
+                <motion.a
+                  key={i}
                   href={info.href}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-white hover:shadow-sm transition-all"
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05 }}
+                  className={`flex items-center gap-3 p-4 rounded-xl border ${c.border} bg-white hover:shadow-md transition-all`}
                 >
-                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
-                    <Icon className="w-5 h-5" />
+                  <div className={`w-10 h-10 rounded-lg ${c.iconBg} flex items-center justify-center flex-shrink-0`}>
+                    <Icon className={`w-5 h-5 ${c.text}`} />
                   </div>
                   <div>
                     <div className="font-semibold text-slate-900 text-sm">{info.value}</div>
                     <div className="text-xs text-slate-500">{info.subtext}</div>
                   </div>
-                </a>
+                </motion.a>
               );
             })}
           </div>
         </div>
       </section>
 
-      {/* Main Content: Form + Support Options */}
-      <main className="max-w-7xl mx-auto px-6 lg:px-12 py-16">
-        <div className="grid lg:grid-cols-5 gap-16">
+      {/* ===== MAIN CONTENT: FORM + SUPPORT ===== */}
+      <section className="py-20 bg-[#e8edf5]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid lg:grid-cols-5 gap-12">
 
-          {/* Left Column — Form */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 md:p-10">
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">Send Us a Message</h2>
-              <p className="text-slate-600 mb-8">
-                Fill out the form below and our team will get back to you within one business day.
-              </p>
-
-              <form onSubmit={handleSubmit} noValidate className="space-y-5">
-                <div className="grid md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                      Full Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleChange}
-                      placeholder="John Ochieng"
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-sm ${errors.fullName ? 'border-red-400 bg-red-50' : 'border-slate-300'}`}
-                    />
-                    {errors.fullName && (
-                      <p className="mt-1 text-xs text-red-600">{errors.fullName}</p>
-                    )}
+            {/* Left — Form */}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={scaleIn} className="lg:col-span-3">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-8 md:p-10">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <Send className="w-5 h-5 text-blue-600" />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                      Email Address <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder="john@school.ac.ke"
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-sm ${errors.email ? 'border-red-400 bg-red-50' : 'border-slate-300'}`}
-                    />
-                    {errors.email && (
-                      <p className="mt-1 text-xs text-red-600">{errors.email}</p>
-                    )}
-                  </div>
+                  <h2 className="text-2xl font-bold text-slate-900">Send Us a Message</h2>
                 </div>
+                <p className="text-slate-500 mb-8 ml-13">
+                  Fill out the form below and our team will get back to you within one business day.
+                </p>
 
-                <div className="grid md:grid-cols-2 gap-5">
+                <form onSubmit={handleSubmit} noValidate className="space-y-5">
+                  <div className="grid md:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        Full Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="fullName"
+                        value={formData.fullName}
+                        onChange={handleChange}
+                        placeholder="John Ochieng"
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-sm bg-slate-50 ${errors.fullName ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}
+                      />
+                      {errors.fullName && <p className="mt-1 text-xs text-red-600">{errors.fullName}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        Email Address <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        placeholder="john@school.ac.ke"
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-sm bg-slate-50 ${errors.email ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}
+                      />
+                      {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Phone Number</label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        placeholder="+254 712 345 678"
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-sm bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">School / Institution</label>
+                      <input
+                        type="text"
+                        name="school"
+                        value={formData.school}
+                        onChange={handleChange}
+                        placeholder="Nairobi Academy"
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-sm bg-slate-50"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Subject</label>
+                    <select
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-sm text-slate-700 bg-slate-50"
+                    >
+                      <option value="">Select a topic</option>
+                      <option value="demo">Request a Demo</option>
+                      <option value="pricing">Pricing & Plans</option>
+                      <option value="technical">Technical Support</option>
+                      <option value="partnership">Partnership Inquiry</option>
+                      <option value="feedback">Feedback & Suggestions</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                      Phone Number
+                      Message <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
+                    <textarea
+                      name="message"
+                      value={formData.message}
                       onChange={handleChange}
-                      placeholder="+254 712 345 678"
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-sm"
+                      rows={5}
+                      placeholder="Tell us how we can help your institution..."
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none text-sm bg-slate-50 ${errors.message ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}
                     />
+                    {errors.message && <p className="mt-1 text-xs text-red-600">{errors.message}</p>}
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                      School / Institution
-                    </label>
-                    <input
-                      type="text"
-                      name="school"
-                      value={formData.school}
-                      onChange={handleChange}
-                      placeholder="Nairobi Academy"
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-sm"
-                    />
-                  </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Subject
-                  </label>
-                  <select
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-sm text-slate-700"
+                  <motion.button
+                    type="submit"
+                    disabled={isSubmitting}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-slate-400 disabled:to-slate-500 text-white font-semibold py-3.5 rounded-xl transition-all text-sm shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
                   >
-                    <option value="">Select a topic</option>
-                    <option value="demo">Request a Demo</option>
-                    <option value="pricing">Pricing & Plans</option>
-                    <option value="technical">Technical Support</option>
-                    <option value="partnership">Partnership Inquiry</option>
-                    <option value="feedback">Feedback & Suggestions</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
+                    {isSubmitting ? (
+                      <>
+                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        Send Message <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </motion.button>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Message <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    name="message"
-                    value={formData.message}
-                    onChange={handleChange}
-                    rows={5}
-                    placeholder="Tell us how we can help your institution..."
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none text-sm ${errors.message ? 'border-red-400 bg-red-50' : 'border-slate-300'}`}
-                  />
-                  {errors.message && (
-                    <p className="mt-1 text-xs text-red-600">{errors.message}</p>
-                  )}
-                </div>
+                  <AnimatePresence>
+                    {status && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className={`p-4 rounded-xl text-sm flex items-start gap-3 ${
+                          status.type === 'success'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-red-50 text-red-700 border border-red-200'
+                        }`}
+                      >
+                        {status.type === 'success' ? (
+                          <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                        ) : (
+                          <Shield className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                        )}
+                        {status.message}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </form>
+              </div>
+            </motion.div>
 
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-semibold py-3 rounded-lg transition-colors text-sm"
-                >
-                  {isSubmitting ? 'Sending...' : 'Send Message'}
-                </button>
+            {/* Right — Support Options */}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="lg:col-span-2 space-y-5">
+              <motion.div variants={fadeUp}>
+                <h3 className="text-xl font-bold text-slate-900 mb-1">How Can We Help?</h3>
+                <p className="text-sm text-slate-500 mb-6">Choose the category that best describes your inquiry.</p>
+              </motion.div>
 
-                {status && (
-                  <div
-                    className={`p-4 rounded-lg text-sm ${
-                      status.type === 'success'
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : 'bg-red-50 text-red-700 border border-red-200'
-                    }`}
+              {supportOptions.map((option, i) => {
+                const Icon = option.icon;
+                const c = colorMap[option.color];
+                return (
+                  <motion.div
+                    key={i}
+                    variants={fadeUp}
+                    whileHover={{ x: 4 }}
+                    className={`flex items-start gap-4 p-5 rounded-xl border ${c.border} bg-white hover:shadow-md transition-all cursor-pointer group`}
                   >
-                    {status.message}
-                  </div>
-                )}
-              </form>
-            </div>
-          </div>
+                    <div className={`w-11 h-11 rounded-xl ${c.iconBg} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
+                      <Icon className={`w-5 h-5 ${c.text}`} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm mb-1">{option.title}</h4>
+                      <p className="text-xs text-slate-600 leading-relaxed">{option.description}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
 
-          {/* Right Column — Support Options */}
-          <div className="lg:col-span-2 space-y-6">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900 mb-1">How Can We Help?</h3>
-              <p className="text-sm text-slate-500 mb-5">Choose the category that best describes your inquiry.</p>
-            </div>
-
-            {supportOptions.map((option, index) => {
-              const Icon = option.icon;
-              return (
-                <div
-                  key={index}
-                  className="flex items-start gap-4 p-5 rounded-xl border border-slate-200 hover:border-blue-200 hover:bg-blue-50/30 transition-all"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
-                    <Icon className="w-5 h-5" />
+              {/* Response Time Card */}
+              <motion.div variants={fadeUp}>
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 text-white relative overflow-hidden">
+                  <motion.div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                        <Clock className="w-5 h-5 text-blue-200" />
+                      </div>
+                      <span className="font-bold text-sm">Average Response Times</span>
+                    </div>
+                    <div className="space-y-3">
+                      {[
+                        { label: 'Email inquiries', time: 'Within 24 hours', bar: 'w-3/4' },
+                        { label: 'Phone support', time: 'Immediate', bar: 'w-full' },
+                        { label: 'Technical issues', time: 'Within 4 hours', bar: 'w-5/6' },
+                        { label: 'Partnership inquiries', time: '2–3 business days', bar: 'w-1/2' },
+                      ].map((r, i) => (
+                        <div key={i}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-blue-100">{r.label}</span>
+                            <span className="font-medium">{r.time}</span>
+                          </div>
+                          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <motion.div
+                              className="h-full bg-gradient-to-r from-cyan-400 to-blue-300 rounded-full"
+                              initial={{ width: 0 }}
+                              whileInView={{ width: '100%' }}
+                              viewport={{ once: true }}
+                              transition={{ delay: i * 0.15, duration: 0.8 }}
+                              style={{ maxWidth: r.bar === 'w-full' ? '100%' : r.bar === 'w-5/6' ? '83%' : r.bar === 'w-3/4' ? '75%' : '50%' }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-slate-900 text-sm">{option.title}</h4>
-                    <p className="text-xs text-slate-600 mt-1 leading-relaxed">{option.description}</p>
-                  </div>
                 </div>
-              );
-            })}
-
-            {/* Response Time */}
-            <div className="p-5 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white">
-              <div className="flex items-center gap-3 mb-3">
-                <Clock className="w-5 h-5 text-blue-200" />
-                <span className="font-semibold text-sm">Average Response Times</span>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-blue-100">Email inquiries</span>
-                  <span className="font-medium">Within 24 hours</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-blue-100">Phone support</span>
-                  <span className="font-medium">Immediate</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-blue-100">Technical issues</span>
-                  <span className="font-medium">Within 4 hours</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-blue-100">Partnership inquiries</span>
-                  <span className="font-medium">2–3 business days</span>
-                </div>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
         </div>
+      </section>
 
-        {/* FAQ Section */}
-        <section className="mt-24">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 mb-3">Frequently Asked Questions</h2>
-            <p className="text-slate-600 max-w-xl mx-auto">
-              Find quick answers to common questions about Noneaa, our platform features, and getting started.
-            </p>
+      {/* ===== WHY CONTACT US ===== */}
+      <section className="py-16 bg-[#dfe5f0]">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-12">
+            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200 mb-6">
+              <Sparkles className="w-4 h-4 text-emerald-600" />
+              <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Why Choose NONEAA</span>
+            </motion.div>
+            <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-4">We're More Than Just Software</motion.h2>
+            <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-2xl mx-auto">Every school gets a dedicated team committed to their success</motion.p>
+          </motion.div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { icon: Zap, title: 'Fast Onboarding', desc: 'Get your school up and running in under 2 weeks with our guided setup process.', gradient: 'from-amber-500 to-orange-500' },
+              { icon: Users, title: 'Dedicated Support', desc: 'Every school gets a named account manager and WhatsApp support channel.', gradient: 'from-blue-500 to-cyan-500' },
+              { icon: GraduationCap, title: 'Teacher Training', desc: 'Comprehensive in-person and virtual training for all staff members.', gradient: 'from-emerald-500 to-teal-500' },
+              { icon: Globe, title: 'Growing Network', desc: 'Join 120+ schools across Kenya transforming education together.', gradient: 'from-purple-500 to-pink-500' },
+            ].map((item, i) => (
+              <motion.div key={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ delay: i * 0.1 }} whileHover={{ y: -5 }}>
+                <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center h-full hover:shadow-lg transition-all group">
+                  <motion.div whileHover={{ rotate: 10, scale: 1.1 }} className={`w-14 h-14 rounded-xl bg-gradient-to-r ${item.gradient} flex items-center justify-center mx-auto mb-5 shadow-lg`}>
+                    <item.icon className="w-7 h-7 text-white" />
+                  </motion.div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">{item.title}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{item.desc}</p>
+                </div>
+              </motion.div>
+            ))}
           </div>
+        </div>
+      </section>
+
+      {/* ===== FAQ SECTION ===== */}
+      <section className="py-20 bg-[#e8edf5]">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-12">
+            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-200 mb-6">
+              <MessageSquare className="w-4 h-4 text-blue-600" />
+              <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">FAQ</span>
+            </motion.div>
+            <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-4">Frequently Asked Questions</motion.h2>
+            <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-2xl mx-auto">Find quick answers to common questions about NONEAA and getting started</motion.p>
+          </motion.div>
+
           <div className="max-w-3xl mx-auto space-y-3">
             {faqs.map((faq, index) => (
-              <div
+              <motion.div
                 key={index}
-                className="border border-slate-200 rounded-lg overflow-hidden"
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.05 }}
+                className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
               >
                 <button
                   onClick={() => setExpandedFaq(expandedFaq === index ? -1 : index)}
-                  className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-slate-50 transition-colors"
+                  className="w-full px-6 py-5 text-left flex items-center justify-between hover:bg-slate-50/50 transition-colors"
                 >
-                  <span className="font-medium text-slate-900 text-sm pr-4">{faq.question}</span>
-                  <ChevronDown
-                    className={`w-4 h-4 text-slate-500 flex-shrink-0 transition-transform ${
-                      expandedFaq === index ? 'rotate-180' : ''
-                    }`}
-                  />
+                  <span className="font-semibold text-slate-900 text-sm pr-4">{faq.question}</span>
+                  <motion.div animate={{ rotate: expandedFaq === index ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                    <ChevronDown className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                  </motion.div>
                 </button>
-                {expandedFaq === index && (
-                  <div className="px-6 py-4 bg-slate-50 border-t border-slate-200">
-                    <p className="text-sm text-slate-700 leading-relaxed">{faq.answer}</p>
-                  </div>
-                )}
-              </div>
+                <AnimatePresence>
+                  {expandedFaq === index && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-6 py-4 bg-blue-50/30 border-t border-gray-100">
+                        <p className="text-sm text-slate-700 leading-relaxed">{faq.answer}</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Payment & Trust Section */}
-        <section className="mt-24 pb-8">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900 mb-3">Flexible Payment Options</h2>
-              <p className="text-slate-600 text-sm leading-relaxed mb-6">
-                We accept a variety of payment methods to make it easy for schools across Kenya and East Africa to get started with Noneaa. All transactions are processed securely.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                {paymentMethods.map((method, index) => (
-                  <div
-                    key={index}
-                    className={`${method.color} border rounded-lg px-4 py-3 flex items-center gap-2`}
+      {/* ===== PAYMENT & TRUST ===== */}
+      <section className="py-20 bg-[#dfe5f0]">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-12">
+            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-50 border border-purple-200 mb-6">
+              <CreditCard className="w-4 h-4 text-purple-600" />
+              <span className="text-xs font-semibold text-purple-600 uppercase tracking-wider">Payments</span>
+            </motion.div>
+            <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-4">Flexible Payment Options</motion.h2>
+            <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-2xl mx-auto">We accept multiple payment methods to make it easy for schools across Kenya to get started</motion.p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 gap-10 items-center max-w-5xl mx-auto">
+            {/* Payment methods */}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={scaleIn}>
+              <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+                {paymentMethods.map((method, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    whileHover={{ y: -3, scale: 1.05 }}
+                    className={`bg-gradient-to-r ${method.color} rounded-xl px-6 py-4 flex items-center gap-3 shadow-lg text-white`}
                   >
-                    <CreditCard className="w-4 h-4 text-slate-600" />
-                    <span className="font-medium text-slate-800 text-sm">{method.name}</span>
-                  </div>
+                    <CreditCard className="w-5 h-5" />
+                    <span className="font-bold text-sm">{method.name}</span>
+                  </motion.div>
                 ))}
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 text-center">
-                <Shield className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                <p className="font-semibold text-slate-900 text-sm">Secure Payments</p>
-                <p className="text-xs text-slate-500 mt-1">256-bit SSL encryption</p>
-              </div>
-              <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 text-center">
-                <Clock className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                <p className="font-semibold text-slate-900 text-sm">Instant Activation</p>
-                <p className="text-xs text-slate-500 mt-1">Access within minutes</p>
-              </div>
-              <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 text-center">
-                <Users className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                <p className="font-semibold text-slate-900 text-sm">150+ Schools</p>
-                <p className="text-xs text-slate-500 mt-1">Trusted nationwide</p>
-              </div>
-              <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 text-center">
-                <GraduationCap className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                <p className="font-semibold text-slate-900 text-sm">50K+ Students</p>
-                <p className="text-xs text-slate-500 mt-1">Actively using Noneaa</p>
-              </div>
-            </div>
+              <p className="text-sm text-slate-500 mt-6 text-center md:text-left">
+                All transactions are processed securely with 256-bit SSL encryption.
+              </p>
+            </motion.div>
+
+            {/* Trust badges */}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid grid-cols-2 gap-4">
+              {[
+                { icon: Shield, title: 'Secure Payments', desc: '256-bit SSL encryption', color: 'blue' },
+                { icon: Zap, title: 'Instant Activation', desc: 'Access within minutes', color: 'amber' },
+                { icon: Star, title: '120+ Schools', desc: 'Trusted nationwide', color: 'emerald' },
+                { icon: GraduationCap, title: '19K+ Students', desc: 'Actively using NONEAA', color: 'purple' },
+              ].map((badge, i) => {
+                const c = colorMap[badge.color];
+                return (
+                  <motion.div key={i} variants={fadeUp} whileHover={{ y: -3 }}>
+                    <div className={`bg-white p-5 rounded-xl border ${c.border} text-center hover:shadow-md transition-all`}>
+                      <div className={`w-10 h-10 rounded-lg ${c.iconBg} flex items-center justify-center mx-auto mb-3`}>
+                        <badge.icon className={`w-5 h-5 ${c.text}`} />
+                      </div>
+                      <p className="font-bold text-slate-900 text-sm">{badge.title}</p>
+                      <p className="text-xs text-slate-500 mt-1">{badge.desc}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
           </div>
-        </section>
-      </main>
+        </div>
+      </section>
+
+      {/* ===== CTA ===== */}
+      <section className="py-20 bg-[#e8edf5]">
+        <div className="max-w-5xl mx-auto px-6">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={scaleIn}>
+            <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 rounded-3xl p-12 md:p-16 text-center text-white relative overflow-hidden">
+              <motion.div className="absolute top-0 right-0 w-72 h-72 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+              <motion.div className="absolute bottom-0 left-0 w-56 h-56 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+
+              <div className="relative z-10">
+                <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Get Started?</h2>
+                <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
+                  Schedule a free demo with our team and see how NONEAA can transform your school's CBC implementation.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <motion.a href="/demo" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="px-8 py-4 bg-white text-blue-600 font-bold rounded-xl hover:bg-gray-50 transition-colors shadow-lg inline-flex items-center justify-center gap-2">
+                    Request a Demo <ArrowRight className="w-5 h-5" />
+                  </motion.a>
+                  <motion.a href="/getting-started" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="px-8 py-4 border-2 border-white/50 text-white font-bold rounded-xl hover:bg-white/10 transition-colors inline-flex items-center justify-center gap-2">
+                    Get Started Free
+                  </motion.a>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
       <Footer />
     </div>
