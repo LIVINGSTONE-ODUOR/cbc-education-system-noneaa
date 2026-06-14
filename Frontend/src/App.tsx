@@ -89,7 +89,7 @@ import ParentPortal from "./pages/Parent-Portal/Parent-Portal";
 import DepartmentsPage from "@/pages/auth/school-admin/teachers/departments/DepartmentsPage";
 
 // Placeholder Pages
-import CurriculumPage from "@/pages/auth/school-admin/Curriculum";
+import AdminCurriculumPage from "@/pages/auth/school-admin/Curriculum";
 import ReportsPage from "@/pages/auth/school-admin/Reports";
 import SettingsPage from "./pages/auth/school-admin/Settings/Settings";
 import ProfileSettings from "./pages/auth/school-admin/Settings/ProfileSettings";
@@ -297,7 +297,7 @@ function AppRoutes() {
                 <Route path="learners/classes" element={<StudentClasses />} />
 
                 {/* ── Other Admin Pages ── */}
-                <Route path="curriculum" element={<CurriculumPage />} />
+                <Route path="curriculum" element={<AdminCurriculumPage />} />
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="settings/profile" element={<ProfileSettings />} />
