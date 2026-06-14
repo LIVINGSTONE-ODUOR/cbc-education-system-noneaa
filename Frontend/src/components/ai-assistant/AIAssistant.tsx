@@ -1,26 +1,29 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { X, Send, Sparkles, Bot, User, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import jarvisLogo from '@/assets/jarvis.png';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  timestamp: Date;
 }
 
-const GREETING_TEXT = 'Hi there 👋! My name is Jarvis, your online Assistant. Ask me anything you need to know about our platform!';
-const PANEL_WIDTH = 380;
-const PANEL_HEIGHT_FALLBACK = 500;
-const GREETING_CHARS = Array.from(GREETING_TEXT);
-const TYPING_SPEED_MS = 30;
+const GREETING_TEXT = "Hi! I'm Anna, your AI assistant for the NONEAA platform. I can help you with anything related to Kenya's Competency-Based Education system. What would you like to know?";
+const TYPING_SPEED_MS = 25;
 const INPUT_MAX_HEIGHT_PX = 120;
 
-const SYSTEM_CONTEXT = `You are a helpful AI assistant for the Nonea CBE Education Platform. You strictly answer questions related to:
+const QUICK_PROMPTS = [
+  'What is CBC?',
+  'How does assessment work?',
+  'Tell me about NONEAA',
+  'CBC structure explained',
+];
+
+const SYSTEM_CONTEXT = `You are Anna, a friendly and knowledgeable AI assistant for the NONEAA CBE Education Platform. You strictly answer questions related to:
 1. The Kenyan Competency-Based Education (CBE) system
-2. The Nonea platform features and functionality
+2. The NONEAA platform features and functionality
 3. How teachers, parents, and school administrators can use the platform
 4. CBE curriculum structure, learning areas, strands, and competencies
 5. Assessment methods under CBE (formative and summative)
@@ -34,7 +37,9 @@ Key CBE information:
 - CBE focuses on learner competencies rather than content coverage
 - The structure is: 2 years Early Years, 6 years Primary, 3 years Junior Secondary, 3 years Senior Secondary, 3+ years Tertiary
 - Core competencies include: Communication, Collaboration, Critical Thinking, Creativity, Citizenship, Digital Literacy, Learning to Learn, Self-Efficacy
-- Assessment is continuous and formative, focusing on competency development`;
+- Assessment is continuous and formative, focusing on competency development
+
+Keep responses concise, helpful, and conversational. Use simple formatting. Be warm and approachable.`;
 
 // Gemini API configuration
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
@@ -87,26 +92,23 @@ async function callGemini(messages: { role: string; content: string }[], systemP
 }
 
 export default function AIAssistant() {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'assistant',
-      content: GREETING_TEXT
+      content: GREETING_TEXT,
+      timestamp: new Date(),
     }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showTypingIndicator, setShowTypingIndicator] = useState(false);
   const [greetingText, setGreetingText] = useState('');
   const [greetingComplete, setGreetingComplete] = useState(false);
-  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const chatWindowRef = useRef<HTMLDivElement>(null);
+  const [showScrollDown, setShowScrollDown] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const greetingStartedRef = useRef(false);
   const greetingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -116,41 +118,17 @@ export default function AIAssistant() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, showTypingIndicator]);
-
-  useEffect(() => {
-    // Clear any existing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    // Add delay before showing typing indicator to make it feel like a transition
-    if (isLoading) {
-      typingTimeoutRef.current = setTimeout(() => {
-        setShowTypingIndicator(true);
-      }, 600); // 600ms delay before showing the typing indicator
-    } else {
-      setShowTypingIndicator(false);
-      // Refocus the input once AI finishes responding
-      inputRef.current?.focus();
-    }
-
-    // Cleanup timeout on unmount or when isLoading changes
-    return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    };
-  }, [isLoading]);
+  }, [messages, isLoading]);
 
   useEffect(() => {
     if (isOpen && !greetingStartedRef.current) {
       greetingStartedRef.current = true;
+      const chars = Array.from(GREETING_TEXT);
       let charIndex = 0;
       const typeNextChar = () => {
         charIndex += 1;
-        setGreetingText(GREETING_CHARS.slice(0, charIndex).join(''));
-        if (charIndex < GREETING_CHARS.length) {
+        setGreetingText(chars.slice(0, charIndex).join(''));
+        if (charIndex < chars.length) {
           greetingTimeoutRef.current = setTimeout(typeNextChar, TYPING_SPEED_MS);
         } else {
           setGreetingComplete(true);
@@ -167,59 +145,37 @@ export default function AIAssistant() {
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
-      inputRef.current.focus();
+      setTimeout(() => inputRef.current?.focus(), 300);
     }
   }, [isOpen]);
 
-  const handleDragMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    // Only drag on primary mouse button
-    if (e.button !== 0) return;
-    e.preventDefault();
-    const rect = chatWindowRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    dragOffsetRef.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
-    setIsDragging(true);
+  const handleScroll = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+    setShowScrollDown(!isNearBottom);
   }, []);
 
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const winW = window.innerWidth;
-      const winH = window.innerHeight;
-      const panelW = chatWindowRef.current?.offsetWidth ?? PANEL_WIDTH;
-      const panelH = chatWindowRef.current?.offsetHeight ?? PANEL_HEIGHT_FALLBACK;
-      const newX = Math.min(Math.max(0, e.clientX - dragOffsetRef.current.x), winW - panelW);
-      const newY = Math.min(Math.max(0, e.clientY - dragOffsetRef.current.y), winH - panelH);
-      setPosition({ x: newX, y: newY });
-    };
-
-    const handleMouseUp = () => setIsDragging(false);
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging]);
-
-  const handleSendMessage = async (e?: React.FormEvent) => {
+  const handleSendMessage = async (e?: React.FormEvent, customMessage?: string) => {
     e?.preventDefault();
-    if (!input.trim() || isLoading) return;
+    const messageText = customMessage || input.trim();
+    if (!messageText || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input.trim()
+      content: messageText,
+      timestamp: new Date(),
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+
+    // Reset textarea height
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+    }
 
     try {
       const allMessages = [...messages, userMessage].map(m => ({
@@ -262,6 +218,7 @@ export default function AIAssistant() {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: reply,
+        timestamp: new Date(),
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -270,7 +227,8 @@ export default function AIAssistant() {
       const fallbackMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Assistant is currently offline. Please contact our team directly if you have any queries.',
+        content: 'I\'m having trouble connecting right now. Please try again in a moment, or reach out to us at contact@teksoft.co.ke for direct assistance.',
+        timestamp: new Date(),
       };
       setMessages(prev => [...prev, fallbackMessage]);
     } finally {
@@ -290,142 +248,231 @@ export default function AIAssistant() {
     el.style.height = `${Math.min(el.scrollHeight, INPUT_MAX_HEIGHT_PX)}px`;
   };
 
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  };
+
   return (
     <>
-      {/* Floating Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center",
-          "bg-primary hover:bg-primary/90 text-primary-foreground",
-          "hover:scale-110 active:scale-95",
-          isOpen && "rotate-90"
-        )}
-        aria-label={isOpen ? "Close AI Assistant" : "Open AI Assistant"}
-      >
-        {isOpen ? (
-          <X className="w-6 h-6" />
-        ) : (
-          <img src={jarvisLogo} alt="Jarvis" className="w-10 h-10 object-cover rounded-full" />
-        )}
-      </button>
-
-      {/* Chat Window */}
-      <div
-        ref={chatWindowRef}
-        style={position ? { left: position.x, top: position.y, bottom: 'auto', right: 'auto' } : undefined}
-        className={cn(
-          "fixed z-50 w-[380px] max-w-[calc(100vw-3rem)] bg-card border border-border shadow-2xl overflow-hidden",
-          "transition-[opacity,transform] duration-300",
-          !position && "bottom-24 right-6",
-          isOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none",
-          isDragging && "select-none"
-        )}
-      >
-        {/* Header — drag handle */}
-        <div
-          onMouseDown={handleDragMouseDown}
-          className="bg-primary text-primary-foreground p-4 flex items-center gap-3 cursor-move"
-        >
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
-            <img src={jarvisLogo} alt="Jarvis" className="w-10 h-10 object-cover rounded-full" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-semibold">Jarvis</h3>
-            <p className="text-xs text-primary-foreground/70">online</p>
-          </div>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="p-1 hover:bg-white/20 rounded-full transition-colors"
+      {/* Modern Floating AI Button */}
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setIsOpen(true)}
+            className="fixed bottom-6 right-6 z-50 group"
+            aria-label="Open AI Assistant"
           >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+            <div className="relative">
+              {/* Pulse ring */}
+              <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-blue-500 rounded-full animate-ping opacity-20" />
+              {/* Button */}
+              <div className="relative w-14 h-14 bg-gradient-to-br from-violet-600 via-blue-600 to-indigo-700 rounded-full shadow-lg shadow-blue-500/25 flex items-center justify-center overflow-hidden">
+                {/* Shimmer effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                <Sparkles className="w-6 h-6 text-white relative z-10" />
+              </div>
+              {/* Label */}
+              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                Ask Anna
+              </div>
+            </div>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
-        {/* Messages */}
-        <div className="h-[350px] overflow-y-auto p-4 space-y-4 bg-background">
-          {messages.map((message) => (
+      {/* Chat Panel */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="fixed bottom-6 right-6 z-50 w-[400px] max-w-[calc(100vw-2rem)] h-[600px] max-h-[calc(100vh-3rem)] flex flex-col bg-white rounded-2xl shadow-2xl shadow-blue-900/10 border border-gray-200/80 overflow-hidden"
+          >
+            {/* Header */}
+            <div className="relative bg-gradient-to-r from-violet-600 via-blue-600 to-indigo-700 px-5 py-4 flex-shrink-0">
+              {/* Decorative pattern */}
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute bottom-0 left-0 w-20 h-20 bg-white rounded-full translate-y-1/2 -translate-x-1/2" />
+              </div>
+
+              <div className="relative flex items-center gap-3">
+                {/* Avatar */}
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/30">
+                    <Bot className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-indigo-600" />
+                </div>
+
+                {/* Info */}
+                <div className="flex-1">
+                  <h3 className="text-white font-semibold text-sm">Anna</h3>
+                  <p className="text-blue-100 text-xs">AI Assistant • Always online</p>
+                </div>
+
+                {/* Close */}
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                  aria-label="Close chat"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+              </div>
+            </div>
+
+            {/* Messages Area */}
             <div
-              key={message.id}
-              className={cn(
-                "flex gap-2",
-                message.role === 'user' ? "justify-end" : "justify-start"
-              )}
+              ref={messagesContainerRef}
+              onScroll={handleScroll}
+              className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white"
             >
-              {message.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                  <img src={jarvisLogo} alt="Jarvis" className="w-full h-full object-cover" />
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={cn(
+                    "flex gap-2.5",
+                    message.role === 'user' ? "justify-end" : "justify-start"
+                  )}
+                >
+                  {/* Assistant avatar */}
+                  {message.role === 'assistant' && (
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center flex-shrink-0 mt-1">
+                      <Bot className="w-3.5 h-3.5 text-white" />
+                    </div>
+                  )}
+
+                  <div className={cn("max-w-[78%] flex flex-col", message.role === 'user' ? "items-end" : "items-start")}>
+                    <div
+                      className={cn(
+                        "rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
+                        message.role === 'user'
+                          ? "bg-gradient-to-br from-violet-600 to-blue-600 text-white rounded-br-md"
+                          : "bg-white text-gray-700 shadow-sm border border-gray-100 rounded-bl-md"
+                      )}
+                    >
+                      {message.id === '1' && !greetingComplete ? (
+                        <span>
+                          {greetingText}
+                          <span className="inline-block w-0.5 h-3.5 bg-violet-500 ml-0.5 align-middle animate-pulse" aria-hidden="true" />
+                        </span>
+                      ) : (
+                        <span className="whitespace-pre-wrap">{message.content}</span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-gray-400 mt-1 px-1">
+                      {formatTime(message.timestamp)}
+                    </span>
+                  </div>
+
+                  {/* User avatar */}
+                  {message.role === 'user' && (
+                    <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 mt-1">
+                      <User className="w-3.5 h-3.5 text-gray-600" />
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Typing indicator */}
+              {isLoading && (
+                <div className="flex gap-2.5 justify-start">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <div className="bg-white shadow-sm border border-gray-100 rounded-2xl rounded-bl-md px-4 py-3">
+                    <div className="flex items-center gap-1">
+                      <div className="flex gap-1">
+                        <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
-              <div
-                className={cn(
-                  "max-w-[80%] rounded-2xl px-4 py-2 text-sm",
-                  message.role === 'user'
-                    ? "bg-primary text-primary-foreground rounded-br-md"
-                    : "bg-muted text-foreground rounded-bl-md"
-                )}
-              >
-                {message.id === '1' && !greetingComplete ? (
-                  <span>
-                    {greetingText}
-                    <span className="inline-block w-0.5 h-3.5 bg-current ml-0.5 align-middle animate-pulse" aria-hidden="true" />
-                  </span>
-                ) : (
-                  message.content
-                )}
-              </div>
-            </div>
-          ))}
-          {showTypingIndicator && (
-            <div className="flex gap-2 justify-start" role="status" aria-label="AI is typing a response">
-              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                <img src={jarvisLogo} alt="Jarvis" className="w-full h-full object-cover" />
-              </div>
-              <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
-                <span className="text-sm text-muted-foreground inline-flex gap-1">
-                  typing
-                  <span className="inline-flex gap-0.5" aria-hidden="true">
-                    <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
-                    <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
-                    <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
-                  </span>
-                </span>
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
 
-        {/* Input */}
-        <form onSubmit={handleSendMessage} className="p-3 border-t border-border bg-card">
-          <div className="flex items-end gap-2 bg-background border border-border rounded-2xl px-3 py-2 focus-within:ring-2 focus-within:ring-primary/40 focus-within:border-primary transition-all">
-            <Textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                autoResize(e.target);
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask about CBE... (Shift+Enter for new line)"
-              rows={1}
-              className="flex-1 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm leading-5 min-h-[36px] p-0 py-1 placeholder:text-muted-foreground/60"
-              style={{ maxHeight: INPUT_MAX_HEIGHT_PX }}
-            />
-            <Button
-              type="submit"
-              size="icon"
-              disabled={!input.trim() || isLoading}
-              className="h-8 w-8 rounded-xl flex-shrink-0 mb-0.5"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
-            Powered by Teksoft Team
-          </p>
-        </form>
-      </div>
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Scroll to bottom button */}
+            <AnimatePresence>
+              {showScrollDown && (
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  onClick={scrollToBottom}
+                  className="absolute bottom-[140px] left-1/2 -translate-x-1/2 w-8 h-8 bg-white shadow-md border border-gray-200 rounded-full flex items-center justify-center hover:shadow-lg transition"
+                >
+                  <ArrowDown className="w-4 h-4 text-gray-600" />
+                </motion.button>
+              )}
+            </AnimatePresence>
+
+            {/* Quick Prompts (shown when few messages) */}
+            {messages.length <= 1 && greetingComplete && (
+              <div className="px-4 pb-2 flex-shrink-0">
+                <div className="flex flex-wrap gap-2">
+                  {QUICK_PROMPTS.map((prompt) => (
+                    <button
+                      key={prompt}
+                      onClick={() => handleSendMessage(undefined, prompt)}
+                      className="text-xs px-3 py-1.5 bg-violet-50 text-violet-700 rounded-full hover:bg-violet-100 border border-violet-200/50 transition-colors"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Input Area */}
+            <div className="flex-shrink-0 border-t border-gray-100 bg-white p-3">
+              <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-violet-300 focus-within:ring-2 focus-within:ring-violet-100 transition-all">
+                  <textarea
+                    ref={inputRef}
+                    value={input}
+                    onChange={(e) => {
+                      setInput(e.target.value);
+                      autoResize(e.target);
+                    }}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Ask Anna anything..."
+                    rows={1}
+                    className="w-full resize-none border-0 bg-transparent text-sm leading-5 min-h-[24px] p-0 text-gray-800 placeholder:text-gray-400 focus:outline-none"
+                    style={{ maxHeight: INPUT_MAX_HEIGHT_PX }}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={!input.trim() || isLoading}
+                  className={cn(
+                    "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all",
+                    input.trim() && !isLoading
+                      ? "bg-gradient-to-br from-violet-600 to-blue-600 text-white shadow-md shadow-violet-200 hover:shadow-lg hover:scale-105"
+                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  )}
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </form>
+              <p className="text-[10px] text-gray-400 mt-2 text-center">
+                Powered by NONEAA • AI may produce inaccurate information
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
