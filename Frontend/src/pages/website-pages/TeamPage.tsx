@@ -55,11 +55,11 @@ const TeamPage = () => {
 </section>
 
       {/* Team Members Grid */}
-      <section className="py-20 bg-slate-800">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-[#0f1729] mb-4">Leadership Team</h2>
-            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Our experienced leadership team brings together diverse expertise to guide our organization's vision and strategy.
             </p>
           </div>
@@ -127,11 +127,11 @@ const TeamPage = () => {
       </section>
 
       {/* Departments Section */}
-      <section className="py-20 bg-slate-800">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-[#0f1729] mb-4">Our Departments</h2>
-            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Specialized teams working together to drive our mission forward
             </p>
           </div>

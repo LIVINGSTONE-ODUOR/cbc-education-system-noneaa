@@ -196,7 +196,7 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-white">
       <Header />
 
       {/* Hero Section */}
@@ -237,9 +237,9 @@ export default function ContactPage() {
                 <a
                   key={index}
                   href={info.href}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 hover:shadow-sm transition-all"
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-white hover:shadow-sm transition-all"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-blue-900/30 flex items-center justify-center text-blue-600 flex-shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
                     <Icon className="w-5 h-5" />
                   </div>
                   <div>
@@ -259,7 +259,7 @@ export default function ContactPage() {
 
           {/* Left Column — Form */}
           <div className="lg:col-span-3">
-            <div className="bg-slate-800 rounded-xl border border-slate-200 shadow-sm p-8 md:p-10">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 md:p-10">
               <h2 className="text-2xl font-bold text-slate-900 mb-2">Send Us a Message</h2>
               <p className="text-slate-600 mb-8">
                 Fill out the form below and our team will get back to you within one business day.
@@ -404,7 +404,7 @@ export default function ContactPage() {
                   key={index}
                   className="flex items-start gap-4 p-5 rounded-xl border border-slate-200 hover:border-blue-200 hover:bg-blue-50/30 transition-all"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-blue-900/30 flex items-center justify-center text-blue-600 flex-shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
                     <Icon className="w-5 h-5" />
                   </div>
                   <div>

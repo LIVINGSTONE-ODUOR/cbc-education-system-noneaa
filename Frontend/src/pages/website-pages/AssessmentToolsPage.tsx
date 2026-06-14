@@ -75,7 +75,7 @@ export default function AssessmentToolsPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-white">
       <Header />
 
       {/* Hero */}
@@ -104,7 +104,7 @@ export default function AssessmentToolsPage() {
                 Purpose-built assessment tools aligned with Kenya&apos;s CBE framework. Record, analyze, and report competency levels with ease.
               </motion.p>
               <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-slate-800 text-purple-900 hover:bg-purple-50" asChild>
+                <Button size="lg" className="bg-white text-purple-900 hover:bg-purple-50" asChild>
                   <Link to="/get-started">Start Assessing <ArrowRight className="w-4 h-4 ml-2" /></Link>
                 </Button>
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
@@ -139,11 +139,11 @@ export default function AssessmentToolsPage() {
       </section>
 
       {/* How It Works */}
-      <AnimatedSection className="py-20 bg-slate-800/50">
+      <AnimatedSection className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">How It Works</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Assess in 3 Simple Steps</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Assess in 3 Simple Steps</h2>
           </motion.div>
           <div className="grid md:grid-cols-3 gap-8">
             {[
@@ -152,13 +152,13 @@ export default function AssessmentToolsPage() {
               { step: '03', title: 'Generate Reports', desc: 'Instantly generate individual, class-wide, or school-wide assessment reports with visual breakdowns.', icon: FileText, color: 'bg-indigo-600' },
             ].map((item, i) => (
               <motion.div key={item.step} variants={fadeUp} custom={i + 1} className="relative">
-                <div className="bg-slate-800 rounded-2xl p-8 shadow-sm border hover:shadow-lg transition-shadow h-full">
+                <div className="bg-white rounded-2xl p-8 shadow-sm border hover:shadow-lg transition-shadow h-full">
                   <div className={`flex h-14 w-14 items-center justify-center rounded-xl ${item.color} text-white mb-6`}>
                     <item.icon className="w-7 h-7" />
                   </div>
                   <span className="text-6xl font-bold text-gray-100 absolute top-4 right-6">{item.step}</span>
-                  <h3 className="text-xl font-semibold text-white mb-3">{item.title}</h3>
-                  <p className="text-slate-300">{item.desc}</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{item.title}</h3>
+                  <p className="text-gray-600">{item.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -174,10 +174,10 @@ export default function AssessmentToolsPage() {
               <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
                 Granular Insights
               </motion.p>
-              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-white mb-6">
+              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
                 Drill Down to Strand & Sub-Strand Level
               </motion.h2>
-              <motion.p variants={fadeUp} custom={2} className="text-lg text-slate-300 mb-8">
+              <motion.p variants={fadeUp} custom={2} className="text-lg text-gray-600 mb-8">
                 Don&apos;t just know that a learner is struggling in Mathematics — know <em>exactly which strand</em> needs attention. Our tools break down performance into Numbers, Geometry, Measurement, Data Handling, and more.
               </motion.p>
               <div className="space-y-4">
@@ -188,12 +188,12 @@ export default function AssessmentToolsPage() {
                 ].map((text, i) => (
                   <motion.div key={i} variants={fadeUp} custom={3 + i} className="flex items-start gap-3">
                     <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-slate-200">{text}</p>
+                    <p className="text-gray-700">{text}</p>
                   </motion.div>
                 ))}
               </div>
             </div>
-            <motion.div variants={scaleIn} className="bg-slate-800 rounded-2xl shadow-lg border p-6">
+            <motion.div variants={scaleIn} className="bg-white rounded-2xl shadow-lg border p-6">
               <p className="text-sm font-medium text-gray-500 mb-4">Mathematics — Strand Performance</p>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={strandPerformance} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
@@ -214,10 +214,10 @@ export default function AssessmentToolsPage() {
       </AnimatedSection>
 
       {/* Competency Radar */}
-      <AnimatedSection className="py-20 bg-slate-800/50">
+      <AnimatedSection className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div variants={scaleIn} className="order-2 lg:order-1 bg-slate-800 rounded-2xl shadow-lg border p-6">
+            <motion.div variants={scaleIn} className="order-2 lg:order-1 bg-white rounded-2xl shadow-lg border p-6">
               <p className="text-sm font-medium text-gray-500 mb-4">Learner Competency Profile</p>
               <ResponsiveContainer width="100%" height={320}>
                 <RadarChart data={radarData}>
@@ -232,10 +232,10 @@ export default function AssessmentToolsPage() {
               <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">
                 Holistic Assessment
               </motion.p>
-              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-white mb-6">
+              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
                 7 Core Competencies — One Clear Picture
               </motion.h2>
-              <motion.p variants={fadeUp} custom={2} className="text-lg text-slate-300 mb-8">
+              <motion.p variants={fadeUp} custom={2} className="text-lg text-gray-600 mb-8">
                 CBE assesses learners across 7 core competencies. Our radar chart gives teachers and parents a holistic view of a learner&apos;s strengths and areas for growth — all in one glance.
               </motion.p>
               <div className="space-y-4">
@@ -246,10 +246,10 @@ export default function AssessmentToolsPage() {
                   { text: 'Digital Literacy & Citizenship', icon: Shield },
                 ].map((item, i) => (
                   <motion.div key={i} variants={fadeUp} custom={3 + i} className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-900/30 flex-shrink-0 mt-0.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 flex-shrink-0 mt-0.5">
                       <item.icon className="w-4 h-4 text-purple-600" />
                     </div>
-                    <p className="text-slate-200">{item.text}</p>
+                    <p className="text-gray-700">{item.text}</p>
                   </motion.div>
                 ))}
               </div>
@@ -262,26 +262,26 @@ export default function AssessmentToolsPage() {
       <AnimatedSection className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Powerful Assessment Features</h2>
-            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Powerful Assessment Features</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Everything you need to assess, report, and improve learner outcomes.
             </p>
           </motion.div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { title: 'Rubric Builder', desc: 'Create custom rubrics for formative and summative assessments aligned to KICD standards.', icon: Layers, color: 'bg-blue-900/30 text-blue-600' },
-              { title: 'Bulk Assessment', desc: 'Record assessments for an entire class in minutes with our streamlined interface.', icon: Zap, color: 'bg-amber-900/30 text-amber-600' },
-              { title: 'Report Cards', desc: 'Auto-generate CBE-compliant report cards with competency levels, teacher remarks, and parent notes.', icon: FileText, color: 'bg-green-900/30 text-green-600' },
-              { title: 'Portfolio Tracking', desc: 'Maintain digital portfolios of learner work samples as evidence of competency development.', icon: BookOpen, color: 'bg-purple-900/30 text-purple-600' },
-              { title: 'Export & Print', desc: 'Download reports as PDF, export data to Excel, or print report cards in bulk.', icon: Download, color: 'bg-indigo-900/30 text-indigo-600' },
-              { title: 'Award Certificates', desc: 'Automatically recognize top performers with printable certificates and badges.', icon: Award, color: 'bg-rose-900/30 text-rose-600' },
+              { title: 'Rubric Builder', desc: 'Create custom rubrics for formative and summative assessments aligned to KICD standards.', icon: Layers, color: 'bg-blue-100 text-blue-600' },
+              { title: 'Bulk Assessment', desc: 'Record assessments for an entire class in minutes with our streamlined interface.', icon: Zap, color: 'bg-amber-100 text-amber-600' },
+              { title: 'Report Cards', desc: 'Auto-generate CBE-compliant report cards with competency levels, teacher remarks, and parent notes.', icon: FileText, color: 'bg-green-100 text-green-600' },
+              { title: 'Portfolio Tracking', desc: 'Maintain digital portfolios of learner work samples as evidence of competency development.', icon: BookOpen, color: 'bg-purple-100 text-purple-600' },
+              { title: 'Export & Print', desc: 'Download reports as PDF, export data to Excel, or print report cards in bulk.', icon: Download, color: 'bg-indigo-100 text-indigo-600' },
+              { title: 'Award Certificates', desc: 'Automatically recognize top performers with printable certificates and badges.', icon: Award, color: 'bg-rose-100 text-rose-600' },
             ].map((feature, i) => (
-              <motion.div key={feature.title} variants={fadeUp} custom={i} className="p-6 rounded-2xl border bg-slate-800 hover:shadow-lg transition-shadow group">
+              <motion.div key={feature.title} variants={fadeUp} custom={i} className="p-6 rounded-2xl border bg-white hover:shadow-lg transition-shadow group">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-xl mb-4 ${feature.color} group-hover:scale-110 transition-transform`}>
                   <feature.icon className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
-                <p className="text-slate-300 text-sm">{feature.desc}</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                <p className="text-gray-600 text-sm">{feature.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -299,7 +299,7 @@ export default function AssessmentToolsPage() {
               Move beyond traditional exams. Embrace competency-based assessment tools that truly measure what matters.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="bg-slate-800 text-purple-700 hover:bg-purple-50" asChild>
+              <Button size="lg" className="bg-white text-purple-700 hover:bg-purple-50" asChild>
                 <Link to="/get-started">Get Started Free <ArrowRight className="w-4 h-4 ml-2" /></Link>
               </Button>
               <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>

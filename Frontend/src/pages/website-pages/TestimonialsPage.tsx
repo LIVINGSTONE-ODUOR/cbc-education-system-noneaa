@@ -63,7 +63,7 @@ const stats = [
 
 export default function TestimonialsPage() {
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-white">
       <Header />
 
       {/* Hero */}
@@ -167,7 +167,7 @@ export default function TestimonialsPage() {
             </a>
             <a
               href="/contact"
-              className="inline-flex items-center justify-center gap-2 bg-slate-800 border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
+              className="inline-flex items-center justify-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
             >
               Contact Sales
             </a>

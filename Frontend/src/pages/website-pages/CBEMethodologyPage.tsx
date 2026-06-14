@@ -59,7 +59,7 @@ export default function CBEMethodologyPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-white">
       <Header />
 
       {/* Hero */}
@@ -88,7 +88,7 @@ export default function CBEMethodologyPage() {
                 Kenya&apos;s Competency-Based Education (CBE) framework focuses on developing real-world skills and competencies — not just memorization. Learn how our platform brings this methodology to life.
               </motion.p>
               <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-slate-800 text-emerald-900 hover:bg-emerald-50" asChild>
+                <Button size="lg" className="bg-white text-emerald-900 hover:bg-emerald-50" asChild>
                   <Link to="/get-started">Get Started <ArrowRight className="w-4 h-4 ml-2" /></Link>
                 </Button>
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
@@ -108,13 +108,13 @@ export default function CBEMethodologyPage() {
               <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold text-emerald-600 uppercase tracking-wide mb-3">
                 Understanding CBE
               </motion.p>
-              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-white mb-6">
+              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
                 What is Competency-Based Education?
               </motion.h2>
-              <motion.p variants={fadeUp} custom={2} className="text-lg text-slate-300 mb-6">
+              <motion.p variants={fadeUp} custom={2} className="text-lg text-gray-600 mb-6">
                 CBE shifts the focus from what learners <em>know</em> to what they can <em>do</em>. Instead of cramming for exams, learners develop practical skills, critical thinking abilities, and values that prepare them for real life.
               </motion.p>
-              <motion.p variants={fadeUp} custom={3} className="text-lg text-slate-300 mb-8">
+              <motion.p variants={fadeUp} custom={3} className="text-lg text-gray-600 mb-8">
                 Kenya adopted the CBC structure (2-6-3-3-3) to replace the traditional 8-4-4 system. Our platform is built from the ground up to support this new approach.
               </motion.p>
               <div className="space-y-3">
@@ -126,12 +126,12 @@ export default function CBEMethodologyPage() {
                 ].map((text, i) => (
                   <motion.div key={i} variants={fadeUp} custom={4 + i} className="flex items-start gap-3">
                     <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-slate-200">{text}</p>
+                    <p className="text-gray-700">{text}</p>
                   </motion.div>
                 ))}
               </div>
             </div>
-            <motion.div variants={fadeUp} custom={2} className="bg-gradient-to-br from-emerald-950/30 to-teal-950/30 rounded-3xl p-8 border border-emerald-800">
+            <motion.div variants={fadeUp} custom={2} className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl p-8 border border-emerald-200">
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { label: 'Old System', value: '8-4-4', sub: 'Exam-focused', color: 'text-red-600 bg-red-50' },
@@ -152,12 +152,12 @@ export default function CBEMethodologyPage() {
       </AnimatedSection>
 
       {/* 7 Core Competencies */}
-      <AnimatedSection className="py-20 bg-slate-800/50">
+      <AnimatedSection className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wide mb-3">Core Competencies</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">The 7 Pillars of CBE</h2>
-            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">The 7 Pillars of CBE</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Every learner is assessed across these 7 competencies, ensuring holistic development beyond academic subjects.
             </p>
           </motion.div>
@@ -167,13 +167,13 @@ export default function CBEMethodologyPage() {
                 key={comp.title}
                 variants={fadeUp}
                 custom={i}
-                className="bg-slate-800 rounded-2xl p-6 shadow-sm border hover:shadow-lg hover:-translate-y-1 transition-all group"
+                className="bg-white rounded-2xl p-6 shadow-sm border hover:shadow-lg hover:-translate-y-1 transition-all group"
               >
                 <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${comp.color} text-white mb-4 group-hover:scale-110 transition-transform`}>
                   <comp.icon className="w-6 h-6" />
                 </div>
-                <h3 className="text-base font-semibold text-white mb-2">{comp.title}</h3>
-                <p className="text-sm text-slate-300">{comp.desc}</p>
+                <h3 className="text-base font-semibold text-gray-900 mb-2">{comp.title}</h3>
+                <p className="text-sm text-gray-600">{comp.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -188,24 +188,24 @@ export default function CBEMethodologyPage() {
               <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
                 Assessment Framework
               </motion.p>
-              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-white mb-6">
+              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
                 Four Levels of Competency
               </motion.h2>
-              <motion.p variants={fadeUp} custom={2} className="text-lg text-slate-300 mb-8">
+              <motion.p variants={fadeUp} custom={2} className="text-lg text-gray-600 mb-8">
                 Instead of letter grades or percentages, CBE uses four competency levels to describe a learner&apos;s progress. This approach celebrates growth and reduces the pressure of traditional grading.
               </motion.p>
             </div>
             <div className="space-y-4">
               {levels.map((level, i) => (
-                <motion.div key={level.name} variants={fadeUp} custom={i} className="bg-slate-800 rounded-xl border p-5 shadow-sm hover:shadow-md transition-shadow">
+                <motion.div key={level.name} variants={fadeUp} custom={i} className="bg-white rounded-xl border p-5 shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
                       <span className={`w-4 h-4 rounded-full ${level.color}`} />
-                      <h4 className="font-semibold text-white">{level.name}</h4>
+                      <h4 className="font-semibold text-gray-900">{level.name}</h4>
                     </div>
                     <span className="text-sm font-bold text-gray-500">{level.pct}</span>
                   </div>
-                  <p className="text-sm text-slate-300 ml-7">{level.desc}</p>
+                  <p className="text-sm text-gray-600 ml-7">{level.desc}</p>
                   <div className="mt-3 h-2 bg-gray-100 rounded-full overflow-hidden">
                     <motion.div
                       className={`h-full rounded-full ${level.color}`}
@@ -223,11 +223,11 @@ export default function CBEMethodologyPage() {
       </AnimatedSection>
 
       {/* Timeline */}
-      <AnimatedSection className="py-20 bg-slate-800/50">
+      <AnimatedSection className="py-20 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wide mb-3">The Journey</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">CBC Implementation Timeline</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">CBC Implementation Timeline</h2>
           </motion.div>
           <div className="relative">
             <div className="absolute left-4 sm:left-1/2 sm:-translate-x-px top-0 bottom-0 w-0.5 bg-emerald-200" />
@@ -242,10 +242,10 @@ export default function CBEMethodologyPage() {
                 <div className="absolute left-4 sm:left-1/2 -translate-x-1/2 w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center text-xs font-bold z-10 flex-shrink-0">
                   {i + 1}
                 </div>
-                <div className="ml-14 sm:ml-0 sm:w-1/2 bg-slate-800 rounded-xl border p-5 shadow-sm">
+                <div className="ml-14 sm:ml-0 sm:w-1/2 bg-white rounded-xl border p-5 shadow-sm">
                   <span className="text-sm font-bold text-emerald-600">{item.year}</span>
-                  <h4 className="font-semibold text-white mt-1">{item.event}</h4>
-                  <p className="text-sm text-slate-300 mt-1">{item.desc}</p>
+                  <h4 className="font-semibold text-gray-900 mt-1">{item.event}</h4>
+                  <p className="text-sm text-gray-600 mt-1">{item.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -258,26 +258,26 @@ export default function CBEMethodologyPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wide mb-3">Our Platform</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">How NONEAA Brings CBE to Life</h2>
-            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">How NONEAA Brings CBE to Life</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               We didn&apos;t just adapt an old system. NONEAA was built from scratch for competency-based education.
             </p>
           </motion.div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { title: 'KICD-Aligned Curriculum', desc: 'All learning areas, strands, and sub-strands match the official KICD curriculum design documents.', icon: BookOpen, color: 'bg-emerald-900/30 text-emerald-600' },
-              { title: 'Competency-Based Reports', desc: 'Auto-generate report cards with the 4 competency levels, replacing traditional percentage-based grading.', icon: Award, color: 'bg-blue-900/30 text-blue-600' },
-              { title: 'Formative Assessment', desc: 'Record daily observations and continuous assessments — not just end-of-term exams.', icon: Eye, color: 'bg-purple-900/30 text-purple-600' },
-              { title: 'Learner Portfolios', desc: 'Maintain evidence-based portfolios with work samples, photos, and teacher observations.', icon: Layers, color: 'bg-amber-900/30 text-amber-600' },
-              { title: 'Parent Engagement', desc: 'Parents see real-time progress, competency profiles, and teacher feedback via the parent portal.', icon: Users, color: 'bg-rose-900/30 text-rose-600' },
-              { title: 'Data-Driven Decisions', desc: 'School leaders get dashboards showing school-wide competency trends and areas needing attention.', icon: Globe, color: 'bg-indigo-900/30 text-indigo-600' },
+              { title: 'KICD-Aligned Curriculum', desc: 'All learning areas, strands, and sub-strands match the official KICD curriculum design documents.', icon: BookOpen, color: 'bg-emerald-100 text-emerald-600' },
+              { title: 'Competency-Based Reports', desc: 'Auto-generate report cards with the 4 competency levels, replacing traditional percentage-based grading.', icon: Award, color: 'bg-blue-100 text-blue-600' },
+              { title: 'Formative Assessment', desc: 'Record daily observations and continuous assessments — not just end-of-term exams.', icon: Eye, color: 'bg-purple-100 text-purple-600' },
+              { title: 'Learner Portfolios', desc: 'Maintain evidence-based portfolios with work samples, photos, and teacher observations.', icon: Layers, color: 'bg-amber-100 text-amber-600' },
+              { title: 'Parent Engagement', desc: 'Parents see real-time progress, competency profiles, and teacher feedback via the parent portal.', icon: Users, color: 'bg-rose-100 text-rose-600' },
+              { title: 'Data-Driven Decisions', desc: 'School leaders get dashboards showing school-wide competency trends and areas needing attention.', icon: Globe, color: 'bg-indigo-100 text-indigo-600' },
             ].map((feature, i) => (
-              <motion.div key={feature.title} variants={fadeUp} custom={i} className="p-6 rounded-2xl border bg-slate-800 hover:shadow-lg transition-shadow group">
+              <motion.div key={feature.title} variants={fadeUp} custom={i} className="p-6 rounded-2xl border bg-white hover:shadow-lg transition-shadow group">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-xl mb-4 ${feature.color} group-hover:scale-110 transition-transform`}>
                   <feature.icon className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
-                <p className="text-slate-300 text-sm">{feature.desc}</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                <p className="text-gray-600 text-sm">{feature.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -296,7 +296,7 @@ export default function CBEMethodologyPage() {
               Join the movement toward competency-based education. NONEAA makes the transition seamless for your school.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="bg-slate-800 text-emerald-700 hover:bg-emerald-50" asChild>
+              <Button size="lg" className="bg-white text-emerald-700 hover:bg-emerald-50" asChild>
                 <Link to="/get-started">Get Started Free <ArrowRight className="w-4 h-4 ml-2" /></Link>
               </Button>
               <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>

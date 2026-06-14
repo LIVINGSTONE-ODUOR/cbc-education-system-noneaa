@@ -94,7 +94,7 @@ const supportResources = [
 
 export default function GettingStartedPage() {
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-white">
       <Header />
 
       {/* Hero */}
@@ -181,7 +181,7 @@ export default function GettingStartedPage() {
               <a
                 key={index}
                 href={resource.link}
-                className="bg-slate-800 border border-slate-200 rounded-xl p-6 hover:shadow-md transition-shadow block"
+                className="bg-white border border-slate-200 rounded-xl p-6 hover:shadow-md transition-shadow block"
               >
                 <Headphones className="w-6 h-6 text-blue-600 mb-3" />
                 <h3 className="font-semibold text-slate-900 text-sm mb-1">{resource.title}</h3>

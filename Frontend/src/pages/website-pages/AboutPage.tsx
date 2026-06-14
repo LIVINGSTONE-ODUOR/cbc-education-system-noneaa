@@ -21,7 +21,7 @@ import { useTypewriter } from '@/hooks/use-typewriter';
 
 // Reusable Card Component
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-slate-800 rounded-xl border border-slate-700 shadow-sm hover:shadow-md transition-shadow ${className}`}>
+  <div className={`bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow ${className}`}>
     {children}
   </div>
 );
@@ -240,7 +240,7 @@ export default function AboutPage() {
   const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0.8]);
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-slate-900 text-slate-900">
+    <div ref={containerRef} className="min-h-screen bg-white text-slate-900">
       {/* Header */}
     <Header/>
 
@@ -248,7 +248,7 @@ export default function AboutPage() {
      <HeroSection />
 
       {/* ===== MISSION & VISION SECTION ===== */}
-      <section className="py-20 md:py-32 bg-slate-800/50 border-t border-slate-700">
+      <section className="py-20 md:py-32 bg-gray-50 border-t border-gray-200">
         <div className="max-w-6xl mx-auto px-6">
           <SectionHeader
             badge="Our Purpose"
@@ -261,7 +261,7 @@ export default function AboutPage() {
             {/* Mission Card */}
             <motion.div {...fadeInUp} className="md:col-span-1">
               <Card className="p-8 h-full">
-                <div className="w-12 h-12 rounded-lg bg-blue-900/30 flex items-center justify-center mb-6">
+                <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-6">
                   <Target className="w-6 h-6 text-blue-600" />
                 </div>
                 <h3 className="text-2xl font-bold text-slate-900 mb-4">
@@ -296,7 +296,7 @@ export default function AboutPage() {
             {/* Vision Card */}
             <motion.div {...fadeInUp} transition={{ delay: 0.1 }} className="md:col-span-1">
               <Card className="p-8 h-full">
-                <div className="w-12 h-12 rounded-lg bg-emerald-900/30 flex items-center justify-center mb-6">
+                <div className="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center mb-6">
                   <Sparkles className="w-6 h-6 text-emerald-600" />
                 </div>
                 <h3 className="text-2xl font-bold text-slate-900 mb-4">
@@ -419,7 +419,7 @@ export default function AboutPage() {
       </section>
 
       {/* ===== CORE VALUES ===== */}
-      <section className="py-20 md:py-32 bg-slate-800/50 border-t border-slate-700">
+      <section className="py-20 md:py-32 bg-gray-50 border-t border-gray-200">
         <div className="max-w-6xl mx-auto px-6">
           <SectionHeader
             badge="Philosophy"
@@ -464,7 +464,7 @@ export default function AboutPage() {
                   <Card className="p-6 h-full text-center">
                     <motion.div
                       whileHover={{ rotate: 10 }}
-                      className="w-12 h-12 rounded-lg bg-blue-900/30 flex items-center justify-center mx-auto mb-4"
+                      className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mx-auto mb-4"
                     >
                       <Icon className="w-6 h-6 text-blue-600" />
                     </motion.div>
@@ -532,7 +532,7 @@ export default function AboutPage() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-8 py-3 bg-slate-800 text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors"
+                className="px-8 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors"
               >
                 Get Started
               </motion.button>

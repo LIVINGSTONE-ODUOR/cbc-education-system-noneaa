@@ -99,7 +99,7 @@ export default function CBETrackLanding() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-white">
       {/* Navigation */}
       <Header />
 
@@ -191,7 +191,7 @@ export default function CBETrackLanding() {
       </section>
 
       {/* Feature 1: Comprehensive CBE Performance & School Administration */}
-      <section className="py-20 bg-slate-900">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -202,11 +202,11 @@ export default function CBETrackLanding() {
                 COMPREHENSIVE SYSTEM
               </p>
 
-              <h2 className="text-4xl font-bold text-white mb-6">
+              <h2 className="text-4xl font-bold text-gray-900 mb-6">
                 NONEAA: Comprehensive CBE Performance & School Administration
               </h2>
 
-              <p className="text-lg text-slate-300 mb-8">
+              <p className="text-lg text-gray-600 mb-8">
                 Efficiently manage all school operations through NONEAA's integrated dashboards. 
                 Monitor fees, attendance, academic progress, and administrative tasks in one centralized platform.
               </p>
@@ -214,21 +214,21 @@ export default function CBETrackLanding() {
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
                   <CheckCircle className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
-                  <p className="text-slate-200">
+                  <p className="text-gray-700">
                     <strong>Admin Dashboard:</strong> Track fee collections, student and teacher activity, and subscription details.
                   </p>
                 </div>
 
                 <div className="flex items-start space-x-3">
                   <CheckCircle className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
-                  <p className="text-slate-200">
+                  <p className="text-gray-700">
                     <strong>Parent Dashboard:</strong> View grades, disciplinary records, and student progress reports.
                   </p>
                 </div>
 
                 <div className="flex items-start space-x-3">
                   <CheckCircle className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
-                  <p className="text-slate-200">
+                  <p className="text-gray-700">
                     <strong>Complete Management:</strong> Oversee students, teachers, classes, and performance analytics in real time.
                   </p>
                 </div>
@@ -257,7 +257,7 @@ export default function CBETrackLanding() {
 
 
       {/* Feature 2: Accounting System */}
-      <section className="py-20 bg-slate-800/50">
+      <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -284,11 +284,11 @@ export default function CBETrackLanding() {
                 ACCOUNTING SYSTEM
               </p>
 
-              <h2 className="text-4xl font-bold text-white mb-6">
+              <h2 className="text-4xl font-bold text-gray-900 mb-6">
                 Streamline Fees, Invoices & Receipts with Ease
               </h2>
 
-              <p className="text-lg text-slate-300 mb-8">
+              <p className="text-lg text-gray-600 mb-8">
                 Our comprehensive accounting suite simplifies fee structure creation, invoice generation, 
                 payment tracking, and bulk document handling—tailored for institutions of all sizes.
               </p>
@@ -296,21 +296,21 @@ export default function CBETrackLanding() {
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
                   <CheckCircle className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
-                  <p className="text-slate-200">
+                  <p className="text-gray-700">
                     Customizable fee structures per student, class, or group
                   </p>
                 </div>
 
                 <div className="flex items-start space-x-3">
                   <CheckCircle className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
-                  <p className="text-slate-200">
+                  <p className="text-gray-700">
                     Automated invoice generation with bulk download support
                   </p>
                 </div>
 
                 <div className="flex items-start space-x-3">
                   <CheckCircle className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
-                  <p className="text-slate-200">
+                  <p className="text-gray-700">
                     Real-time payment tracking and bulk receipt downloads
                   </p>
                 </div>
@@ -323,68 +323,68 @@ export default function CBETrackLanding() {
       </section>
 
       {/* Feature 3: User Roles & Permissions */}
-      <section className="py-20 bg-slate-900">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <p className="text-sm font-semibold text-green-600 uppercase tracking-wide mb-3">
                 USER & ROLES
               </p>
-              <h2 className="text-4xl font-bold text-white mb-6">
+              <h2 className="text-4xl font-bold text-gray-900 mb-6">
                 Manage Roles & Permissions Across the System
               </h2>
-              <p className="text-lg text-slate-300 mb-8">
+              <p className="text-lg text-gray-600 mb-8">
                 Our platform provides robust role-based access control to ensure secure and structured interactions for administrators, teachers, parents, and staff.
               </p>
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
                   <CheckCircle className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                  <p className="text-slate-200">Separate portals for Admin, Teachers, Parents, and Staff</p>
+                  <p className="text-gray-700">Separate portals for Admin, Teachers, Parents, and Staff</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <CheckCircle className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                  <p className="text-slate-200">Role assignment and permission customization</p>
+                  <p className="text-gray-700">Role assignment and permission customization</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <CheckCircle className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                  <p className="text-slate-200">Secure and limited access per user type</p>
+                  <p className="text-gray-700">Secure and limited access per user type</p>
                 </div>
               </div>
             </div>
             <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-3xl p-8 shadow-xl">
-              <div className="bg-slate-800 rounded-2xl p-6 shadow-lg">
+              <div className="bg-white rounded-2xl p-6 shadow-lg">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-2">
                     <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
                       <GraduationCap className="w-5 h-5 text-white" />
                     </div>
-                    <span className="text-lg font-bold text-white">NONEAA</span>
+                    <span className="text-lg font-bold text-gray-900">NONEAA</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-4 gap-4 mb-6">
                   <div className="text-center">
-                    <div className="w-16 h-16 bg-blue-900/30 rounded-full mx-auto mb-2 flex items-center justify-center">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full mx-auto mb-2 flex items-center justify-center">
                       <Users className="w-8 h-8 text-blue-600" />
                     </div>
-                    <p className="text-sm font-semibold text-white">Admin</p>
+                    <p className="text-sm font-semibold text-gray-900">Admin</p>
                   </div>
                   <div className="text-center">
-                    <div className="w-16 h-16 bg-green-900/30 rounded-full mx-auto mb-2 flex items-center justify-center">
+                    <div className="w-16 h-16 bg-green-100 rounded-full mx-auto mb-2 flex items-center justify-center">
                       <GraduationCap className="w-8 h-8 text-green-600" />
                     </div>
-                    <p className="text-sm font-semibold text-white">Teacher</p>
+                    <p className="text-sm font-semibold text-gray-900">Teacher</p>
                   </div>
                   <div className="text-center">
-                    <div className="w-16 h-16 bg-orange-900/30 rounded-full mx-auto mb-2 flex items-center justify-center">
+                    <div className="w-16 h-16 bg-orange-100 rounded-full mx-auto mb-2 flex items-center justify-center">
                       <Users className="w-8 h-8 text-orange-600" />
                     </div>
-                    <p className="text-sm font-semibold text-white">Parent</p>
+                    <p className="text-sm font-semibold text-gray-900">Parent</p>
                   </div>
                   <div className="text-center">
-                    <div className="w-16 h-16 bg-purple-900/30 rounded-full mx-auto mb-2 flex items-center justify-center">
+                    <div className="w-16 h-16 bg-purple-100 rounded-full mx-auto mb-2 flex items-center justify-center">
                       <Users className="w-8 h-8 text-purple-600" />
                     </div>
-                    <p className="text-sm font-semibold text-white">Staff</p>
+                    <p className="text-sm font-semibold text-gray-900">Staff</p>
                   </div>
                 </div>
               </div>
@@ -403,10 +403,10 @@ export default function CBETrackLanding() {
             Join hundreds of schools across Kenya using NONEAA to streamline operations and improve student outcomes.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-slate-800 text-green-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition shadow-lg">
+            <button className="bg-white text-green-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition shadow-lg">
               Start Your Free Trial
             </button>
-            <button className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-slate-800 hover:text-green-600 transition">
+            <button className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white hover:text-green-600 transition">
               Schedule a Demo
             </button>
           </div>

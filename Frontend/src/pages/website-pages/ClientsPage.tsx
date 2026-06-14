@@ -71,7 +71,7 @@ const ClientsPage = () => {
   [activeCategory]);
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-white">
       <Header />
 
       {/* Hero Section: Refined Gradient & Typography */}
@@ -176,7 +176,7 @@ const ClientsPage = () => {
       </section>
 
       {/* CTA Section: Clean & Professional */}
-      <section className="py-20 bg-slate-800">
+      <section className="py-20 bg-white">
         <div className="max-w-5xl mx-auto px-4 text-center">
           <div className="bg-gradient-to-r from-indigo-600 to-blue-700 rounded-3xl p-12 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
@@ -185,10 +185,10 @@ const ClientsPage = () => {
               Join 150+ Kenyan institutions. Get your CBE assessments and student tracking under one roof.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
-              <a href="/contact" className="bg-slate-800 text-indigo-700 font-bold py-4 px-8 rounded-xl hover:bg-indigo-900/30 transition-colors shadow-lg">
+              <a href="/contact" className="bg-white text-indigo-700 font-bold py-4 px-8 rounded-xl hover:bg-indigo-50 transition-colors shadow-lg">
                 Request a Free Demo
               </a>
-              <a href="/pricing" className="bg-indigo-500/30 text-white border border-indigo-400 font-bold py-4 px-8 rounded-xl hover:bg-indigo-900/300/50 transition-colors">
+              <a href="/pricing" className="bg-indigo-500/30 text-white border border-indigo-400 font-bold py-4 px-8 rounded-xl hover:bg-indigo-500/50 transition-colors">
                 View Pricing
               </a>
             </div>
