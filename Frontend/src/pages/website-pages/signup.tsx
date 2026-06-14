@@ -156,7 +156,7 @@ export default function GetStartedPage() {
               </div>
 
               {/* User Type Selection */}
-              <div className="flex gap-4 bg-gray-50 rounded-xl p-2">
+              <div className="flex gap-4 bg-[#dfe5f0] rounded-xl p-2">
                 <button
                   onClick={() => setIsSchoolAdmin(true)}
                   className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
@@ -421,12 +421,12 @@ export default function GetStartedPage() {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="bg-[#dfe5f0] rounded-lg p-4">
                       <h4 className="text-gray-800 font-semibold mb-2">For Teachers:</h4>
                       <p className="text-gray-600 text-sm">Contact your school administrator to get access to the teacher portal. They will provide you with login credentials and guide you through the setup process.</p>
                     </div>
                     
-                    <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="bg-[#dfe5f0] rounded-lg p-4">
                       <h4 className="text-gray-800 font-semibold mb-2">For Parents:</h4>
                       <p className="text-gray-600 text-sm">Your school will provide you with access to the parent portal. Contact the school administration to get your login details and start monitoring your child's progress.</p>
                     </div>

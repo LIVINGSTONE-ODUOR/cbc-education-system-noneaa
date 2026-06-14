@@ -114,7 +114,7 @@ export default function CareersPage() {
       </section>
 
       {/* Values */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-[#dfe5f0]">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div {...fadeInUp} className="text-center mb-16">
             <h2 className="text-2xl font-bold text-foreground mb-4">Why work with us</h2>

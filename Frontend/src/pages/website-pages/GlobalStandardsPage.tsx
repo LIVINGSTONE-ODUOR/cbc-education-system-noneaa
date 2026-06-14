@@ -86,7 +86,7 @@ export default function GlobalStandardsPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#e8edf5]">
       <Header />
 
       {/* Hero */}
@@ -146,7 +146,7 @@ export default function GlobalStandardsPage() {
       </section>
 
       {/* Certifications Bar */}
-      <section className="bg-gray-50 py-12">
+      <section className="bg-[#dfe5f0] py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {certifications.map((cert, i) => (
@@ -169,7 +169,7 @@ export default function GlobalStandardsPage() {
 
       {/* Standards Sections */}
       {standards.map((section, sectionIdx) => (
-        <AnimatedSection key={section.category} className={sectionIdx % 2 === 0 ? 'py-20' : 'py-20 bg-gray-50'}>
+        <AnimatedSection key={section.category} className={sectionIdx % 2 === 0 ? 'py-20' : 'py-20 bg-[#dfe5f0]'}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div variants={fadeUp} custom={0} className="mb-12">
               <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-2">{section.category}</p>

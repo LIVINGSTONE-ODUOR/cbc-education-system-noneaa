@@ -80,7 +80,7 @@ export default function PricingPage() {
   const [isAnnual, setIsAnnual] = useState(true);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#e8edf5]">
       <Header />
 
       {/* Hero */}

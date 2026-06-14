@@ -57,7 +57,7 @@ export default function SecurityPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#e8edf5]">
       <Header />
 
       {/* Hero */}
@@ -86,7 +86,7 @@ export default function SecurityPage() {
       </section>
 
       {/* Stats Bar */}
-      <section className="bg-gray-50 py-12">
+      <section className="bg-[#dfe5f0] py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {stats.map((stat, i) => (
@@ -132,7 +132,7 @@ export default function SecurityPage() {
       </AnimatedSection>
 
       {/* Security Architecture Visual */}
-      <AnimatedSection className="py-20 bg-gray-50">
+      <AnimatedSection className="py-20 bg-[#dfe5f0]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Architecture</p>
@@ -188,7 +188,7 @@ export default function SecurityPage() {
       </AnimatedSection>
 
       {/* Certifications */}
-      <AnimatedSection className="py-16 bg-gray-50">
+      <AnimatedSection className="py-16 bg-[#dfe5f0]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Compliance & Certifications</h2>

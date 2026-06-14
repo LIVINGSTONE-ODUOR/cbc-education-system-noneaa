@@ -240,7 +240,7 @@ export default function AboutPage() {
   const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0.8]);
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-white text-slate-900">
+    <div ref={containerRef} className="min-h-screen bg-[#e8edf5] text-slate-900">
       {/* Header */}
     <Header/>
 
@@ -248,7 +248,7 @@ export default function AboutPage() {
      <HeroSection />
 
       {/* ===== MISSION & VISION SECTION ===== */}
-      <section className="py-20 md:py-32 bg-gray-50 border-t border-gray-200">
+      <section className="py-20 md:py-32 bg-[#dfe5f0] border-t border-gray-200">
         <div className="max-w-6xl mx-auto px-6">
           <SectionHeader
             badge="Our Purpose"
@@ -419,7 +419,7 @@ export default function AboutPage() {
       </section>
 
       {/* ===== CORE VALUES ===== */}
-      <section className="py-20 md:py-32 bg-gray-50 border-t border-gray-200">
+      <section className="py-20 md:py-32 bg-[#dfe5f0] border-t border-gray-200">
         <div className="max-w-6xl mx-auto px-6">
           <SectionHeader
             badge="Philosophy"

@@ -63,7 +63,7 @@ const stats = [
 
 export default function TestimonialsPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#e8edf5]">
       <Header />
 
       {/* Hero */}

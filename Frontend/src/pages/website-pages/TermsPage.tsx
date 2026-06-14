@@ -143,7 +143,7 @@ export default function TermsPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#e8edf5]">
       <Header />
 
       {/* Hero */}
@@ -172,7 +172,7 @@ export default function TermsPage() {
       </section>
 
       {/* Highlights */}
-      <section className="bg-gray-50 py-12">
+      <section className="bg-[#dfe5f0] py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {highlights.map((h, i) => (
@@ -235,7 +235,7 @@ export default function TermsPage() {
       </div>
 
       {/* Contact */}
-      <AnimatedSection className="py-16 bg-gray-50">
+      <AnimatedSection className="py-16 bg-[#dfe5f0]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-200 p-8">
             <div className="grid md:grid-cols-2 gap-8 items-center">

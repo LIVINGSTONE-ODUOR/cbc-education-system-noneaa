@@ -59,7 +59,7 @@ export default function CBEMethodologyPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#e8edf5]">
       <Header />
 
       {/* Hero */}
@@ -152,7 +152,7 @@ export default function CBEMethodologyPage() {
       </AnimatedSection>
 
       {/* 7 Core Competencies */}
-      <AnimatedSection className="py-20 bg-gray-50">
+      <AnimatedSection className="py-20 bg-[#dfe5f0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wide mb-3">Core Competencies</p>
@@ -223,7 +223,7 @@ export default function CBEMethodologyPage() {
       </AnimatedSection>
 
       {/* Timeline */}
-      <AnimatedSection className="py-20 bg-gray-50">
+      <AnimatedSection className="py-20 bg-[#dfe5f0]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wide mb-3">The Journey</p>

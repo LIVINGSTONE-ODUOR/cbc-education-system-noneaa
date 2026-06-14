@@ -54,7 +54,7 @@ const workflowSteps = [
 
 export default function DemoPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#e8edf5]">
       <Header />
 
       {/* Hero */}

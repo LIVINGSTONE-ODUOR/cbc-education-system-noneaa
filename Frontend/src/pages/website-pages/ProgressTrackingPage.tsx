@@ -73,7 +73,7 @@ export default function ProgressTrackingPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#e8edf5]">
       <Header />
 
       {/* Hero */}
@@ -134,7 +134,7 @@ export default function ProgressTrackingPage() {
       </section>
 
       {/* Stats Bar */}
-      <section className="bg-gray-50 py-12">
+      <section className="bg-[#dfe5f0] py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
@@ -208,7 +208,7 @@ export default function ProgressTrackingPage() {
       </AnimatedSection>
 
       {/* Feature: Competency Growth */}
-      <AnimatedSection className="py-20 bg-gray-50">
+      <AnimatedSection className="py-20 bg-[#dfe5f0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div variants={scaleIn} className="order-2 lg:order-1 bg-white rounded-2xl shadow-lg border p-6">

@@ -55,7 +55,7 @@ const TeamPage = () => {
 </section>
 
       {/* Team Members Grid */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-[#e8edf5]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-[#0f1729] mb-4">Leadership Team</h2>
@@ -127,7 +127,7 @@ const TeamPage = () => {
       </section>
 
       {/* Departments Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-[#e8edf5]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-[#0f1729] mb-4">Our Departments</h2>

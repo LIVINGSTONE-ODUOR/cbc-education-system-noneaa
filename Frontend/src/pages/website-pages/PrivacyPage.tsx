@@ -121,7 +121,7 @@ export default function PrivacyPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#e8edf5]">
       <Header />
 
       {/* Hero */}
@@ -150,7 +150,7 @@ export default function PrivacyPage() {
       </section>
 
       {/* Principles Grid */}
-      <AnimatedSection className="py-20 bg-gray-50">
+      <AnimatedSection className="py-20 bg-[#dfe5f0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Our Commitment</p>
@@ -175,7 +175,7 @@ export default function PrivacyPage() {
 
       {/* Policy Sections */}
       {sections.map((section, sIdx) => (
-        <AnimatedSection key={section.title} className={sIdx % 2 === 0 ? 'py-16' : 'py-16 bg-gray-50'}>
+        <AnimatedSection key={section.title} className={sIdx % 2 === 0 ? 'py-16' : 'py-16 bg-[#dfe5f0]'}>
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div variants={fadeUp} custom={0} className={`bg-white rounded-2xl border-l-4 ${section.color} border shadow-sm p-8`}>
               <div className="flex items-center gap-3 mb-6">
@@ -246,7 +246,7 @@ export default function PrivacyPage() {
       </AnimatedSection>
 
       {/* Children's Privacy */}
-      <AnimatedSection className="py-16 bg-gray-50">
+      <AnimatedSection className="py-16 bg-[#dfe5f0]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="bg-white rounded-2xl border shadow-sm p-8 text-center">
             <div className="w-14 h-14 rounded-2xl bg-rose-100 flex items-center justify-center mx-auto mb-4">

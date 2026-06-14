@@ -71,7 +71,7 @@ const ClientsPage = () => {
   [activeCategory]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#e8edf5]">
       <Header />
 
       {/* Hero Section: Refined Gradient & Typography */}
@@ -176,7 +176,7 @@ const ClientsPage = () => {
       </section>
 
       {/* CTA Section: Clean & Professional */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-[#e8edf5]">
         <div className="max-w-5xl mx-auto px-4 text-center">
           <div className="bg-gradient-to-r from-indigo-600 to-blue-700 rounded-3xl p-12 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />

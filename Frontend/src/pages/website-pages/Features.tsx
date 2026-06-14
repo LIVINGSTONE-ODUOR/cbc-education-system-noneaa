@@ -99,7 +99,7 @@ export default function CBETrackLanding() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#e8edf5]">
       {/* Navigation */}
       <Header />
 
@@ -191,7 +191,7 @@ export default function CBETrackLanding() {
       </section>
 
       {/* Feature 1: Comprehensive CBE Performance & School Administration */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-[#e8edf5]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -257,7 +257,7 @@ export default function CBETrackLanding() {
 
 
       {/* Feature 2: Accounting System */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-[#dfe5f0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -323,7 +323,7 @@ export default function CBETrackLanding() {
       </section>
 
       {/* Feature 3: User Roles & Permissions */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-[#e8edf5]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
