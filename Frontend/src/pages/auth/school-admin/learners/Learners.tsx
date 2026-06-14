@@ -42,7 +42,12 @@ import {
   BookOpen,
   Trash2,
   Upload,
+  BarChart3,
 } from 'lucide-react';
+import {
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+} from 'recharts';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -450,6 +455,47 @@ const StudentManagement = () => {
   const maleStudents = students.filter((s) => s.gender.toLowerCase() === 'male').length;
   const femaleStudents = students.filter((s) => s.gender.toLowerCase() === 'female').length;
 
+  // Chart data derived from real student records
+  const genderChartData = useMemo(() => {
+    const data: { name: string; value: number; color: string }[] = [];
+    if (maleStudents > 0) data.push({ name: 'Boys', value: maleStudents, color: '#3b82f6' });
+    if (femaleStudents > 0) data.push({ name: 'Girls', value: femaleStudents, color: '#ec4899' });
+    const other = totalStudents - maleStudents - femaleStudents;
+    if (other > 0) data.push({ name: 'Other', value: other, color: '#94a3b8' });
+    return data;
+  }, [maleStudents, femaleStudents, totalStudents]);
+
+  const statusChartData = useMemo(() => {
+    const data: { name: string; value: number; color: string }[] = [];
+    if (activeStudents > 0) data.push({ name: 'Active', value: activeStudents, color: '#10b981' });
+    if (inactiveStudents > 0) data.push({ name: 'Inactive', value: inactiveStudents, color: '#ef4444' });
+    return data;
+  }, [activeStudents, inactiveStudents]);
+
+  const gradeDistributionData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    students.forEach((s) => {
+      const grade = s.grade_level || 'Unknown';
+      counts[grade] = (counts[grade] || 0) + 1;
+    });
+    const gradeOrder = ['PP1', 'PP2', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9'];
+    return gradeOrder
+      .filter((g) => counts[g])
+      .map((g) => ({ grade: g, count: counts[g] }));
+  }, [students]);
+
+  const genderPerGradeData = useMemo(() => {
+    const data: Record<string, { grade: string; boys: number; girls: number }> = {};
+    students.forEach((s) => {
+      const grade = s.grade_level || 'Unknown';
+      if (!data[grade]) data[grade] = { grade, boys: 0, girls: 0 };
+      if (s.gender.toLowerCase() === 'male') data[grade].boys++;
+      else if (s.gender.toLowerCase() === 'female') data[grade].girls++;
+    });
+    const gradeOrder = ['PP1', 'PP2', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9'];
+    return gradeOrder.filter((g) => data[g]).map((g) => data[g]);
+  }, [students]);
+
   const hasActiveFilters =
     searchTerm || selectedGrade !== 'all' || selectedStatus !== 'all' || selectedGender !== 'all';
 
@@ -695,6 +741,167 @@ const StudentManagement = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Data Visualization Charts */}
+      {totalStudents > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {/* Gender Distribution - Donut */}
+          <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="h-6 w-6 rounded-md bg-blue-100 flex items-center justify-center">
+                  <Users className="h-3.5 w-3.5 text-blue-600" />
+                </div>
+                Boys vs Girls
+              </CardTitle>
+              <CardDescription className="text-xs">Gender distribution</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4">
+              {genderChartData.length > 0 ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-[120px] h-[120px] shrink-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={genderChartData} cx="50%" cy="50%" innerRadius={32} outerRadius={52} paddingAngle={3} dataKey="value" strokeWidth={0}>
+                          {genderChartData.map((entry, i) => (<Cell key={i} fill={entry.color} />))}
+                        </Pie>
+                        <Tooltip formatter={(val: number) => [val, 'Students']} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    {genderChartData.map((entry) => (
+                      <div key={entry.name} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: entry.color }} />
+                          <span className="text-xs text-slate-600">{entry.name}</span>
+                        </div>
+                        <span className="text-sm font-bold text-slate-900">{entry.value}</span>
+                      </div>
+                    ))}
+                    <div className="pt-1 border-t border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-slate-500">Ratio</span>
+                        <span className="text-xs font-bold text-slate-700">{maleStudents}:{femaleStudents}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 text-center py-6">No data</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Status Distribution - Donut */}
+          <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="h-6 w-6 rounded-md bg-emerald-100 flex items-center justify-center">
+                  <UserCheck className="h-3.5 w-3.5 text-emerald-600" />
+                </div>
+                Enrollment Status
+              </CardTitle>
+              <CardDescription className="text-xs">Active vs Inactive</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4">
+              {statusChartData.length > 0 ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-[120px] h-[120px] shrink-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={statusChartData} cx="50%" cy="50%" innerRadius={32} outerRadius={52} paddingAngle={3} dataKey="value" strokeWidth={0}>
+                          {statusChartData.map((entry, i) => (<Cell key={i} fill={entry.color} />))}
+                        </Pie>
+                        <Tooltip formatter={(val: number) => [val, 'Students']} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    {statusChartData.map((entry) => (
+                      <div key={entry.name} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: entry.color }} />
+                          <span className="text-xs text-slate-600">{entry.name}</span>
+                        </div>
+                        <span className="text-sm font-bold text-slate-900">{entry.value}</span>
+                      </div>
+                    ))}
+                    <div className="pt-1 border-t border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-slate-500">Active Rate</span>
+                        <span className="text-xs font-bold text-emerald-600">{Math.round((activeStudents / Math.max(totalStudents, 1)) * 100)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 text-center py-6">No data</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Students per Grade - Bar Chart */}
+          <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow md:col-span-2">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="h-6 w-6 rounded-md bg-purple-100 flex items-center justify-center">
+                  <BarChart3 className="h-3.5 w-3.5 text-purple-600" />
+                </div>
+                Students per Grade
+              </CardTitle>
+              <CardDescription className="text-xs">Enrollment count by grade level</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4">
+              {gradeDistributionData.length > 0 ? (
+                <div className="h-[160px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={gradeDistributionData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                      <XAxis dataKey="grade" tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} formatter={(val: number) => [val, 'Students']} />
+                      <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} maxBarSize={36} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 text-center py-6">No grade data</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Boys vs Girls per Grade - Grouped Bar */}
+      {genderPerGradeData.length > 1 && (
+        <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <div className="h-6 w-6 rounded-md bg-indigo-100 flex items-center justify-center">
+                <GraduationCap className="h-3.5 w-3.5 text-indigo-600" />
+              </div>
+              Boys vs Girls per Grade
+            </CardTitle>
+            <CardDescription className="text-xs">Gender comparison across each grade level</CardDescription>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={genderPerGradeData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                  <XAxis dataKey="grade" tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="boys" name="Boys" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                  <Bar dataKey="girls" name="Girls" fill="#ec4899" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Search and Filters Card */}
       <Card className="border-slate-200 bg-white">
