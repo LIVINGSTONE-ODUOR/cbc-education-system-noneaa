@@ -432,7 +432,7 @@ const Header = ({
             </div>
             <div className="p-4">
               <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                Welcome to CBE Noneaa! Use the sidebar to navigate between modules such as Student Management, 
+                Welcome to Noneaa! Use the sidebar to navigate between modules such as Student Management, 
                 Teachers, Attendance, and more. If you experience any issues or need assistance, 
                 please don't hesitate to reach out to our support team.
               </p>
