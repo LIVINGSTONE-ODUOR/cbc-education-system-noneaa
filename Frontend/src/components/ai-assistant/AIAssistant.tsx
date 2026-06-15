@@ -460,7 +460,7 @@ export default function AIAssistant() {
                 </button>
               </form>
               <p className="text-[10px] text-gray-400 mt-2 text-center">
-                Powered by NONEAA • AI may produce inaccurate information
+                Powered by TEKSOFT • Your Friendly Assistant
               </p>
             </div>
           </motion.div>
