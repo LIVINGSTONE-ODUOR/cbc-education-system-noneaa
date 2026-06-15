@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Send, User, ArrowDown } from 'lucide-react';
-import annaAvatar from '@/assets/anna.png';
+import annaAvatar from '@/assets/anna.png'; // Anna AI assistant avatar
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
