@@ -41,7 +41,7 @@ exports.chat = async (req, res) => {
     ];
 
     const completion = await openai.chat.completions.create({
-      model: "openai/gpt-4o-mini",
+      model: "google/gemini-2.5-flash",
       messages: chatMessages,
       temperature: 0.7,
       max_tokens: 1024,
