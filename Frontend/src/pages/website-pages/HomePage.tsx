@@ -547,74 +547,46 @@ export default function HomePage() {
               Noneaa helps schools manage curriculum, assess students using competency levels, track progress across all learning areas, and keep parents informed — from Pre-Primary to Senior Secondary.
             </p>
 
-            {/* Role Selector with Glow Effect */}
-            <div className="mb-10">
-              <p className="text-sm font-medium text-white/70 mb-4 tracking-wider flex items-center gap-2">
-                <MousePointerClick className="w-4 h-4" />
-                SELECT YOUR ROLE:
+            {/* Role Selector */}
+            <div className="mb-8">
+              <p className="text-xs font-semibold text-white/50 mb-3 tracking-[0.2em] uppercase">
+                Select your role
               </p>
-              <div className="flex flex-wrap gap-3">
+              <div className="inline-flex rounded-full bg-white/[0.08] backdrop-blur-md border border-white/10 p-1">
                 {roles.map((role) => (
-                  <motion.button
+                  <button
                     key={role}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
                     onClick={() => handleRoleClick(role)}
                     className={cn(
-                      "relative px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300",
+                      "relative px-5 py-2 rounded-full text-sm font-medium transition-all duration-200",
                       selectedRole === role
-                        ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white shadow-lg shadow-blue-500/30"
-                        : "bg-white/10 backdrop-blur-sm text-white/90 hover:bg-white/20"
+                        ? "bg-white text-gray-900 shadow-md"
+                        : "text-white/70 hover:text-white hover:bg-white/10"
                     )}
                   >
                     {role}
-                    {selectedRole === role && (
-                      <motion.div
-                        layoutId="role-indicator"
-                        className="absolute inset-0 rounded-xl border-2 border-white/30"
-                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                      />
-                    )}
-                  </motion.button>
+                  </button>
                 ))}
               </div>
             </div>
 
-            {/* CTA Buttons with Animation */}
-            <div className="flex flex-wrap gap-4">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+            {/* CTA Buttons */}
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to="/login"
+                className="group inline-flex items-center gap-2.5 bg-white text-gray-900 font-semibold py-3 px-7 rounded-full hover:bg-gray-100 transition-colors shadow-lg shadow-black/20"
               >
-                <Button
-                  size="lg"
-                  className="group relative overflow-hidden bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-8 shadow-xl"
-                  asChild
-                >
-                  <Link to="/login" className="flex items-center gap-3">
-                    <Rocket className="w-5 h-5 group-hover:rotate-45 transition-transform" />
-                    <span className="font-semibold">Explore Dashboard</span>
-                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-2 transition-transform" />
-                  </Link>
-                </Button>
-              </motion.div>
-              
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                <Rocket className="w-4 h-4" />
+                Explore Dashboard
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+              <Link
+                to="#demo"
+                className="group inline-flex items-center gap-2.5 border border-white/25 text-white font-medium py-3 px-7 rounded-full hover:bg-white/10 transition-colors backdrop-blur-sm"
               >
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="group bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 text-white px-8"
-                  asChild
-                >
-                  <Link to="#demo" className="flex items-center gap-3">
-                    <Play className="w-5 h-5" />
-                    <span>Watch Demo</span>
-                  </Link>
-                </Button>
-              </motion.div>
+                <Play className="w-4 h-4" />
+                Watch Demo
+              </Link>
             </div>
 
             {/* Trust Badges */}
@@ -622,14 +594,14 @@ export default function HomePage() {
               initial={{ y: 20, opacity: 0 }}
               animate={isHeroInView ? { y: 0, opacity: 1 } : {}}
               transition={{ delay: 0.6 }}
-              className="mt-12 pt-8 border-t border-white/20"
+              className="mt-10 pt-6 border-t border-white/10"
             >
-              <p className="text-sm text-white/70 mb-4">Built for Kenyan schools implementing CBC</p>
-              <div className="flex flex-wrap items-center gap-6 opacity-70">
+              <p className="text-xs text-white/40 mb-3 tracking-wide">Built for Kenyan schools implementing CBC</p>
+              <div className="flex flex-wrap items-center gap-5">
                 {['KICD-Aligned', 'Pre-Primary to Grade 12', '4-Level Competency Scale', 'Parent & Teacher Portals'].map((name) => (
-                  <div key={name} className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-emerald-400" />
-                    <span className="text-white/90 text-sm">{name}</span>
+                  <div key={name} className="flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400/80" />
+                    <span className="text-white/60 text-xs font-medium">{name}</span>
                   </div>
                 ))}
               </div>
