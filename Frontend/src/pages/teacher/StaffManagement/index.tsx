@@ -10,32 +10,6 @@ import {
 import { getBranches, type Branch } from "@/lib/api/schoolsApi";
 import { uploadStaffPhoto } from "./photoUtils";
 
-const camelToSnake = (obj: Record<string, any>): Record<string, any> => {
-  const mapping: Record<string, string> = {
-    firstName: 'first_name',
-    lastName: 'last_name',
-    phoneNumber: 'phone_number',
-    mobilePhone: 'phone_number',
-    idNumber: 'id_number',
-    tscNumber: 'tsc_number',
-    dateOfBirth: 'date_of_birth',
-    hireDate: 'date_joined',
-    dateJoined: 'date_joined',
-    contractStart: 'contract_start',
-    contractEnd: 'contract_end',
-    jobStatus: 'job_status',
-    staffType: 'staff_type',
-    teachingSubjects: 'subjects_taught',
-    subjectsTaught: 'subjects_taught',
-  };
-
-  return Object.fromEntries(
-    Object.entries(obj).map(([key, value]) => {
-      const snakeKey = mapping[key] || key.replace(/([A-Z])/g, '_$1').toLowerCase();
-      return [snakeKey, value];
-    })
-  );
-};
 import { DashboardView, ListView, FormView, DetailsView, PerformanceView } from "./components";
 
 
@@ -169,6 +143,9 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
       return;
     }
 
+    // Sync subjects from slots to form
+    const currentSubjects = slots.filter(s => s && s.trim() !== "");
+
     try {
       console.log('[DEBUG] handleSave payload:', form);
       console.log('[DEBUG] handleSave photo field:', form.photo);
@@ -208,7 +185,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
         console.log('[DEBUG] Updating teacher:', selected.id);
         console.log('[DEBUG] form.photo before merge:', form.photo);
         console.log('[DEBUG] photoUrl to merge:', photoUrl);
-        const formWithPhoto = { ...form, photo: photoUrl };
+        const formWithPhoto = { ...form, photo: photoUrl, subjectsTaught: currentSubjects };
         console.log('[DEBUG] formWithPhoto after merge:', formWithPhoto);
         console.log('[DEBUG] formWithPhoto.photo explicitly:', formWithPhoto.photo);
         console.log('[DEBUG] All keys in formWithPhoto:', Object.keys(formWithPhoto));
@@ -238,7 +215,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
           gender: form.sex || form.gender,
           county: form.county,
           location: form.location,
-          subjects_taught: form.teachingSubjects,
+          subjects_taught: currentSubjects,
           photo: photoUrl // Add photo to invite payload
         } as Parameters<typeof inviteTeacher>[0];
         
