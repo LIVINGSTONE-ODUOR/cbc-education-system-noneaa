@@ -65,34 +65,6 @@ export interface ApiResponse<T = unknown> {
   data: T;
 }
 
-// ==================== Utilities ====================
-const camelToSnake = (obj: Record<string, any>): Record<string, any> => {
-  const mapping: Record<string, string> = {
-    firstName: 'first_name',
-    lastName: 'last_name',
-    phoneNumber: 'phone_number',
-    mobilePhone: 'phone_number',
-    idNumber: 'id_number',
-    tscNumber: 'tsc_number',
-    dateOfBirth: 'date_of_birth',
-    hireDate: 'date_joined',
-    dateJoined: 'date_joined',
-    contractStart: 'contract_start',
-    contractEnd: 'contract_end',
-    jobStatus: 'job_status',
-    staffType: 'staff_type',
-    teachingSubjects: 'subjects_taught',
-    subjectsTaught: 'subjects_taught',
-  };
-
-  return Object.fromEntries(
-    Object.entries(obj).map(([key, value]) => {
-      const snakeKey = mapping[key] || key.replace(/([A-Z])/g, '_$1').toLowerCase();
-      return [snakeKey, value];
-    })
-  );
-};
-
 // ==================== API Functions ====================
 
 /**
@@ -147,6 +119,20 @@ export const inviteTeacher = async (payload: {
   tsc_number?: string;
   qualifications?: string[];
   date_joined?: string;
+  id_number?: string;
+  designation?: string;
+  branch?: string;
+  job_status?: string;
+  staff_type?: string;
+  salary?: number;
+  contract_start?: string;
+  contract_end?: string;
+  date_of_birth?: string;
+  gender?: string;
+  county?: string;
+  location?: string;
+  subjects_taught?: string[];
+  photo?: string;
 }): Promise<ApiResponse<{teacher_id: string; user_id: string}>> => {
   const url = `${API_URL}/api/v1/teachers/invite`;
   const response = await fetch(url, getFetchOptions('POST', payload));

@@ -524,7 +524,7 @@ const updateTeacher = asyncHandler(async (req, res) => {
   const {
     tsc_number, qualifications, date_joined, phone_number, first_name, last_name,
     id_number, designation, branch, email, job_status, contract_start, contract_end,
-    salary, county, location, teaching_subjects, photo // Add photo field
+    salary, county, location, subjects_taught, photo // Add photo field
   } = req.body;
 
   // ========== TEACHERS TABLE UPDATES ==========
@@ -549,8 +549,8 @@ const updateTeacher = asyncHandler(async (req, res) => {
   if (id_number !== undefined) teacherUpdates.id_number = id_number;
   
   // Use subjects_taught instead of teaching_subjects (based on your schema)
-  if (teaching_subjects !== undefined) {
-    teacherUpdates.subjects_taught = Array.isArray(teaching_subjects) ? teaching_subjects : JSON.parse(teaching_subjects);
+  if (subjects_taught !== undefined) {
+    teacherUpdates.subjects_taught = Array.isArray(subjects_taught) ? subjects_taught : JSON.parse(subjects_taught);
   }
   if (photo !== undefined) {
     teacherUpdates.photo = photo;
