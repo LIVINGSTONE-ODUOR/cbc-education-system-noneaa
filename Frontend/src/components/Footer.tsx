@@ -76,7 +76,7 @@ export default function Footer() {
       // Send confirmation email
       const { data, error: functionError } =
        await supabase.functions.invoke(
-         "subscribe-confirmation",
+         "send-subscription-email",
          {
            body: {
              email: email.trim(),
