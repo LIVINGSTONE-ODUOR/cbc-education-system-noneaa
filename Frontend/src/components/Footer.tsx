@@ -219,7 +219,7 @@ export default function Footer() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-white">Priority Support</p>
-                    <p className="text-sm text-slate-400">+254 111 276 271</p>
+                    <p className="text-sm text-slate-400">+254 111 276 71</p>
                   </div>
                 </div>
               </div>
