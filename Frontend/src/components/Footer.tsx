@@ -225,7 +225,7 @@ export default function Footer() {
           <div className="text-center md:text-left">
             <p className="text-xs font-bold text-slate-400">
               © {new Date().getFullYear()} Noneaa Africa. <span className="text-slate-600 ml-2 hidden md:inline">|</span> 
-              <span className="block md:inline mt-1 md:mt-0 md:ml-2 text-slate-500 font-normal italic">Innovation for the Kenyan Classroom.</span>
+              <span className="block md:inline mt-1 md:mt-0 md:ml-2 text-slate-500 font-normal italic">Innovation for The Kenyan Classroom.</span>
             </p>
           </div>
           
