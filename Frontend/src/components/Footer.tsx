@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { 
   CircuitBoard, Database, Mail, Phone, ArrowRight,
   Facebook, Twitter, Linkedin, Instagram,
