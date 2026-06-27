@@ -188,29 +188,6 @@ export default function ContactPage() {
     setIsSubmitting(true);
     setStatus(null);
 
-    const accessKey = import.meta.env.VITE_WEB3FORMS_KEY?.trim();
-
-    if (!accessKey) {
-      setStatus({
-        type: 'error',
-        message: 'Configuration error. Please email contact@noneaa.com directly.'
-      });
-      setIsSubmitting(false);
-      return;
-    }
-
-    const formDataToSend = new FormData();
-    Object.entries(formData).forEach(([key, value]) => {
-      formDataToSend.append(key, value);
-    });
-    formDataToSend.append('access_key', accessKey);
-
-    try {
-      const response = await fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        body: formDataToSend
-      });
-
       const json = await response.json();
 
       if (json.success) {
