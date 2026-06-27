@@ -250,7 +250,7 @@ export default function ContactPage() {
               </h1>
 
               <p className="text-lg text-slate-300 mb-8 leading-relaxed max-w-xl">
-                Whether you are a school looking to implement CBC, a partner interested in collaboration, or a user needing support — the NONEAA team is here to help you succeed.
+                Whether you're a school looking to implement CBC, a partner interested in collaboration, or a user needing support — the NONEAA team is here to help you succeed.
               </p>
 
               {/* Quick stats */}
