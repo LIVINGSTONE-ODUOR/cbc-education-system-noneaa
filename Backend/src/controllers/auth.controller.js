@@ -76,7 +76,7 @@ const fetchUserFromSupabase = async (email) => {
   };
 };
 
-// Login with extensive debugging
+// Login with extensive debugging and bulletproof fallbacks
 exports.login = async (req, res) => {
   console.log('\n========== LOGIN ATTEMPT ==========');
   console.log('Time:', new Date().toISOString());
@@ -254,8 +254,23 @@ exports.login = async (req, res) => {
     const deviceInfo = getDeviceInfo(userAgent);
     
     // Auto-add current device to trusted list
-    const trustedResult = await query('SELECT trusted_devices, trusted_devices_only, login_alerts_enabled, email, first_name FROM users WHERE id = $1', [user.id]);
-    const userSecurity = trustedResult.rows[0];
+    let userSecurity = null;
+    try {
+      const trustedResult = await query('SELECT trusted_devices, trusted_devices_only, login_alerts_enabled, email, first_name FROM users WHERE id = $1', [user.id]);
+      userSecurity = trustedResult.rows[0];
+    } catch (dbErr) {
+      console.error('❌ Database query error during security fetch:', dbErr.message);
+      console.log('🔄 Falling back to Supabase API security fetch...');
+      if (supabaseAdmin) {
+        const { data, error } = await supabaseAdmin
+          .from('users')
+          .select('trusted_devices, trusted_devices_only, login_alerts_enabled, email, first_name')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (!error && data) userSecurity = data;
+      }
+    }
+
     let trustedDevices = [];
     if (userSecurity?.trusted_devices) {
       const rawTrusted = userSecurity.trusted_devices;
@@ -287,7 +302,19 @@ exports.login = async (req, res) => {
         lastUsed: new Date().toISOString()
       });
       console.log('🔐 Auto-added device to trusted:', deviceInfo.deviceName);
-      await query('UPDATE users SET trusted_devices = $1 WHERE id = $2', [JSON.stringify(trustedDevices), user.id]);
+      
+      try {
+        await query('UPDATE users SET trusted_devices = $1 WHERE id = $2', [JSON.stringify(trustedDevices), user.id]);
+      } catch (dbErr) {
+        console.error('❌ Database update error for trusted devices:', dbErr.message);
+        if (supabaseAdmin) {
+          await supabaseAdmin
+            .from('users')
+            .update({ trusted_devices: trustedDevices })
+            .eq('id', user.id);
+          console.log('✅ Fallback: Trusted devices updated via Supabase API');
+        }
+      }
     }
     
     // Check trusted devices + alerts (now always trusted)
@@ -298,20 +325,27 @@ exports.login = async (req, res) => {
     }
     
     // Update last login + activity
-    await query('UPDATE users SET last_login = NOW(), last_login_ip = $1, last_activity = NOW() WHERE id = $2', [clientIp, user.id]);
+    try {
+      await query('UPDATE users SET last_login = NOW(), last_login_ip = $1, last_activity = NOW() WHERE id = $2', [clientIp, user.id]);
+    } catch (dbErr) {
+      console.error('❌ Database update error for metadata login stats:', dbErr.message);
+      if (supabaseAdmin) {
+        await supabaseAdmin
+          .from('users')
+          .update({
+            last_login: new Date().toISOString(),
+            last_login_ip: clientIp,
+            last_activity: new Date().toISOString()
+          })
+          .eq('id', user.id);
+        console.log('✅ Fallback: Login logs synchronized via Supabase API');
+      }
+    }
 
     // Step 6: Email verification check
     console.log('\n📋 STEP 6: Checking email verification');
     console.log('REQUIRE_EMAIL_VERIFICATION:', process.env.REQUIRE_EMAIL_VERIFICATION);
     console.log('Email verified:', user.email_verified);
-    
-    // if (!user.email_verified && process.env.REQUIRE_EMAIL_VERIFICATION === 'true') {
-    //   console.log('❌ Email not verified');
-    //   return res.status(403).json({
-    //     success: false,
-    //     message: 'Please verify your email address before logging in.'
-    //   });
-    // }
     console.log('✅ Email verification check passed');
 
     // Step 7: Reset login attempts
@@ -347,7 +381,18 @@ exports.login = async (req, res) => {
       );
       console.log('✅ Session updated successfully');
     } catch (err) {
-      console.error('Failed to update session:', err.message);
+      console.error('❌ Database query error updating user session schema:', err.message);
+      if (supabaseAdmin) {
+        try {
+          await supabaseAdmin
+            .from('user_sessions')
+            .update({ ip_address: clientIp, user_agent: userAgent })
+            .eq('session_token', tokens.refreshToken);
+          console.log('✅ Fallback: Session configuration synchronized via Supabase API');
+        } catch (sbSessionErr) {
+          console.error('❌ Full session tracking failure:', sbSessionErr.message);
+        }
+      }
     }
 
     // Step 10: Success response
@@ -377,10 +422,9 @@ exports.login = async (req, res) => {
     console.error('Error stack:', error.stack);
     console.error('=====================================\n');
     
-    // Send the REAL error message
     return res.status(500).json({
       success: false,
-      message: error.message, // This shows the actual error
+      message: error.message,
       error: {
         name: error.name,
         code: error.code,
@@ -396,7 +440,18 @@ exports.logout = async (req, res) => {
     const token = req.headers.authorization?.substring(7);
     
     if (token) {
-      await query('DELETE FROM user_sessions WHERE session_token = $1', [token]);
+      try {
+        await query('DELETE FROM user_sessions WHERE session_token = $1', [token]);
+      } catch (dbErr) {
+        console.error('❌ Database error removing session token on logout:', dbErr.message);
+        if (supabaseAdmin) {
+          await supabaseAdmin
+            .from('user_sessions')
+            .delete()
+            .eq('session_token', token);
+          console.log('✅ Fallback: Session cleared via Supabase API');
+        }
+      }
     }
 
     res.json({
@@ -425,13 +480,49 @@ exports.refreshToken = async (req, res) => {
       });
     }
 
-    const sessionResult = await query(
-      `SELECT us.user_id, us.expires_at, u.email, u.role, u.status, u.school_id
-       FROM user_sessions us
-       JOIN users u ON us.user_id = u.id
-       WHERE us.session_token = $1 AND us.expires_at > NOW() AND u.status != 'deleted'`,
-      [refreshToken]
-    );
+    let sessionResult;
+    try {
+      sessionResult = await query(
+        `SELECT us.user_id, us.expires_at, u.email, u.role, u.status, u.school_id
+         FROM user_sessions us
+         JOIN users u ON us.user_id = u.id
+         WHERE us.session_token = $1 AND us.expires_at > NOW() AND u.status != 'deleted'`,
+        [refreshToken]
+      );
+    } catch (dbErr) {
+      console.error('❌ Database error reading session row token refresh:', dbErr.message);
+      if (supabaseAdmin) {
+        const { data: sessionData, error: sessionErr } = await supabaseAdmin
+          .from('user_sessions')
+          .select('user_id, expires_at')
+          .eq('session_token', refreshToken)
+          .gt('expires_at', new Date().toISOString())
+          .maybeSingle();
+
+        if (!sessionErr && sessionData) {
+          const { data: userData, error: userErr } = await supabaseAdmin
+            .from('users')
+            .select('email, role, status, school_id')
+            .eq('id', sessionData.user_id)
+            .neq('status', 'deleted')
+            .maybeSingle();
+
+          if (!userErr && userData) {
+            sessionResult = {
+              rows: [{
+                user_id: sessionData.user_id,
+                expires_at: sessionData.expires_at,
+                email: userData.email,
+                role: userData.role,
+                status: userData.status,
+                school_id: userData.school_id
+              }]
+            };
+          }
+        }
+      }
+      if (!sessionResult) sessionResult = { rows: [] };
+    }
 
     if (sessionResult.rows.length === 0) {
       return res.status(401).json({
