@@ -144,19 +144,63 @@ export const getLearners = async (params: {
     ...getFetchOptions('GET'),
     signal: params.signal,
   });
+
+  // If token expired/invalid, try refreshing then retry once.
+  if (response.status === 401) {
+    try {
+      const refreshToken = localStorage.getItem('cbe_refresh_token');
+      if (refreshToken) {
+        // Prefer modern refresh route in backend.
+        const refreshResp = await fetch(`${API_URL}/api/v1/refresh-token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        });
+
+        if (refreshResp.ok) {
+          const refreshData = await refreshResp.json();
+          const newAccessToken = refreshData?.data?.tokens?.accessToken ?? refreshData?.data?.accessToken;
+          const newRefreshToken = refreshData?.data?.tokens?.refreshToken ?? refreshData?.data?.refreshToken;
+
+          if (newAccessToken) {
+            localStorage.setItem('cbe_access_token', newAccessToken);
+            if (newRefreshToken) localStorage.setItem('cbe_refresh_token', newRefreshToken);
+
+            // retry original request once with updated token
+            const retryResponse = await fetch(url, {
+              ...getFetchOptions('GET'),
+              signal: params.signal,
+            });
+            const retryResult = await handleResponse<LearnersListResponse>(retryResponse);
+            const students = Array.isArray(retryResult.data)
+              ? retryResult.data.map(mapBackendToLearner)
+              : [];
+            const totalStudents = retryResult.pagination?.total ?? students.length;
+            const totalPages = retryResult.pagination?.pages ?? Math.ceil(totalStudents / (params.pageSize || 10));
+            return { students, totalStudents, totalPages };
+          }
+        }
+      }
+    } catch {
+      // fall through to original error handling
+    }
+  }
+
   const result = await handleResponse<LearnersListResponse>(response);
 
-  const students = Array.isArray(result.data) 
-    ? result.data.map(mapBackendToLearner) 
+  const students = Array.isArray(result.data)
+    ? result.data.map(mapBackendToLearner)
     : [];
   const totalStudents = result.pagination?.total ?? students.length;
-  const totalPages = result.pagination?.pages ?? Math.ceil(totalStudents / (params.pageSize || 10));
+  const totalPages =
+    result.pagination?.pages ?? Math.ceil(totalStudents / (params.pageSize || 10));
 
   return {
     students,
     totalStudents,
     totalPages,
   };
+
 };
 
 /**
