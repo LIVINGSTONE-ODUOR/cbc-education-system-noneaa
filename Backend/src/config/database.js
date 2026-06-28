@@ -1,6 +1,6 @@
 const dns = require('dns');
 
-// ✅ FORCE Node to prefer IPv4 over IPv6 (fixes ENETUNREACH on cloud environments)
+// ✅ FORCE Node to prefer IPv4 over IPv6 (prevents socket ENETUNREACH drops on Render)
 dns.setDefaultResultOrder('ipv4first');
 const { Pool } = require('pg');
 const { createClient } = require('@supabase/supabase-js');
@@ -8,7 +8,7 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-// ==================== ENV CONFIG ====================
+// ==================== ENVIRONMENT CONFIGURATION ====================
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 const dbPassword = process.env.SUPABASE_DB_PASSWORD || null;
@@ -21,7 +21,7 @@ if (!supabaseUrl) {
   process.exit(1);
 }
 
-// ==================== INITIALIZE SUPABASE ADMIN FALLBACK CLIENT ====================
+// ==================== INITIALIZE SUPABASE REST API CLIENT ====================
 const supabaseAdmin =
   supabaseUrl && supabaseServiceRoleKey
     ? createClient(supabaseUrl, supabaseServiceRoleKey, {
@@ -30,16 +30,16 @@ const supabaseAdmin =
     : null;
 
 if (!supabaseAdmin) {
-  console.warn('⚠️ Warning: SUPABASE_SERVICE_ROLE_KEY missing. API fallback mode will be unavailable.');
+  console.warn('⚠️ Warning: SUPABASE_SERVICE_ROLE_KEY is missing. REST API global fallback mode will fail.');
 }
 
 if (!process.env.DATABASE_URL && !dbPassword) {
   console.error(
-    "[database] Missing DATABASE_URL (postgresql://...) or SUPABASE_DB_PASSWORD. Supabase anon/service-role keys are not DB credentials; pg connection will fail."
+    "[database] Missing DATABASE_URL or SUPABASE_DB_PASSWORD. Standard direct pg connection pools will fail."
   );
 }
 
-// ==================== EXTRACT PROJECT REF ====================
+// ==================== EXTRACT PROJECT REFERENCE ====================
 let projectRef = null;
 try {
   const parsed = new URL(supabaseUrl);
@@ -49,28 +49,21 @@ try {
   projectRef = host.split('.')[0] || null;
 }
 
-if (!projectRef) {
-  console.error('❌ Could not extract Supabase project reference.');
-  process.exit(1);
-}
-
-// ==================== CONNECTION STRING ====================
+// ==================== DATABASE CONNECTION STRING SET up ====================
 const dbHost = process.env.SUPABASE_DB_HOST || `db.${projectRef}.supabase.co`;
 
 let connectionString;
 if (process.env.DATABASE_URL) {
   connectionString = process.env.DATABASE_URL;
-  console.log('🔗 Using DATABASE_URL from environment');
+  console.log('🔗 Utilizing DATABASE_URL from container layer');
 } else {
   connectionString = `postgresql://${encodeURIComponent(dbUser)}:${encodeURIComponent(
     dbPassword
   )}@${dbHost}:${dbPort}/${encodeURIComponent(dbName)}`;
-  console.log('🔗 Built connection string from components');
+  console.log('🔗 Constructing system connection credentials string');
 }
 
-console.log('🔗 Connecting to DB host:', dbHost);
-
-// ==================== POOL CONFIG ====================
+// ==================== NATIVE POSTGRESQL POOL DEFINITION ====================
 const pool = new Pool({
   connectionString,
   ssl: {
@@ -81,73 +74,63 @@ const pool = new Pool({
   min: 5,
   idleTimeoutMillis: 60000,
   connectionTimeoutMillis: 10000,
-  statement_timeout: 60000, // 1 minute allowed for large sweeps
+  statement_timeout: 60000, 
   query_timeout: 60000
 });
 
-// ==================== EVENTS ====================
+// ==================== POOL LIFECYCLE MONITORING EVENTS ====================
 pool.on('connect', () => {
-  console.log('🗄️ Connected to database (IPv4)');
+  console.log('🗄️ Successfully attached direct connection pool channel (IPv4)');
 });
 
 pool.on('error', (err) => {
-  console.error('❌ Database connection pool error:', err.message);
+  console.error('❌ Direct pool infrastructure connection alert:', err.message);
 });
 
-// ==================== GLOBAL ROBUST QUERY WRAPPER ====================
+// ==================== GLOBAL ROBUST QUERY WRAPPER WITH PARSER FIX ====================
 const query = async (text, params) => {
   const start = Date.now();
   try {
-    // 1. Primary path: run the raw standard PostgreSQL operation
+    // 1. Primary path execution: Attempt rapid SQL network handshake
     const res = await pool.query(text, params);
     const duration = Date.now() - start;
-    console.log(`📊 SQL Query executed in ${duration}ms`, { rows: res.rowCount });
+    console.log(`📊 SQL Query executed natively in ${duration}ms`, { rows: res.rowCount });
     return res;
   } catch (error) {
-    console.error('❌ Database query error caught:', error.message);
+    console.error('❌ Primary database pooling channel dropped:', error.message);
 
-    // 2. Fallback path: automatically swap to the Supabase Client REST API if PostgreSQL fails
+    // 2. Fallback path validation: Engage Supabase API if raw postgres is throwing errors
     if (supabaseAdmin) {
-      console.log('🔄 Global Database Fallback: Routing data query through Supabase REST API...');
+      console.log('🔄 Global Database Fallback: Routing active execution thread through Supabase REST API...');
       try {
         const lowerText = text.toLowerCase().trim();
         let tableName = null;
 
-        // --- IMPROVED PERMISSIVE TABLE DETECTION ---
-        // Strips spaces, quotes, and punctuation to prevent structural query patterns from bypassing mappings
-        const normalizedText = lowerText.replace(/["`\s;()]/g, '');
+        // --- BULLETPROOF FUZZY TABLE IDENTIFIER ENGINE ---
+        // Completely strips formatting, spaces, quotes, and punctuation tags
+        const cleanText = lowerText.replace(/["`\s;()\[\]]/g, '');
 
-        if (normalizedText.includes('fromusers')) tableName = 'users';
-        else if (normalizedText.includes('fromlearners')) tableName = 'learners';
-        else if (normalizedText.includes('fromclasses')) tableName = 'classes';
-        else if (normalizedText.includes('fromteachers')) tableName = 'teachers';
-        else if (normalizedText.includes('fromuser_sessions')) tableName = 'user_sessions';
-        else if (normalizedText.includes('fromschools')) tableName = 'schools';
-        else if (normalizedText.includes('fromschool_admins')) tableName = 'school_admins';
-        
-        // Ultimate keyword safety valve block to intercept custom query styles
-        if (!tableName) {
-          if (lowerText.includes('classes')) tableName = 'classes';
-          else if (lowerText.includes('learners')) tableName = 'learners';
-          else if (lowerText.includes('teachers')) tableName = 'teachers';
-          else if (lowerText.includes('users')) tableName = 'users';
-          else if (lowerText.includes('schools')) tableName = 'schools';
-        }
+        if (cleanText.includes('learners') || cleanText.includes('learner')) tableName = 'learners';
+        else if (cleanText.includes('classes') || cleanText.includes('class')) tableName = 'classes';
+        else if (cleanText.includes('teachers') || cleanText.includes('teacher')) tableName = 'teachers';
+        else if (cleanText.includes('user_sessions') || cleanText.includes('usersession')) tableName = 'user_sessions';
+        else if (cleanText.includes('users') || cleanText.includes('user')) tableName = 'users';
+        else if (cleanText.includes('schools') || cleanText.includes('school')) tableName = 'schools';
+        else if (cleanText.includes('school_admins') || cleanText.includes('schooladmin')) tableName = 'school_admins';
 
         if (tableName) {
-          console.log(`📊 Intercepted route target table: "${tableName}"`);
+          console.log(`📊 Global Fallback intercepted operational scope target table: "${tableName}"`);
           
-          // --- WRITE OPERATIONS HANDLERS ---
+          // --- WRITE BLOCK HANDLER MAPPING ---
           if (lowerText.startsWith('update')) {
             let updateData = {};
-            if (tableName === 'users' && lowerText.includes('trusted_devices = $1')) {
+            if (tableName === 'users' && lowerText.includes('trusted_devices')) {
               updateData = { trusted_devices: typeof params[0] === 'string' ? JSON.parse(params[0]) : params[0] };
-            } else if (tableName === 'users' && lowerText.includes('last_login = now()')) {
+            } else if (tableName === 'users' && lowerText.includes('last_login')) {
               updateData = { last_login: new Date().toISOString(), last_login_ip: params[0], last_activity: new Date().toISOString() };
-            } else if (tableName === 'user_sessions' && lowerText.includes('ip_address = $1')) {
+            } else if (tableName === 'user_sessions' && lowerText.includes('ip_address')) {
               updateData = { ip_address: params[0], user_agent: params[1] };
             } else {
-              // Generic fallback fallback object mapper
               updateData = { updated_at: new Date().toISOString() };
             }
 
@@ -170,11 +153,10 @@ const query = async (text, params) => {
             return { rows: data || [], rowCount: data ? data.length : 0 };
           }
 
-          // --- UNCONSTRAINED FETCH MODE WITH STREAMGUARD LOOP ---
-          // Recursively pulls every entry sequentially in steps of 1,000 to cleanly reconstruct large scale lists
+          // --- HIGH VOLUME FETCH STRATAGEM (STREAMGUARD PAGINATION LOOP) ---
           let allRows = [];
           let fetchPage = 0;
-          const pageSize = 1000; 
+          const pageSize = 1000; // Pull limits max step size threshold 
           let keepingLoopAlive = true;
 
           while (keepingLoopAlive) {
@@ -183,7 +165,7 @@ const query = async (text, params) => {
               .select('*')
               .range(fetchPage * pageSize, (fetchPage + 1) * pageSize - 1);
 
-            // Dynamically map common raw SQL parameterized queries ($1, $2)
+            // Parameterized filter queries transformation array pipeline ($1, $2, etc.)
             if (params && params.length > 0) {
               if (lowerText.includes('where email = $1') || lowerText.includes('where u.email = $1')) {
                 sbQuery = sbQuery.eq('email', params[0]);
@@ -203,7 +185,7 @@ const query = async (text, params) => {
               keepingLoopAlive = false;
             } else {
               allRows = allRows.concat(data);
-              // If we pulled fewer records than the chunk size, we've successfully collected everything
+              // Complete early if structural bounds array limits match table termination endpoints
               if (data.length < pageSize) {
                 keepingLoopAlive = false;
               } else {
@@ -211,9 +193,9 @@ const query = async (text, params) => {
               }
             }
 
-            // Production Memory Safety Guard Rail 
+            // Production execution overflow container protection loop
             if (allRows.length >= 100000) {
-              console.warn('⚠️ Safety Circuit Breaker triggered: Stopped compilation loop at 100,000 objects to safeguard container RAM.');
+              console.warn('⚠️ Loop break invoked at 100k safety index metrics.');
               break;
             }
           }
@@ -224,16 +206,16 @@ const query = async (text, params) => {
           };
         }
       } catch (fallbackError) {
-        console.error('❌ Central Supabase REST API Fallback failed:', fallbackError.message);
+        console.error('❌ Global REST API fallback execution processing failed:', fallbackError.message);
       }
     }
 
-    // Re-throw original query fault if template configuration matching criteria wasn't met
+    // Re-throw if query parsing criteria mismatch defaults
     throw error;
   }
 };
 
-// ==================== TRANSACTION WRAPPER ====================
+// ==================== ACCELERATED TRANSACTION CONTEXT ISOLATOR ====================
 const transaction = async (callback) => {
   let client;
   try {
@@ -244,11 +226,11 @@ const transaction = async (callback) => {
     return result;
   } catch (error) {
     if (client) await client.query('ROLLBACK');
-    console.error('❌ Transaction failed, rolling back:', error.message);
+    console.error('❌ Operational active context loop transaction failed:', error.message);
     
-    // Fallback logic inside transaction block if database infrastructure goes offline completely
+    // Auto-rescue configuration tracking state
     if (error.message.includes('authentication failed') || error.message.includes('timeout') || !client) {
-      console.log('🔄 Transaction Fallback: Attempting continuous context block execution via Admin API Client...');
+      console.log('🔄 Transaction context redirected seamlessly into secondary execution layer...');
       return await callback(null);
     }
     throw error;
@@ -257,7 +239,7 @@ const transaction = async (callback) => {
   }
 };
 
-// ==================== EXPORT ====================
+// ==================== MODULE EXPORT SCHEMATICS ====================
 module.exports = {
   query,
   transaction,
