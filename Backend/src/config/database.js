@@ -21,7 +21,7 @@ if (!supabaseUrl) {
   process.exit(1);
 }
 
-// ==================== INITIALIZE SUPABASE ADMIN FALLBACK CLIENT ====================
+// ==================== INITIALIZE SUPABASE CLIENT ====================
 const supabaseAdmin =
   supabaseUrl && supabaseServiceRoleKey
     ? createClient(supabaseUrl, supabaseServiceRoleKey, {
@@ -29,118 +29,64 @@ const supabaseAdmin =
       })
     : null;
 
-if (!supabaseAdmin) {
-  console.warn('⚠️ Warning: SUPABASE_SERVICE_ROLE_KEY missing. API fallback mode will be unavailable.');
-}
-
-if (!process.env.DATABASE_URL && !dbPassword) {
-  console.error(
-    "[database] Missing DATABASE_URL (postgresql://...) or SUPABASE_DB_PASSWORD. Supabase anon/service-role keys are not DB credentials; pg connection will fail."
-  );
-}
-
-// ==================== EXTRACT PROJECT REF ====================
-let projectRef = null;
-
-try {
-  const parsed = new URL(supabaseUrl);
-  projectRef = parsed.hostname.split('.')[0] || null;
-} catch {
-  const host = supabaseUrl.replace(/^https?:\/\//, '').split('/')[0];
-  projectRef = host.split('.')[0] || null;
-}
-
-if (!projectRef) {
-  console.error('❌ Could not extract Supabase project reference.');
-  process.exit(1);
-}
-
 // ==================== CONNECTION STRING ====================
-const dbHost = process.env.SUPABASE_DB_HOST || `db.${projectRef}.supabase.co`;
-
-let connectionString;
-if (process.env.DATABASE_URL) {
-  connectionString = process.env.DATABASE_URL;
-  console.log('🔗 Using DATABASE_URL from environment');
-} else {
-  connectionString = `postgresql://${encodeURIComponent(dbUser)}:${encodeURIComponent(
-    dbPassword
-  )}@${dbHost}:${dbPort}/${encodeURIComponent(dbName)}`;
-  console.log('🔗 Built connection string from components');
+let projectRef = null;
+try {
+  projectRef = new URL(supabaseUrl).hostname.split('.')[0];
+} catch {
+  projectRef = 'postgres';
 }
-
-console.log('🔗 Connecting to DB host:', dbHost);
+const dbHost = process.env.SUPABASE_DB_HOST || `db.${projectRef}.supabase.co`;
+let connectionString = process.env.DATABASE_URL || `postgresql://${encodeURIComponent(dbUser)}:${encodeURIComponent(dbPassword)}@${dbHost}:${dbPort}/${encodeURIComponent(dbName)}`;
 
 // ==================== POOL CONFIG ====================
 const pool = new Pool({
   connectionString,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  family: 4, // ✅ CRITICAL FIX → FORCE IPv4 (fixes ENETUNREACH)
+  ssl: { rejectUnauthorized: false },
+  family: 4, 
   max: 30,
   min: 5,
   idleTimeoutMillis: 60000,
   connectionTimeoutMillis: 10000,
-  statement_timeout: 30000,
-  query_timeout: 30000
+  statement_timeout: 60000, // 1 minute allowed for large sweeps
+  query_timeout: 60000
 });
 
-// ==================== EVENTS ====================
-pool.on('connect', () => {
-  console.log('🗄️ Connected to database (IPv4)');
-});
-
-pool.on('error', (err) => {
-  console.error('❌ Database connection pool error:', err.message);
-});
-
-// ==================== GLOBAL ROBUST QUERY WRAPPER ====================
+// ==================== GLOBAL QUERY WRAPPER ====================
 const query = async (text, params) => {
   const start = Date.now();
   try {
-    // 1. Primary path: run the raw standard PostgreSQL operation
+    // 1. Try standard SQL query path
     const res = await pool.query(text, params);
-    const duration = Date.now() - start;
-    console.log(`📊 Query executed in ${duration}ms`, { rows: res.rowCount });
+    console.log(`📊 SQL executed in ${Date.now() - start}ms`, { rows: res.rowCount });
     return res;
   } catch (error) {
     console.error('❌ Database query error caught:', error.message);
 
-    // 2. Fallback path: automatically swap to the Supabase Client REST API if PostgreSQL fails
+    // 2. Fallback path via API Client if direct DB fails
     if (supabaseAdmin) {
       console.log('🔄 Global Database Fallback: Routing data query through Supabase REST API...');
       try {
         const lowerText = text.toLowerCase().trim();
         let tableName = null;
 
-        // Parse query string to extract table targets
         if (lowerText.includes('from users')) tableName = 'users';
         else if (lowerText.includes('from learners')) tableName = 'learners';
         else if (lowerText.includes('from classes')) tableName = 'classes';
         else if (lowerText.includes('from teachers')) tableName = 'teachers';
         else if (lowerText.includes('from user_sessions')) tableName = 'user_sessions';
-        else if (lowerText.includes('from school_admins')) tableName = 'school_admins';
 
         if (tableName) {
-          console.log(`📊 Intercepted route target table: "${tableName}"`);
-          
-          // Separate logic for write operations versus read operations
+          // --- WRITE OPERATIONS HANDLERS ---
           if (lowerText.startsWith('update')) {
             let updateData = {};
-            if (tableName === 'users' && lowerText.includes('trusted_devices = $1')) {
-              updateData = { trusted_devices: typeof params[0] === 'string' ? JSON.parse(params[0]) : params[0] };
-            } else if (tableName === 'users' && lowerText.includes('last_login = now()')) {
-              updateData = { last_login: new Date().toISOString(), last_login_ip: params[0], last_activity: new Date().toISOString() };
-            } else if (tableName === 'user_sessions' && lowerText.includes('ip_address = $1')) {
-              updateData = { ip_address: params[0], user_agent: params[1] };
+            if (tableName === 'users' && lowerText.includes('last_login = now()')) {
+              updateData = { last_login: new Date().toISOString() };
             }
-
             const { data, error: updateErr } = await supabaseAdmin
               .from(tableName)
               .update(updateData)
-              .eq(lowerText.includes('where id = $2') || lowerText.includes('where id = $3') ? 'id' : 'session_token', params[params.length - 1]);
-
+              .eq('id', params[params.length - 1]);
             if (updateErr) throw updateErr;
             return { rows: data ? [data] : [], rowCount: 1 };
           }
@@ -148,46 +94,71 @@ const query = async (text, params) => {
           if (lowerText.startsWith('insert into')) {
             let insertData = {};
             if (tableName === 'user_sessions') {
-              insertData = { user_id: params[0], session_token: params[1], ip_address: params[2], user_agent: params[3], expires_at: params[4] };
+              insertData = { user_id: params[0], session_token: params[1], expires_at: params[4] };
             }
             const { data, error: insertErr } = await supabaseAdmin.from(tableName).insert([insertData]).select();
             if (insertErr) throw insertErr;
             return { rows: data || [], rowCount: data ? data.length : 0 };
           }
 
-          // Default operation: SELECT requests
-          let sbQuery = supabaseAdmin.from(tableName).select('*');
+          // --- UNCONSTRAINED FETCH MODE WITH STREAMGUARD ---
+          let allRows = [];
+          let fetchPage = 0;
+          const pageSize = 1000; // Large chunk compilation size to optimize transit traffic
+          let keepingLoopAlive = true;
 
-          // Dynamically map common WHERE filters for specific users or relations
-          if (params && params.length > 0) {
-            if (lowerText.includes('where u.email = $1') || lowerText.includes('where email = $1')) {
-              sbQuery = sbQuery.eq('email', params[0]).neq('status', 'deleted');
-            } else if (lowerText.includes('where u.id = $1') || lowerText.includes('where id = $1')) {
-              sbQuery = sbQuery.eq('id', params[0]);
-            } else if (lowerText.includes('where user_id = $1')) {
-              sbQuery = sbQuery.eq('user_id', params[0]);
-            } else if (lowerText.includes('where school_id = $2') || lowerText.includes('where school_id = $1')) {
-              sbQuery = sbQuery.eq('school_id', params[0]);
+          while (keepingLoopAlive) {
+            let sbQuery = supabaseAdmin
+              .from(tableName)
+              .select('*')
+              .range(fetchPage * pageSize, (fetchPage + 1) * pageSize - 1);
+
+            // Apply specific parameter where logic
+            if (params && params.length > 0) {
+              if (lowerText.includes('where email = $1')) {
+                sbQuery = sbQuery.eq('email', params[0]);
+              } else if (lowerText.includes('where id = $1')) {
+                sbQuery = sbQuery.eq('id', params[0]);
+              } else if (lowerText.includes('school_id =')) {
+                sbQuery = sbQuery.eq('school_id', params[0]);
+              }
+            }
+
+            const { data, error: fetchErr } = await sbQuery;
+            if (fetchErr) throw fetchErr;
+
+            if (!data || data.length === 0) {
+              keepingLoopAlive = false;
+            } else {
+              allRows = allRows.concat(data);
+              // If we pulled fewer records than the chunk size, we've hit the end of the table
+              if (data.length < pageSize) {
+                keepingLoopAlive = false;
+              } else {
+                fetchPage++;
+              }
+            }
+
+            // Production Circuit Breaker: Safety check to avoid infinite loops if data gets too massive
+            if (allRows.length >= 50000) {
+              console.warn('⚠️ Safety Circuit Breaker triggered: Stopped loading at 50,000 items to protect server memory.');
+              break;
             }
           }
 
-          const { data, error: fetchErr } = await sbQuery;
-          if (fetchErr) throw fetchErr;
-
-          const rows = Array.isArray(data) ? data : data ? [data] : [];
-          return { rows, rowCount: rows.length };
+          return { 
+            rows: allRows, 
+            rowCount: allRows.length 
+          };
         }
       } catch (fallbackError) {
         console.error('❌ Central Supabase REST API Fallback failed:', fallbackError.message);
       }
     }
-
-    // Re-throw original crash error if no appropriate fallback route was found
     throw error;
   }
 };
 
-// ==================== TRANSACTION WRAPPER ====================
 const transaction = async (callback) => {
   let client;
   try {
@@ -198,22 +169,11 @@ const transaction = async (callback) => {
     return result;
   } catch (error) {
     if (client) await client.query('ROLLBACK');
-    console.error('❌ Transaction failed, rolling back:', error.message);
-    
-    // Fallback logic inside a transaction block if direct connection failed completely at startup
-    if (error.message.includes('authentication failed') || error.message.includes('timeout') || !client) {
-      console.log('🔄 Transaction Fallback: Attempting continuous execution via Admin API Client...');
-      return await callback(null);
-    }
+    if (!client) return await callback(null);
     throw error;
   } finally {
     if (client) client.release();
   }
 };
 
-// ==================== EXPORT ====================
-module.exports = {
-  query,
-  transaction,
-  pool
-};
+module.exports = { query, transaction, pool };
