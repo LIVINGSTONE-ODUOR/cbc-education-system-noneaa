@@ -43,7 +43,9 @@ const verifyPassword = async (password, hashedPassword) => {
 
 // Generate JWT tokens
 const generateTokens = async (user) => {
+  // Signed payload satisfies both front-end hooks expecting 'id' and legacy server code expecting 'userId'
   const payload = {
+    id: user.id,
     userId: user.id,
     email: user.email,
     role: user.role,
