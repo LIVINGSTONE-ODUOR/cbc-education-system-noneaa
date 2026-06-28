@@ -23,8 +23,11 @@ const getApiUrl = () => {
 
   // Production fallback (Render backend)
   if (import.meta.env.PROD) {
-    return 'https://cbc-education-system-1.onrender.com';
+    // Use the backend that actually serves the API in this project.
+    // (Frontend runtime logs show /api/v1/login being called on this host.)
+    return 'https://cbc-education-system.onrender.com';
   }
+
 
   // Development fallback (Vite proxy/local backend)
   return '';
@@ -32,8 +35,11 @@ const getApiUrl = () => {
 
 const API_URL = getApiUrl();
 
-console.log('[AuthContext] API_URL:', API_URL);
-console.log('[AuthContext] Environment:', import.meta.env.MODE);
+  console.log('[AuthContext] API_URL:', API_URL);
+  console.log('[AuthContext] Environment:', import.meta.env.MODE);
+  console.log('[AuthContext] Login URL:', `${API_URL}/api/v1/login`);
+  console.log('[AuthContext] Health URL:', `${API_URL}/health`);
+
 
 // ======================================================
 // TYPES
