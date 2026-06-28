@@ -101,7 +101,10 @@ import OwnerLoginPage from "./pages/website-pages/OwnerLoginPage";
 import BlogAdminPage from "./pages/website-pages/BlogAdminPage";
 import { BlogProvider } from "@/contexts/BlogContext";
 
+import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
+
 const queryClient = new QueryClient();
+
 
 // ─── Protected Route ──────────────────────────────────────────────────────────
 function ProtectedRoute({
@@ -188,6 +191,8 @@ function AppRoutes() {
       <Route path="/company/our-team" element={<TeamMembersPage />} />
       <Route path="/cbe-standards" element={<CBEStandardsPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+
       <Route path="/get-started" element={<GetStartedPage />} />
       <Route path="/signup" element={<GetStartedPage />} />
       <Route path="/admin-register" element={<AdminRegistrationPage />} />
