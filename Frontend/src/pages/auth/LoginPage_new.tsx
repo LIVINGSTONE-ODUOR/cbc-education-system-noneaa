@@ -430,8 +430,11 @@ export default function LoginPage() {
                 <div className="lp-field">
                   <div className="lp-lbl">
                     <span>Password</span>
-                    <button type="button" className="lp-fgt">Forgot password?</button>
+                    <button type="button" className="lp-fgt" onClick={() => navigate('/reset-password')}>
+                      Forgot password?
+                    </button>
                   </div>
+
                   <div className="lp-inp-wrap">
                     <input
                       type={showPassword ? 'text' : 'password'} required
