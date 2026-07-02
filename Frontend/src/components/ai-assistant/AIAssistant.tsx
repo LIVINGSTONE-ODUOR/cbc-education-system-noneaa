@@ -27,51 +27,21 @@ const SYSTEM_CONTEXT = `
 You are Anna, the official Virtual AI Assistant for the NONEAA Platform.
 Your role is to assist school administrators, teachers, parents, students, and website visitors by providing accurate information about the NONEAA platform and the Kenyan Competency Based Education (CBE) system.
 You are professional, patient, friendly, knowledgeable, and concise.
-Never claim to be human.
-Never pretend to have performed actions you cannot perform.
-Always be honest.
 
-# YOUR KNOWLEDGE
-You specialize in:
-- The NONEAA platform
-- Kenyan Competency Based Education (CBE)
-- CBC curriculum
-- School administration
-- Assessments
-- Learning Areas
-- Competencies
-- Teachers
-- Parents
-- Students
-- School management
-- User accounts
-- Reports
-- Attendance
-- Timetables
-- Fees
-- Admissions
-- Results
-- Technical guidance related to NONEAA
+# CRITICAL RULES
+- NEVER make up information, names, or facts.
+- If the answer is not in the search results, say: "I couldn't find that information on the official website."
+- Always prioritize accuracy.
 
-# ABOUT NONEAA
-NONEAA is an educational platform designed to help schools digitize and simplify school management under the Kenyan Competency Based Education system.
-The platform supports student management, teacher management, parent access, CBC assessments, report generation, attendance, school communication, timetables, learning areas, competency tracking, school records, academic progress, and administrative management.
-Only mention features that actually exist.
+# SEARCH USAGE
+You have access to search noneaa.com.
+Use the search results provided to answer questions about the company, staff, CEO, etc.
+If no relevant information is found, admit it honestly.
 
-# CBE KNOWLEDGE
-Understand the Kenyan education structure and key terms (Learning Areas, Strands, Sub Strands, etc.).
-
-# WHEN ANSWERING
-Be accurate, concise, and helpful. Use simple English.
-
-# RESPONSE FORMATTING
-- Never use asterisks (*) or double asterisks (**).
+# RESPONSE STYLE
+- Keep replies short and clear by default.
+- Never use asterisks (*).
 - Use hyphens (-) or bullet points (•) for lists.
-- Use numbered lists for steps.
-- Keep answers short unless user asks for details.
-
-# SEARCH CAPABILITY
-You have access to search noneaa.com. Use the search results to give accurate, up-to-date answers.
 `;
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
@@ -189,7 +159,7 @@ export default function AIAssistant() {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  // Greeting typing effect
+  // Greeting Typing Effect
   useEffect(() => {
     if (isOpen && !greetingStartedRef.current) {
       greetingStartedRef.current = true;
@@ -249,7 +219,7 @@ export default function AIAssistant() {
       }));
 
       const enhancedSystemPrompt = searchResults 
-        ? `${SYSTEM_CONTEXT}\n\n=== Search Results from noneaa.com ===\n${searchResults}\n\nUse the above information to answer accurately.`
+        ? `${SYSTEM_CONTEXT}\n\n=== Latest Search Results from noneaa.com ===\n${searchResults}\n\nAnswer ONLY using the information above. Do not guess.`
         : SYSTEM_CONTEXT;
 
       let reply: string;
@@ -376,7 +346,11 @@ export default function AIAssistant() {
                       message.role === 'user' ? "bg-[#e50914] text-white rounded-br-sm" : 
                       isDarkMode ? "bg-[#2f2f2f] text-white rounded-bl-sm" : "bg-white border border-gray-200 text-gray-900 rounded-bl-sm"
                     )}>
-                      <span className="whitespace-pre-wrap">{message.content}</span>
+                      {message.id === '1' && !greetingComplete ? (
+                        <span>{greetingText}<span className="animate-pulse">▋</span></span>
+                      ) : (
+                        <span className="whitespace-pre-wrap">{message.content}</span>
+                      )}
                     </div>
                     <div className="text-[10px] text-zinc-500 mt-1 px-1">
                       {formatTime(message.timestamp)}
