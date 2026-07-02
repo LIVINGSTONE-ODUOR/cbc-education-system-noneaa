@@ -27,12 +27,8 @@ const SYSTEM_CONTEXT = `
 You are Anna, the official Virtual AI Assistant for the NONEAA Platform.
 
 # CRITICAL RULES
-- Be honest. If you cannot find the information, say so.
-- Do not guess names or facts.
-
-# SEARCH USAGE
-You can search the entire noneaa.com website including subpages like /company, /team, /about, etc.
-Use the search results to answer accurately.
+- NEVER guess or make up information.
+- If search results don't have the answer, say: "I couldn't find that information on the official website."
 `;
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
@@ -76,7 +72,12 @@ async function callGemini(messages: { role: string; content: string }[], systemP
 }
 
 async function searchNoneaaWebsite(query: string): Promise<string> {
-  if (!TAVILY_API_KEY) return "";
+  if (!TAVILY_API_KEY) {
+    console.log("❌ Tavily key is missing");
+    return "";
+  }
+
+  console.log("🔍 Searching Tavily for:", query);
 
   try {
     const response = await fetch('https://api.tavily.com/search', {
@@ -85,14 +86,18 @@ async function searchNoneaaWebsite(query: string): Promise<string> {
       body: JSON.stringify({
         api_key: TAVILY_API_KEY,
         query: `${query} site:noneaa.com`,
-        search_depth: "advanced",        // Better for deep pages
+        search_depth: "advanced",
         include_answer: true,
-        max_results: 10,
+        max_results: 8,
       }),
     });
 
+    console.log("📡 Tavily status:", response.status);
+
     if (!response.ok) return "";
+
     const data = await response.json();
+    console.log("✅ Tavily results found:", data.results?.length || 0);
 
     if (!data.results || data.results.length === 0) return "";
 
@@ -103,7 +108,7 @@ URL: ${result.url}
 Content: ${result.content}
 `).join('\n---\n');
   } catch (error) {
-    console.error("Tavily search error:", error);
+    console.error("❌ Tavily error:", error);
     return "";
   }
 }
@@ -150,7 +155,6 @@ export default function AIAssistant() {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  // Greeting Typing Effect
   useEffect(() => {
     if (isOpen && !greetingStartedRef.current) {
       greetingStartedRef.current = true;
@@ -210,7 +214,7 @@ export default function AIAssistant() {
       }));
 
       const enhancedSystemPrompt = searchResults 
-        ? `${SYSTEM_CONTEXT}\n\n=== Search Results from noneaa.com (including subpages) ===\n${searchResults}\n\nAnswer based ONLY on the search results. Do not guess.`
+        ? `${SYSTEM_CONTEXT}\n\n=== Search Results from noneaa.com ===\n${searchResults}\n\nAnswer based ONLY on the search results.`
         : SYSTEM_CONTEXT;
 
       let reply: string;
