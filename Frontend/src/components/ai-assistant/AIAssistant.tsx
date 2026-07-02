@@ -14,7 +14,6 @@ interface Message {
 const GREETING_TEXT = "Hi! I'm Anna, your Virtual AI Assistant for the NONEAA platform. I can help you with anything related to Noneaa platform . What would you like to know?";
 const TYPING_SPEED_MS = 25;
 const INPUT_MAX_HEIGHT_PX = 120;
-
 const QUICK_PROMPTS = [
   'What is CBE?',
   'How does assessment work?',
@@ -53,6 +52,12 @@ You specialize in:
 - Results
 - Technical guidance related to NONEAA
 
+# LEADERSHIP TEAM
+- John Ominde - CEO & Founder
+- Jeremy Bravoge - Director of Technology
+- Livingstone Oduor - Full Stack Software Engineer
+- Victoria Wamboi - Digital Marketing Lead
+
 # ABOUT NONEAA
 NONEAA is an educational platform designed to help schools digitize and simplify school management under the Kenyan Competency Based Education system.
 The platform supports student management, teacher management, parent access, CBC assessments, report generation, attendance, school communication, timetables, learning areas, competency tracking, school records, academic progress, and administrative management.
@@ -77,7 +82,7 @@ You have access to search noneaa.com including subpages. Use the search results 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 const TAVILY_API_KEY = import.meta.env.VITE_TAVILY_API_KEY || '';
 
-console.log("Tavily Key Loaded:", !!TAVILY_API_KEY); // Debug
+console.log("🔑 Tavily Key Loaded:", !!TAVILY_API_KEY); // Debug
 
 const normalizeAiEndpoint = (raw?: string) => {
   const fallback = '/api/v1/ai/ai-chat';
@@ -100,7 +105,6 @@ async function callGemini(messages: { role: string; content: string }[], systemP
     role: m.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: m.content }],
   }));
-
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -110,7 +114,6 @@ async function callGemini(messages: { role: string; content: string }[], systemP
       generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
     }),
   });
-
   if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
   const data = await response.json();
   return data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
@@ -118,12 +121,10 @@ async function callGemini(messages: { role: string; content: string }[], systemP
 
 async function searchNoneaaWebsite(query: string): Promise<string> {
   if (!TAVILY_API_KEY) {
-    console.log("Tavily key is missing");
+    console.log("❌ Tavily key is missing");
     return "";
   }
-
-  console.log("Searching Tavily for:", query);
-
+  console.log("🔍 Searching Tavily for:", query);
   try {
     const response = await fetch('https://api.tavily.com/search', {
       method: 'POST',
@@ -136,16 +137,11 @@ async function searchNoneaaWebsite(query: string): Promise<string> {
         max_results: 8,
       }),
     });
-
     console.log("📡 Tavily status:", response.status);
-
     if (!response.ok) return "";
-
     const data = await response.json();
-    console.log("Tavily results found:", data.results?.length || 0);
-
+    console.log("✅ Tavily results found:", data.results?.length || 0);
     if (!data.results || data.results.length === 0) return "";
-
     return data.results.map((result: any, index: number) => `
 Source ${index + 1}:
 Title: ${result.title}
@@ -153,7 +149,7 @@ URL: ${result.url}
 Content: ${result.content}
 `).join('\n---\n');
   } catch (error) {
-    console.error("Tavily error:", error);
+    console.error("❌ Tavily error:", error);
     return "";
   }
 }
@@ -177,7 +173,6 @@ export default function AIAssistant() {
   const [greetingComplete, setGreetingComplete] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -252,13 +247,12 @@ export default function AIAssistant() {
 
     try {
       const searchResults = await searchNoneaaWebsite(messageText);
-
       const allMessages = [...messages, userMessage].map(m => ({
         role: m.role,
         content: m.content,
       }));
 
-      const enhancedSystemPrompt = searchResults 
+      const enhancedSystemPrompt = searchResults
         ? `${SYSTEM_CONTEXT}\n\n=== Search Results from noneaa.com ===\n${searchResults}\n\nAnswer based ONLY on the search results above.`
         : SYSTEM_CONTEXT;
 
@@ -284,14 +278,12 @@ export default function AIAssistant() {
       }
 
       const cleanedReply = cleanResponse(reply);
-
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: cleanedReply,
         timestamp: new Date(),
       };
-
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('AI Chat Error:', error);
@@ -355,7 +347,7 @@ export default function AIAssistant() {
             )}
           >
             {/* Header */}
-            <div className={cn("px-4 py-3 flex items-center gap-3 border-b", 
+            <div className={cn("px-4 py-3 flex items-center gap-3 border-b",
               isDarkMode ? "bg-[#1f1f1f] border-zinc-800" : "bg-gray-100 border-gray-300"
             )}>
               <div className="relative">
@@ -363,8 +355,8 @@ export default function AIAssistant() {
                 <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#1f1f1f]" />
               </div>
               <div className="flex-1">
-                <div className="font-semibold">Anna</div>
-                <div className="text-xs text-zinc-400">Virtual Assistant • Online</div>
+                <div className="font-semibold">Anna - AI Assistant</div>
+                <div className="text-xs text-zinc-400">Customer Support • Online</div>
               </div>
               <button onClick={() => setIsOpen(false)} className="text-3xl text-zinc-400 hover:text-white">×</button>
             </div>
@@ -374,7 +366,6 @@ export default function AIAssistant() {
               <div className="flex justify-center">
                 <div className="bg-zinc-800 text-zinc-400 text-xs px-5 py-2 rounded-full">You are now chatting with: Anna</div>
               </div>
-
               {messages.map((message) => (
                 <div key={message.id} className={cn("flex", message.role === 'user' ? "justify-end" : "justify-start")}>
                   {message.role === 'assistant' && (
@@ -383,7 +374,7 @@ export default function AIAssistant() {
                   <div className={cn("max-w-[76%]", message.role === 'user' ? "items-end" : "items-start")}>
                     <div className={cn(
                       "px-4 py-3 rounded-2xl text-[13px] font-tahoma leading-relaxed",
-                      message.role === 'user' ? "bg-[#e50914] text-white rounded-br-sm" : 
+                      message.role === 'user' ? "bg-[#e50914] text-white rounded-br-sm" :
                       isDarkMode ? "bg-[#2f2f2f] text-white rounded-bl-sm" : "bg-white border border-gray-200 text-gray-900 rounded-bl-sm"
                     )}>
                       {message.id === '1' && !greetingComplete ? (
@@ -401,7 +392,6 @@ export default function AIAssistant() {
                   )}
                 </div>
               ))}
-
               {isLoading && (
                 <div className="flex gap-3">
                   <img src={annaAvatar} alt="Anna" className="w-8 h-8 rounded-full flex-shrink-0 mt-1" />
@@ -428,8 +418,8 @@ export default function AIAssistant() {
                   placeholder="Type your message..."
                   className={cn(
                     "flex-1 px-5 py-3 focus:outline-none resize-y max-h-[120px] text-[13px] font-tahoma",
-                    isDarkMode 
-                      ? "bg-zinc-900 border border-zinc-700 focus:border-red-600 text-white" 
+                    isDarkMode
+                      ? "bg-zinc-900 border border-zinc-700 focus:border-red-600 text-white"
                       : "bg-gray-100 border border-gray-300 focus:border-red-600 text-gray-900",
                     "rounded-none"
                   )}
