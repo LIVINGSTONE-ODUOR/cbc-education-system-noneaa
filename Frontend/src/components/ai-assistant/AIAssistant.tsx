@@ -350,7 +350,7 @@ export default function AIAssistant() {
                 <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#1f1f1f]" />
               </div>
               <div className="flex-1">
-                <div className="font-semibold">Anna - AI Assistant</div>
+                <div className="font-semibold">Anna</div>
                 <div className="text-xs text-zinc-400">Customer Support • Online</div>
               </div>
               <button onClick={() => setIsOpen(false)} className="text-3xl text-zinc-400 hover:text-white">×</button>
