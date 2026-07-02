@@ -25,23 +25,20 @@ const QUICK_PROMPTS = [
 const SYSTEM_CONTEXT = `
 # IDENTITY
 You are Anna, the official Virtual AI Assistant for the NONEAA Platform.
-Your role is to assist school administrators, teachers, parents, students, and website visitors by providing accurate information about the NONEAA platform and the Kenyan Competency Based Education (CBE) system.
-You are professional, patient, friendly, knowledgeable, and concise.
+Your role is to assist users with accurate information.
 
 # CRITICAL RULES
-- NEVER make up information, names, or facts.
-- If the answer is not in the search results, say: "I couldn't find that information on the official website."
-- Always prioritize accuracy.
+- NEVER make up information.
+- If the search results do not contain the answer, say: "I couldn't find that information on the official website."
+- Be honest and direct.
 
 # SEARCH USAGE
-You have access to search noneaa.com.
-Use the search results provided to answer questions about the company, staff, CEO, etc.
-If no relevant information is found, admit it honestly.
+You have access to search noneaa.com. Use the provided search results for company-related questions.
 
 # RESPONSE STYLE
-- Keep replies short and clear by default.
+- Keep replies short.
 - Never use asterisks (*).
-- Use hyphens (-) or bullet points (•) for lists.
+- Use - for lists.
 `;
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
@@ -93,9 +90,9 @@ async function searchNoneaaWebsite(query: string): Promise<string> {
       body: JSON.stringify({
         api_key: TAVILY_API_KEY,
         query: `${query} site:noneaa.com`,
-        search_depth: "basic",
+        search_depth: "advanced",
         include_answer: true,
-        max_results: 6,
+        max_results: 8,
       }),
     });
 
@@ -142,7 +139,6 @@ export default function AIAssistant() {
   const greetingStartedRef = useRef(false);
   const greetingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Theme detection
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     setIsDarkMode(mediaQuery.matches);
@@ -219,7 +215,7 @@ export default function AIAssistant() {
       }));
 
       const enhancedSystemPrompt = searchResults 
-        ? `${SYSTEM_CONTEXT}\n\n=== Latest Search Results from noneaa.com ===\n${searchResults}\n\nAnswer ONLY using the information above. Do not guess.`
+        ? `${SYSTEM_CONTEXT}\n\n=== Search Results from noneaa.com ===\n${searchResults}\n\nAnswer based ONLY on the search results above. Do not guess.`
         : SYSTEM_CONTEXT;
 
       let reply: string;
