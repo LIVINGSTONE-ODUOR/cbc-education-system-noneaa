@@ -25,20 +25,14 @@ const QUICK_PROMPTS = [
 const SYSTEM_CONTEXT = `
 # IDENTITY
 You are Anna, the official Virtual AI Assistant for the NONEAA Platform.
-Your role is to assist users with accurate information.
 
 # CRITICAL RULES
-- NEVER make up information.
-- If the search results do not contain the answer, say: "I couldn't find that information on the official website."
-- Be honest and direct.
+- Be honest. If you cannot find the information, say so.
+- Do not guess names or facts.
 
 # SEARCH USAGE
-You have access to search noneaa.com. Use the provided search results for company-related questions.
-
-# RESPONSE STYLE
-- Keep replies short.
-- Never use asterisks (*).
-- Use - for lists.
+You can search the entire noneaa.com website including subpages like /company, /team, /about, etc.
+Use the search results to answer accurately.
 `;
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
@@ -83,6 +77,7 @@ async function callGemini(messages: { role: string; content: string }[], systemP
 
 async function searchNoneaaWebsite(query: string): Promise<string> {
   if (!TAVILY_API_KEY) return "";
+
   try {
     const response = await fetch('https://api.tavily.com/search', {
       method: 'POST',
@@ -90,9 +85,9 @@ async function searchNoneaaWebsite(query: string): Promise<string> {
       body: JSON.stringify({
         api_key: TAVILY_API_KEY,
         query: `${query} site:noneaa.com`,
-        search_depth: "advanced",
+        search_depth: "advanced",        // Better for deep pages
         include_answer: true,
-        max_results: 8,
+        max_results: 10,
       }),
     });
 
@@ -215,7 +210,7 @@ export default function AIAssistant() {
       }));
 
       const enhancedSystemPrompt = searchResults 
-        ? `${SYSTEM_CONTEXT}\n\n=== Search Results from noneaa.com ===\n${searchResults}\n\nAnswer based ONLY on the search results above. Do not guess.`
+        ? `${SYSTEM_CONTEXT}\n\n=== Search Results from noneaa.com (including subpages) ===\n${searchResults}\n\nAnswer based ONLY on the search results. Do not guess.`
         : SYSTEM_CONTEXT;
 
       let reply: string;
