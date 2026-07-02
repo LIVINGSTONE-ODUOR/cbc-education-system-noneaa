@@ -82,7 +82,7 @@ You have access to search noneaa.com including subpages. Use the search results 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 const TAVILY_API_KEY = import.meta.env.VITE_TAVILY_API_KEY || '';
 
-console.log("🔑 Tavily Key Loaded:", !!TAVILY_API_KEY); // Debug
+console.log("Tavily Key Loaded:", !!TAVILY_API_KEY); // Debug
 
 const normalizeAiEndpoint = (raw?: string) => {
   const fallback = '/api/v1/ai/ai-chat';
@@ -121,10 +121,10 @@ async function callGemini(messages: { role: string; content: string }[], systemP
 
 async function searchNoneaaWebsite(query: string): Promise<string> {
   if (!TAVILY_API_KEY) {
-    console.log("❌ Tavily key is missing");
+    console.log("Tavily key is missing");
     return "";
   }
-  console.log("🔍 Searching Tavily for:", query);
+  console.log("Searching Tavily for:", query);
   try {
     const response = await fetch('https://api.tavily.com/search', {
       method: 'POST',
@@ -140,7 +140,7 @@ async function searchNoneaaWebsite(query: string): Promise<string> {
     console.log("📡 Tavily status:", response.status);
     if (!response.ok) return "";
     const data = await response.json();
-    console.log("✅ Tavily results found:", data.results?.length || 0);
+    console.log("Tavily results found:", data.results?.length || 0);
     if (!data.results || data.results.length === 0) return "";
     return data.results.map((result: any, index: number) => `
 Source ${index + 1}:
@@ -149,7 +149,7 @@ URL: ${result.url}
 Content: ${result.content}
 `).join('\n---\n');
   } catch (error) {
-    console.error("❌ Tavily error:", error);
+    console.error("Tavily error:", error);
     return "";
   }
 }
@@ -355,7 +355,7 @@ export default function AIAssistant() {
                 <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#1f1f1f]" />
               </div>
               <div className="flex-1">
-                <div className="font-semibold">Anna - AI Assistant</div>
+                <div className="font-semibold">Anna</div>
                 <div className="text-xs text-zinc-400">Customer Support • Online</div>
               </div>
               <button onClick={() => setIsOpen(false)} className="text-3xl text-zinc-400 hover:text-white">×</button>
