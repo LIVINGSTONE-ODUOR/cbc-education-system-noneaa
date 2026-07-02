@@ -14,12 +14,6 @@ interface Message {
 const GREETING_TEXT = "Hi! I'm Anna, your Virtual AI Assistant for the NONEAA platform. I can help you with anything related to Noneaa platform . What would you like to know?";
 const TYPING_SPEED_MS = 25;
 const INPUT_MAX_HEIGHT_PX = 120;
-const QUICK_PROMPTS = [
-  'What is CBE?',
-  'How does assessment work?',
-  'Tell me about NONEAA',
-  'CBC structure explained',
-];
 
 const SYSTEM_CONTEXT = `
 # IDENTITY
@@ -63,15 +57,12 @@ NONEAA is an educational platform designed to help schools digitize and simplify
 The platform supports student management, teacher management, parent access, CBC assessments, report generation, attendance, school communication, timetables, learning areas, competency tracking, school records, academic progress, and administrative management.
 Only mention features that actually exist.
 
-# CBE KNOWLEDGE
-Understand the Kenyan education structure and key terms (Learning Areas, Strands, Sub Strands, etc.).
-
-# WHEN ANSWERING
-Be accurate, concise, and helpful. Use simple English.
-
 # GREETINGS & CASUAL CONVERSATION
 You can respond naturally and friendly to greetings like "hi", "hello", "good morning", "how are you", etc.
 Keep responses warm but professional.
+
+# WHEN ANSWERING
+Be accurate, concise, and helpful. Use simple English.
 
 # RESPONSE FORMATTING
 - Never use asterisks (*) or double asterisks (**).
@@ -141,7 +132,7 @@ async function searchNoneaaWebsite(query: string): Promise<string> {
         max_results: 8,
       }),
     });
-    console.log("📡 Tavily status:", response.status);
+    console.log("Tavily status:", response.status);
     if (!response.ok) return "";
     const data = await response.json();
     console.log("Tavily results found:", data.results?.length || 0);
@@ -359,7 +350,7 @@ export default function AIAssistant() {
                 <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#1f1f1f]" />
               </div>
               <div className="flex-1">
-                <div className="font-semibold">Anna</div>
+                <div className="font-semibold">Anna - AI Assistant</div>
                 <div className="text-xs text-zinc-400">Customer Support • Online</div>
               </div>
               <button onClick={() => setIsOpen(false)} className="text-3xl text-zinc-400 hover:text-white">×</button>
@@ -391,9 +382,6 @@ export default function AIAssistant() {
                       {formatTime(message.timestamp)}
                     </div>
                   </div>
-                  {message.role === 'user' && (
-                    <div className="w-8 h-8 rounded-full bg-zinc-700 flex-shrink-0 ml-3 mt-1 flex items-center justify-center text-sm">👤</div>
-                  )}
                 </div>
               ))}
               {isLoading && (
