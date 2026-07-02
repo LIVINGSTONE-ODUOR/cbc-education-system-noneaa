@@ -77,6 +77,22 @@ You have access to search noneaa.com. Use the search results to give accurate, u
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 const TAVILY_API_KEY = import.meta.env.VITE_TAVILY_API_KEY || '';
 
+const normalizeAiEndpoint = (raw?: string) => {
+  const fallback = '/api/v1/ai/ai-chat';
+  if (!raw) return fallback;
+  const trimmed = raw.trim();
+  if (!trimmed) return fallback;
+  if (/\/api\/ai-chat$/.test(trimmed)) {
+    return trimmed.replace(/\/api\/ai-chat$/, '/api/v1/ai/ai-chat');
+  }
+  if (/\/api\/ai\/ai-chat$/.test(trimmed) && !/\/api\/v1\/ai\/ai-chat$/.test(trimmed)) {
+    return trimmed.replace(/\/api\/ai\/ai-chat$/, '/api/v1/ai/ai-chat');
+  }
+  return trimmed;
+};
+
+const AI_API_ENDPOINT = normalizeAiEndpoint(import.meta.env.VITE_AI_API_ENDPOINT);
+
 async function callGemini(messages: { role: string; content: string }[], systemPrompt: string): Promise<string> {
   const contents = messages.map(m => ({
     role: m.role === 'assistant' ? 'model' : 'user',
@@ -343,7 +359,7 @@ export default function AIAssistant() {
               <button onClick={() => setIsOpen(false)} className="text-3xl text-zinc-400 hover:text-white">×</button>
             </div>
 
-            {/* Messages Area */}
+            {/* Messages */}
             <div ref={messagesContainerRef} onScroll={handleScroll} className={cn("flex-1 overflow-y-auto p-4 space-y-5", isDarkMode ? "bg-[#0a0a0a]" : "bg-gray-50")}>
               <div className="flex justify-center">
                 <div className="bg-zinc-800 text-zinc-400 text-xs px-5 py-2 rounded-full">You are now chatting with: Anna</div>
