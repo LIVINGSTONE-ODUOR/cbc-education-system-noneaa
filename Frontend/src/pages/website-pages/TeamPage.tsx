@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { teamMembers } from '@/data/teamMembers';
+/*import { teamMembers } from '@/data/teamMembers';*/
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Linkedin, Mail, Github, Users, Lightbulb, Heart, CheckCircle, Code, BarChart3, DollarSign, Briefcase, Headphones, BookOpen, ArrowRight } from 'lucide-react';
