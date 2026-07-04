@@ -437,15 +437,18 @@ export function AuthProvider({
             'Invalid credentials. Please try again.'
         );
 
-        if (
-          response.status === 423 &&
-          data.locked_until
-        ) {
+        if (response.status === 423 && data.locked_until) {
           (
             err as Error & {
               lockedUntil: string;
             }
           ).lockedUntil = data.locked_until;
+        }
+
+        if (response.status === 503 || data.error === 'DATABASE_UNAVAILABLE') {
+          (
+            err as Error & { code: string }
+          ).code = 'DATABASE_UNAVAILABLE';
         }
 
         throw err;

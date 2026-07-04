@@ -37,6 +37,7 @@ exports.login = async (req, res) => {
 
     // Fetch user (with fallback)
     let userResult;
+    let dbUnavailable = false;
     try {
       userResult = await query(`
         SELECT u.id, u.email, u.password_hash, u.role, u.status,
@@ -49,8 +50,22 @@ exports.login = async (req, res) => {
         LIMIT 1`, [email]);
     } catch (dbError) {
       console.error('Direct DB query failed, trying Supabase...', dbError.message);
-      const supabaseUser = await fetchUserFromSupabase(email);
-      userResult = { rows: supabaseUser ? [supabaseUser] : [] };
+      try {
+        const supabaseUser = await fetchUserFromSupabase(email);
+        userResult = { rows: supabaseUser ? [supabaseUser] : [] };
+      } catch (supabaseError) {
+        console.error('Supabase fallback also failed:', supabaseError.message);
+        dbUnavailable = true;
+        userResult = { rows: [] };
+      }
+    }
+
+    if (dbUnavailable) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database unavailable. Please try again later.',
+        error: 'DATABASE_UNAVAILABLE'
+      });
     }
 
     if (userResult.rows.length === 0) {
@@ -114,6 +129,19 @@ exports.login = async (req, res) => {
 
   } catch (error) {
     console.error('Login error:', error);
+    const isDbError = error.code === 'ECONNREFUSED' ||
+      error.code === 'ETIMEDOUT' ||
+      error.code === 'ENOTFOUND' ||
+      error.message?.includes('database') ||
+      error.message?.includes('connection') ||
+      error.message?.includes('timeout');
+    if (isDbError) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database unavailable. Please try again later.',
+        error: 'DATABASE_UNAVAILABLE'
+      });
+    }
     return res.status(500).json({ success: false, message: 'Internal server error.' });
   }
 };
