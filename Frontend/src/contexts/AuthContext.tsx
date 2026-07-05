@@ -86,12 +86,18 @@ const SKELETON_FADE_START_MS =
   // ======================================================
   // AUTO LOGOUT SETTINGS
   // ======================================================
-  
+
   // Disabled by default to prevent dashboard 401 loops while debugging.
   // Re-enable after token/refresh behavior is stable.
+  //
+  // NOTE: 0 is treated as "disabled" by startInactivityTimer() below.
+  // setTimeout(fn, 0) does NOT mean "never fire" - it fires almost
+  // immediately on the next tick. Previously this caused an instant
+  // logout right after login. Do not remove the guard in
+  // startInactivityTimer() unless these values are both > 0.
   const INACTIVITY_TIMEOUT_MS = 0;
   const INACTIVITY_WARNING_MS = 0;
-  
+
   const ACTIVITY_EVENTS = [
     'mousemove',
     'mousedown',
@@ -268,6 +274,14 @@ export function AuthProvider({
 
   const startInactivityTimer = useCallback(() => {
     stopInactivityTimer();
+
+    // Guard: treat a non-positive timeout as "inactivity logout disabled".
+    // setTimeout(fn, 0) fires almost immediately (next tick), NOT never.
+    // Without this guard, INACTIVITY_TIMEOUT_MS = 0 was logging users out
+    // right after login, before the dashboard even finished loading.
+    if (INACTIVITY_TIMEOUT_MS <= 0) {
+      return;
+    }
 
     inactivityWarningTimerRef.current = setTimeout(() => {
       warningToastIdRef.current = toast.warning(
