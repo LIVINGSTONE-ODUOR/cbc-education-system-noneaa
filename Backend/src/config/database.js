@@ -61,6 +61,22 @@ const query = async (text, params = []) => {
     return res;
   } catch (error) {
     console.error('Direct Postgres failed:', error.message);
+
+    // For auth/session persistence, REST fallback is unsafe because the SQL->REST mapping
+    // is not guaranteed to preserve parameterized values for this schema.
+    // Fail fast so refresh-token/session logic doesn't silently desync.
+    const lower = String(text || '').toLowerCase();
+    const isAuthSessionQuery =
+      lower.includes('from user_sessions') ||
+      lower.includes('insert into user_sessions') ||
+      lower.includes('update user_sessions') ||
+      lower.includes('delete from user_sessions') ||
+      lower.includes('from users') && lower.includes('session') ;
+
+    if (isAuthSessionQuery) {
+      throw error;
+    }
+
     if (!supabaseAdmin) throw error;
     console.log('Falling back to Supabase REST...');
     return await executeViaRest(text, params);
