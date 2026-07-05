@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-/*import { clients, clientStats } from '@/data/clients';*/
+import { clients, clientStats } from '@/data/clients';
 import ClientCard from '@/components/ClientCard';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
