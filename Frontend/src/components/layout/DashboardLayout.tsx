@@ -612,7 +612,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       try {
         const token = localStorage.getItem('cbe_access_token');
         if (token) {
-          await fetch('/api/users/me/update-activity', {
+          const apiBase = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || '');
+          const url = `${apiBase}/api/v1/users/me/update-activity`;
+          await fetch(url, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
