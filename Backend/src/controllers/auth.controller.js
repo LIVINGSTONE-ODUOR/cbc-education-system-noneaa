@@ -186,9 +186,9 @@ exports.refreshToken = async (req, res) => {
           AND u.status != 'deleted'`,
         [refreshToken]);
     } catch (dbErr) {
-      console.error('DB error during refresh:', dbErr.message);
-      // Supabase fallback...
-      sessionResult = { rows: [] };
+      // Let the main query wrapper handle REST fallback.
+      console.error('DB error during refresh (will retry via query wrapper):', dbErr.message);
+      throw dbErr;
     }
 
     if (sessionResult.rows.length === 0) {
