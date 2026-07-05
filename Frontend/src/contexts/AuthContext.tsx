@@ -23,9 +23,13 @@ const getApiUrl = () => {
 
   // Production fallback (Render backend)
   if (import.meta.env.PROD) {
-    // Use the backend that actually serves the API in this project.
-    // (Frontend runtime logs show /api/v1/login being called on this host.)
-    return 'https://cbc-education-system.onrender.com';
+    // IMPORTANT: this must match the backend the Vercel rewrite in
+    // vercel.json points to (currently cbc-education-system-1). If this
+    // ever drifts from that value again, login() below will sign tokens
+    // against a different JWT_SECRET than the one every other relative
+    // /api/* call verifies against - every request after login will fail
+    // with "invalid signature" no matter how many times you log in fresh.
+    return 'https://cbc-education-system-1.onrender.com';
   }
 
 
