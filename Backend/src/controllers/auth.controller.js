@@ -128,13 +128,23 @@ exports.login = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Login error:', error);
-    const isDbError = error.code === 'ECONNREFUSED' ||
-      error.code === 'ETIMEDOUT' ||
-      error.code === 'ENOTFOUND' ||
-      error.message?.includes('database') ||
-      error.message?.includes('connection') ||
-      error.message?.includes('timeout');
+    // Surface the real underlying error for easier debugging.
+    // (Frontend still receives a safe generic message.)
+    console.error('Login error:', {
+      message: error?.message,
+      code: error?.code,
+      detail: error?.detail,
+      hint: error?.hint,
+      stack: error?.stack,
+    });
+
+    const isDbError = error?.code === 'ECONNREFUSED' ||
+      error?.code === 'ETIMEDOUT' ||
+      error?.code === 'ENOTFOUND' ||
+      error?.message?.includes('database') ||
+      error?.message?.includes('connection') ||
+      error?.message?.includes('timeout');
+
     if (isDbError) {
       return res.status(503).json({
         success: false,
@@ -142,7 +152,11 @@ exports.login = async (req, res) => {
         error: 'DATABASE_UNAVAILABLE'
       });
     }
-    return res.status(500).json({ success: false, message: 'Internal server error.' });
+
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error.'
+    });
   }
 };
 
