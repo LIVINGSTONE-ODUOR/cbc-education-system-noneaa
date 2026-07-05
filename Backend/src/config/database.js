@@ -82,11 +82,14 @@ async function executeViaRest(text, params = []) {
     tableName = 'school_admins';
   } else {
     // Fallback regex
+    // Must be careful with queries that contain the token "SET" (e.g. ON CONFLICT ... DO UPDATE ... SET ...)
+    // This REST fallback uses the detected table name to build a .from(tableName) call.
     const fromMatch = lower.match(/\bfrom\s+["`]?(\w+)/i);
     const updateMatch = lower.match(/\bupdate\s+["`]?(\w+)/i);
     const insertMatch = lower.match(/\binsert\s+into\s+["`]?(\w+)/i);
-    
-    tableName = fromMatch?.[1] || updateMatch?.[1] || insertMatch?.[1];
+
+    // If the query is an UPSERT/ON CONFLICT, prefer the INSERT INTO table name.
+    tableName = insertMatch?.[1] || fromMatch?.[1] || updateMatch?.[1];
   }
 
   if (!tableName) {
