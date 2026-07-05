@@ -35,10 +35,12 @@ const getApiUrl = () => {
 
 const API_URL = getApiUrl();
 
-  console.log('[AuthContext] API_URL:', API_URL);
-  console.log('[AuthContext] Environment:', import.meta.env.MODE);
-  console.log('[AuthContext] Login URL:', `${API_URL}/api/v1/login`);
-  console.log('[AuthContext] Health URL:', `${API_URL}/health`);
+  if (!import.meta.env.PROD) {
+    console.log('[AuthContext] API_URL:', API_URL);
+    console.log('[AuthContext] Environment:', import.meta.env.MODE);
+    console.log('[AuthContext] Login URL:', `${API_URL}/api/v1/login`);
+    console.log('[AuthContext] Health URL:', `${API_URL}/health`);
+  }
 
 
 // ======================================================

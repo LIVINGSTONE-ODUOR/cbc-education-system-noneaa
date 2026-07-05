@@ -32,7 +32,9 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ||
   (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
 
 // 🔍 DEBUG LOGGING
-console.log('🔍 Frontend auth - API_BASE_URL:', API_BASE_URL);
+if (!import.meta.env.PROD) {
+  console.log('🔍 Frontend auth - API_BASE_URL:', API_BASE_URL);
+}
 const TOKEN_KEY = 'cbe_access_token';
 const REFRESH_TOKEN_KEY = 'cbe_refresh_token';
 const USER_KEY = 'cbe_user_data';
