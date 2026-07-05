@@ -1,7 +1,7 @@
+// src/config/database.js
 const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first');
 
-const { Pool } = require('pg');
 const { createClient } = require('@supabase/supabase-js');
 const dotenv = require('dotenv');
 
@@ -11,116 +11,93 @@ const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl) {
-  console.error('Missing SUPABASE_URL');
+  console.error('❌ Missing SUPABASE_URL');
   process.exit(1);
 }
 
-// ====================== Supabase Admin Client ======================
-const supabaseAdmin = supabaseUrl && supabaseServiceRoleKey
-  ? createClient(supabaseUrl, supabaseServiceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    })
-  : null;
-
-// ====================== Project Ref Extraction ======================
-let projectRef = null;
-try {
-  const parsed = new URL(supabaseUrl);
-  projectRef = parsed.hostname.split('.')[0];
-} catch (e) {
-  const host = supabaseUrl.replace(/^https?:\/\//, '').split('/')[0];
-  projectRef = host.split('.')[0];
+if (!supabaseServiceRoleKey) {
+  console.error('❌ Missing SUPABASE_SERVICE_ROLE_KEY');
+  process.exit(1);
 }
 
-// ====================== Postgres Pool ======================
-const dbHost = process.env.SUPABASE_DB_HOST || `db.${projectRef}.supabase.co`;
-const connectionString = process.env.DATABASE_URL ||
-  `postgresql://${encodeURIComponent(process.env.SUPABASE_DB_USER || 'postgres')}` +
-  `:${encodeURIComponent(process.env.SUPABASE_DB_PASSWORD)}@${dbHost}:${process.env.SUPABASE_DB_PORT || 5432}/postgres`;
-
-const pool = new Pool({
-  connectionString,
-  ssl: { rejectUnauthorized: false },
-  family: 4, // Force IPv4
-  max: 20,
-  idleTimeoutMillis: 60000,
-  connectionTimeoutMillis: 15000,
-  statement_timeout: 60000,
-  query_timeout: 60000,
+// ====================== Supabase Admin Client (Recommended) ======================
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  auth: { 
+    autoRefreshToken: false, 
+    persistSession: false 
+  },
 });
 
-pool.on('connect', () => console.log('Postgres pool connected (IPv4)'));
-pool.on('error', (err) => console.error('Pool error:', err.message));
+console.log('✅ Supabase admin client initialized successfully');
 
-// ====================== Query Wrapper ======================
+// ====================== Optional: Lightweight Postgres Pool (for heavy queries) ======================
+let pool = null;
+
+if (process.env.ENABLE_DIRECT_POSTGRES === 'true') {
+  const { Pool } = require('pg');
+  
+  const dbHost = process.env.SUPABASE_DB_HOST || 
+    supabaseUrl.replace(/^https?:\/\//, '').split('.')[0] + '.supabase.co';
+  
+  const connectionString = process.env.DATABASE_URL || 
+    `postgresql://${encodeURIComponent(process.env.SUPABASE_DB_USER || 'postgres')}` +
+    `:${encodeURIComponent(process.env.SUPABASE_DB_PASSWORD)}@${dbHost}:${process.env.SUPABASE_DB_PORT || 5432}/postgres`;
+
+  pool = new Pool({
+    connectionString,
+    ssl: { rejectUnauthorized: false },
+    max: 20,
+    idleTimeoutMillis: 60000,
+    connectionTimeoutMillis: 15000,
+  });
+
+  pool.on('connect', () => console.log('✅ Postgres pool connected (IPv4)'));
+  pool.on('error', (err) => console.error('Pool error:', err.message));
+}
+
+// ====================== Simple Query Wrapper (with fallback) ======================
 const query = async (text, params = []) => {
   const start = Date.now();
-  try {
-    const res = await pool.query(text, params);
-    console.log(`Query OK [${Date.now() - start}ms]`, { rows: res.rowCount });
-    return res;
-  } catch (error) {
-    console.error('Direct Postgres failed:', error.message);
 
-    // For auth/session persistence, REST fallback is unsafe because the SQL->REST mapping
-    // is not guaranteed to preserve parameterized values for this schema.
-    // Fail fast so refresh-token/session logic doesn't silently desync.
-    const lower = String(text || '').toLowerCase();
-    const isAuthSessionQuery =
-      lower.includes('from user_sessions') ||
-      lower.includes('insert into user_sessions') ||
-      lower.includes('update user_sessions') ||
-      lower.includes('delete from user_sessions') ||
-      lower.includes('from users') && lower.includes('session') ;
-
-    if (isAuthSessionQuery) {
-      throw error;
+  // Try direct Postgres first (if enabled)
+  if (pool && process.env.ENABLE_DIRECT_POSTGRES === 'true') {
+    try {
+      const res = await pool.query(text, params);
+      console.log(`Query OK [${Date.now() - start}ms]`, { rows: res.rowCount });
+      return res;
+    } catch (error) {
+      console.error('Direct Postgres failed:', error.message);
     }
-
-    if (!supabaseAdmin) throw error;
-    console.log('Falling back to Supabase REST...');
-    return await executeViaRest(text, params);
   }
+
+  // Fallback to Supabase JS client
+  console.log('Falling back to Supabase REST...');
+  return executeViaRest(text, params);
 };
 
-// ====================== REST Fallback (Fixed) ======================
+// ====================== Improved REST Fallback ======================
 async function executeViaRest(text, params = []) {
   const lower = text.toLowerCase().trim();
-
-  // Improved table name detection
   let tableName = null;
 
-  if (lower.includes('from users') || lower.includes('update users')) {
-    tableName = 'users';
-  } else if (lower.includes('from user_sessions') || lower.includes('update user_sessions')) {
-    tableName = 'user_sessions';
-  } else if (lower.includes('from school_admins')) {
-    tableName = 'school_admins';
-  } else {
-    // Fallback regex
-    // Must be careful with queries that contain the token "SET" (e.g. ON CONFLICT ... DO UPDATE ... SET ...)
-    // This REST fallback uses the detected table name to build a .from(tableName) call.
-    const fromMatch = lower.match(/\bfrom\s+["`]?(\w+)/i);
-    const updateMatch = lower.match(/\bupdate\s+["`]?(\w+)/i);
-    const insertMatch = lower.match(/\binsert\s+into\s+["`]?(\w+)/i);
-
-    // If the query is an UPSERT/ON CONFLICT, prefer the INSERT INTO table name.
-    tableName = insertMatch?.[1] || fromMatch?.[1] || updateMatch?.[1];
-  }
+  // Better table detection
+  const tableMatches = lower.match(/\b(?:from|into|update)\s+["']?(\w+)["']?/i);
+  tableName = tableMatches ? tableMatches[1] : null;
 
   if (!tableName) {
-    console.error('REST fallback: Could not determine target table from query:', text);
-    throw new Error('REST fallback: Could not determine target table');
+    console.error('REST fallback: Could not determine table from query:', text);
+    throw new Error('Could not determine target table for REST fallback');
   }
 
-  console.log(`Supabase REST fallback using table: ${tableName}`);
+  console.log(`Supabase REST fallback → table: ${tableName}`);
 
   try {
     // INSERT
     if (lower.startsWith('insert')) {
+      const insertData = Array.isArray(params[0]) ? params[0] : params[0] || {};
       const { data, error } = await supabaseAdmin
         .from(tableName)
-        .insert(params[0] || {})
+        .insert(insertData)
         .select();
       if (error) throw error;
       return { rows: data || [], rowCount: data?.length || 0 };
@@ -128,57 +105,58 @@ async function executeViaRest(text, params = []) {
 
     // UPDATE
     if (lower.startsWith('update')) {
+      const updateData = params[0] || {};
       const { data, error } = await supabaseAdmin
         .from(tableName)
-        .update(params[0] || {})
-        .eq('id', params[1])
+        .update(updateData)
+        .eq('id', params[1])   // Adjust this logic based on your queries
         .select();
       if (error) throw error;
       return { rows: data || [], rowCount: data?.length || 0 };
     }
 
-    // SELECT
-    let queryBuilder = supabaseAdmin.from(tableName).select('*');
+    // SELECT (basic)
+    let qb = supabaseAdmin.from(tableName).select('*');
 
-    // Basic filters
+    // Simple param handling - extend as needed
     if (params.length > 0) {
-      if (lower.includes('email =') || lower.includes('email = $1')) {
-        queryBuilder = queryBuilder.eq('email', params[0]);
-      } else if (lower.includes('id =') || lower.includes('id = $1')) {
-        queryBuilder = queryBuilder.eq('id', params[0]);
-      } else if (lower.includes('user_id =') || lower.includes('user_id = $1')) {
-        queryBuilder = queryBuilder.eq('user_id', params[0]);
-      } else if (lower.includes('session_token =')) {
-        queryBuilder = queryBuilder.eq('session_token', params[0]);
-      }
+      if (lower.includes('email')) qb = qb.eq('email', params[0]);
+      else if (lower.includes('id')) qb = qb.eq('id', params[0]);
+      else if (lower.includes('user_id')) qb = qb.eq('user_id', params[0]);
+      else if (lower.includes('session_token')) qb = qb.eq('session_token', params[0]);
     }
 
-    const { data, error } = await queryBuilder;
+    const { data, error } = await qb;
     if (error) throw error;
 
     return { rows: data || [], rowCount: data?.length || 0 };
   } catch (error) {
-    console.error(`Supabase REST failed for table '${tableName}':`, error.message);
+    console.error(`REST failed for table '${tableName}':`, error.message);
     throw error;
   }
 }
 
-// ====================== Transaction Wrapper ======================
+// ====================== Transaction (Direct Postgres only) ======================
 const transaction = async (callback) => {
-  let client;
+  if (!pool) throw new Error('Transactions require direct Postgres pool. Enable ENABLE_DIRECT_POSTGRES.');
+  
+  const client = await pool.connect();
   try {
-    client = await pool.connect();
     await client.query('BEGIN');
     const result = await callback(client);
     await client.query('COMMIT');
     return result;
   } catch (error) {
-    if (client) await client.query('ROLLBACK');
-    console.error('Transaction failed:', error.message);
+    await client.query('ROLLBACK');
     throw error;
   } finally {
-    if (client) client.release();
+    client.release();
   }
 };
 
-module.exports = { query, transaction, pool, supabaseAdmin };
+module.exports = { 
+  query, 
+  transaction, 
+  pool, 
+  supabaseAdmin 
+};
