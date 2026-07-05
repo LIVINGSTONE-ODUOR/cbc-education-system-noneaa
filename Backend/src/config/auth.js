@@ -81,9 +81,15 @@ const generateTokens = async (user) => {
 // Verify JWT token
 const verifyToken = (token) => {
   try {
+    // JWT verification
     return jwt.verify(token, JWT_SECRET);
   } catch (error) {
-    throw new Error('Invalid or expired token');
+    // Preserve jwt error name for better debugging (e.g. TokenExpiredError)
+    const msg = error?.message || 'Invalid or expired token';
+    const err = new Error(msg);
+    err.name = error?.name;
+    err.code = error?.code;
+    throw err;
   }
 };
 
