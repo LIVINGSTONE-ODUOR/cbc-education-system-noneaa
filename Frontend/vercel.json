@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://cbc-education-system.onrender.com/api/:path*"
+      "destination": "https://cbc-education-system-1.onrender.com/api/:path*"
     },
     {
       "source": "/:path((?!api).*)*",
