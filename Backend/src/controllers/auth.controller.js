@@ -174,6 +174,12 @@ exports.refreshToken = async (req, res) => {
       });
     }
 
+    console.log('[refreshToken] incoming refreshToken:', {
+      hasRefreshToken: !!refreshToken,
+      length: typeof refreshToken === 'string' ? refreshToken.length : null,
+      first10: typeof refreshToken === 'string' ? refreshToken.slice(0, 10) : null
+    });
+
     // Find valid session
     let sessionResult;
     try {
