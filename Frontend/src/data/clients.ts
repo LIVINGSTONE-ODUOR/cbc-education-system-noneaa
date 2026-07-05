@@ -1,4 +1,14 @@
-export const clients = [];
+export interface Client {
+  id: string | number;
+  name: string;
+  location: string;
+  description?: string;
+  students?: number;
+  since?: string;
+  category?: string;
+}
+
+export const clients: Client[] = [];
 
 export const clientStats = {
   totalSchools: 0,

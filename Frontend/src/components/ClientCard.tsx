@@ -1,6 +1,6 @@
 // src/components/ClientCard.tsx
 import React from 'react';
-import { Client } from '@/data/clients/clients';
+import { Client } from '@/data/clients';
 
 interface ClientCardProps {
   client: Client;
