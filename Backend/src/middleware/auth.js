@@ -20,6 +20,19 @@ const authenticate = async (req, res, next) => {
   try {
     decoded = verifyToken(token);
   } catch (error) {
+    // 🔴 TEMP DEBUG LOGGING - remove once root cause is confirmed.
+    // The response message below is intentionally generic for the
+    // frontend, but it does NOT mean the token is actually expired -
+    // jwt.verify() throws for expired tokens AND malformed/invalid
+    // signature tokens, and both were being reported identically.
+    console.error('🔴 Token verify failed:', {
+      errorName: error?.name,       // e.g. 'TokenExpiredError' vs 'JsonWebTokenError'
+      errorMessage: error?.message, // e.g. 'jwt expired' vs 'jwt malformed' vs 'invalid signature'
+      tokenPreview: token ? token.slice(0, 20) : null,
+      tokenLength: token ? token.length : null,
+      authHeaderPreview: authHeader ? authHeader.slice(0, 30) : null
+    });
+
     return res.status(401).json({
       success: false,
       message: 'Token expired. Please login again.'
