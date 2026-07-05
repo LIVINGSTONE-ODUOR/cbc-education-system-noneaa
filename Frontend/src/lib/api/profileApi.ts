@@ -103,8 +103,43 @@ export interface PasswordChange {
 
 export const getProfile = async (): Promise<Profile> => {
   const url = `${API_URL}/api/v1/users/me`;
-  const response = await fetch(url, getFetchOptions('GET'));
-  return handleResponse<{ data: Profile }>(response).then(data => data.data);
+
+  const doRequest = async () => {
+    const response = await fetch(url, getFetchOptions('GET'));
+    return handleResponse<{ data: Profile }>(response).then((data) => data.data);
+  };
+
+  try {
+    return await doRequest();
+  } catch (e: any) {
+    // If token expired, attempt refresh then retry once.
+    // profileApi previously never retried, causing persistent 401.
+    if (String(e?.message || '').toLowerCase().includes('401')) {
+      const refreshToken = localStorage.getItem('cbe_refresh_token');
+      if (!refreshToken) throw e;
+
+      const refreshResp = await fetch(`${API_URL}/api/v1/refresh-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!refreshResp.ok) throw e;
+
+      const refreshData = await refreshResp.json();
+      const newAccessToken = refreshData?.data?.tokens?.accessToken ?? refreshData?.data?.accessToken;
+      const newRefreshToken = refreshData?.data?.tokens?.refreshToken ?? refreshData?.data?.refreshToken;
+
+      if (newAccessToken) {
+        localStorage.setItem('cbe_access_token', newAccessToken);
+        if (newRefreshToken) localStorage.setItem('cbe_refresh_token', newRefreshToken);
+      }
+
+      return await doRequest();
+    }
+
+    throw e;
+  }
 };
 
 export const updatePersonalInfo = async (data: PersonalInfoUpdate): Promise<void> => {
@@ -199,9 +234,43 @@ export const removeTrustedDevice = async (deviceId: string): Promise<void> => {
 };
 
 export const updateActivity = async (): Promise<void> => {
-  const url = `${API_URL}/api/users/me/update-activity`;
-  const response = await fetch(url, getFetchOptions('POST'));
-  await handleResponse<{ success: true }>(response);
+  const url = `${API_URL}/api/v1/users/me/update-activity`;
+
+  const doRequest = async () => {
+    const response = await fetch(url, getFetchOptions('POST'));
+    await handleResponse<{ success: true }>(response);
+  };
+
+  try {
+    await doRequest();
+  } catch (e: any) {
+    if (String(e?.message || '').toLowerCase().includes('401')) {
+      const refreshToken = localStorage.getItem('cbe_refresh_token');
+      if (!refreshToken) throw e;
+
+      const refreshResp = await fetch(`${API_URL}/api/v1/refresh-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!refreshResp.ok) throw e;
+
+      const refreshData = await refreshResp.json();
+      const newAccessToken = refreshData?.data?.tokens?.accessToken ?? refreshData?.data?.accessToken;
+      const newRefreshToken = refreshData?.data?.tokens?.refreshToken ?? refreshData?.data?.refreshToken;
+
+      if (newAccessToken) {
+        localStorage.setItem('cbe_access_token', newAccessToken);
+        if (newRefreshToken) localStorage.setItem('cbe_refresh_token', newRefreshToken);
+      }
+
+      await doRequest();
+      return;
+    }
+
+    throw e;
+  }
 };
 
 

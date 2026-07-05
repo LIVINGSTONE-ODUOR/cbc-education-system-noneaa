@@ -81,22 +81,22 @@ const LOGIN_SKELETON_DURATION_MS = 6000;
 const SKELETON_FADE_START_MS =
   LOGIN_SKELETON_DURATION_MS - 1000;
 
-// ======================================================
-// AUTO LOGOUT SETTINGS
-// ======================================================
-
-const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
-
-const INACTIVITY_WARNING_MS =
-  INACTIVITY_TIMEOUT_MS - 5 * 60 * 1000;
-
-const ACTIVITY_EVENTS = [
-  'mousemove',
-  'mousedown',
-  'keydown',
-  'scroll',
-  'touchstart',
-] as const;
+  // ======================================================
+  // AUTO LOGOUT SETTINGS
+  // ======================================================
+  
+  // Disabled by default to prevent dashboard 401 loops while debugging.
+  // Re-enable after token/refresh behavior is stable.
+  const INACTIVITY_TIMEOUT_MS = 0;
+  const INACTIVITY_WARNING_MS = 0;
+  
+  const ACTIVITY_EVENTS = [
+    'mousemove',
+    'mousedown',
+    'keydown',
+    'scroll',
+    'touchstart',
+  ] as const;
 
 // ======================================================
 // TOKEN HELPERS
