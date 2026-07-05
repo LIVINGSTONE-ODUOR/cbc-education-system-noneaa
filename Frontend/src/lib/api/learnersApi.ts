@@ -150,7 +150,6 @@ export const getLearners = async (params: {
     try {
       const refreshToken = localStorage.getItem('cbe_refresh_token');
       if (refreshToken) {
-        // Prefer modern refresh route in backend.
         const refreshResp = await fetch(`${API_URL}/api/v1/refresh-token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -159,31 +158,51 @@ export const getLearners = async (params: {
 
         if (refreshResp.ok) {
           const refreshData = await refreshResp.json();
-          const newAccessToken = refreshData?.data?.tokens?.accessToken ?? refreshData?.data?.accessToken;
-          const newRefreshToken = refreshData?.data?.tokens?.refreshToken ?? refreshData?.data?.refreshToken;
+          const newAccessToken =
+            refreshData?.data?.tokens?.accessToken ??
+            refreshData?.data?.accessToken;
+          const newRefreshToken =
+            refreshData?.data?.tokens?.refreshToken ??
+            refreshData?.data?.refreshToken;
 
-          if (newAccessToken) {
-            localStorage.setItem('cbe_access_token', newAccessToken);
-            if (newRefreshToken) localStorage.setItem('cbe_refresh_token', newRefreshToken);
-
-            // retry original request once with updated token
-            const retryResponse = await fetch(url, {
-              ...getFetchOptions('GET'),
-              signal: params.signal,
-            });
-            const retryResult = await handleResponse<LearnersListResponse>(retryResponse);
-            const students = Array.isArray(retryResult.data)
-              ? retryResult.data.map(mapBackendToLearner)
-              : [];
-            const totalStudents = retryResult.pagination?.total ?? students.length;
-            const totalPages = retryResult.pagination?.pages ?? Math.ceil(totalStudents / (params.pageSize || 10));
-            return { students, totalStudents, totalPages };
+          if (!newAccessToken) {
+            throw new Error('Refresh did not return an access token');
           }
+
+          localStorage.setItem('cbe_access_token', newAccessToken);
+          if (newRefreshToken) {
+            localStorage.setItem('cbe_refresh_token', newRefreshToken);
+          }
+
+          // retry original request once with updated token
+          const retryResponse = await fetch(url, {
+            ...getFetchOptions('GET'),
+            signal: params.signal,
+          });
+
+          const retryResult = await handleResponse<LearnersListResponse>(
+            retryResponse
+          );
+
+          const students = Array.isArray(retryResult.data)
+            ? retryResult.data.map(mapBackendToLearner)
+            : [];
+          const totalStudents =
+            retryResult.pagination?.total ?? students.length;
+          const totalPages =
+            retryResult.pagination?.pages ??
+            Math.ceil(totalStudents / (params.pageSize || 10));
+
+          return { students, totalStudents, totalPages };
         }
       }
     } catch {
       // fall through to original error handling
     }
+
+    // If refresh didn't work (401 again / no refresh token), stop here.
+    // This prevents infinite retry loops.
+    throw new Error('Authentication failed. Please login again.');
   }
 
   const result = await handleResponse<LearnersListResponse>(response);

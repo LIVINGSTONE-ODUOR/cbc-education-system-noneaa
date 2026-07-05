@@ -31,6 +31,7 @@ import { menuSections, getTotalBadges } from '@/config/menuData';
 import Breadcrumb from './Breadcrumb';
 import NotificationDropdown from './NotificationDropdown';
 import UserMenuDropdown from './UserMenuDropdown';
+import { updateActivity } from '@/lib/api/profileApi';
 
 /* ─────────────────────────────────────────────────────────────────── */
 /* SIDEBAR COMPONENT                                                    */
@@ -610,18 +611,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       lastActivityUpdate = now;
 
       try {
-        const token = localStorage.getItem('cbe_access_token');
-        if (token) {
-          const apiBase = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || '');
-          const url = `${apiBase}/api/v1/users/me/update-activity`;
-          await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-        }
+        // Use centralized refresh-capable implementation to avoid 401 retry loops.
+        await updateActivity();
       } catch (error) {
         console.error('Activity update failed:', error);
       }
