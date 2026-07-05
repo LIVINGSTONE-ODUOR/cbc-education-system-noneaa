@@ -605,7 +605,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   useEffect(() => {
     let lastActivityUpdate = 0;
 
-    const updateActivity = async () => {
+    const sendActivityPing = async () => {
       const now = Date.now();
       if (now - lastActivityUpdate < 240000) return;
       lastActivityUpdate = now;
