@@ -1,158 +1,138 @@
-const express = require('express');
-const rateLimit = require('express-rate-limit');
-const { body } = require('express-validator');
-const authController = require('../controllers/auth.controller');
-const schoolRegistrationController = require('../controllers/schoolRegistration.controller');
-const schoolValidator = require('../validators/school.validator');
-const { authenticate, auditLog, securityHeaders, authorize } = require('../middleware/auth');
+const jwt = require('jsonwebtoken');
+const { verifyToken } = require('../config/auth');
+const { query } = require('../config/database');
+const { sessionTimeout } = require('./sessionTimeout');
 
-const router = express.Router();
+// Authentication middleware
+const authenticate = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
 
-// Apply security headers to all auth routes
-router.use(securityHeaders);
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      success: false,
+      message: 'Access denied. No token provided.'
+    });
+  }
 
-// Rate limiting for auth endpoints — keyed by email address so that
-// a locked-out account does not prevent OTHER accounts from logging in
-// from the same device, browser, or IP address.
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // limit each email address to 10 requests per windowMs
-  // Key by the submitted email so rate-limiting is per-account, not per-IP.
-  // Normalise the email (lowercase + trim) before using it as the key so that
-  // case/whitespace variations of the same address share one counter.
-  // A length cap (RFC 5321: 254 chars) guards against memory exhaustion via
-  // artificially long email strings.  Fall back to IP for requests that carry
-  // no valid email (the input validator will reject them anyway).
-  keyGenerator: (req) => {
-    const raw = req.body && req.body.email;
-    if (raw && typeof raw === 'string') {
-      const normalized = raw.toLowerCase().trim();
-      if (normalized.length > 0 && normalized.length <= 254) {
-        return normalized;
-      }
+  const token = authHeader.substring(7);
+  let decoded;
+
+  try {
+    decoded = verifyToken(token);
+  } catch (error) {
+    console.error('🔴 Token verify failed:', {
+      errorName: error?.name,
+      errorMessage: error?.message,
+      tokenPreview: token ? token.slice(0, 20) : null,
+    });
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid or expired token. Please login again.'
+    });
+  }
+
+  const tokenUser = {
+    id: decoded.userId,
+    email: decoded.email,
+    role: decoded.role,
+    schoolId: decoded.schoolId || null
+  };
+
+  console.log('🔍 AUTH DEBUG:', tokenUser);
+
+  // DB Lookup
+  let userResult;
+  try {
+    userResult = await query(
+      `SELECT 
+         u.id,
+         u.email,
+         u.role,
+         u.status,
+         COALESCE(u.school_id, sa.school_id) AS school_id
+       FROM users u
+       LEFT JOIN school_admins sa ON sa.user_id = u.id
+       WHERE u.id = $1 
+         AND (u.status IS NULL OR u.status != 'deleted')
+       LIMIT 1`,
+      [decoded.userId]
+    );
+
+    console.log('✅ DB User Lookup:', {
+      rowsFound: userResult.rows.length,
+      userId: decoded.userId
+    });
+  } catch (dbError) {
+    console.error('❌ DB lookup failed, using JWT fallback:', dbError.message);
+    req.user = tokenUser;
+    return next();
+  }
+
+  if (userResult.rows.length === 0) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid token. User not found or account deleted.'
+    });
+  }
+
+  const user = userResult.rows[0];
+
+  if (user.status === 'suspended') {
+    return res.status(403).json({
+      success: false,
+      message: 'Account suspended. Please contact support.'
+    });
+  }
+
+  req.user = {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    schoolId: user.school_id
+  };
+
+  // Session timeout
+  try {
+    await new Promise((resolve) => {
+      sessionTimeout(req, res, (err) => {
+        if (err) console.error('Session timeout error:', err);
+        resolve();
+      });
+    });
+  } catch (e) {
+    console.error('Session timeout error:', e);
+  }
+
+  next();
+};
+
+// Other middlewares (authorize, etc.)
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user) return res.status(401).json({ success: false, message: 'Authentication required.' });
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ success: false, message: 'Insufficient permissions.' });
     }
-    // For requests without a usable email key fall back to IP so they still
-    // get rate-limited individually rather than sharing a single counter.
-    return req.ip || req.socket?.remoteAddress || req.connection?.remoteAddress || 'fallback';
-  },
-  message: {
-    success: false,
-    message: 'Too many authentication attempts for this account, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+    next();
+  };
+};
 
-// Rate limiting for registration endpoints
-const registerLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
-  message: {
-    success: false,
-    message: 'Too many registration attempts, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+const requireSameSchool = (req, res, next) => { /* add your existing code */ };
+const rateLimit = (maxAttempts = 5, windowMs = 15 * 60 * 1000) => { /* your existing */ };
+const validateInput = (schema) => { /* your existing */ };
+const csrfProtection = (req, res, next) => { /* your existing */ };
+const auditLog = (action) => { /* your existing */ };
+const securityHeaders = (req, res, next) => { /* your existing */ };
+const errorHandler = (err, req, res, next) => { /* your existing */ };
 
-// ==================== v1 Auth Routes ====================
-
-// Login endpoint
-router.post('/v1/login',
-  authLimiter,
-  [
-    body('email').isEmail().withMessage('Please provide a valid email address'),
-    body('password').notEmpty().withMessage('Password is required'),
-  ],
-  auditLog('USER_LOGIN'),
-  authController.login
-);
-
-// Logout endpoint
-router.post('/v1/logout',
+module.exports = {
   authenticate,
-  auditLog('USER_LOGOUT'),
-  authController.logout
-);
-
-// Refresh token endpoint
-router.post('/v1/refresh-token',
-  [
-    body('refreshToken').notEmpty().withMessage('Refresh token is required'),
-  ],
-  auditLog('TOKEN_REFRESH'),
-  authController.refreshToken
-);
-
-// ==================== v1 Registration Routes ====================
-
-// Register School Admin (public)
-router.post('/v1/register/school-admin',
-  registerLimiter,
-  schoolValidator.validateSchoolAdminRegistration,
-  auditLog('REGISTER_SCHOOL_ADMIN'),
-  schoolRegistrationController.registerSchoolAdmin
-);
-
-// Register Teacher (requires school admin authentication)
-router.post('/v1/register/teacher',
-  authenticate,
-  authorize('school_admin'),
-  schoolValidator.validateTeacherRegistration,
-  auditLog('REGISTER_TEACHER'),
-  schoolRegistrationController.registerTeacher
-);
-
-// Register Parent (public)
-router.post('/v1/register/parent',
-  registerLimiter,
-  schoolValidator.validateParentRegistration,
-  auditLog('REGISTER_PARENT'),
-  schoolRegistrationController.registerParent
-);
-
-// Check School Code Availability
-router.get('/v1/check-school-code/:code',
-  schoolRegistrationController.checkSchoolCode
-);
-
-// Check Email Availability
-router.get('/v1/check-email',
-  schoolRegistrationController.checkEmail
-);
-
-// Get School by Code
-router.get('/v1/school/:code',
-  schoolRegistrationController.getSchoolByCode
-);
-
-// ==================== Legacy Routes (for backward compatibility) ====================
-
-// Login endpoint (legacy)
-router.post('/login',
-  authLimiter,
-  [
-    body('email').isEmail().withMessage('Please provide a valid email address'),
-    body('password').notEmpty().withMessage('Password is required'),
-  ],
-  auditLog('USER_LOGIN'),
-  authController.login
-);
-
-// Logout endpoint (legacy)
-router.post('/logout',
-  authenticate,
-  auditLog('USER_LOGOUT'),
-  authController.logout
-);
-
-// Refresh token endpoint (legacy)
-router.post('/refresh-token',
-  [
-    body('refreshToken').notEmpty().withMessage('Refresh token is required'),
-  ],
-  auditLog('TOKEN_REFRESH'),
-  authController.refreshToken
-);
-
-module.exports = router;
+  authorize,
+  requireSameSchool,
+  rateLimit,
+  validateInput,
+  csrfProtection,
+  auditLog,
+  securityHeaders,
+  errorHandler
+};
