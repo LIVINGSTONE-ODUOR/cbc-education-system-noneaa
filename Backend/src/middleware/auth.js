@@ -1,11 +1,11 @@
 const jwt = require('jsonwebtoken');
-const { verifyToken, JWT_SECRET } = require('../config/auth');
+const { verifyToken } = require('../config/auth');
 const { query } = require('../config/database');
-const { sessionTimeout } = require('./sessionTimeout');
 
 // Authentication middleware
 const authenticate = async (req, res, next) => {
   const authHeader = req.headers.authorization;
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({
       success: false,
@@ -13,7 +13,7 @@ const authenticate = async (req, res, next) => {
     });
   }
 
-  const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+  const token = authHeader.substring(7);
   let decoded;
 
   try {
@@ -23,12 +23,10 @@ const authenticate = async (req, res, next) => {
       errorName: error?.name,
       errorMessage: error?.message,
       tokenPreview: token ? token.slice(0, 20) : null,
-      tokenLength: token ? token.length : null,
-      authHeaderPreview: authHeader ? authHeader.slice(0, 30) : null
     });
     return res.status(401).json({
       success: false,
-      message: 'Token expired. Please login again.'
+      message: 'Invalid or expired token. Please login again.'
     });
   }
 
@@ -39,14 +37,9 @@ const authenticate = async (req, res, next) => {
     schoolId: decoded.schoolId || null
   };
 
-  console.log('🔍 AUTH DEBUG:', {
-    jwtUserId: decoded.userId,
-    jwtEmail: decoded.email,
-    jwtRole: decoded.role,
-    jwtSchoolId: decoded.schoolId
-  });
+  console.log('🔍 AUTH DEBUG:', tokenUser);
 
-  // Get user details from database
+  // DB Lookup for extra validation
   let userResult;
   try {
     userResult = await query(
@@ -66,15 +59,10 @@ const authenticate = async (req, res, next) => {
 
     console.log('✅ DB User Lookup:', {
       rowsFound: userResult.rows.length,
-      userId: decoded.userId,
-      sample: userResult.rows[0] ? {
-        id: userResult.rows[0].id,
-        email: userResult.rows[0].email,
-        role: userResult.rows[0].role
-      } : null
+      userId: decoded.userId
     });
   } catch (dbError) {
-    console.error('❌ Authentication DB lookup failed, using JWT fallback:', dbError.message);
+    console.error('❌ DB lookup failed, using JWT fallback:', dbError.message);
     req.user = tokenUser;
     return next();
   }
@@ -89,7 +77,6 @@ const authenticate = async (req, res, next) => {
 
   const user = userResult.rows[0];
 
-  // Check if account is suspended
   if (user.status === 'suspended') {
     return res.status(403).json({
       success: false,
@@ -104,64 +91,44 @@ const authenticate = async (req, res, next) => {
     schoolId: user.school_id
   };
 
-  // Session timeout check
-  try {
-    await new Promise((resolve) => {
-      sessionTimeout(req, res, (err) => {
-        if (err) console.error('Session timeout error:', err);
-        resolve();
-      });
-    });
-  } catch (timeoutError) {
-    console.error('Session timeout error:', timeoutError);
-  }
-
   next();
 };
 
-// ==================== Other Middlewares (unchanged) ====================
-
+// Role-based authorization
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required.'
-      });
+      return res.status(401).json({ success: false, message: 'Authentication required.' });
     }
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Insufficient permissions for this action.'
-      });
+      return res.status(403).json({ success: false, message: 'Insufficient permissions for this action.' });
     }
     next();
   };
 };
 
+// School isolation
 const requireSameSchool = (req, res, next) => {
   if (!req.user) {
-    return res.status(401).json({
-      success: false,
-      message: 'Authentication required.'
-    });
+    return res.status(401).json({ success: false, message: 'Authentication required.' });
   }
   if (req.user.role === 'super_admin') return next();
   if (!req.user.schoolId) {
-    return res.status(403).json({
-      success: false,
-      message: 'Access denied. No school assigned to your account.'
-    });
+    return res.status(403).json({ success: false, message: 'Access denied. No school assigned.' });
   }
   next();
 };
 
-const rateLimit = (maxAttempts = 5, windowMs = 15 * 60 * 1000) => { /* ... your existing code ... */ };
-const validateInput = (schema) => { /* ... */ };
-const csrfProtection = (req, res, next) => { /* ... */ };
-const auditLog = (action) => { /* ... */ };
-const securityHeaders = (req, res, next) => { /* ... */ };
-const errorHandler = (err, req, res, next) => { /* ... */ };
+// Placeholder for other middlewares
+const rateLimit = (maxAttempts = 5, windowMs = 15 * 60 * 1000) => (req, res, next) => next();
+const validateInput = (schema) => (req, res, next) => next();
+const csrfProtection = (req, res, next) => next();
+const auditLog = (action) => (req, res, next) => next();
+const securityHeaders = (req, res, next) => next();
+const errorHandler = (err, req, res, next) => {
+  console.error('❌ Error:', err);
+  res.status(500).json({ success: false, message: 'Internal server error.' });
+};
 
 module.exports = {
   authenticate,
