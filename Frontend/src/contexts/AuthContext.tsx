@@ -21,16 +21,18 @@ const getApiUrl = () => {
     return import.meta.env.VITE_API_URL.replace(/\/+$/, '');
   }
 
-  // Production fallback (Render backend)
+  // Production backend base URL.
+  // Must point to the SAME backend that serves `/api/v1/login`.
+  // In prod, require VITE_API_URL to avoid hardcoded drift across deployments.
   if (import.meta.env.PROD) {
-    // IMPORTANT: this must match the backend the Vercel rewrite in
-    // vercel.json points to (currently cbc-education-system-1). If this
-    // ever drifts from that value again, login() below will sign tokens
-    // against a different JWT_SECRET than the one every other relative
-    // /api/* call verifies against - every request after login will fail
-    // with "invalid signature" no matter how many times you log in fresh.
-    return 'https://cbc-education-system-1.onrender.com';
+    const fromEnv = import.meta.env.VITE_API_URL;
+    if (!fromEnv) {
+      console.warn('[AuthContext] VITE_API_URL missing in PROD; falling back to empty string (may break auth).');
+      return '';
+    }
+    return fromEnv.replace(/\/+$/, '');
   }
+
 
 
   // Development fallback (Vite proxy/local backend)
@@ -413,6 +415,8 @@ export function AuthProvider({
       );
 
       const loginUrl = `${API_URL}/api/v1/login`;
+      // Absolute URL in prod is required to match the backend that signs JWTs.
+
 
       console.log(
         '[AuthContext] Full API URL:',
