@@ -32,8 +32,9 @@ console.log('✅ Supabase admin client initialized successfully');
 
 // ====================== Optional: Lightweight Postgres Pool (for heavy queries) ======================
 let pool = null;
+const shouldUseDirectPostgres = process.env.ENABLE_DIRECT_POSTGRES === 'true' || Boolean(process.env.DATABASE_URL || process.env.SUPABASE_DB_HOST);
 
-if (process.env.ENABLE_DIRECT_POSTGRES === 'true') {
+if (shouldUseDirectPostgres) {
   const { Pool } = require('pg');
   
   const dbHost = process.env.SUPABASE_DB_HOST || 
@@ -59,8 +60,8 @@ if (process.env.ENABLE_DIRECT_POSTGRES === 'true') {
 const query = async (text, params = []) => {
   const start = Date.now();
 
-  // Try direct Postgres first (if enabled)
-  if (pool && process.env.ENABLE_DIRECT_POSTGRES === 'true') {
+  // Try direct Postgres first when the pool is available
+  if (pool) {
     try {
       const res = await pool.query(text, params);
       console.log(`Query OK [${Date.now() - start}ms]`, { rows: res.rowCount });

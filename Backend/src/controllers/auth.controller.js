@@ -69,10 +69,23 @@ exports.login = async (req, res) => {
     }
 
     if (userResult.rows.length === 0) {
+      console.log('❌ USER NOT FOUND:', email);
       return res.status(401).json({ success: false, message: 'Invalid credentials.' });
     }
 
     const user = userResult.rows[0];
+    console.log('========== USER FOUND ==========');
+    console.log({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      school_id: user.school_id,
+      hasPasswordHash: !!user.password_hash,
+      passwordHashLength: user.password_hash
+        ? user.password_hash.length
+        : 0
+    });
 
     // Account checks
     if (user.locked_until && new Date() < new Date(user.locked_until)) {
@@ -88,10 +101,24 @@ exports.login = async (req, res) => {
     }
 
     // Verify password
-    if (!user.password_hash || !(await verifyPassword(password, user.password_hash))) {
+    const passwordValid =
+      user.password_hash &&
+      await verifyPassword(password, user.password_hash);
+    console.log('========== PASSWORD CHECK ==========');
+    console.log({
+      email,
+      hasPasswordHash: !!user.password_hash,
+      passwordValid
+    });
+    if (!passwordValid) {
+      console.log('❌ PASSWORD VERIFICATION FAILED');
       await incrementLoginAttempts(user.id);
-      return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials.'
+      });
     }
+    console.log('✅ PASSWORD VERIFIED');
 
     await resetLoginAttempts(user.id);
 
