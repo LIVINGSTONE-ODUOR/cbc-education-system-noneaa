@@ -1,6 +1,5 @@
 import React from 'react';
 import { Plus, Users, BookOpen, DollarSign, FileText, Bell, BarChart3 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
 interface QuickAction {
