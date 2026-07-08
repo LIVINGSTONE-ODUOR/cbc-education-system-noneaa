@@ -1589,7 +1589,7 @@ const StudentManagement = () => {
                     <TableHead className="font-semibold text-slate-700 h-12">Adm. No</TableHead>
                     <TableHead className="font-semibold text-slate-700 h-12">Grade / Class</TableHead>
                     <TableHead className="font-semibold text-slate-700 h-12">Gender</TableHead>
-                    <TableHead className="font-semibold text-slate-700 h-12">Guardian</TableHead>
+                    <TableHead className="font-semibold text-slate-700 h-12">Parent/Guardian</TableHead>
                     <TableHead className="font-semibold text-slate-700 h-12">Status</TableHead>
                     <TableHead className="font-semibold text-slate-700 h-12 text-right">Actions</TableHead>
                   </TableRow>
@@ -1891,4 +1891,3 @@ const StudentManagement = () => {
 };
 
 export default StudentManagement;
-
