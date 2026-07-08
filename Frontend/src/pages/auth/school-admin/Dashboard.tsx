@@ -241,7 +241,7 @@ export default function SchoolDashboard() {
           </CardHeader>
           <CardContent className="space-y-2">
             <Button variant="outline" className="w-full justify-start" asChild>
-              <Link to="/school-admin/teachers/add">
+              <Link to="/school-admin/teachers?add=1">
                 <Plus className="w-4 h-4 mr-2" />
                 Add New Teacher
               </Link>
