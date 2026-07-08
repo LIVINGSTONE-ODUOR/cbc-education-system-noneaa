@@ -45,6 +45,14 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
 }) => {
   const [hoveredData, setHoveredData] = useState<any>(null);
 
+  if (!data || data.length === 0) {
+    return (
+      <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-gray-500">
+        No data available
+      </div>
+    );
+  }
+
   const renderChart = () => {
     switch (chartType) {
       case 'bar':
@@ -52,7 +60,7 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
           <ResponsiveContainer width="100%" height={height}>
             <BarChart data={data}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="date" stroke="#9ca3af" />
+              <XAxis dataKey="name" stroke="#9ca3af" />
               <YAxis stroke="#9ca3af" />
               <Tooltip
                 contentStyle={{
@@ -64,16 +72,17 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                 onMouseLeave={() => setHoveredData(null)}
               />
               <Legend />
-              {Object.keys(data[0] || {})
-                .filter((key) => key !== 'date')
-                .map((key, index) => (
-                  <Bar
-                    key={key}
-                    dataKey={key}
-                    fill={colors[index % colors.length]}
-                    radius={[8, 8, 0, 0]}
-                  />
-                ))}
+              {data[0] &&
+                Object.keys(data[0])
+                  .filter((key) => key !== 'name' && key !== 'date')
+                  .map((key, index) => (
+                    <Bar
+                      key={key}
+                      dataKey={key}
+                      fill={colors[index % colors.length]}
+                      radius={[8, 8, 0, 0]}
+                    />
+                  ))}
             </BarChart>
           </ResponsiveContainer>
         );
@@ -83,17 +92,33 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
           <ResponsiveContainer width="100%" height={height}>
             <AreaChart data={data}>
               <defs>
-                {Object.keys(data[0] || {})
-                  .filter((key) => key !== 'date')
-                  .map((key, index) => (
-                    <linearGradient key={key} id={`color${key}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={colors[index % colors.length]} stopOpacity={0.8} />
-                      <stop offset="95%" stopColor={colors[index % colors.length]} stopOpacity={0.1} />
-                    </linearGradient>
-                  ))}
+                {data[0] &&
+                  Object.keys(data[0])
+                    .filter((key) => key !== 'name' && key !== 'date')
+                    .map((key, index) => (
+                      <linearGradient
+                        key={key}
+                        id={`color${key}`}
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor={colors[index % colors.length]}
+                          stopOpacity={0.8}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor={colors[index % colors.length]}
+                          stopOpacity={0.1}
+                        />
+                      </linearGradient>
+                    ))}
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="date" stroke="#9ca3af" />
+              <XAxis dataKey="name" stroke="#9ca3af" />
               <YAxis stroke="#9ca3af" />
               <Tooltip
                 contentStyle={{
@@ -103,18 +128,19 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                 }}
               />
               <Legend />
-              {Object.keys(data[0] || {})
-                .filter((key) => key !== 'date')
-                .map((key, index) => (
-                  <Area
-                    key={key}
-                    type="monotone"
-                    dataKey={key}
-                    stroke={colors[index % colors.length]}
-                    fillOpacity={1}
-                    fill={`url(#color${key})`}
-                  />
-                ))}
+              {data[0] &&
+                Object.keys(data[0])
+                  .filter((key) => key !== 'name' && key !== 'date')
+                  .map((key, index) => (
+                    <Area
+                      key={key}
+                      type="monotone"
+                      dataKey={key}
+                      stroke={colors[index % colors.length]}
+                      fillOpacity={1}
+                      fill={`url(#color${key})`}
+                    />
+                  ))}
             </AreaChart>
           </ResponsiveContainer>
         );
@@ -126,11 +152,11 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
               <Pie
                 data={data}
                 dataKey="value"
-                nameKey="date"
+                nameKey="name"
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                label={({ name, value }) => `${name}: ${value}`}
                 outerRadius={120}
               >
                 {data.map((entry, index) => (
@@ -154,17 +180,33 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
           <ResponsiveContainer width="100%" height={height}>
             <LineChart data={data}>
               <defs>
-                {Object.keys(data[0] || {})
-                  .filter((key) => key !== 'date')
-                  .map((key, index) => (
-                    <linearGradient key={key} id={`lineGradient${key}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={colors[index % colors.length]} stopOpacity={0.8} />
-                      <stop offset="95%" stopColor={colors[index % colors.length]} stopOpacity={0.1} />
-                    </linearGradient>
-                  ))}
+                {data[0] &&
+                  Object.keys(data[0])
+                    .filter((key) => key !== 'name' && key !== 'date')
+                    .map((key, index) => (
+                      <linearGradient
+                        key={key}
+                        id={`lineGradient${key}`}
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor={colors[index % colors.length]}
+                          stopOpacity={0.8}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor={colors[index % colors.length]}
+                          stopOpacity={0.1}
+                        />
+                      </linearGradient>
+                    ))}
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="date" stroke="#9ca3af" />
+              <XAxis dataKey="name" stroke="#9ca3af" />
               <YAxis stroke="#9ca3af" />
               <Tooltip
                 contentStyle={{
@@ -176,20 +218,21 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                 onMouseLeave={() => setHoveredData(null)}
               />
               <Legend />
-              {Object.keys(data[0] || {})
-                .filter((key) => key !== 'date')
-                .map((key, index) => (
-                  <Line
-                    key={key}
-                    type="monotone"
-                    dataKey={key}
-                    stroke={colors[index % colors.length]}
-                    strokeWidth={2}
-                    dot={{ fill: colors[index % colors.length], r: 4 }}
-                    activeDot={{ r: 6 }}
-                    isAnimationActive={true}
-                  />
-                ))}
+              {data[0] &&
+                Object.keys(data[0])
+                  .filter((key) => key !== 'name' && key !== 'date')
+                  .map((key, index) => (
+                    <Line
+                      key={key}
+                      type="monotone"
+                      dataKey={key}
+                      stroke={colors[index % colors.length]}
+                      strokeWidth={2}
+                      dot={{ fill: colors[index % colors.length], r: 4 }}
+                      activeDot={{ r: 6 }}
+                      isAnimationActive={true}
+                    />
+                  ))}
             </LineChart>
           </ResponsiveContainer>
         );
