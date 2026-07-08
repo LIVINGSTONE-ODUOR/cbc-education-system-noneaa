@@ -260,6 +260,7 @@ const listClasses = asyncHandler(async (req, res) => {
       },
     },
   });
+});
 
 // =============================================================================
 // 3. GET /api/v1/classes/:id
@@ -621,4 +622,3 @@ module.exports = {
   getClassLearners,
   getClassTimetable,
 };
-
