@@ -102,7 +102,7 @@ const SKELETON_FADE_START_MS =
   // logout right after login. Do not remove the guard in
   // startInactivityTimer() unless these values are both > 0.
   const INACTIVITY_TIMEOUT_MS =
-    Number(import.meta.env.VITE_INACTIVITY_TIMEOUT_MINUTES || 30) *
+    Number(import.meta.env.VITE_INACTIVITY_TIMEOUT_MINUTES || 5) *
     60 *
     1000;
 
