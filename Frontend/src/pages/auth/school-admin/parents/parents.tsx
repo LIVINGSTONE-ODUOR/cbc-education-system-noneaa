@@ -169,11 +169,6 @@ import {
 } from '@/lib/api/parentsApi';
 
 // ============================================================================
-// getAuthToken (kept for consistency - used in other places?)
-// ============================================================================
-// apiCall remnants removed - using parentsApi
-
-// ============================================================================
 // Parent Management Component
 // ============================================================================
 
@@ -404,9 +399,7 @@ export default function ParentManagement() {
     try {
       setIsLoading(true);
 
-      await apiCall(`/parents/${selectedParent.id}`, {
-        method: 'DELETE',
-      });
+      await deleteParent(selectedParent.id);
 
       toast.success('Parent deleted successfully');
       setShowDeleteDialog(false);
@@ -427,18 +420,15 @@ export default function ParentManagement() {
     try {
       setIsLoading(true);
 
-      await apiCall(`/parents/${selectedParent.id}/link-learner`, {
-        method: 'POST',
-        body: JSON.stringify(linkFormData),
-      });
+      await linkLearner(selectedParent.id, linkFormData);
 
       toast.success('Learner linked successfully');
       setShowLinkDialog(false);
       setLinkFormData({ learner_id: '', relationship: 'guardian', is_primary: false });
 
       // Refresh the view
-      const response: ApiResponse<Parent> = await apiCall(`/parents/${selectedParent.id}`);
-      setSelectedParent(response.data[0]);
+      const response = await getSingleParent(selectedParent.id);
+      setSelectedParent(Array.isArray(response.data) ? response.data[0] : response.data);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to link learner');
     } finally {
@@ -452,17 +442,15 @@ export default function ParentManagement() {
     try {
       setIsLoading(true);
 
-      await apiCall(`/parents/${selectedParent.id}/unlink/${unlinkData.learner_id}`, {
-        method: 'DELETE',
-      });
+      await unlinkLearner(selectedParent.id, unlinkData.learner_id);
 
       toast.success('Learner unlinked successfully');
       setShowUnlinkDialog(false);
       setUnlinkData(null);
 
       // Refresh the view
-      const response: ApiResponse<Parent> = await apiCall(`/parents/${selectedParent.id}`);
-      setSelectedParent(response.data[0]);
+      const response = await getSingleParent(selectedParent.id);
+      setSelectedParent(Array.isArray(response.data) ? response.data[0] : response.data);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to unlink learner');
     } finally {
@@ -476,10 +464,7 @@ export default function ParentManagement() {
     try {
       setIsLoading(true);
 
-      const response = await apiCall(`/parents/${selectedParent.id}/send-invite`, {
-        method: 'POST',
-        body: JSON.stringify({ channel: inviteChannel }),
-      });
+      const response = await sendParentInvite(selectedParent.id, inviteChannel);
 
       toast.success(`Portal invite sent via ${inviteChannel} to ${response.data.to}`);
       setShowInviteDialog(false);
