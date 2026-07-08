@@ -253,12 +253,13 @@ const listClasses = asyncHandler(async (req, res) => {
     success: true,
     data: {
       classes: enrichedClasses,
-      pagination: { 
+      pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
-        total_count: total_count || 0
+        total_count: total_count || 0,
       },
-});
+    },
+  });
 
 // =============================================================================
 // 3. GET /api/v1/classes/:id
