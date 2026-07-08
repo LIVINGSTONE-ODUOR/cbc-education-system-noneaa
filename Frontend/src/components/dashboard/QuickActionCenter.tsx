@@ -29,7 +29,7 @@ const DEFAULT_ACTIONS: QuickAction[] = [
     label: 'Add Teacher',
     description: 'Hire new staff',
     icon: <Users className="h-5 w-5" />,
-    href: '/school-admin/teachers/add',
+    href: '/school-admin/teachers?add=1',
     color: 'from-purple-500 to-purple-600',
   },
   {
