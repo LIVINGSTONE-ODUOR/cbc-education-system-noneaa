@@ -294,12 +294,12 @@ const getClass = asyncHandler(async (req, res) => {
       id,
       learner_id,
       status,
-      enrolled_at,
+      enrollment_date,
       learners(id, first_name, last_name, admission_number, gender)
     `)
     .eq('class_id', id)
     .eq('status', 'enrolled')
-    .order('enrolled_at', { ascending: false })
+    .order('enrollment_date', { ascending: false })
     .limit(10);
 
   // Fetch subject assignments
@@ -493,7 +493,7 @@ const getClassLearners = asyncHandler(async (req, res) => {
       id,
       learner_id,
       status,
-      enrolled_at,
+      enrollment_date,
       learners(
         id,
         first_name,
@@ -517,7 +517,7 @@ const getClassLearners = asyncHandler(async (req, res) => {
   const isDescending = sort_order === 'desc';
   if (sort_by.startsWith('learners.')) {
     // For nested field sorting, we'll do it app-side after fetch
-    query = query.order('enrolled_at', { ascending: false });
+    query = query.order('enrollment_date', { ascending: false });
   } else {
     query = query.order(sort_by, { ascending: !isDescending });
   }
