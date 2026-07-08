@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof Error && error.message) {
@@ -29,53 +28,56 @@ export default function AddTeacherPage() {
     qualifications: '',
   });
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Validate required fields
-      if (!formData.firstName || !formData.lastName || !formData.email || 
-          !formData.phoneNumber || !formData.subjects) {
+      if (
+        !formData.firstName ||
+        !formData.lastName ||
+        !formData.email ||
+        !formData.phoneNumber ||
+        !formData.subjects
+      ) {
         throw new Error('Please fill in all required fields.');
       }
 
-      // Check if email already exists
-      const { data: existingTeacher, error: checkError } = await supabase
-        .from('teachers')
-        .select('id')
-        .eq('email', formData.email)
-        .single();
+      // Use backend invite endpoint. The previous approach inserted directly into Supabase
+      // `teachers` from the frontend, which does not match your backend schema/constraints.
+      const { inviteTeacher } = await import('@/lib/api/teacherApi');
 
-      if (existingTeacher) {
-        throw new Error('A teacher with this email already exists.');
-      }
+      const subjects_taught = formData.subjects
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
 
-      // Create teacher record
-      const { data: teacherData, error: teacherError } = await supabase
-        .from('teachers')
-        .insert({
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          email: formData.email,
-          phone_number: formData.phoneNumber,
-          employee_number: formData.employeeNumber,
-          subjects: formData.subjects.split(',').map(s => s.trim()),
-          qualifications: formData.qualifications,
-          is_active: true,
-        })
-        .select()
-        .single();
+      const qualifications = formData.qualifications
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
 
-      if (teacherError) {
-        throw teacherError;
-      }
+      await inviteTeacher({
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone_number: formData.phoneNumber,
+        tsc_number: formData.employeeNumber || undefined,
+        subjects_taught,
+        qualifications: qualifications.length ? qualifications : undefined,
+        staff_type: 'teaching',
+        job_status: 'active',
+      });
 
       toast({
-        title: 'Teacher Added Successfully',
-        description: `${formData.firstName} ${formData.lastName} has been added to your school.`,
+        title: 'Teacher Invited Successfully',
+        description: `${formData.firstName} ${formData.lastName} has been invited.`,
       });
-      
+
       navigate('/school-admin/teachers');
     } catch (error: unknown) {
       console.error('Error adding teacher:', error);
@@ -89,13 +91,8 @@ export default function AddTeacherPage() {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link to="/school-admin/teachers">
@@ -104,15 +101,12 @@ export default function AddTeacherPage() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold text-foreground">Add New Teacher</h1>
-          <p className="text-muted-foreground mt-1">
-            Create a new teacher account
-          </p>
+          <p className="text-muted-foreground mt-1">Create a new teacher account</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} noValidate>
         <div className="grid gap-6 max-w-2xl">
-          {/* Personal Information */}
           <Card>
             <CardHeader>
               <CardTitle>Personal Information</CardTitle>
@@ -167,7 +161,6 @@ export default function AddTeacherPage() {
             </CardContent>
           </Card>
 
-          {/* Employment Details */}
           <Card>
             <CardHeader>
               <CardTitle>Employment Details</CardTitle>
@@ -208,7 +201,6 @@ export default function AddTeacherPage() {
             </CardContent>
           </Card>
 
-          {/* Actions */}
           <div className="flex gap-4">
             <Button type="submit" disabled={isLoading}>
               {isLoading ? (
@@ -229,3 +221,4 @@ export default function AddTeacherPage() {
     </div>
   );
 }
+
