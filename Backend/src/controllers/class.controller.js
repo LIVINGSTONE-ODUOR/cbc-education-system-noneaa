@@ -220,12 +220,40 @@ const listClasses = asyncHandler(async (req, res) => {
 
   const { count: total_count } = await totalQuery;
 
+  // Add live learner_count per class (enrolled learners)
+  const classIds = (classes || []).map((c) => c.id);
+  let learnerCounts = {};
+
+  if (classIds.length > 0) {
+    // Count enrolled learners grouped by class_id
+    const { data: enrollmentCounts, error: enrollmentCountError } = await supabase
+      .from('learner_enrollments')
+      .select('class_id, count:class_id')
+      .eq('status', 'enrolled')
+      .in('class_id', classIds)
+      .group('class_id');
+
+    if (enrollmentCountError) {
+      console.error('[listClasses] learner_count aggregation error:', enrollmentCountError);
+    } else {
+      learnerCounts = (enrollmentCounts || []).reduce((acc, row) => {
+        acc[row.class_id] = Number(row.count) || 0;
+        return acc;
+      }, {});
+    }
+  }
+
+  const enrichedClasses = (classes || []).map((cls) => ({
+    ...cls,
+    learner_count: learnerCounts[cls.id] || 0,
+  }));
+
   return res.json({
     success: true,
     data: {
-      classes: classes || [],
+      classes: enrichedClasses,
       pagination: { 
-        page: parseInt(page), 
+        page: parseInt(page),
         limit: parseInt(limit),
         total_count: total_count || 0
       },
