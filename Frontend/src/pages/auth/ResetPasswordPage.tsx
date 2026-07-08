@@ -336,6 +336,7 @@ export default function ResetPasswordPage() {
       <style>{STYLES}</style>
 
       <div className="lp-page">
+
         <div className="lp-bg" style={{ backgroundImage: `url(${loginBg})` }} />
         <div className="lp-overlay" />
         <div className="lp-blob lp-blob-1" />

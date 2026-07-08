@@ -135,7 +135,8 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      <PageLoader />
+      {/* PageLoader removed on auth pages (external loading only). Button/spinner states remain in-form. */}
+
 
       {/* Background photo */}
       <div

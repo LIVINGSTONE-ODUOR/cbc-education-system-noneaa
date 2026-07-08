@@ -37,6 +37,10 @@ const StudentProfile = () => {
     }
 
     const fetchLearner = async () => {
+      // Flex skeleton loader to users: ensure at least a short minimum duration.
+      const MIN_SKELETON_MS = 900;
+      const start = Date.now();
+
       try {
         setIsLoading(true);
         setError(null);
@@ -46,12 +50,18 @@ const StudentProfile = () => {
         console.error('Failed to load learner profile:', err);
         setError(err instanceof Error ? err.message : 'Failed to load learner profile.');
       } finally {
+        const elapsed = Date.now() - start;
+        const remaining = MIN_SKELETON_MS - elapsed;
+        if (remaining > 0) {
+          await new Promise((res) => setTimeout(res, remaining));
+        }
         setIsLoading(false);
       }
     };
 
     void fetchLearner();
   }, [learnerId]);
+
 
   const student = useMemo(() => {
     if (!learner) return null;
