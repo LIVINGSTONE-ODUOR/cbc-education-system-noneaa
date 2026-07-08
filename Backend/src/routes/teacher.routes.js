@@ -4,6 +4,7 @@
 // =============================================================================
 
 const express = require('express');
+const multer = require('multer');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const {
@@ -16,6 +17,20 @@ const {
   getTeacherTimetable,
   getTeacherClasses,
 } = require('../controllers/teacher.controller');
+const { uploadTeacherPhoto } = require('../controllers/teacherPhoto.controller');
+
+// Photo upload multer (images, 5MB) — same limits as the learner photo upload
+const photoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files allowed'), false);
+    }
+  },
+});
 
 // All teacher routes require authentication
 router.use(authenticate);
@@ -26,6 +41,9 @@ router.use(authenticate);
 
 // POST   /api/v1/teachers/invite   — send invite email (school_admin only)
 router.post('/invite', inviteTeacher);
+
+// POST   /api/v1/teachers/upload-photo   — upload teacher profile photo
+router.post('/upload-photo', photoUpload.single('file'), uploadTeacherPhoto);
 
 // GET    /api/v1/teachers           — list all teachers for this school
 //   query params:
