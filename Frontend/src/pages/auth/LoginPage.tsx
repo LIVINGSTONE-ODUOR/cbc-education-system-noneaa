@@ -135,10 +135,10 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* PageLoader removed on auth pages (external loading only). Button/spinner states remain in-form. */}
-
+      <PageLoader />
 
       {/* Background photo */}
+
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${loginBg})` }}

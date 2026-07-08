@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
+
 import { useNavigate, useSearchParams } from 'react-router-dom';
+
 import { ArrowLeft, ArrowRight, CheckCircle2, Eye, EyeOff, Loader2 } from 'lucide-react';
 import loginBg from '@/assets/hero-bg.png';
 import { useAuth } from '@/contexts/AuthContext';
@@ -336,9 +338,9 @@ export default function ResetPasswordPage() {
       <style>{STYLES}</style>
 
       <div className="lp-page">
-
         <div className="lp-bg" style={{ backgroundImage: `url(${loginBg})` }} />
         <div className="lp-overlay" />
+
         <div className="lp-blob lp-blob-1" />
         <div className="lp-blob lp-blob-2" />
         <div className="lp-blob lp-blob-3" />
