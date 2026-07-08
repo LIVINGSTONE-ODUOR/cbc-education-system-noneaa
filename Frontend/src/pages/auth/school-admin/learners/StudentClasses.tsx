@@ -20,6 +20,11 @@ import {
   Grid3x3,
   List,
 } from 'lucide-react';
+
+import ProtectedPageSkeleton from '@/components/skeletons/ProtectedPageSkeleton';
+
+import ClassCardsSkeleton from '@/components/skeletons/ClassCardsSkeleton';
+
 import { getClasses } from '@/lib/api/classApi';
 import { cn } from '@/lib/utils';
 
@@ -388,13 +393,20 @@ const StudentClasses: React.FC = () => {
 
       {/* Loading State */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-600" />
-            <p className="text-slate-600 font-medium">Loading classes...</p>
+        <div className="space-y-4">
+          <div className="flex flex-col gap-2">
+            <div className="h-8 w-56 rounded-md bg-white/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 animate-pulse" />
+            <div className="h-4 w-96 rounded-md bg-white/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 animate-pulse" />
           </div>
+
+          {viewMode === 'grid' ? (
+            <ClassCardsSkeleton mode="grid" rowCount={8} />
+          ) : (
+            <ClassCardsSkeleton mode="list" rowCount={6} />
+          )}
         </div>
       ) : classes.length === 0 ? (
+
         // Empty State - IMPROVED DESIGN
         <Card className="border-slate-200 bg-white dark:bg-slate-900">
           <CardContent className="text-center py-16">
