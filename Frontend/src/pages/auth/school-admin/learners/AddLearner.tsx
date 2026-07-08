@@ -34,7 +34,6 @@ import { Gender } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { getClasses } from '@/lib/api/classApi';
-import { enrollLearner } from '@/lib/api/learnersApi';
 
 // ✅ INTERFACES
 interface CreateLearnerPayload {
@@ -484,35 +483,20 @@ export default function AddLearnerPage() {
       console.log(`Learner ${isEditMode ? 'updated' : 'created'} successfully:`, result);
 
       const learnerId = result.data?.id || editId;
-      let enrollmentSuccess = false;
+      // The backend already creates the class enrollment atomically inside
+      // registerLearner/updateLearner when class_id is included in the payload
+      // (see Backend controller "Option A"). Calling a separate enroll endpoint
+      // here was redundant, guaranteed to conflict with that just-created row,
+      // and was slowing down/derailing every successful submission.
+      const enrollmentSuccess = !isEditMode && Boolean(result.data?.enrollment);
 
-      if (!isEditMode && selectedClassId && learnerId) {
-        try {
-          console.log('Enrolling learner in class:', selectedClassId);
-          // Primary path: enroll endpoint
-          await enrollLearner(learnerId, selectedClassId);
-
-          // Verification path: ensure learner_enrollments row exists so class counts update
-          // (prevents any silent 500/partial failures)
-          const verifyResp = await fetch(`${localStorage.getItem('cbe_api_base_url') || ''}/api/v1/classes/${selectedClassId}/learners?limit=1`, {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('cbe_access_token')}`,
-            },
-          }).catch(() => null as any);
-
-          // If verify fails, still mark success if no exception happened
-          console.log('Learner enrolled in class successfully');
-          enrollmentSuccess = true;
-        } catch (enrollError) {
-          console.warn('Enrollment in class failed, but learner was created:', enrollError);
-          // Fallback: if enrollLearner endpoint is down/unavailable, do not swallow silently
-          toast({
-            title: 'Partial Success',
-            description: `Student ${learnerData.firstName} ${learnerData.lastName} was created successfully, but enrollment in the class failed. You can enroll them manually later.`,
-            variant: 'default',
-          });
-        }
+      if (!isEditMode && selectedClassId && !enrollmentSuccess) {
+        console.warn('Learner created but no enrollment came back from the server:', result);
+        toast({
+          title: 'Partial Success',
+          description: `Student ${learnerData.firstName} ${learnerData.lastName} was created successfully, but enrollment in the class failed. You can enroll them manually later.`,
+          variant: 'default',
+        });
       }
 
       if (isEditMode) {
@@ -1526,4 +1510,3 @@ export default function AddLearnerPage() {
     </div>
   );
 }
-
