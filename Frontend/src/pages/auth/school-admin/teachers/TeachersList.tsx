@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,8 +30,7 @@ import {
 } from 'lucide-react';
 
 import ProtectedTableSkeleton from '@/components/skeletons/ProtectedTableSkeleton';
-
-
+import AddTeacherModal from './AddTeacherModal';
 
 interface Teacher {
   id: string;
@@ -47,10 +46,12 @@ interface Teacher {
 
 export default function TeachersListPage() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
   const fetchTeachers = useCallback(async () => {
     try {
@@ -79,6 +80,22 @@ export default function TeachersListPage() {
   useEffect(() => {
     void fetchTeachers();
   }, [fetchTeachers]);
+
+  // Support links/buttons elsewhere in the app (e.g. dashboard quick actions)
+  // that navigate to /school-admin/teachers?add=1 — open the popup instead
+  // of requiring a dedicated page.
+  useEffect(() => {
+    if (searchParams.get('add') === '1') {
+      setIsAddOpen(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete('add');
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const handleAddSuccess = () => {
+    void fetchTeachers();
+  };
 
   const filteredTeachers = teachers.filter(teacher => 
     `${teacher.first_name} ${teacher.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -115,11 +132,9 @@ export default function TeachersListPage() {
             Manage your school's teaching staff
           </p>
         </div>
-        <Button asChild>
-          <Link to="/school-admin/teachers/add">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Teacher
-          </Link>
+        <Button onClick={() => setIsAddOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Teacher
         </Button>
       </div>
 
@@ -234,17 +249,17 @@ export default function TeachersListPage() {
                 {searchQuery ? 'No teachers found matching your search.' : 'No teachers added yet.'}
               </div>
               {!searchQuery && (
-                <Button asChild>
-                  <Link to="/school-admin/teachers/add">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add First Teacher
-                  </Link>
+                <Button onClick={() => setIsAddOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add First Teacher
                 </Button>
               )}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <AddTeacherModal open={isAddOpen} onOpenChange={setIsAddOpen} onSuccess={handleAddSuccess} />
     </div>
   );
 }
