@@ -101,8 +101,10 @@ const SKELETON_FADE_START_MS =
   // immediately on the next tick. Previously this caused an instant
   // logout right after login. Do not remove the guard in
   // startInactivityTimer() unless these values are both > 0.
-  const INACTIVITY_TIMEOUT_MS = 0;
-  const INACTIVITY_WARNING_MS = 0;
+  const INACTIVITY_TIMEOUT_MS =
+    Number(import.meta.env.VITE_INACTIVITY_TIMEOUT_MINUTES || 30) *
+    60 *
+    1000;
 
   const ACTIVITY_EVENTS = [
     'mousemove',
@@ -192,12 +194,6 @@ export function AuthProvider({
   const inactivityTimerRef =
     useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const inactivityWarningTimerRef =
-    useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const warningToastIdRef =
-    useRef<string | number | null>(null);
-
   // ======================================================
   // SKELETON TIMER
   // ======================================================
@@ -237,17 +233,6 @@ export function AuthProvider({
       inactivityTimerRef.current = null;
     }
 
-    if (inactivityWarningTimerRef.current) {
-      clearTimeout(inactivityWarningTimerRef.current);
-
-      inactivityWarningTimerRef.current = null;
-    }
-
-    if (warningToastIdRef.current !== null) {
-      toast.dismiss(warningToastIdRef.current);
-
-      warningToastIdRef.current = null;
-    }
   }, []);
 
   // ======================================================
@@ -289,16 +274,6 @@ export function AuthProvider({
       return;
     }
 
-    inactivityWarningTimerRef.current = setTimeout(() => {
-      warningToastIdRef.current = toast.warning(
-        'Your session will expire in 5 minutes due to inactivity. Move your mouse or press a key to stay logged in.',
-        {
-          duration: 30000,
-          id: 'inactivity-warning',
-        }
-      );
-    }, INACTIVITY_WARNING_MS);
-
     inactivityTimerRef.current = setTimeout(() => {
       performLogout();
 
@@ -318,12 +293,17 @@ export function AuthProvider({
   useEffect(() => {
     const initializeAuth = () => {
       try {
-        const { user: storedUser } = getStoredTokens();
+        const {
+          user: storedUser,
+          accessToken,
+        } = getStoredTokens();
 
-        if (storedUser) {
+        if (storedUser && accessToken) {
           setUser(storedUser);
 
           startSkeletonTimer();
+        } else {
+          clearTokens();
         }
       } catch (error) {
         console.error(
@@ -570,7 +550,7 @@ export function AuthProvider({
         user,
         schoolId: user?.schoolId || null,
         isLoading,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && !!getStoredTokens().accessToken,
         showLoginSkeleton,
         isSkeletonFading,
         login,
