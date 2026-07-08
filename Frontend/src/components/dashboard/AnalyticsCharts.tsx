@@ -68,8 +68,6 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                   border: '1px solid #e5e7eb',
                   borderRadius: '8px',
                 }}
-                onMouseEnter={(e) => setHoveredData(e.payload?.[0])}
-                onMouseLeave={() => setHoveredData(null)}
               />
               <Legend />
               {data[0] &&
@@ -214,8 +212,6 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                   border: '1px solid #e5e7eb',
                   borderRadius: '8px',
                 }}
-                onMouseEnter={(e) => setHoveredData(e.payload?.[0])}
-                onMouseLeave={() => setHoveredData(null)}
               />
               <Legend />
               {data[0] &&
@@ -281,15 +277,6 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
       <div className="overflow-x-auto">
         {renderChart()}
       </div>
-
-      {/* Hovered Data Info */}
-      {hoveredData && (
-        <div className="mt-4 rounded-lg bg-blue-50 border border-blue-200 p-3">
-          <p className="text-sm text-blue-900">
-            <strong>Selected Data:</strong> {JSON.stringify(hoveredData)}
-          </p>
-        </div>
-      )}
     </div>
   );
 };

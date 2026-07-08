@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Users, BookOpen, DollarSign, FileText, Bell, BarChart3, LogOut } from 'lucide-react';
+import { Plus, Users, BookOpen, DollarSign, FileText, Bell, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
@@ -97,9 +97,6 @@ const QuickActionCenter: React.FC<QuickActionCenterProps> = ({
               {/* Label & Description */}
               <p className="font-semibold text-gray-900 text-sm">{action.label}</p>
               <p className="text-xs text-gray-600 mt-1">{action.description}</p>
-
-              {/* Hover Indicator */}
-              <div className="absolute bottom-0 left-0 h-1 w-0 bg-gradient-to-r from-current transition-all duration-300 group-hover:w-full" />
             </div>
           </Link>
         ))}
