@@ -42,7 +42,9 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
   const data = await response.json();
   if (!response.ok || !data.success) {
     toast.error(data.message || 'API Error');
-    throw new Error(data.message || 'API Error');
+    const err: any = new Error(data.message || 'API Error');
+    err.status = response.status;
+    throw err;
   }
   toast.success(data.message || 'Success');
   return data;
@@ -114,7 +116,7 @@ export const getProfile = async (): Promise<Profile> => {
   } catch (e: any) {
     // If token expired, attempt refresh then retry once.
     // profileApi previously never retried, causing persistent 401.
-    if (String(e?.message || '').toLowerCase().includes('401')) {
+    if ((e && (e.status === 401)) || String(e?.message || '').toLowerCase().includes('401')) {
       const refreshToken = localStorage.getItem('cbe_refresh_token');
       if (!refreshToken) throw e;
 
