@@ -2,7 +2,11 @@ import { createClient } from '@supabase/supabase-js';
 
 // Supabase configuration from environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Vite exposes env vars prefixed with VITE_.
+// Your error shows Supabase is being called with an invalid API key, which usually
+// means this env var is missing/empty (or mis-named in .env).
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_KEY;
+
 
 const missing: string[] = [];
 if (!supabaseUrl) missing.push('VITE_SUPABASE_URL');
