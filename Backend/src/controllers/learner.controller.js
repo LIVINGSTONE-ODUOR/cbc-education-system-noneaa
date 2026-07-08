@@ -60,22 +60,33 @@ const registerLearner = asyncHandler(async (req, res) => {
     date_of_birth,
     gender,
     email,
+
     // Government & CBC
     birth_certificate_number,
     nemis_number,
     nationality,
+
     // Health info
     special_needs,
     medical_conditions,
     allergies,
+
     // Academic info
     previous_school,
     admission_date,
     academic_year,
+
     // Photo
     profile_photo,
+
     // Parent info
     parent_info,
+
+    // ✅ Enrollment during registration
+    class_id,
+    enrollment_date,
+    academic_year_id,
+    term_id,
   } = req.body;
 
   // Validation
@@ -290,6 +301,43 @@ const registerLearner = asyncHandler(async (req, res) => {
     } catch (error) {
       console.warn('Error handling parent creation:', error);
     }
+  }
+
+  // ✅ Option A: Create enrollment atomically during registration (if class_id provided)
+  // This ensures /learners and /learners/classes stay consistent and class learner_count matches.
+  if (class_id) {
+    const { data: enrollment, error: enrollmentError } = await supabase
+      .from('learner_enrollments')
+      .insert({
+        learner_id: learner.id,
+        class_id,
+        school_id,
+        academic_year_id: academic_year_id || null,
+        term_id: term_id || null,
+        enrollment_date: enrollment_date || new Date().toISOString().split('T')[0],
+        status: 'enrolled',
+      })
+      .select()
+      .single();
+
+    if (enrollmentError) {
+      // Learner is already created; fail hard to avoid silent count mismatch.
+      return res.status(500).json({
+        success: false,
+        message: 'Learner registered, but failed to create enrollment for selected class',
+        error: enrollmentError.message,
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: 'Learner registered successfully',
+      data: {
+        ...learner,
+        parent: parentInfo,
+        enrollment,
+      },
+    });
   }
 
   res.status(201).json({
