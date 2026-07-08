@@ -242,6 +242,9 @@ export default function ParentManagement() {
     is_primary: false,
   });
 
+  // Search state for learner selection
+  const [learnerSearchQuery, setLearnerSearchQuery] = useState('');
+
   const [unlinkData, setUnlinkData] = useState<{
     learner_id: string;
     learner_name: string;
@@ -1197,8 +1200,11 @@ export default function ParentManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Link Learner Dialog */}
-      <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
+      {/* Link Learner Dialog - with searchable learner selection */}
+      <Dialog open={showLinkDialog} onOpenChange={(open) => {
+        setShowLinkDialog(open);
+        if (!open) setLearnerSearchQuery('');
+      }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Link Learner</DialogTitle>
@@ -1206,23 +1212,74 @@ export default function ParentManagement() {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label>Learner *</Label>
-              <Select
-                value={linkFormData.learner_id}
-                onValueChange={(value) => setLinkFormData({ ...linkFormData, learner_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select learner" />
-                </SelectTrigger>
-                <SelectContent>
-                  {learners.map((learner) => (
-                    <SelectItem key={learner.id} value={learner.id}>
-                      {learner.first_name} {learner.last_name} ({learner.admission_number})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                {/* Search input for learners */}
+                <Input
+                  placeholder="Search by name or admission number..."
+                  value={learnerSearchQuery}
+                  onChange={(e) => setLearnerSearchQuery(e.target.value)}
+                  className="text-sm"
+                />
+
+                {/* Filtered learner list */}
+                <div className="border rounded-md max-h-64 overflow-y-auto bg-white">
+                  {learners
+                    .filter((learner) => {
+                      const searchLower = learnerSearchQuery.toLowerCase();
+                      return (
+                        learner.first_name.toLowerCase().includes(searchLower) ||
+                        learner.last_name.toLowerCase().includes(searchLower) ||
+                        learner.admission_number.toLowerCase().includes(searchLower)
+                      );
+                    })
+                    .map((learner) => (
+                      <div
+                        key={learner.id}
+                        onClick={() => {
+                          setLinkFormData({ ...linkFormData, learner_id: learner.id });
+                          setLearnerSearchQuery('');
+                        }}
+                        className={cn(
+                          'px-3 py-2.5 cursor-pointer text-sm border-b last:border-b-0 hover:bg-slate-50 transition-colors',
+                          linkFormData.learner_id === learner.id ? 'bg-green-50 border-l-2 border-l-green-500' : ''
+                        )}
+                      >
+                        <div className="font-medium">
+                          {learner.first_name} {learner.last_name}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {learner.admission_number} • Grade {learner.grade_level}
+                        </div>
+                      </div>
+                    ))}
+
+                  {learners.filter((learner) => {
+                    const searchLower = learnerSearchQuery.toLowerCase();
+                    return (
+                      learner.first_name.toLowerCase().includes(searchLower) ||
+                      learner.last_name.toLowerCase().includes(searchLower) ||
+                      learner.admission_number.toLowerCase().includes(searchLower)
+                    );
+                  }).length === 0 && (
+                    <div className="px-3 py-6 text-center text-sm text-gray-500">
+                      {learnerSearchQuery ? 'No learners found' : 'No learners available'}
+                    </div>
+                  )}
+                </div>
+
+                {/* Show selected learner */}
+                {linkFormData.learner_id && (
+                  <div className="p-2.5 bg-green-50 border border-green-200 rounded-md">
+                    <div className="text-xs text-green-900">
+                      Selected: <span className="font-medium">
+                        {learners.find(l => l.id === linkFormData.learner_id)?.first_name} {learners.find(l => l.id === linkFormData.learner_id)?.last_name}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="space-y-1.5">
@@ -1263,7 +1320,7 @@ export default function ParentManagement() {
             <Button variant="outline" onClick={() => setShowLinkDialog(false)} disabled={isLoading}>
               Cancel
             </Button>
-            <Button onClick={handleLinkLearner} disabled={isLoading}>
+            <Button onClick={handleLinkLearner} disabled={isLoading || !linkFormData.learner_id}>
               {isLoading ? 'Linking...' : 'Link Learner'}
             </Button>
           </DialogFooter>
