@@ -199,23 +199,24 @@ const listClasses = asyncHandler(async (req, res) => {
     return res.status(500).json({ success: false, message: 'Failed to fetch classes', error: error.message });
   }
 
-  const totalQuery = supabase
+  // NOTE: keep totalQuery filters in sync with the main query for correct pagination metadata.
+  let totalQuery = supabase
     .from('classes')
     .select('*', { count: 'exact', head: true })
     .eq('school_id', schoolId)
     .eq('is_active', true);
 
   if (academic_year_id) {
-    totalQuery.eq('academic_year_id', academic_year_id);
+    totalQuery = totalQuery.eq('academic_year_id', academic_year_id);
   }
   if (grade_level) {
-    totalQuery.eq('grade_level', grade_level);
+    totalQuery = totalQuery.eq('grade_level', grade_level);
   }
   if (is_active !== undefined) {
-    totalQuery.eq('is_active', is_active === 'true');
+    totalQuery = totalQuery.eq('is_active', is_active === 'true');
   }
   if (branch_id) {
-    totalQuery.eq('branch_id', branch_id);
+    totalQuery = totalQuery.eq('branch_id', branch_id);
   }
 
   const { count: total_count } = await totalQuery;
@@ -257,8 +258,6 @@ const listClasses = asyncHandler(async (req, res) => {
         limit: parseInt(limit),
         total_count: total_count || 0
       },
-    },
-  });
 });
 
 // =============================================================================

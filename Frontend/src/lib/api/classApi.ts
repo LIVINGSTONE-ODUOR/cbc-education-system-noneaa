@@ -102,6 +102,11 @@ export const getClasses = async (params: {
   const url = `${API_URL}/api/v1/classes${query ? `?${query}` : ''}`;
 
   const response = await fetch(url, getFetchOptions('GET'));
+  // Helpful debug when creation succeeds but subsequent list is empty.
+  if (!response.ok) {
+    const txt = await response.text().catch(() => '');
+    console.error('[classApi:getClasses] request failed', { url, status: response.status, body: txt });
+  }
   return handleResponse<ApiResponse<ClassesApiResponse>>(response);
 };
 
@@ -113,7 +118,12 @@ export const createClass = async (payload: {
   academic_year_id?: string | null;
   capacity?: number;
 }): Promise<ApiResponse<ClassApiItem>> => {
-  const response = await fetch(`${API_URL}/api/v1/classes`, getFetchOptions('POST', payload));
+  const url = `${API_URL}/api/v1/classes`;
+  const response = await fetch(url, getFetchOptions('POST', payload));
+  if (!response.ok) {
+    const txt = await response.text().catch(() => '');
+    console.error('[classApi:createClass] request failed', { url, status: response.status, body: txt });
+  }
   return handleResponse<ApiResponse<ClassApiItem>>(response);
 };
 
