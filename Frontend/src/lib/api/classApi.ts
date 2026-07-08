@@ -131,3 +131,61 @@ export const deleteClass = async (id: string): Promise<ApiResponse<{ message: st
   const response = await fetch(`${API_URL}/api/v1/classes/${id}`, getFetchOptions('DELETE'));
   return handleResponse<ApiResponse<{ message: string }>>(response);
 };
+
+// ── Class Roster ─────────────────────────────────────────────────────────
+
+export interface ClassLearnerItem {
+  id: string; // enrollment id
+  learner_id: string;
+  status: string;
+  enrolled_at?: string;
+  learners: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    admission_number: string;
+    date_of_birth?: string;
+    gender?: string;
+    email?: string;
+  } | null;
+}
+
+export interface ClassLearnersApiResponse {
+  learners: ClassLearnerItem[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total_count: number;
+  };
+}
+
+/**
+ * GET /api/v1/classes/:id/learners - Full roster for a class
+ */
+export const getClassLearners = async (
+  classId: string,
+  params: {
+    status?: 'enrolled' | 'withdrawn' | 'all';
+    gender?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  } = {}
+): Promise<ApiResponse<ClassLearnersApiResponse>> => {
+  const searchParams = new URLSearchParams();
+  if (params.status) searchParams.append('status', params.status);
+  if (params.gender) searchParams.append('gender', params.gender);
+  if (params.search) searchParams.append('search', params.search);
+  if (params.page) searchParams.append('page', params.page.toString());
+  if (params.limit) searchParams.append('limit', params.limit.toString());
+
+  const query = searchParams.toString();
+  const url = `${API_URL}/api/v1/classes/${classId}/learners${query ? `?${query}` : ''}`;
+
+  const response = await fetch(url, getFetchOptions('GET'));
+  if (!response.ok) {
+    const txt = await response.text().catch(() => '');
+    console.error('[classApi:getClassLearners] request failed', { url, status: response.status, body: txt });
+  }
+  return handleResponse<ApiResponse<ClassLearnersApiResponse>>(response);
+};
