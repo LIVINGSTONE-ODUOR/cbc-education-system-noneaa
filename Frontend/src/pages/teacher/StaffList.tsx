@@ -786,7 +786,7 @@ export default function AdminTeachers() {
                 <Filter className="h-5 w-5 text-muted-foreground" />
                 <CardTitle className="text-lg">Filters & Search</CardTitle>
               </div>
-              <Button size="sm" className="gap-2" onClick={() => navigate('/school-admin/teachers/add')}>
+              <Button size="sm" className="gap-2" onClick={() => navigate('/school-admin/teachers?add=1')}>
                 <Plus className="h-4 w-4" />
                 Add Teacher
               </Button>
