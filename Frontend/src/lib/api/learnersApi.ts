@@ -56,6 +56,24 @@ interface LearnerBackend {
     phone_number?: string;
     relationship?: string;
   } | null;
+  // GET /learners/:id returns the linked parent as "parents" (plural) instead of "parent"
+  parents?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email?: string;
+    phone_number?: string;
+    relationship?: string;
+  } | null;
+  // GET /learners/:id returns the active class nested under "current_enrollment.class"
+  // instead of the list endpoint's flat "current_class"
+  current_enrollment?: {
+    class?: {
+      id: string;
+      grade_level: string;
+      stream_name?: string;
+    } | null;
+  } | null;
   email?: string;
   photo_url?: string;
   birth_certificate_number?: string;
@@ -79,7 +97,7 @@ interface LearnersListResponse {
 interface LearnerDetailResponse {
   success: boolean;
   data: LearnerBackend & {
-    parent?: any;
+    parents?: any;
     enrollments?: any[];
     current_enrollment?: any;
   };
@@ -99,13 +117,13 @@ const mapBackendToLearner = (backend: LearnerBackend): any => ({
   last_name: backend.last_name,
   middle_name: backend.middle_name || null,
   date_of_birth: backend.date_of_birth || null,
-  grade_level: backend.current_class?.grade_level || '',
-  stream_name: backend.current_class?.stream_name || null,
+  grade_level: backend.current_class?.grade_level || backend.current_enrollment?.class?.grade_level || '',
+  stream_name: backend.current_class?.stream_name || backend.current_enrollment?.class?.stream_name || null,
   gender: backend.gender,
   special_needs: backend.special_needs || null,
   is_active: backend.is_active,
   created_at: backend.created_at,
-  parents: backend.parent || null,
+  parents: backend.parents || backend.parent || null,
   email: backend.email || null,
   photo_url: backend.photo_url || null,
   birth_certificate_number: backend.birth_certificate_number || null,
