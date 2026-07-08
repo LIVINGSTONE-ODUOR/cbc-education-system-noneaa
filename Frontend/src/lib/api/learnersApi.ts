@@ -81,6 +81,20 @@ interface LearnerBackend {
   admission_date?: string;
   nationality?: string;
   parent_id?: string;
+  // GET /learners/:id also returns the raw join-table rows here
+  learner_parents?: Array<{
+    id: string;
+    relationship?: string;
+    is_primary?: boolean;
+    parents: {
+      id: string;
+      first_name: string;
+      last_name: string;
+      email?: string;
+      phone_number?: string;
+      relationship?: string;
+    } | null;
+  }>;
 }
 
 interface LearnersListResponse {
@@ -124,6 +138,22 @@ const mapBackendToLearner = (backend: LearnerBackend): any => ({
   is_active: backend.is_active,
   created_at: backend.created_at,
   parents: backend.parents || backend.parent || null,
+  // Normalize into the { is_primary, parents }[] shape the Learners list table expects,
+  // regardless of whether this came from the list endpoint (flat "parent") or the
+  // detail endpoint (raw "learner_parents" array).
+  learner_parents:
+    backend.learner_parents && backend.learner_parents.length > 0
+      ? backend.learner_parents
+      : backend.parent || backend.parents
+        ? [
+            {
+              id: (backend.parent || backend.parents)!.id,
+              relationship: (backend.parent || backend.parents)!.relationship,
+              is_primary: true,
+              parents: backend.parent || backend.parents,
+            },
+          ]
+        : [],
   email: backend.email || null,
   photo_url: backend.photo_url || null,
   birth_certificate_number: backend.birth_certificate_number || null,
