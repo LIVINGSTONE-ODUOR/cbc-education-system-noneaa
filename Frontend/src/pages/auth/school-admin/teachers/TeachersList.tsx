@@ -20,15 +20,18 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   MoreHorizontal,
   Mail,
   Phone,
-  Loader2,
   AlertCircle,
 } from 'lucide-react';
+
+import ProtectedTableSkeleton from '@/components/skeletons/ProtectedTableSkeleton';
+
+
 
 interface Teacher {
   id: string;
@@ -84,15 +87,9 @@ export default function TeachersListPage() {
   );
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
-          <p className="mt-4 text-muted-foreground">Loading teachers...</p>
-        </div>
-      </div>
-    );
+    return <ProtectedTableSkeleton rowCount={8} columnCount={6} />;
   }
+
 
   if (error) {
     return (

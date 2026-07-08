@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import SchoolSetupWizard from '@/components/SchoolSetupWizard';
+import ProtectedPageSkeleton from '@/components/skeletons/ProtectedPageSkeleton';
+
 
 interface SchoolStats {
   totalTeachers: number;
@@ -142,15 +144,10 @@ export default function SchoolDashboard() {
   }, [fetchDashboardData]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
-          <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
-        </div>
-      </div>
-    );
+    // Skeleton flex for protected pages (after login)
+    return <ProtectedPageSkeleton variant="dashboard" />;
   }
+
 
   if (error) {
     return (

@@ -71,6 +71,8 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { getLearners } from '@/lib/api/learnersApi';
+import ProtectedPageSkeleton from '@/components/skeletons/ProtectedPageSkeleton';
+
 import type { Learner } from './Learners';
 import { cn } from '@/lib/utils';
 
@@ -702,16 +704,10 @@ const StudentManagement = () => {
   };
 
   if (loading && !students.length) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 animate-spin mx-auto text-blue-600" />
-          <p className="text-lg font-medium text-slate-900 dark:text-slate-100">Loading students...</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">This may take a moment...</p>
-        </div>
-      </div>
-    );
+    // Skeleton flex for protected pages (after login)
+    return <ProtectedPageSkeleton variant="table" />;
   }
+
 
   if (error && !students.length) {
     return (

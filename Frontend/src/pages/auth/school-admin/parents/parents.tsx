@@ -16,12 +16,15 @@ import {
   CheckCircle2,
   XCircle,
   Shield,
-  Loader2,
   Send,
   Link as LinkIcon,
   Unlink,
   RefreshCw,
+  Loader2,
 } from 'lucide-react';
+
+import ProtectedTableSkeleton from '@/components/skeletons/ProtectedTableSkeleton';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -215,8 +218,10 @@ export default function ParentManagement() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
+
   // Invite state
   const [inviteChannel, setInviteChannel] = useState<'email' | 'sms'>('email');
+
 
   // Form data
   const [formData, setFormData] = useState({
@@ -710,13 +715,13 @@ export default function ParentManagement() {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12">
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-                    <p className="text-muted-foreground">Loading parents...</p>
-                  </TableCell>
-                </TableRow>
+                <tr>
+                  <td colSpan={6} className="p-0">
+                    <ProtectedTableSkeleton rowCount={8} columnCount={6} />
+                  </td>
+                </tr>
               ) : filteredParents.length === 0 ? (
+
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                     <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
