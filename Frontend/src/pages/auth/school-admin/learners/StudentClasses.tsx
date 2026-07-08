@@ -27,6 +27,8 @@ import ClassCardsSkeleton from '@/components/skeletons/ClassCardsSkeleton';
 
 import { getClasses } from '@/lib/api/classApi';
 import { cn } from '@/lib/utils';
+import AddClassModal from '@/pages/auth/school-admin/learners/AddClassModal';
+
 
 interface TermPerformance {
   term: string;
@@ -152,6 +154,8 @@ const StudentClasses: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState<ClassData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [isAddClassOpen, setIsAddClassOpen] = useState(false);
+
 
   const fetchClasses = useCallback(async () => {
     setIsLoading(true);
@@ -355,7 +359,8 @@ const StudentClasses: React.FC = () => {
   return (
     <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
       {/* Header - IMPROVED DESIGN */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
@@ -369,7 +374,16 @@ const StudentClasses: React.FC = () => {
         </div>
 
         {/* View Mode Toggle */}
-        <div className="flex gap-2 border border-slate-200 rounded-lg p-1 bg-white dark:bg-slate-900">
+        <div className="flex gap-2 items-center border border-slate-200 rounded-lg p-1 bg-white dark:bg-slate-900">
+          <Button
+            size="sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white mx-1 gap-2"
+            onClick={() => setIsAddClassOpen(true)}
+            type="button"
+          >
+            Add Class
+          </Button>
+
           <Button
             variant={viewMode === 'grid' ? 'default' : 'ghost'}
             size="sm"
@@ -391,8 +405,18 @@ const StudentClasses: React.FC = () => {
         </div>
       </div>
 
+      <AddClassModal
+        open={isAddClassOpen}
+        onOpenChange={setIsAddClassOpen}
+        onClassCreated={() => {
+          // refresh list after creating a class
+          void fetchClasses();
+        }}
+      />
+
       {/* Loading State */}
       {isLoading ? (
+
         <div className="space-y-4">
           <div className="flex flex-col gap-2">
             <div className="h-8 w-56 rounded-md bg-white/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 animate-pulse" />
