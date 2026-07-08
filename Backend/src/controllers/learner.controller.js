@@ -326,21 +326,39 @@ const registerLearner = asyncHandler(async (req, res) => {
     // Use class's academic_year_id if not explicitly provided
     const enrollmentYearId = academic_year_id || classData.academic_year_id;
 
+    // Validate academic_year_id exists (required FK)
+    if (!enrollmentYearId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot enroll learner: class does not have an associated academic year',
+        error: 'Class academic_year_id is null or missing',
+      });
+    }
+
+    const enrollmentPayload = {
+      learner_id: learner.id,
+      class_id,
+      school_id,
+      academic_year_id: enrollmentYearId,
+      term_id: term_id || null,
+      enrollment_date: enrollment_date || new Date().toISOString().split('T')[0],
+      status: 'enrolled',
+    };
+
+    console.log('[registerLearner] Creating enrollment with payload:', enrollmentPayload);
+
     const { data: enrollment, error: enrollmentError } = await supabase
       .from('learner_enrollments')
-      .insert({
-        learner_id: learner.id,
-        class_id,
-        school_id,
-        academic_year_id: enrollmentYearId,
-        term_id: term_id || null,
-        enrollment_date: enrollment_date || new Date().toISOString().split('T')[0],
-        status: 'enrolled',
-      })
+      .insert(enrollmentPayload)
       .select()
       .single();
 
     if (enrollmentError) {
+      console.error('[registerLearner] Enrollment insert failed:', {
+        error: enrollmentError.message,
+        code: enrollmentError.code,
+        details: enrollmentError.details,
+      });
       // Learner is already created; fail hard to avoid silent count mismatch.
       return res.status(500).json({
         success: false,
