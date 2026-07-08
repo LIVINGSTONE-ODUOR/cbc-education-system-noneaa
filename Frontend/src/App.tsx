@@ -64,8 +64,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import SchoolManagement from "./pages/SchoolManagement/schoolmanagement";
 import DashboardWidgets from "./pages/school-admin/learners/DashboardWidgets";
 import TeachersListPage from "@/pages/auth/school-admin/teachers/TeachersList";
-import AddTeacherPage from "@/pages/auth/school-admin/teachers/AddTeacher";
-import StudentManagement from "@/pages/auth/school-admin/learners/Learners";  // ✅ Keep only one
+import StudentManagement from "@/pages/auth/school-admin/learners/Learners";  //  Keep only one
 import AddLearnerPage from "./pages/auth/school-admin/learners/AddLearner";
 import BulkImportPage from "@/pages/auth/school-admin/learners/BulkImportPage";
 import FeeManagement from "./pages/school-admin/learners/FeesManagent/FeeManagement";
@@ -296,7 +295,7 @@ function AppRoutes() {
 
                 {/* ── Teachers ── */}
                 <Route path="teachers" element={<TeachersListPage />} />
-                <Route path="teachers/add" element={<AddTeacherPage />} />
+                <Route path="teachers/add" element={<Navigate to="/school-admin/teachers?add=1" replace />} />
                 <Route path="teachers/departments" element={<DepartmentsPage />} />
                 <Route path="teacher-profile" element={<Teacher />} />
                 <Route path="teacher-list" element={<AdminStaff />} />
