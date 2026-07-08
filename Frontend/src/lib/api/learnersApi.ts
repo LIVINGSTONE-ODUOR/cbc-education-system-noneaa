@@ -5,9 +5,9 @@
  */
 
 const getApiUrl = (): string => {
-  if (import.meta.env.PROD) return '';
   const raw = import.meta.env.VITE_API_URL || '';
-  return raw.replace(/\/api\/?$/, '').replace(/\/+$/, '');
+  if (!raw) return '';
+  return raw.replace(/\/api(?:\/v1)?\/?$/, '').replace(/\/+$/, '');
 };
 
 export const API_URL = getApiUrl();
