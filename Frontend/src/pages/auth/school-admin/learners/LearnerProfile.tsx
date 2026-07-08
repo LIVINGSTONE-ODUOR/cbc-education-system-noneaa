@@ -15,13 +15,15 @@ import StudentProfileHeader from '@/components/student-profile/StudentProfileHea
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getLearnerById } from '@/lib/api/learnersApi';
 
+type LearnerProfileData = Awaited<ReturnType<typeof getLearnerById>>;
+
 const StudentProfile = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isEditMode, setIsEditMode] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const learnerId = searchParams.get('id');
-  const [learner, setLearner] = useState<any | null>(null);
+  const [learner, setLearner] = useState<LearnerProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
