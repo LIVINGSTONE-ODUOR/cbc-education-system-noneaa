@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,7 +26,7 @@ import ProtectedPageSkeleton from '@/components/skeletons/ProtectedPageSkeleton'
 
 import ClassCardsSkeleton from '@/components/skeletons/ClassCardsSkeleton';
 
-import { getClasses } from '@/lib/api/classApi';
+import { getClasses, getClassLearners, type ClassLearnerItem } from '@/lib/api/classApi';
 import { cn } from '@/lib/utils';
 import AddClassModal from '@/pages/auth/school-admin/learners/AddClassModal';
 
@@ -150,11 +151,16 @@ const gradeColors = [
 ];
 
 const StudentClasses: React.FC = () => {
+  const navigate = useNavigate();
   const [classes, setClasses] = useState<ClassData[]>([]);
   const [selectedClass, setSelectedClass] = useState<ClassData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isAddClassOpen, setIsAddClassOpen] = useState(false);
+
+  // Roster (learners) for the currently selected class
+  const [classLearners, setClassLearners] = useState<ClassLearnerItem[]>([]);
+  const [isLoadingLearners, setIsLoadingLearners] = useState(false);
 
 
   const fetchClasses = useCallback(async () => {
@@ -195,6 +201,42 @@ const StudentClasses: React.FC = () => {
   useEffect(() => {
     void fetchClasses();
   }, [fetchClasses]);
+
+  // Fetch the roster of learners for the selected class (details view)
+  useEffect(() => {
+    if (!selectedClass) {
+      setClassLearners([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchRoster = async () => {
+      setIsLoadingLearners(true);
+      try {
+        const response = await getClassLearners(selectedClass.id, { status: 'enrolled', limit: 100 });
+        if (!cancelled) {
+          setClassLearners(response.data?.learners || []);
+        }
+      } catch (error) {
+        console.error('Failed to load class roster:', error);
+        if (!cancelled) {
+          toast.error('Failed to load learners for this class');
+          setClassLearners([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingLearners(false);
+        }
+      }
+    };
+
+    void fetchRoster();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedClass]);
 
   // CLASS DETAILS VIEW - KEPT EXACTLY AS ORIGINAL STRUCTURE
   if (selectedClass) {
@@ -349,6 +391,68 @@ const StudentClasses: React.FC = () => {
                 );
               })}
             </Tabs>
+          </CardContent>
+        </Card>
+
+        {/* Learners in this Class - NEW SECTION, added without touching anything above */}
+        <Card className="border-slate-200 bg-white dark:bg-slate-900 shadow-sm">
+          <CardHeader className="flex flex-row items-center gap-3 pb-4 border-b border-slate-200 dark:border-slate-700">
+            <div className={`w-10 h-10 rounded-lg ${colors.icon} flex items-center justify-center`}>
+              <Users className="h-5 w-5" />
+            </div>
+            <CardTitle className="text-lg text-slate-900 dark:text-slate-100">Learners in this Class</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            {isLoadingLearners ? (
+              <div className="flex items-center justify-center py-10 gap-2 text-slate-500">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Loading learners...</span>
+              </div>
+            ) : classLearners.length === 0 ? (
+              <div className="text-center py-10">
+                <Users className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-600 dark:text-slate-400">No learners enrolled in this class yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {classLearners.map((enrollment) => {
+                  const learner = enrollment.learners;
+                  if (!learner) return null;
+
+                  return (
+                    <div
+                      key={enrollment.id}
+                      className="flex items-center justify-between gap-4 flex-wrap rounded-lg border border-slate-200 dark:border-slate-700 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-sm ${colors.icon}`}>
+                          {`${learner.first_name?.charAt(0) || ''}${learner.last_name?.charAt(0) || ''}`.toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-900 dark:text-slate-100 truncate">
+                            {learner.first_name} {learner.last_name}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Adm. No: {learner.admission_number}
+                            {learner.gender ? ` · ${learner.gender}` : ''}
+                          </p>
+                        </div>
+                      </div>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-2 border-slate-200 hover:bg-slate-100"
+                        onClick={() => navigate(`/school-admin/learners/profile?id=${learner.id}`)}
+                      >
+                        View
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -595,4 +699,3 @@ const StudentClasses: React.FC = () => {
 };
 
 export default StudentClasses;
-
