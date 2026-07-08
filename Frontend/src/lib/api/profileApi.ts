@@ -6,9 +6,9 @@ import type { School, ApiResponse } from './schoolsApi'; // Import types only
 import { toast } from '@/components/ui/sonner';
 
 const getApiUrl = (): string => {
-  if (import.meta.env.PROD) return '';
   const raw = import.meta.env.VITE_API_URL || '';
-  return raw.replace(/\/api\/?$/, '').replace(/\/+$/, '');
+  if (!raw) return '';
+  return raw.replace(/\/api(?:\/v1)?\/?$/, '').replace(/\/+$/, '');
 };
 
 const API_URL = getApiUrl();
@@ -272,5 +272,4 @@ export const updateActivity = async (): Promise<void> => {
     throw e;
   }
 };
-
 
