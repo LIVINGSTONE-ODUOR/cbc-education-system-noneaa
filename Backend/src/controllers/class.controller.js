@@ -510,32 +510,77 @@ const getClassLearners = asyncHandler(async (req, res) => {
     query = query.eq('status', status);
   }
 
+  // Note: Gender and search filtering done app-side (nested relation filters can be unreliable)
+  // Fetch all results first, then filter/search/sort/paginate in JavaScript for reliability
+  
+  // Apply sort at DB level if it's on enrollment fields (not on nested learner fields)
+  const isDescending = sort_order === 'desc';
+  if (sort_by.startsWith('learners.')) {
+    // For nested field sorting, we'll do it app-side after fetch
+    query = query.order('enrolled_at', { ascending: false });
+  } else {
+    query = query.order(sort_by, { ascending: !isDescending });
+  }
+
+  // Fetch all for this class (no pagination yet - we'll paginate after filtering)
+  const { data: allLearners, error } = await query;
+
+  if (error) {
+    console.error('[getClassLearners] Query error:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      query_params: { id, status, gender, search, sort_by, sort_order, page, limit },
+    });
+    return res.status(500).json({ success: false, message: 'Failed to fetch learners', error: error.message });
+  }
+
+  // App-side filtering for gender and search
+  let filtered = (allLearners || []);
+
   if (gender) {
-    query = query.eq('learners.gender', gender);
+    filtered = filtered.filter(e => e.learners?.gender?.toLowerCase() === gender.toLowerCase());
   }
 
   if (search) {
-    query = query.or(`learners.first_name.ilike.%${search}%,learners.last_name.ilike.%${search}%,learners.admission_number.ilike.%${search}%`);
+    const searchLower = search.toLowerCase();
+    filtered = filtered.filter(e => {
+      const learner = e.learners || {};
+      return (
+        learner.first_name?.toLowerCase().includes(searchLower) ||
+        learner.last_name?.toLowerCase().includes(searchLower) ||
+        learner.admission_number?.toLowerCase().includes(searchLower)
+      );
+    });
   }
 
-  // Apply sort
-  const isDescending = sort_order === 'desc';
-  query = query.order(sort_by, { ascending: !isDescending });
-
-  // Paginate
-  query = paginate(query, parseInt(page), parseInt(limit));
-
-  const { data: learners, error } = await query;
-
-  if (error) {
-    return res.status(500).json({ success: false, message: 'Failed to fetch learners', error: error.message });
+  // App-side sorting for nested fields
+  if (sort_by.startsWith('learners.')) {
+    const field = sort_by.replace('learners.', '');
+    filtered.sort((a, b) => {
+      const valA = a.learners?.[field] || '';
+      const valB = b.learners?.[field] || '';
+      const cmp = String(valA).localeCompare(String(valB));
+      return sort_order === 'desc' ? -cmp : cmp;
+    });
   }
+
+  // App-side pagination
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const from = (pageNum - 1) * limitNum;
+  const to = from + limitNum;
+  const paginatedLearners = filtered.slice(from, to);
 
   return res.json({
     success: true,
     data: {
-      learners: learners || [],
-      pagination: { page: parseInt(page), limit: parseInt(limit) },
+      learners: paginatedLearners,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total_count: filtered.length,
+      },
     },
   });
 });
