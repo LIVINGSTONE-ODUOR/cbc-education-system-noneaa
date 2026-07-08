@@ -306,13 +306,33 @@ const registerLearner = asyncHandler(async (req, res) => {
   // ✅ Option A: Create enrollment atomically during registration (if class_id provided)
   // This ensures /learners and /learners/classes stay consistent and class learner_count matches.
   if (class_id) {
+    // Validate class exists and belongs to this school, then fetch its academic_year_id if not provided
+    const { data: classData, error: classError } = await supabase
+      .from('classes')
+      .select('id, academic_year_id')
+      .eq('id', class_id)
+      .eq('school_id', school_id)
+      .single();
+
+    if (classError || !classData) {
+      // Learner is already created; fail hard to avoid silent orphan.
+      return res.status(400).json({
+        success: false,
+        message: 'Class not found or does not belong to this school',
+        error: classError?.message || 'Class validation failed',
+      });
+    }
+
+    // Use class's academic_year_id if not explicitly provided
+    const enrollmentYearId = academic_year_id || classData.academic_year_id;
+
     const { data: enrollment, error: enrollmentError } = await supabase
       .from('learner_enrollments')
       .insert({
         learner_id: learner.id,
         class_id,
         school_id,
-        academic_year_id: academic_year_id || null,
+        academic_year_id: enrollmentYearId,
         term_id: term_id || null,
         enrollment_date: enrollment_date || new Date().toISOString().split('T')[0],
         status: 'enrolled',
