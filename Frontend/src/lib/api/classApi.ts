@@ -103,8 +103,11 @@ export const getClasses = async (params: {
 
   const response = await fetch(url, getFetchOptions('GET'));
   // Helpful debug when creation succeeds but subsequent list is empty.
+  // NOTE: read a clone, not the original — reading .text()/.json() on the
+  // original consumes its body stream, which made the later handleResponse()
+  // call throw "body stream already read".
   if (!response.ok) {
-    const txt = await response.text().catch(() => '');
+    const txt = await response.clone().text().catch(() => '');
     console.error('[classApi:getClasses] request failed', { url, status: response.status, body: txt });
   }
   return handleResponse<ApiResponse<ClassesApiResponse>>(response);
@@ -121,7 +124,7 @@ export const createClass = async (payload: {
   const url = `${API_URL}/api/v1/classes`;
   const response = await fetch(url, getFetchOptions('POST', payload));
   if (!response.ok) {
-    const txt = await response.text().catch(() => '');
+    const txt = await response.clone().text().catch(() => '');
     console.error('[classApi:createClass] request failed', { url, status: response.status, body: txt });
   }
   return handleResponse<ApiResponse<ClassApiItem>>(response);
@@ -138,7 +141,7 @@ export interface ClassLearnerItem {
   id: string; // enrollment id
   learner_id: string;
   status: string;
-  enrolled_at?: string;
+  enrollment_date?: string;
   learners: {
     id: string;
     first_name: string;
@@ -184,7 +187,7 @@ export const getClassLearners = async (
 
   const response = await fetch(url, getFetchOptions('GET'));
   if (!response.ok) {
-    const txt = await response.text().catch(() => '');
+    const txt = await response.clone().text().catch(() => '');
     console.error('[classApi:getClassLearners] request failed', { url, status: response.status, body: txt });
   }
   return handleResponse<ApiResponse<ClassLearnersApiResponse>>(response);
