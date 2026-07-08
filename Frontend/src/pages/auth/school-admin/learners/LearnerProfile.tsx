@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/table";
 import { BookOpen, Calendar, ChevronRight, User, Users, ArrowRight, Printer, FileText } from 'lucide-react';
 import StudentProfileHeader from '@/components/student-profile/StudentProfileHeader';
+import LearnerProfileSkeleton from '@/components/student-profile/LearnerProfileSkeleton';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getLearnerById } from '@/lib/api/learnersApi';
+
 
 type LearnerProfileData = Awaited<ReturnType<typeof getLearnerById>>;
 
@@ -59,28 +61,28 @@ const StudentProfile = () => {
       .join(' ')
       .trim();
 
-    const guardianName = learner.parents
-      ? [learner.parents.first_name, learner.parents.last_name].filter(Boolean).join(' ').trim()
+    const guardianName = (learner as any).parents
+      ? [(learner as any).parents.first_name, (learner as any).parents.last_name].filter(Boolean).join(' ').trim()
       : 'Not assigned';
 
-    const guardianPhone = learner.parents?.phone_number || 'Not provided';
+    const guardianPhone = (learner as any).parents?.phone_number || 'Not provided';
     const status = learner.is_active ? 'active' : 'inactive';
     const profileImage = learner.photo_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName || learner.admission_number || learner.id)}`;
 
     return {
-      id: learner.admission_number || learner.id,
+      id: (learner as any).admission_number || (learner as any).id,
       name: fullName || 'Unnamed learner',
-      email: learner.email || 'Not provided',
+      email: (learner as any).email || 'Not provided',
       phone: guardianPhone,
-      grade: learner.grade_level || 'Not assigned',
+      grade: (learner as any).grade_level || 'Not assigned',
       school: 'CBE Education',
-      class: learner.stream_name || '-',
+      class: (learner as any).stream_name || '-',
       classTeacher: 'Not assigned',
       age: 0,
-      joinDate: learner.created_at ? new Date(learner.created_at).toLocaleDateString() : 'N/A',
-      dateOfBirth: learner.date_of_birth ? new Date(learner.date_of_birth).toLocaleDateString() : 'Not provided',
+      joinDate: (learner as any).created_at ? new Date((learner as any).created_at).toLocaleDateString() : 'N/A',
+      dateOfBirth: (learner as any).date_of_birth ? new Date((learner as any).date_of_birth).toLocaleDateString() : 'Not provided',
       image: profileImage,
-      status: status as const,
+      status: status as any,
       guardianName,
       guardianPhone,
     };
@@ -164,17 +166,7 @@ const StudentProfile = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">
-        <div className="max-w-7xl mx-auto">
-          <Card>
-            <CardContent className="py-10 text-center text-muted-foreground">
-              Loading learner profile...
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
+    return <LearnerProfileSkeleton />;
   }
 
   if (error || !student) {
