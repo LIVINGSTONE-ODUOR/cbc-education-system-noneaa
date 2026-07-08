@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Upload, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const getErrorMessage = (error: unknown, fallback: string) => {
@@ -18,6 +18,8 @@ export default function AddTeacherPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -30,6 +32,32 @@ export default function AddTeacherPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid file',
+        description: 'Please select an image file.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Photo must be under 5MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,7 +77,7 @@ export default function AddTeacherPage() {
 
       // Use backend invite endpoint. The previous approach inserted directly into Supabase
       // `teachers` from the frontend, which does not match your backend schema/constraints.
-      const { inviteTeacher } = await import('@/lib/api/teacherApi');
+      const { inviteTeacher, uploadTeacherPhoto } = await import('@/lib/api/teacherApi');
 
       const subjects_taught = formData.subjects
         .split(',')
@@ -61,6 +89,26 @@ export default function AddTeacherPage() {
         .map((s) => s.trim())
         .filter(Boolean);
 
+      // Upload photo first (if provided). Photo is optional — if upload fails,
+      // we still proceed with the rest of the registration rather than
+      // blocking teacher creation on a photo issue.
+      let photoUrl: string | undefined;
+      if (photoFile) {
+        try {
+          photoUrl = await uploadTeacherPhoto(
+            photoFile,
+            formData.employeeNumber || `${formData.firstName}-${formData.lastName}`
+          );
+        } catch (photoError) {
+          console.warn('Photo upload failed, continuing without photo:', photoError);
+          toast({
+            title: 'Photo upload skipped',
+            description: getErrorMessage(photoError, 'Could not upload photo, continuing without it.'),
+            variant: 'destructive',
+          });
+        }
+      }
+
       await inviteTeacher({
         first_name: formData.firstName,
         last_name: formData.lastName,
@@ -71,6 +119,7 @@ export default function AddTeacherPage() {
         qualifications: qualifications.length ? qualifications : undefined,
         staff_type: 'teaching',
         job_status: 'active',
+        photo: photoUrl,
       });
 
       toast({
@@ -113,6 +162,36 @@ export default function AddTeacherPage() {
               <CardDescription>Basic details about the teacher</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
+              <div className="space-y-2">
+                <Label>Photo</Label>
+                <div className="flex items-center gap-4">
+                  <div className="h-16 w-16 rounded-full overflow-hidden bg-muted flex items-center justify-center border">
+                    {photoPreview ? (
+                      <img src={photoPreview} alt="Teacher preview" className="h-full w-full object-cover" />
+                    ) : (
+                      <User className="h-8 w-8 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div>
+                    <Input
+                      id="photo"
+                      name="photo"
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      className="hidden"
+                    />
+                    <Label
+                      htmlFor="photo"
+                      className="inline-flex items-center gap-2 cursor-pointer rounded-md border px-3 py-2 text-sm hover:bg-muted"
+                    >
+                      <Upload className="h-4 w-4" />
+                      {photoFile ? 'Change Photo' : 'Upload Photo'}
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">JPG, PNG up to 5MB (Optional)</p>
+                  </div>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name *</Label>
@@ -221,4 +300,3 @@ export default function AddTeacherPage() {
     </div>
   );
 }
-
