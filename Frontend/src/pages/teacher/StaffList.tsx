@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -508,6 +509,7 @@ function DeleteConfirmDialog({
 // ─────────────────────────────────────────────────────────────────
 
 export default function AdminTeachers() {
+  const navigate = useNavigate();
   // State
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteDialog, setDeleteDialog] = useState<{
@@ -784,7 +786,7 @@ export default function AdminTeachers() {
                 <Filter className="h-5 w-5 text-muted-foreground" />
                 <CardTitle className="text-lg">Filters & Search</CardTitle>
               </div>
-              <Button size="sm" className="gap-2" onClick={() => console.log('Add teacher')}>
+              <Button size="sm" className="gap-2" onClick={() => navigate('/school-admin/teachers/add')}>
                 <Plus className="h-4 w-4" />
                 Add Teacher
               </Button>
