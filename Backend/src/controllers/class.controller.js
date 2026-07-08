@@ -226,19 +226,19 @@ const listClasses = asyncHandler(async (req, res) => {
   let learnerCounts = {};
 
   if (classIds.length > 0) {
-    // Count enrolled learners grouped by class_id
-    const { data: enrollmentCounts, error: enrollmentCountError } = await supabase
+    // Count enrolled learners per class_id (aggregated client-side —
+    // the supabase-js/PostgREST query builder has no .group() method)
+    const { data: enrollments, error: enrollmentCountError } = await supabase
       .from('learner_enrollments')
-      .select('class_id, count:class_id')
+      .select('class_id')
       .eq('status', 'enrolled')
-      .in('class_id', classIds)
-      .group('class_id');
+      .in('class_id', classIds);
 
     if (enrollmentCountError) {
       console.error('[listClasses] learner_count aggregation error:', enrollmentCountError);
     } else {
-      learnerCounts = (enrollmentCounts || []).reduce((acc, row) => {
-        acc[row.class_id] = Number(row.count) || 0;
+      learnerCounts = (enrollments || []).reduce((acc, row) => {
+        acc[row.class_id] = (acc[row.class_id] || 0) + 1;
         return acc;
       }, {});
     }
