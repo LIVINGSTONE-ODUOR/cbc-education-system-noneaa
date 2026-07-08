@@ -108,6 +108,35 @@ export const getTeacher = async (id: string): Promise<StaffMember> => {
 };
 
 /**
+ * POST /api/v1/teachers/upload-photo
+ * Upload a teacher's profile photo (multipart/form-data). Returns a public URL
+ * that should be passed as `photo` in the inviteTeacher/updateTeacher payload.
+ */
+export const uploadTeacherPhoto = async (
+  file: File,
+  label?: string
+): Promise<string> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (label) formData.append('filename', label);
+
+  const token = getAuthToken();
+  const response = await fetch(`${API_URL}/api/v1/teachers/upload-photo`, {
+    method: 'POST',
+    body: formData,
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok || !data?.photoUrl) {
+    throw new Error(data?.message || 'Failed to upload photo');
+  }
+
+  return data.photoUrl;
+};
+
+/**
  * POST /api/v1/teachers/invite
  * Create pending teacher (send invite email)
  */
@@ -208,5 +237,3 @@ export const deleteTeacher = async (id: string): Promise<ApiResponse<void>> => {
 export const mapBackendToStaffMember = (backend: TeacherBackend): StaffMember => {
   return backendToStaffMember(backend); // Delegate to utils.ts
 };
-
-
