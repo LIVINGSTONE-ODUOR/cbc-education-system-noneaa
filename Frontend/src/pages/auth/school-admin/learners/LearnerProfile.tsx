@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,29 +12,79 @@ import {
 } from "@/components/ui/table";
 import { BookOpen, Calendar, ChevronRight, User, Users, ArrowRight, Printer, FileText } from 'lucide-react';
 import StudentProfileHeader from '@/components/student-profile/StudentProfileHeader';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { getLearnerById } from '@/lib/api/learnersApi';
+
+type LearnerProfileData = Awaited<ReturnType<typeof getLearnerById>>;
 
 const StudentProfile = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isEditMode, setIsEditMode] = useState(false);
-  
-  // Student details - Enhanced with more information
-  const student = {
-    id: "ST12345",
-    name: "David Ochieng",
-    email: "david.ochieng@example.com",
-    phone: "+254 701 234 567",
-    grade: "Grade 6",
-    school: "Nairobi Academy",
-    class: "6B",
-    classTeacher: "Mrs. Njoroge",
-    age: 12,
-    joinDate: "January 2020",
-    dateOfBirth: "March 15, 2013",
-    image: "https://images.unsplash.com/photo-1531384441138-2736e62e0919?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80",
-    status: 'active' as const,
-    guardianName: "John Ochieng",
-    guardianPhone: "+254 722 334 455"
-  };
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const learnerId = searchParams.get('id');
+  const [learner, setLearner] = useState<LearnerProfileData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!learnerId) {
+      setError('Learner ID is missing. Please select a learner from the list.');
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchLearner = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await getLearnerById(learnerId);
+        setLearner(data);
+      } catch (err) {
+        console.error('Failed to load learner profile:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load learner profile.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void fetchLearner();
+  }, [learnerId]);
+
+  const student = useMemo(() => {
+    if (!learner) return null;
+
+    const fullName = [learner.first_name, learner.middle_name, learner.last_name]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    const guardianName = learner.parents
+      ? [learner.parents.first_name, learner.parents.last_name].filter(Boolean).join(' ').trim()
+      : 'Not assigned';
+
+    const guardianPhone = learner.parents?.phone_number || 'Not provided';
+    const status = learner.is_active ? 'active' : 'inactive';
+    const profileImage = learner.photo_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName || learner.admission_number || learner.id)}`;
+
+    return {
+      id: learner.admission_number || learner.id,
+      name: fullName || 'Unnamed learner',
+      email: learner.email || 'Not provided',
+      phone: guardianPhone,
+      grade: learner.grade_level || 'Not assigned',
+      school: 'CBE Education',
+      class: learner.stream_name || '-',
+      classTeacher: 'Not assigned',
+      age: 0,
+      joinDate: learner.created_at ? new Date(learner.created_at).toLocaleDateString() : 'N/A',
+      dateOfBirth: learner.date_of_birth ? new Date(learner.date_of_birth).toLocaleDateString() : 'Not provided',
+      image: profileImage,
+      status: status as const,
+      guardianName,
+      guardianPhone,
+    };
+  }, [learner]);
   
   // Academic data
   const subjects = [
@@ -112,6 +162,40 @@ const StudentProfile = () => {
     };
     return styles[type as keyof typeof styles] || "";
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          <Card>
+            <CardContent className="py-10 text-center text-muted-foreground">
+              Loading learner profile...
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !student) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Unable to load learner profile</CardTitle>
+              <CardDescription>{error || 'Learner profile could not be found.'}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => navigate('/school-admin/learners')} variant="outline">
+                Back to Learners
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">

@@ -8,9 +8,9 @@ import { backendToStaffMember, staffMemberToBackend } from '../../pages/teacher/
 
 // API URL - normalize VITE_API_URL to avoid duplicate '/api' segments
 const getApiUrl = (): string => {
-  if (import.meta.env.PROD) return '';
   const raw = import.meta.env.VITE_API_URL || '';
-  return raw.replace(/\/api\/?$/, '').replace(/\/+$/, '');
+  if (!raw) return '';
+  return raw.replace(/\/api(?:\/v1)?\/?$/, '').replace(/\/+$/, '');
 };
 
 const API_URL = getApiUrl();
@@ -208,6 +208,5 @@ export const deleteTeacher = async (id: string): Promise<ApiResponse<void>> => {
 export const mapBackendToStaffMember = (backend: TeacherBackend): StaffMember => {
   return backendToStaffMember(backend); // Delegate to utils.ts
 };
-
 
 

@@ -8,9 +8,9 @@ import type { Parent, School, Learner, ApiResponse } from '../../types';
 
 // API URL helper - normalize VITE_API_URL to avoid duplicate '/api'
 const getApiUrl = (): string => {
-  if (import.meta.env.PROD) return '';
   const raw = import.meta.env.VITE_API_URL || '';
-  return raw.replace(/\/api\/?$/, '').replace(/\/+$/, '');
+  if (!raw) return '';
+  return raw.replace(/\/api(?:\/v1)?\/?$/, '').replace(/\/+$/, '');
 };
 
 const API_URL = getApiUrl();
@@ -130,4 +130,3 @@ export const getLearners = async (): Promise<ApiResponse<Learner[]>> => {
   const response = await fetch(url, getFetchOptions('GET'));
   return handleResponse<ApiResponse<Learner[]>>(response);
 };
-
