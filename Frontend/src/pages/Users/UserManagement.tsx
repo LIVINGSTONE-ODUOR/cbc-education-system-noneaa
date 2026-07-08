@@ -144,9 +144,9 @@ interface AddUserForm {
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════
 
-const API_URL = import.meta.env.PROD
-  ? ""
-  : (import.meta.env.VITE_API_URL || "").replace(/\/api\/?$/, "").replace(/\/+$/, "");
+const API_URL = (import.meta.env.VITE_API_URL || "")
+  .replace(/\/api(?:\/v1)?\/?$/, "")
+  .replace(/\/+$/, "");
 
 const ROLE_LABELS: Record<string, string> = {
   super_admin: "Super Admin",

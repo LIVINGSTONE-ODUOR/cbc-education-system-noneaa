@@ -62,7 +62,13 @@ const authenticate = async (req, res, next) => {
        LIMIT 1`,
       [decoded.userId]
     );
+
+    console.log("========== AUTH QUERY ==========");
+    console.log("JWT userId:", decoded.userId);
+    console.log("Rows returned:", userResult.rows.length);
+    console.log("Rows:", JSON.stringify(userResult.rows, null, 2));
   } catch (dbError) {
+
     // DB fallback mode: trust signed JWT claims when DB is temporarily unavailable.
     // This keeps authenticated flows alive if Postgres connectivity is down.
     console.error('❌ Authentication DB lookup failed, using JWT fallback:', dbError.message);

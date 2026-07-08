@@ -1,202 +1,90 @@
-import React, { useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
+import { 
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
+  TableRow
 } from "@/components/ui/table";
-import { BookOpen, Calendar, ChevronRight, Users, ArrowRight, Printer, FileText } from 'lucide-react';
+import { BookOpen, Calendar, ChevronRight, User, Users, ArrowRight, Printer, FileText } from 'lucide-react';
 import StudentProfileHeader from '@/components/student-profile/StudentProfileHeader';
-import LearnerProfileSkeleton from '@/components/student-profile/LearnerProfileSkeleton';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getLearnerById } from '@/lib/api/learnersApi';
 
-type LearnerBackendLike = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email?: string | null;
-  admission_number?: string | null;
-  date_of_birth?: string | null;
-  gender?: string | null;
-  current_class?: { grade_level: string; stream_name?: string | null; id?: string } | null;
-  parent?: {
-    first_name?: string | null;
-    last_name?: string | null;
-    phone_number?: string | null;
-  } | null;
-  photo_url?: string | null;
-  birth_certificate_number?: string | null;
-};
+type LearnerProfileData = Awaited<ReturnType<typeof getLearnerById>>;
 
 const StudentProfile = () => {
-  const location = useLocation();
-  const learnerId = useMemo(() => {
-    const params = new URLSearchParams(location.search);
-    return params.get('id');
-  }, [location.search]);
-
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isEditMode, setIsEditMode] = useState(false);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const learnerId = searchParams.get('id');
+  const [learner, setLearner] = useState<LearnerProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [student, setStudent] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  React.useEffect(() => {
-    let isMounted = true;
-    const run = async () => {
+  useEffect(() => {
+    if (!learnerId) {
+      setError('Learner ID is missing. Please select a learner from the list.');
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchLearner = async () => {
       try {
         setIsLoading(true);
-        if (!learnerId) {
-          if (isMounted) {
-            setStudent(null);
-          }
-          return;
-        }
+        setError(null);
         const data = await getLearnerById(learnerId);
-        if (!isMounted) return;
-        setStudent(data);
-      } catch {
-        if (!isMounted) return;
-        setStudent(null);
+        setLearner(data);
+      } catch (err) {
+        console.error('Failed to load learner profile:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load learner profile.');
       } finally {
-        if (isMounted) setIsLoading(false);
+        setIsLoading(false);
       }
     };
-    void run();
-    return () => {
-      isMounted = false;
-    };
+
+    void fetchLearner();
   }, [learnerId]);
 
-  // Fallback UI still needs data shape for the profile layout.
-  // If the backend returns null/undefined, we keep a minimal safe object.
-  const safeStudent =
-    student ?? {
-      id: learnerId ?? '—',
-      name: '—',
-      email: '—',
-      phone: '—',
-      grade: '—',
-      school: '—',
-      class: '—',
-      classTeacher: '—',
-      age: '—',
-      joinDate: '—',
-      dateOfBirth: '—',
-      image: 'https://via.placeholder.com/200',
-      status: 'active' as const,
-      guardianName: '—',
-      guardianPhone: '—',
+  const student = useMemo(() => {
+    if (!learner) return null;
+
+    const fullName = [learner.first_name, learner.middle_name, learner.last_name]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    const guardianName = learner.parents
+      ? [learner.parents.first_name, learner.parents.last_name].filter(Boolean).join(' ').trim()
+      : 'Not assigned';
+
+    const guardianPhone = learner.parents?.phone_number || 'Not provided';
+    const status = learner.is_active ? 'active' : 'inactive';
+    const profileImage = learner.photo_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName || learner.admission_number || learner.id)}`;
+
+    return {
+      id: learner.admission_number || learner.id,
+      name: fullName || 'Unnamed learner',
+      email: learner.email || 'Not provided',
+      phone: guardianPhone,
+      grade: learner.grade_level || 'Not assigned',
+      school: 'CBE Education',
+      class: learner.stream_name || '-',
+      classTeacher: 'Not assigned',
+      age: 0,
+      joinDate: learner.created_at ? new Date(learner.created_at).toLocaleDateString() : 'N/A',
+      dateOfBirth: learner.date_of_birth ? new Date(learner.date_of_birth).toLocaleDateString() : 'Not provided',
+      image: profileImage,
+      status: status as const,
+      guardianName,
+      guardianPhone,
     };
-
-  if (isLoading) {
-    return <LearnerProfileSkeleton />;
-  }
-
-  // Student details - Enhanced with more information
-  const subjects = [
-    { name: "Mathematics", completed: 78, upcoming: 3, score: 85 },
-    { name: "English", completed: 82, upcoming: 1, score: 92 },
-    { name: "Kiswahili", completed: 75, upcoming: 4, score: 88 },
-    { name: "Science", completed: 80, upcoming: 2, score: 76 },
-    { name: "Social Studies", completed: 85, upcoming: 0, score: 91 },
-    { name: "Creative Arts", completed: 90, upcoming: 2, score: 94 },
-  ];
-
-  // Homework and assignments
-  const assignments = [
-    { id: 1, title: "Mathematics Problem Set", dueDate: "May 5, 2025", status: "completed" },
-    { id: 2, title: "English Essay Writing", dueDate: "May 7, 2025", status: "pending" },
-    { id: 3, title: "Science Project", dueDate: "May 10, 2025", status: "pending" },
-    { id: 4, title: "Social Studies Research", dueDate: "May 12, 2025", status: "pending" },
-  ];
-
-  // Attendance data
-  const attendance = {
-    present: 87,
-    absent: 4,
-    late: 9,
-    total: 100,
-  };
-
-  // Recent activities
-  const recentActivities = [
-    { id: 1, activity: "Submitted Mathematics assignment", date: "May 1, 2025", time: "10:30 AM" },
-    { id: 2, activity: "Participated in Science lab experiment", date: "April 29, 2025", time: "2:15 PM" },
-    { id: 3, activity: "Completed English quiz", date: "April 28, 2025", time: "11:45 AM" },
-    { id: 4, activity: "Attended virtual field trip", date: "April 25, 2025", time: "9:00 AM" },
-  ];
-
-  // Use the existing helper functions below.
-
-  const getStatusStyles = (status: string) => {
-    const styles: Record<string, string> = {
-      completed: "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200",
-      pending: "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200",
-    };
-    return styles[status] || styles.pending;
-  };
-
-  const getGradeStyles = (score: number) => {
-    if (score >= 90) return "text-emerald-600 dark:text-emerald-400";
-    if (score >= 80) return "text-blue-600 dark:text-blue-400";
-    if (score >= 70) return "text-amber-600 dark:text-amber-400";
-    return "text-red-600 dark:text-red-400";
-  };
-
-  const getAttendanceCardStyles = (type: string) => {
-    const styles: Record<string, string> = {
-      present: "bg-emerald-50 dark:bg-emerald-950/30 border dark:border-emerald-900",
-      late: "bg-amber-50 dark:bg-amber-950/30 border dark:border-emerald-900",
-      absent: "bg-red-50 dark:bg-red-950/30 border dark:border-red-900",
-    };
-    return styles[type] || "";
-  };
-
-  const getAttendanceTextStyles = (type: string) => {
-    const styles: Record<string, string> = {
-      present: "text-emerald-600 dark:text-emerald-400",
-      late: "text-amber-600 dark:text-amber-400",
-      absent: "text-red-600 dark:text-red-400",
-    };
-    return styles[type] || "";
-  };
-
-  const getAttendanceLabelStyles = (type: string) => {
-    const styles: Record<string, string> = {
-      present: "text-emerald-800 dark:text-emerald-300",
-      late: "text-amber-800 dark:text-amber-300",
-      absent: "text-red-800 dark:text-red-300",
-    };
-    return styles[type] || "";
-  };
-
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [isEditMode, setIsEditMode] = useState(false);
-  
-  // Student details - Enhanced with more information
-  const student = {
-    id: "ST12345",
-    name: "David Ochieng",
-    email: "david.ochieng@example.com",
-    phone: "+254 701 234 567",
-    grade: "Grade 6",
-    school: "Nairobi Academy",
-    class: "6B",
-    classTeacher: "Mrs. Njoroge",
-    age: 12,
-    joinDate: "January 2020",
-    dateOfBirth: "March 15, 2013",
-    image: "https://images.unsplash.com/photo-1531384441138-2736e62e0919?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80",
-    status: 'active' as const,
-    guardianName: "John Ochieng",
-    guardianPhone: "+254 722 334 455"
-  };
+  }, [learner]);
   
   // Academic data
   const subjects = [
@@ -274,6 +162,40 @@ const StudentProfile = () => {
     };
     return styles[type as keyof typeof styles] || "";
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          <Card>
+            <CardContent className="py-10 text-center text-muted-foreground">
+              Loading learner profile...
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !student) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Unable to load learner profile</CardTitle>
+              <CardDescription>{error || 'Learner profile could not be found.'}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => navigate('/school-admin/learners')} variant="outline">
+                Back to Learners
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">
