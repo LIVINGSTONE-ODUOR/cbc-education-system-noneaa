@@ -340,10 +340,12 @@ const registerLearner = asyncHandler(async (req, res) => {
       class_id,
       school_id,
       academic_year_id: enrollmentYearId,
-      term_id: term_id || null,
       enrollment_date: enrollment_date || new Date().toISOString().split('T')[0],
       status: 'enrolled',
     };
+    // NOTE: term_id is intentionally omitted — the live learner_enrollments
+    // table does not have this column yet. Add it back once a migration
+    // adds learner_enrollments.term_id (see Backend/migrations).
 
     console.log('[registerLearner] Creating enrollment with payload:', enrollmentPayload);
 
@@ -687,7 +689,6 @@ const getLearner = asyncHandler(async (req, res) => {
       id,
       class_id,
       academic_year_id,
-      term_id,
       enrollment_date,
       exit_date,
       status,
@@ -1335,7 +1336,6 @@ const getEnrollmentHistory = asyncHandler(async (req, res) => {
       id,
       class_id,
       academic_year_id,
-      term_id,
       enrollment_date,
       exit_date,
       status,
