@@ -69,6 +69,7 @@ import {
   type BatchKind,
   type BatchStatus,
 } from '@/lib/api/promotionApi';
+import PromotionsPageSkeleton from '@/components/skeletons/PromotionsPageSkeleton';
 import { getAcademicTerms, type AcademicTerm } from '@/lib/api/academicTermsApi';
 import { getClasses, type ClassApiItem } from '@/lib/api/classApi';
 
