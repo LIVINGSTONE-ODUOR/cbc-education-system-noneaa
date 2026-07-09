@@ -1,4 +1,5 @@
 import React from 'react';
+import { Edit, Trash2 } from 'lucide-react';
 import { LearningArea, LEVEL_CONFIG } from '@/services/curriculumService';
 
 interface LearningAreaCardProps {
@@ -6,6 +7,8 @@ interface LearningAreaCardProps {
   isSelected: boolean;
   onToggleSelect: () => void;
   onViewDetails: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }
 
 const LearningAreaCard: React.FC<LearningAreaCardProps> = ({
@@ -13,6 +16,8 @@ const LearningAreaCard: React.FC<LearningAreaCardProps> = ({
   isSelected,
   onToggleSelect,
   onViewDetails,
+  onEdit,
+  onDelete,
 }) => {
   return (
     <tr
@@ -61,18 +66,35 @@ const LearningAreaCard: React.FC<LearningAreaCardProps> = ({
         {row.optional ? "Optional" : "Core"}
       </td>
 
-      {/* Details Button */}
-      <td className="px-4 py-3 text-right">
-        <button
-          className="text-blue-600 hover:underline text-sm"
-          onClick={onViewDetails}
-        >
-          View
-        </button>
+      {/* Actions */}
+      <td className="px-4 py-3">
+        <div className="flex items-center justify-end gap-3">
+          <button
+            className="text-blue-600 hover:underline text-sm"
+            onClick={onViewDetails}
+          >
+            View
+          </button>
+          <button
+            className="text-slate-500 hover:text-slate-900 transition-colors"
+            onClick={onEdit}
+            title="Edit learning area"
+            aria-label="Edit learning area"
+          >
+            <Edit className="h-4 w-4" />
+          </button>
+          <button
+            className="text-red-500 hover:text-red-700 transition-colors"
+            onClick={onDelete}
+            title="Delete learning area"
+            aria-label="Delete learning area"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
       </td>
     </tr>
   );
 };
 
 export default LearningAreaCard;
-
