@@ -49,7 +49,6 @@ import LearningMaterials from "@/pages/student/LearningMaterials";
 import Grade1 from "@/pages/student/Grade1";
 import Grade2 from "@/pages/student/Grade2";
 import StudentPortal from "./pages/Student-Portal/Student";
-import DailyAttendance from "./pages/Attendance/DailyAttendance";
 
 // Teacher Pages
 import TeachingResources from "@/pages/teacher/TeachingResources";
@@ -71,6 +70,8 @@ import BulkImportPage from "@/pages/auth/school-admin/learners/BulkImportPage";
 import FeeManagement from "./pages/school-admin/learners/FeesManagent/FeeManagement";
 import Assessments from "./pages/school-admin/Assessment";
 import AdminAttendance from "./pages/teacher/StaffAttendance";
+import DailyAttendance from "./pages/Attendance/DailyAttendance";
+import TeacherAttendance from "./pages/Attendance/TeacherAttendance";
 import Calendar from "./pages/Calendar/Calendar";
 import Classes from "./pages/ClassesManagement/ClassManagement";
 import Student from "./pages/auth/school-admin/learners/LearnerProfile";
@@ -309,10 +310,6 @@ function AppRoutes() {
                 <Route path="learners/bulk-import" element={<BulkImportPage />} />
                 <Route path="learners/profile" element={<Student />} />
                 <Route path="learners/classes" element={<StudentClasses />} />
-                <Route path="attendance/students" element={<Navigate to="/school-admin/attendance/students/daily" replace />} />
-                <Route path="attendance/students/daily" element={<DailyAttendance />} />
-                <Route path="attendance/students/reports" element={<ReportsPage />} />
-                <Route path="attendance/teachers" element={<AdminAttendance />} />
 
                 {/* ── Other Admin Pages ── */}
                 <Route path="curriculum" element={<AdminCurriculumPage />} />
@@ -324,6 +321,13 @@ function AppRoutes() {
                 <Route path="fee-management" element={<FeeManagement onBack={() => window.history.back()} />} />
                 <Route path="assessments" element={<Assessments />} />
                 <Route path="staff-attendance" element={<AdminAttendance />} />
+
+                {/* ── Attendance (sidebar links live in menuData.ts under ATTENDANCE & PERFORMANCE) ── */}
+                <Route path="attendance/students" element={<Navigate to="/school-admin/attendance/students/daily" replace />} />
+                <Route path="attendance/students/daily" element={<DailyAttendance />} />
+                <Route path="attendance/students/reports" element={<ReportsPage />} />
+                <Route path="attendance/teachers" element={<TeacherAttendance />} />
+
                 <Route path="parents" element={<ParentManagement />} />
                 <Route path="calendar" element={<Calendar />} />
                 <Route path="schoolmanagement" element={<SchoolManagement/>} />
