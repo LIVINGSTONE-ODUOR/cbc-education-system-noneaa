@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { z } from 'zod';
@@ -56,40 +56,60 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
-  Trash2,
   Unlock,
 } from 'lucide-react';
 
-type PromotionKind = 'promotion' | 'graduation';
+import {
+  getPromotionBatches,
+  createPromotionBatch,
+  runPromotionBatch,
+  lockPromotionBatch,
+  unlockPromotionBatch,
+  type PromotionBatchApiItem,
+  type BatchKind,
+  type BatchStatus,
+} from '@/lib/api/promotionApi';
+import { getAcademicTerms, type AcademicTerm } from '@/lib/api/academicTermsApi';
+import { getClasses, type ClassApiItem } from '@/lib/api/classApi';
 
-type PromotionStatus =
-  | 'draft'
-  | 'ready'
-  | 'running'
-  | 'completed'
-  | 'locked'
-  | 'cancelled';
-
-type GradeLevel = string;
-
-type StreamName = string;
-
+// -----------------------------------------------------------------------------
+// View model — thin wrapper around the API shape for display convenience.
+// -----------------------------------------------------------------------------
 interface PromotionBatch {
   id: string;
-  kind: PromotionKind;
+  kind: BatchKind;
   academicYear: string; // display label
   academicYearId: string;
-  gradeLevel: GradeLevel;
-  streamName: StreamName | null;
+  gradeLevel: string;
+  streamName: string | null;
+  toGradeLevel: string | null;
   criteria: string;
-  effectiveDate: string; // yyyy-mm-dd
+  effectiveDate: string;
   learnerCountTarget: number;
   learnerCountSelected: number;
   learnerCountPromotedOrGraduated: number;
-  status: PromotionStatus;
+  status: BatchStatus;
   createdAt: string;
   updatedAt: string;
 }
+
+const toViewModel = (b: PromotionBatchApiItem): PromotionBatch => ({
+  id: b.id,
+  kind: b.kind,
+  academicYear: b.academic_years ? `${b.academic_years.name} (${b.academic_years.year})` : '—',
+  academicYearId: b.academic_year_id,
+  gradeLevel: b.grade_level,
+  streamName: b.stream_name,
+  toGradeLevel: b.to_grade_level,
+  criteria: b.criteria,
+  effectiveDate: b.effective_date,
+  learnerCountTarget: b.learner_count_target ?? 0,
+  learnerCountSelected: b.learner_count_selected ?? 0,
+  learnerCountPromotedOrGraduated: b.learner_count_completed ?? 0,
+  status: b.status,
+  createdAt: b.created_at,
+  updatedAt: b.updated_at,
+});
 
 const formatDate = (value?: string | null) => {
   if (!value) return '—';
@@ -100,175 +120,95 @@ const formatDate = (value?: string | null) => {
   }
 };
 
-const statusBadge = (status: PromotionStatus) => {
+const statusBadge = (status: BatchStatus) => {
   switch (status) {
     case 'draft':
-      return {
-        variant: 'outline' as const,
-        className: 'border-gray-200 bg-gray-50 text-gray-600',
-        label: 'Draft',
-      };
+      return { variant: 'outline' as const, className: 'border-gray-200 bg-gray-50 text-gray-600', label: 'Draft' };
     case 'ready':
-      return {
-        variant: 'outline' as const,
-        className: 'border-indigo-200 bg-indigo-50 text-indigo-700',
-        label: 'Ready',
-      };
+      return { variant: 'outline' as const, className: 'border-indigo-200 bg-indigo-50 text-indigo-700', label: 'Ready' };
     case 'running':
-      return {
-        variant: 'outline' as const,
-        className: 'border-amber-200 bg-amber-50 text-amber-700',
-        label: 'Running',
-      };
+      return { variant: 'outline' as const, className: 'border-amber-200 bg-amber-50 text-amber-700', label: 'Running' };
     case 'completed':
-      return {
-        variant: 'outline' as const,
-        className: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-        label: 'Completed',
-      };
+      return { variant: 'outline' as const, className: 'border-emerald-200 bg-emerald-50 text-emerald-700', label: 'Completed' };
     case 'locked':
-      return {
-        variant: 'outline' as const,
-        className: 'border-sky-200 bg-sky-50 text-sky-700',
-        label: 'Locked',
-      };
+      return { variant: 'outline' as const, className: 'border-sky-200 bg-sky-50 text-sky-700', label: 'Locked' };
     case 'cancelled':
-      return {
-        variant: 'outline' as const,
-        className: 'border-red-200 bg-red-50 text-red-700',
-        label: 'Cancelled',
-      };
+      return { variant: 'outline' as const, className: 'border-red-200 bg-red-50 text-red-700', label: 'Cancelled' };
     default:
-      return {
-        variant: 'outline' as const,
-        className: 'border-gray-200 bg-gray-50 text-gray-600',
-        label: status,
-      };
+      return { variant: 'outline' as const, className: 'border-gray-200 bg-gray-50 text-gray-600', label: status };
   }
 };
 
-const promotionKindBadge = (kind: PromotionKind) => {
+const promotionKindBadge = (kind: BatchKind) => {
   if (kind === 'graduation') {
     return {
-      className:
-        'border-0 bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+      className: 'border-0 bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
       label: 'Graduation',
     };
   }
-
   return {
-    className:
-      'border-0 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+    className: 'border-0 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
     label: 'Promotion',
   };
 };
 
 const createBatchSchema = z.object({
   kind: z.enum(['promotion', 'graduation']),
-  academicYearId: z.string().min(1),
-  gradeLevel: z.string().min(1),
+  academicYearId: z.string().min(1, 'Academic year is required'),
+  gradeLevel: z.string().min(1, 'Grade / level is required'),
   streamName: z.string().nullable(),
-  effectiveDate: z.string().min(1),
-  criteria: z.string().min(10).max(1200),
+  toGradeLevel: z.string().nullable(),
+  effectiveDate: z.string().min(1, 'Effective date is required'),
+  criteria: z.string().min(10, 'Criteria must be at least 10 characters').max(1200),
+}).refine((v) => v.kind !== 'promotion' || !!v.toGradeLevel, {
+  message: 'Destination grade is required for promotion batches',
+  path: ['toGradeLevel'],
 });
 
-const makeId = () =>
-  `pb_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`;
-
-const nowIso = () => new Date().toISOString();
-
-const seededBatches = (): PromotionBatch[] => {
-  const t = Date.now();
-  return [
-    {
-      id: 'pb_001',
-      kind: 'promotion',
-      academicYear: '2025/2026',
-      academicYearId: 'ay_2026',
-      gradeLevel: 'Grade 6',
-      streamName: null,
-      criteria:
-        'Learners who meet attendance and continuous assessment thresholds move to Junior High School. Prioritize learners with improved performance over the last two terms.',
-      effectiveDate: '2026-02-20',
-      learnerCountTarget: 132,
-      learnerCountSelected: 126,
-      learnerCountPromotedOrGraduated: 124,
-      status: 'locked',
-      createdAt: new Date(t - 1000 * 60 * 60 * 48).toISOString(),
-      updatedAt: new Date(t - 1000 * 60 * 60 * 12).toISOString(),
-    },
-    {
-      id: 'pb_002',
-      kind: 'promotion',
-      academicYear: '2025/2026',
-      academicYearId: 'ay_2026',
-      gradeLevel: 'Grade 9',
-      streamName: 'Science',
-      criteria:
-        'Select learners based on end-term results and final examinations. Learners with special needs may be considered under approved adjustments.',
-      effectiveDate: '2026-01-30',
-      learnerCountTarget: 88,
-      learnerCountSelected: 84,
-      learnerCountPromotedOrGraduated: 82,
-      status: 'completed',
-      createdAt: new Date(t - 1000 * 60 * 60 * 72).toISOString(),
-      updatedAt: new Date(t - 1000 * 60 * 60 * 20).toISOString(),
-    },
-    {
-      id: 'pb_003',
-      kind: 'graduation',
-      academicYear: '2024/2025',
-      academicYearId: 'ay_2025',
-      gradeLevel: 'Senior High',
-      streamName: 'Arts',
-      criteria:
-        'Graduates are learners who complete SHS requirements and satisfy attendance, conduct, and examination minimums. Ensure audit trail before issuing certificates.',
-      effectiveDate: '2025-12-10',
-      learnerCountTarget: 64,
-      learnerCountSelected: 60,
-      learnerCountPromotedOrGraduated: 58,
-      status: 'completed',
-      createdAt: new Date(t - 1000 * 60 * 60 * 24 * 12).toISOString(),
-      updatedAt: new Date(t - 1000 * 60 * 60 * 24 * 5).toISOString(),
-    },
-  ];
-};
-
 export default function PromotionsPage() {
-  const [userData, setUserData] = useState<{ schoolId: string | null; role: string } | null>(
-    null,
-  );
+  const [userData, setUserData] = useState<{ schoolId: string | null; role: string } | null>(null);
 
-  // Reference-like data (client-side)
-  const [academicYears] = useState(() => [
-    { id: 'ay_2025', label: '2024/2025' },
-    { id: 'ay_2026', label: '2025/2026' },
-    { id: 'ay_2027', label: '2026/2027' },
-  ]);
+  // Reference data (from real backend)
+  const [academicTerms, setAcademicTerms] = useState<AcademicTerm[]>([]);
+  const [classes, setClasses] = useState<ClassApiItem[]>([]);
+  const [refDataLoading, setRefDataLoading] = useState(false);
 
-  const [gradeLevels] = useState<GradeLevel[]>(() => [
-    'Grade 6',
-    'Grade 9',
-    'Grade 12',
-    'Junior High',
-    'Senior High',
-  ]);
+  const academicYears = useMemo(() => {
+    // Each academic_years row is a Term; group by year for the "Academic Year" dropdown.
+    const byYear = new Map<number, AcademicTerm>();
+    academicTerms.forEach((t) => {
+      const existing = byYear.get(t.year);
+      if (!existing || (t.is_current && !existing.is_current)) byYear.set(t.year, t);
+    });
+    return Array.from(byYear.values())
+      .sort((a, b) => b.year - a.year)
+      .map((t) => ({ id: t.id, label: `${t.year}` }));
+  }, [academicTerms]);
 
-  const [streams] = useState<StreamName[]>(() => ['Science', 'Arts', 'Business', 'Technology']);
+  const gradeLevels = useMemo(() => {
+    const set = new Set<string>();
+    classes.forEach((c) => { if (c.grade_level) set.add(c.grade_level); });
+    return Array.from(set).sort();
+  }, [classes]);
 
-  const [batches, setBatches] = useState<PromotionBatch[]>(() => seededBatches());
+  const streams = useMemo(() => {
+    const set = new Set<string>();
+    classes.forEach((c) => { if (c.stream_name) set.add(c.stream_name); });
+    return Array.from(set).sort();
+  }, [classes]);
+
+  const [batches, setBatches] = useState<PromotionBatch[]>([]);
+  const [listLoading, setListLoading] = useState(false);
 
   // Filters
   const [search, setSearch] = useState('');
-  const [filterKind, setFilterKind] = useState<'all' | PromotionKind>('all');
+  const [filterKind, setFilterKind] = useState<'all' | BatchKind>('all');
   const [filterYearId, setFilterYearId] = useState<'all' | string>('all');
-  const [filterStatus, setFilterStatus] = useState<'all' | PromotionStatus>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | BatchStatus>('all');
   const [filterGrade, setFilterGrade] = useState<'all' | string>('all');
 
-  // Loading actions
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Dialogs
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showRunDialog, setShowRunDialog] = useState(false);
@@ -277,10 +217,11 @@ export default function PromotionsPage() {
   const [formErrors, setFormErrors] = useState<string[]>([]);
 
   const emptyForm = {
-    kind: 'promotion' as PromotionKind,
-    academicYearId: 'ay_2026',
-    gradeLevel: 'Grade 6',
+    kind: 'promotion' as BatchKind,
+    academicYearId: '',
+    gradeLevel: '',
     streamName: null as string | null,
+    toGradeLevel: null as string | null,
     effectiveDate: format(new Date(), 'yyyy-MM-dd'),
     criteria:
       'Select learners who meet academic and attendance requirements. Ensure decisions are aligned with school policy and approved assessment records.',
@@ -294,55 +235,12 @@ export default function PromotionsPage() {
     [batches, selectedBatchId],
   );
 
-  const filteredBatches = useMemo(() => {
-    const s = search.trim().toLowerCase();
-
-    return batches
-      .filter((b) => {
-        if (filterKind !== 'all' && b.kind !== filterKind) return false;
-        if (filterYearId !== 'all' && b.academicYearId !== filterYearId) return false;
-        if (filterStatus !== 'all' && b.status !== filterStatus) return false;
-        if (filterGrade !== 'all' && b.gradeLevel !== filterGrade) return false;
-        return true;
-      })
-      .filter((b) => {
-        if (!s) return true;
-        const haystack = [
-          b.id,
-          b.gradeLevel,
-          b.streamName || '',
-          b.academicYear,
-          b.kind,
-          b.criteria,
-        ]
-          .join(' ')
-          .toLowerCase();
-        return haystack.includes(s);
-      })
-      .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
-  }, [
-    batches,
-    filterGrade,
-    filterKind,
-    filterStatus,
-    filterYearId,
-    search,
-  ]);
-
-  const counts = useMemo(() => {
-    const total = batches.length;
-    const completed = batches.filter((b) => b.status === 'completed').length;
-    const locked = batches.filter((b) => b.status === 'locked').length;
-    const running = batches.filter((b) => b.status === 'running').length;
-    const selectedTotal = batches.reduce((acc, b) => acc + b.learnerCountSelected, 0);
-
-    return { total, completed, locked, running, selectedTotal };
-  }, [batches]);
-
+  // ---------------------------------------------------------------------------
+  // Load user, reference data, and batches
+  // ---------------------------------------------------------------------------
   useEffect(() => {
     const stored = localStorage.getItem('cbe_user');
     if (!stored) return;
-
     try {
       const parsed = JSON.parse(stored);
       setUserData({
@@ -354,9 +252,73 @@ export default function PromotionsPage() {
     }
   }, []);
 
+  const loadReferenceData = useCallback(async (schoolId: string) => {
+    setRefDataLoading(true);
+    try {
+      const [terms, classesRes] = await Promise.all([
+        getAcademicTerms(schoolId),
+        getClasses({ school_id: schoolId, is_active: 'true', limit: 200 }),
+      ]);
+      setAcademicTerms(terms || []);
+      setClasses(classesRes?.data?.classes || []);
+    } catch (e: any) {
+      toast.error(e?.message || 'Could not load academic years / classes.');
+    } finally {
+      setRefDataLoading(false);
+    }
+  }, []);
+
+  const loadBatches = useCallback(async () => {
+    setListLoading(true);
+    try {
+      const res = await getPromotionBatches({
+        kind: filterKind === 'all' ? undefined : filterKind,
+        status: filterStatus === 'all' ? undefined : filterStatus,
+        academic_year_id: filterYearId === 'all' ? undefined : filterYearId,
+        grade_level: filterGrade === 'all' ? undefined : filterGrade,
+        search: search.trim() || undefined,
+      });
+      setBatches((res.data || []).map(toViewModel));
+    } catch (e: any) {
+      toast.error(e?.message || 'Could not load promotion/graduation batches.');
+    } finally {
+      setListLoading(false);
+    }
+  }, [filterKind, filterStatus, filterYearId, filterGrade, search]);
+
+  useEffect(() => {
+    if (userData?.schoolId) {
+      loadReferenceData(userData.schoolId);
+    }
+  }, [userData?.schoolId, loadReferenceData]);
+
+  useEffect(() => {
+    loadBatches();
+  }, [loadBatches]);
+
+  const filteredBatches = useMemo(() => {
+    // Search/kind/status/year/grade are applied server-side; this just keeps
+    // the list stable for rendering (already filtered by loadBatches).
+    return [...batches].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+  }, [batches]);
+
+  const counts = useMemo(() => {
+    const total = batches.length;
+    const completed = batches.filter((b) => b.status === 'completed').length;
+    const locked = batches.filter((b) => b.status === 'locked').length;
+    const running = batches.filter((b) => b.status === 'running').length;
+    const selectedTotal = batches.reduce((acc, b) => acc + b.learnerCountSelected, 0);
+    return { total, completed, locked, running, selectedTotal };
+  }, [batches]);
+
   const openCreate = () => {
     setFormErrors([]);
-    setForm({ ...emptyForm, effectiveDate: format(new Date(), 'yyyy-MM-dd') });
+    setForm({
+      ...emptyForm,
+      academicYearId: academicYears[0]?.id || '',
+      gradeLevel: gradeLevels[0] || '',
+      effectiveDate: format(new Date(), 'yyyy-MM-dd'),
+    });
     setShowCreateDialog(true);
   };
 
@@ -370,71 +332,37 @@ export default function PromotionsPage() {
 
   const canLock = (b: PromotionBatch) => b.status === 'completed';
 
-  const refreshClientData = () => {
-    // Client-only refresh simulation.
-    toast.message('Promotion batches refreshed (demo data).');
-    setBatches(seededBatches());
-  };
-
   const handleCreateBatch = async () => {
-    const toValidate = {
+    const parsed = createBatchSchema.safeParse({
       kind: form.kind,
       academicYearId: form.academicYearId,
       gradeLevel: form.gradeLevel,
       streamName: form.streamName,
+      toGradeLevel: form.kind === 'promotion' ? form.toGradeLevel : null,
       effectiveDate: form.effectiveDate,
       criteria: form.criteria,
-    };
+    });
 
-    const parsed = createBatchSchema.safeParse(toValidate);
     if (!parsed.success) {
-      const issues = parsed.error.issues.map((i) => i.message);
-      setFormErrors(issues);
+      setFormErrors(parsed.error.issues.map((i) => i.message));
       return;
     }
 
     setActionLoading(true);
     try {
-      const yearLabel = academicYears.find((y) => y.id === form.academicYearId)?.label || '';
-
-      // Demo “real data required”: generate target/selected counts based on grade.
-      const baseTarget =
-        form.gradeLevel === 'Grade 6'
-          ? 120
-          : form.gradeLevel === 'Grade 9'
-            ? 86
-            : form.gradeLevel === 'Grade 12'
-              ? 44
-              : form.gradeLevel === 'Senior High'
-                ? 64
-                : form.gradeLevel === 'Junior High'
-                  ? 90
-                  : 60;
-
-      const streamFactor = form.streamName ? 0.85 : 1.0;
-      const target = Math.round(baseTarget * streamFactor);
-      const selected = Math.round(target * 0.95);
-
-      const batch: PromotionBatch = {
-        id: makeId(),
+      await createPromotionBatch({
         kind: form.kind,
-        academicYear: yearLabel,
-        academicYearId: form.academicYearId,
-        gradeLevel: form.gradeLevel,
-        streamName: form.streamName,
+        academic_year_id: form.academicYearId,
+        grade_level: form.gradeLevel,
+        stream_name: form.streamName,
+        to_grade_level: form.kind === 'promotion' ? form.toGradeLevel : null,
         criteria: form.criteria.trim(),
-        effectiveDate: form.effectiveDate,
-        learnerCountTarget: target,
-        learnerCountSelected: selected,
-        learnerCountPromotedOrGraduated: 0,
-        status: 'ready',
-        createdAt: nowIso(),
-        updatedAt: nowIso(),
-      };
+        effective_date: form.effectiveDate,
+      });
 
-      setBatches((prev) => [batch, ...prev]);
       setShowCreateDialog(false);
-      toast.success('Promotion batch created. You can now run it.');
+      toast.success('Batch created. You can now run it.');
+      await loadBatches();
     } catch (e: any) {
       toast.error(e?.message || 'Could not create promotion batch.');
     } finally {
@@ -451,41 +379,10 @@ export default function PromotionsPage() {
 
     setActionLoading(true);
     try {
-      // Simulate running with a quick timeout.
-      setBatches((prev) =>
-        prev.map((b) =>
-          b.id === selectedBatch.id
-            ? {
-                ...b,
-                status: 'running',
-                updatedAt: nowIso(),
-              }
-            : b,
-        ),
-      );
-
-      await new Promise((r) => setTimeout(r, 700));
-
-      setBatches((prev) =>
-        prev.map((b) => {
-          if (b.id !== selectedBatch.id) return b;
-
-          const promoteOrGraduate =
-            b.kind === 'graduation'
-              ? Math.round(b.learnerCountSelected * 0.96)
-              : Math.round(b.learnerCountSelected * 0.98);
-
-          return {
-            ...b,
-            status: 'completed',
-            learnerCountPromotedOrGraduated: promoteOrGraduate,
-            updatedAt: nowIso(),
-          };
-        }),
-      );
-
+      await runPromotionBatch(selectedBatch.id);
       setShowRunDialog(false);
       toast.success('Batch run completed. Results are ready for review.');
+      await loadBatches();
     } catch (e: any) {
       toast.error(e?.message || 'Failed to run batch.');
     } finally {
@@ -499,26 +396,14 @@ export default function PromotionsPage() {
     setActionLoading(true);
     try {
       if (selectedBatch.status === 'locked') {
-        setBatches((prev) =>
-          prev.map((b) =>
-            b.id === selectedBatch.id
-              ? { ...b, status: 'completed', updatedAt: nowIso() }
-              : b,
-          ),
-        );
+        await unlockPromotionBatch(selectedBatch.id);
         toast.message('Batch unlocked.');
       } else {
-        setBatches((prev) =>
-          prev.map((b) =>
-            b.id === selectedBatch.id
-              ? { ...b, status: 'locked', updatedAt: nowIso() }
-              : b,
-          ),
-        );
+        await lockPromotionBatch(selectedBatch.id);
         toast.success('Batch locked. Decisions are now protected.');
       }
-
       setShowLockDialog(false);
+      await loadBatches();
     } catch (e: any) {
       toast.error(e?.message || 'Failed to update lock state.');
     } finally {
@@ -533,6 +418,7 @@ export default function PromotionsPage() {
       academicYear: batch.academicYear,
       gradeLevel: batch.gradeLevel,
       streamName: batch.streamName,
+      toGradeLevel: batch.toGradeLevel,
       effectiveDate: batch.effectiveDate,
       status: batch.status,
       criteria: batch.criteria,
@@ -541,26 +427,20 @@ export default function PromotionsPage() {
         selected: batch.learnerCountSelected,
         promotedOrGraduated: batch.learnerCountPromotedOrGraduated,
       },
-      exportedAt: nowIso(),
-      note:
-        'This export is generated from the current UI state (demo). Connect backend endpoints to export official records.',
+      exportedAt: new Date().toISOString(),
     };
 
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: 'application/json',
-    });
-
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `promotion-batch-${batch.id}.json`;
     a.click();
     URL.revokeObjectURL(url);
-
     toast.success('Export generated (JSON).');
   };
 
-  const statusOptions: Array<{ value: 'all' | PromotionStatus; label: string }> = [
+  const statusOptions: Array<{ value: 'all' | BatchStatus; label: string }> = [
     { value: 'all', label: 'All Statuses' },
     { value: 'draft', label: 'Draft' },
     { value: 'ready', label: 'Ready' },
@@ -570,11 +450,13 @@ export default function PromotionsPage() {
     { value: 'cancelled', label: 'Cancelled' },
   ];
 
-  const kindOptions: Array<{ value: 'all' | PromotionKind; label: string }> = [
+  const kindOptions: Array<{ value: 'all' | BatchKind; label: string }> = [
     { value: 'all', label: 'All Types' },
     { value: 'promotion', label: 'Promotions' },
     { value: 'graduation', label: 'Graduations' },
   ];
+
+  const isBusy = actionLoading || listLoading || refDataLoading;
 
   return (
     <div className="min-h-screen w-full p-6 space-y-6 bg-gray-50">
@@ -596,17 +478,17 @@ export default function PromotionsPage() {
           <Button
             variant="outline"
             className="rounded-xl"
-            onClick={refreshClientData}
-            disabled={actionLoading}
+            onClick={() => loadBatches()}
+            disabled={isBusy}
           >
-            <RefreshCcw className={`h-4 w-4 mr-2 ${actionLoading ? 'animate-spin' : ''}`} />
+            <RefreshCcw className={`h-4 w-4 mr-2 ${listLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
 
           <Button
             className="rounded-xl bg-indigo-600 hover:bg-indigo-700"
             onClick={openCreate}
-            disabled={actionLoading}
+            disabled={isBusy || gradeLevels.length === 0 || academicYears.length === 0}
           >
             <Sparkles className="h-4 w-4 mr-2" />
             New Batch
@@ -688,7 +570,7 @@ export default function PromotionsPage() {
             <div className="relative md:col-span-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search by grade, stream, criteria..."
+                placeholder="Search by criteria..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 rounded-xl"
@@ -701,9 +583,7 @@ export default function PromotionsPage() {
               </SelectTrigger>
               <SelectContent>
                 {kindOptions.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -715,9 +595,7 @@ export default function PromotionsPage() {
               <SelectContent>
                 <SelectItem value="all">All Years</SelectItem>
                 {academicYears.map((y) => (
-                  <SelectItem key={y.id} value={y.id}>
-                    {y.label}
-                  </SelectItem>
+                  <SelectItem key={y.id} value={y.id}>{y.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -728,9 +606,7 @@ export default function PromotionsPage() {
               </SelectTrigger>
               <SelectContent>
                 {statusOptions.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -742,9 +618,7 @@ export default function PromotionsPage() {
               <SelectContent>
                 <SelectItem value="all">All Grades</SelectItem>
                 {gradeLevels.map((g) => (
-                  <SelectItem key={g} value={g}>
-                    {g}
-                  </SelectItem>
+                  <SelectItem key={g} value={g}>{g}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -764,7 +638,12 @@ export default function PromotionsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {filteredBatches.length === 0 ? (
+          {listLoading ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center text-gray-500">
+              <Loader2 className="h-8 w-8 mb-3 animate-spin text-indigo-500" />
+              <p>Loading batches…</p>
+            </div>
+          ) : filteredBatches.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center text-gray-500">
               <AlertCircle className="h-10 w-10 mb-3 text-gray-300" />
               <p className="font-medium">No batches match your filters</p>
@@ -795,7 +674,7 @@ export default function PromotionsPage() {
                       <TableRow key={b.id}>
                         <TableCell className="font-medium text-gray-900">
                           <div className="flex flex-col">
-                            <span className="text-sm">{b.id}</span>
+                            <span className="text-sm">{b.id.slice(0, 8)}</span>
                             <span className="text-xs text-gray-500">Updated {formatDate(b.updatedAt)}</span>
                           </div>
                         </TableCell>
@@ -805,7 +684,9 @@ export default function PromotionsPage() {
                         <TableCell className="text-gray-600">{b.academicYear}</TableCell>
                         <TableCell className="text-gray-600">
                           <div className="flex flex-col">
-                            <span className="text-sm">{b.gradeLevel}</span>
+                            <span className="text-sm">
+                              {b.gradeLevel}{b.toGradeLevel ? ` → ${b.toGradeLevel}` : ''}
+                            </span>
                             <span className="text-xs text-gray-500">
                               {b.streamName ? b.streamName : 'No stream'}
                             </span>
@@ -813,9 +694,7 @@ export default function PromotionsPage() {
                         </TableCell>
                         <TableCell className="text-gray-600">{formatDate(b.effectiveDate)}</TableCell>
                         <TableCell>
-                          <Badge variant={sb.variant} className={sb.className}>
-                            {sb.label}
-                          </Badge>
+                          <Badge variant={sb.variant} className={sb.className}>{sb.label}</Badge>
                         </TableCell>
                         <TableCell className="text-gray-700">
                           <div className="flex flex-col">
@@ -823,8 +702,7 @@ export default function PromotionsPage() {
                               Selected <b>{b.learnerCountSelected}</b>
                             </span>
                             <span className="text-xs text-gray-500">
-                              {b.kind === 'graduation' ? 'Graduated' : 'Promoted'}{' '}
-                              <b>{b.learnerCountPromotedOrGraduated}</b>
+                              {b.kind === 'graduation' ? 'Graduated' : 'Promoted'} <b>{b.learnerCountPromotedOrGraduated}</b>
                             </span>
                           </div>
                         </TableCell>
@@ -845,10 +723,7 @@ export default function PromotionsPage() {
                               variant="ghost"
                               className="h-8 w-8"
                               disabled={!canRun(b) || actionLoading}
-                              onClick={() => {
-                                setSelectedBatchId(b.id);
-                                setShowRunDialog(true);
-                              }}
+                              onClick={() => { setSelectedBatchId(b.id); setShowRunDialog(true); }}
                               title="Run batch"
                             >
                               <ArrowRight className="h-4 w-4" />
@@ -859,10 +734,7 @@ export default function PromotionsPage() {
                               variant="ghost"
                               className="h-8 w-8"
                               disabled={!(canLock(b) || b.status === 'locked') || actionLoading}
-                              onClick={() => {
-                                setSelectedBatchId(b.id);
-                                setShowLockDialog(true);
-                              }}
+                              onClick={() => { setSelectedBatchId(b.id); setShowLockDialog(true); }}
                               title={b.status === 'locked' ? 'Unlock batch' : 'Lock batch'}
                             >
                               {b.status === 'locked' ? (
@@ -921,9 +793,7 @@ export default function PromotionsPage() {
                 <Label>Batch Type</Label>
                 <Select
                   value={form.kind}
-                  onValueChange={(v) =>
-                    setForm((f) => ({ ...f, kind: v as PromotionKind }))
-                  }
+                  onValueChange={(v) => setForm((f) => ({ ...f, kind: v as BatchKind, toGradeLevel: v === 'graduation' ? null : f.toGradeLevel }))}
                 >
                   <SelectTrigger className="rounded-xl">
                     <SelectValue placeholder="Select type" />
@@ -946,9 +816,7 @@ export default function PromotionsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {academicYears.map((y) => (
-                      <SelectItem key={y.id} value={y.id}>
-                        {y.label}
-                      </SelectItem>
+                      <SelectItem key={y.id} value={y.id}>{y.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -958,20 +826,14 @@ export default function PromotionsPage() {
                 <Label>Grade / Level</Label>
                 <Select
                   value={form.gradeLevel}
-                  onValueChange={(v) => {
-                    const grade = v;
-                    // If user selects a high-level graduation, keep stream optional.
-                    setForm((f) => ({ ...f, gradeLevel: grade }));
-                  }}
+                  onValueChange={(v) => setForm((f) => ({ ...f, gradeLevel: v }))}
                 >
                   <SelectTrigger className="rounded-xl">
                     <SelectValue placeholder="Select grade" />
                   </SelectTrigger>
                   <SelectContent>
                     {gradeLevels.map((g) => (
-                      <SelectItem key={g} value={g}>
-                        {g}
-                      </SelectItem>
+                      <SelectItem key={g} value={g}>{g}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -981,12 +843,7 @@ export default function PromotionsPage() {
                 <Label>Stream (optional)</Label>
                 <Select
                   value={form.streamName ?? 'none'}
-                  onValueChange={(v) =>
-                    setForm((f) => ({
-                      ...f,
-                      streamName: v === 'none' ? null : v,
-                    }))
-                  }
+                  onValueChange={(v) => setForm((f) => ({ ...f, streamName: v === 'none' ? null : v }))}
                 >
                   <SelectTrigger className="rounded-xl">
                     <SelectValue placeholder="Select stream" />
@@ -994,13 +851,32 @@ export default function PromotionsPage() {
                   <SelectContent>
                     <SelectItem value="none">No stream</SelectItem>
                     {streams.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+
+              {form.kind === 'promotion' && (
+                <div className="space-y-1.5 col-span-2">
+                  <Label>Destination Grade (promoting to)</Label>
+                  <Select
+                    value={form.toGradeLevel ?? ''}
+                    onValueChange={(v) => setForm((f) => ({ ...f, toGradeLevel: v }))}
+                  >
+                    <SelectTrigger className="rounded-xl">
+                      <SelectValue placeholder="Select destination grade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {gradeLevels
+                        .filter((g) => g !== form.gradeLevel)
+                        .map((g) => (
+                          <SelectItem key={g} value={g}>{g}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <Label>Effective Date</Label>
@@ -1018,12 +894,13 @@ export default function PromotionsPage() {
                   <div className="flex items-center gap-2">
                     <Info className="h-4 w-4 text-indigo-600" />
                     <span>
-                      You will run a batch for <b>{form.gradeLevel}</b>{' '}
-                      {form.streamName ? `(${form.streamName})` : '(all streams)'}.
+                      You will run a batch for <b>{form.gradeLevel || '—'}</b>{' '}
+                      {form.streamName ? `(${form.streamName})` : '(all streams)'}
+                      {form.kind === 'promotion' && form.toGradeLevel ? <> → <b>{form.toGradeLevel}</b></> : null}.
                     </span>
                   </div>
                   <div className="mt-2 text-gray-600">
-                    Learners selected & results will be generated after running.
+                    Target learner count is calculated from current enrollments when the batch is created.
                   </div>
                 </div>
               </div>
@@ -1069,7 +946,7 @@ export default function PromotionsPage() {
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle>{selectedBatch ? selectedBatch.id : 'Batch details'}</DialogTitle>
+            <DialogTitle>{selectedBatch ? selectedBatch.id.slice(0, 8) : 'Batch details'}</DialogTitle>
             <DialogDescription>Review criteria and results summary.</DialogDescription>
           </DialogHeader>
 
@@ -1090,7 +967,9 @@ export default function PromotionsPage() {
               <div className="flex justify-between items-center border-b border-gray-100 pb-2">
                 <span className="text-gray-500">Grade & Stream</span>
                 <span className="font-medium text-gray-900">
-                  {selectedBatch.gradeLevel} {selectedBatch.streamName ? `• ${selectedBatch.streamName}` : ''}
+                  {selectedBatch.gradeLevel}
+                  {selectedBatch.toGradeLevel ? ` → ${selectedBatch.toGradeLevel}` : ''}
+                  {selectedBatch.streamName ? ` • ${selectedBatch.streamName}` : ''}
                 </span>
               </div>
 
@@ -1101,10 +980,7 @@ export default function PromotionsPage() {
 
               <div className="flex justify-between items-center border-b border-gray-100 pb-2">
                 <span className="text-gray-500">Status</span>
-                <Badge
-                  variant={statusBadge(selectedBatch.status).variant}
-                  className={statusBadge(selectedBatch.status).className}
-                >
+                <Badge variant={statusBadge(selectedBatch.status).variant} className={statusBadge(selectedBatch.status).className}>
                   {statusBadge(selectedBatch.status).label}
                 </Badge>
               </div>
@@ -1158,7 +1034,7 @@ export default function PromotionsPage() {
           {selectedBatch ? (
             <>
               <p className="text-sm text-gray-600">
-                You are about to run batch <b>{selectedBatch.id}</b> for{' '}
+                You are about to run batch <b>{selectedBatch.id.slice(0, 8)}</b> for{' '}
                 <b>{selectedBatch.gradeLevel}</b> {selectedBatch.streamName ? `(${selectedBatch.streamName})` : ''}.
                 This will generate the promotion/graduation results.
               </p>
@@ -1173,19 +1049,10 @@ export default function PromotionsPage() {
               </div>
 
               <DialogFooter className="gap-3 mt-4">
-                <Button
-                  variant="outline"
-                  className="rounded-xl"
-                  onClick={() => setShowRunDialog(false)}
-                  disabled={actionLoading}
-                >
+                <Button variant="outline" className="rounded-xl" onClick={() => setShowRunDialog(false)} disabled={actionLoading}>
                   Cancel
                 </Button>
-                <Button
-                  className="rounded-xl bg-indigo-600 hover:bg-indigo-700"
-                  onClick={() => void handleRunBatch()}
-                  disabled={actionLoading}
-                >
+                <Button className="rounded-xl bg-indigo-600 hover:bg-indigo-700" onClick={() => void handleRunBatch()} disabled={actionLoading}>
                   {actionLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                   Run
                 </Button>
@@ -1200,11 +1067,7 @@ export default function PromotionsPage() {
         <DialogContent className="sm:max-w-sm rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-sky-700 flex items-center gap-3 text-lg font-bold">
-              {selectedBatch?.status === 'locked' ? (
-                <Unlock className="h-5 w-5" />
-              ) : (
-                <Lock className="h-5 w-5" />
-              )}
+              {selectedBatch?.status === 'locked' ? <Unlock className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
               {selectedBatch?.status === 'locked' ? 'Unlock Batch' : 'Lock Batch'}
             </DialogTitle>
           </DialogHeader>
@@ -1212,7 +1075,7 @@ export default function PromotionsPage() {
           {selectedBatch ? (
             <>
               <p className="text-sm text-gray-600">
-                Batch <b>{selectedBatch.id}</b> is currently <b>{statusBadge(selectedBatch.status).label}</b>.
+                Batch <b>{selectedBatch.id.slice(0, 8)}</b> is currently <b>{statusBadge(selectedBatch.status).label}</b>.
                 {selectedBatch.status === 'locked'
                   ? ' Unlocking allows edits and re-running selection.'
                   : ' Locking protects decisions and makes results official for records.'}
@@ -1221,26 +1084,15 @@ export default function PromotionsPage() {
               <div className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-800 mt-3">
                 <div className="flex items-center gap-2">
                   <Info className="h-4 w-4" />
-                  <span>
-                    Use lock after you confirm the list of learners promoted or graduated.
-                  </span>
+                  <span>Use lock after you confirm the list of learners promoted or graduated.</span>
                 </div>
               </div>
 
               <DialogFooter className="gap-3 mt-4">
-                <Button
-                  variant="outline"
-                  className="rounded-xl"
-                  onClick={() => setShowLockDialog(false)}
-                  disabled={actionLoading}
-                >
+                <Button variant="outline" className="rounded-xl" onClick={() => setShowLockDialog(false)} disabled={actionLoading}>
                   Cancel
                 </Button>
-                <Button
-                  className="rounded-xl bg-sky-700 hover:bg-sky-800"
-                  onClick={() => void handleToggleLock()}
-                  disabled={actionLoading}
-                >
+                <Button className="rounded-xl bg-sky-700 hover:bg-sky-800" onClick={() => void handleToggleLock()} disabled={actionLoading}>
                   {actionLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                   {selectedBatch.status === 'locked' ? 'Unlock' : 'Lock'}
                 </Button>
@@ -1249,12 +1101,6 @@ export default function PromotionsPage() {
           ) : null}
         </DialogContent>
       </Dialog>
-
-      {/* Notes for role / school (optional UI) */}
-      {userData?.schoolId ? null : (
-        <div className="hidden" />
-      )}
     </div>
   );
 }
-
