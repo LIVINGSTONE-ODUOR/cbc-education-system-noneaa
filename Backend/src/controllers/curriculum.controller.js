@@ -70,7 +70,7 @@ const generateCode = (name) =>
 const getLearningAreas = async (req, res) => {
   try {
     const school_id = req.user?.schoolId;
-    const { grade_level, is_active, school_only } = req.query;
+    const { grade_level, class_id, is_active, school_only } = req.query;
 
     let sql = `
       SELECT
@@ -80,6 +80,7 @@ const getLearningAreas = async (req, res) => {
         la.description,
         la.school_id,
         la.grade_levels,
+        la.class_ids,
         la.is_active,
         la.created_at,
         CASE WHEN la.school_id IS NULL THEN true ELSE false END AS is_national,
@@ -101,6 +102,10 @@ const getLearningAreas = async (req, res) => {
     if (grade_level) {
       sql += ` AND (la.grade_levels IS NULL OR $${idx++} = ANY(la.grade_levels))`;
       params.push(grade_level);
+    }
+    if (class_id) {
+      sql += ` AND (la.class_ids IS NULL OR la.class_ids = '{}' OR $${idx++} = ANY(la.class_ids))`;
+      params.push(class_id);
     }
     if (is_active !== undefined) {
       sql += ` AND la.is_active = $${idx++}`;
@@ -171,7 +176,7 @@ const getLearningAreaById = async (req, res) => {
 const createLearningArea = async (req, res) => {
   if (!isWriter(req)) return respond(res, 403, false, 'Only admins can create learning areas');
 
-  const { name, code, description, grade_levels } = req.body;
+  const { name, code, description, grade_levels, class_ids } = req.body;
   // super_admin sets school_id=NULL (national); school_admin sets own school
   const school_id  = req.user.role === 'super_admin' ? null : req.user.schoolId;
   const created_by = req.user.id;
@@ -183,7 +188,27 @@ const createLearningArea = async (req, res) => {
     errors.push({ field: 'grade_levels', message: 'grade_levels must be an array' });
   if (grade_levels?.some(g => !VALID_GRADES.includes(g)))
     errors.push({ field: 'grade_levels', message: `Invalid grade in array. Valid: ${VALID_GRADES.join(', ')}` });
+  if (class_ids && !Array.isArray(class_ids))
+    errors.push({ field: 'class_ids', message: 'class_ids must be an array' });
   if (errors.length > 0) return respond(res, 422, false, 'Validation failed', null, errors);
+
+  // class_ids must reference real, currently-registered classes for this
+  // school -- never accept ids the UI didn't actually fetch from /classes.
+  let validatedClassIds = null;
+  if (Array.isArray(class_ids) && class_ids.length > 0) {
+    const check = await query(
+      `SELECT id FROM classes WHERE id = ANY($1) AND school_id = $2 AND deleted_at IS NULL`,
+      [class_ids, school_id]
+    );
+    const foundIds = check.rows.map(r => r.id);
+    const missing = class_ids.filter(id => !foundIds.includes(id));
+    if (missing.length > 0) {
+      return respond(res, 422, false, 'Validation failed', null, [
+        { field: 'class_ids', message: `Unknown or inaccessible class id(s): ${missing.join(', ')}` },
+      ]);
+    }
+    validatedClassIds = class_ids;
+  }
 
   const finalCode = (code || generateCode(name)).toUpperCase();
 
@@ -202,11 +227,11 @@ const createLearningArea = async (req, res) => {
 
     const result = await query(`
       INSERT INTO learning_areas
-        (name, code, description, school_id, grade_levels,
+        (name, code, description, school_id, grade_levels, class_ids,
          is_active, created_by, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, true, $6, NOW(), NOW())
+      VALUES ($1, $2, $3, $4, $5, $6, true, $7, NOW(), NOW())
       RETURNING *
-    `, [name.trim(), finalCode, description?.trim() || null, school_id, grade_levels || null, created_by]);
+    `, [name.trim(), finalCode, description?.trim() || null, school_id, grade_levels || null, validatedClassIds, created_by]);
 
     return respond(res, 201, true, 'Learning area created', {
       learning_area: result.rows[0],
@@ -230,7 +255,13 @@ const updateLearningArea = async (req, res) => {
   const { id }     = req.params;
   const school_id  = req.user.schoolId;
   const updated_by = req.user.id;
-  const { name, code, description, grade_levels, is_active } = req.body;
+  const { name, code, description, grade_levels, class_ids, is_active } = req.body;
+
+  if (class_ids !== undefined && class_ids !== null && !Array.isArray(class_ids)) {
+    return respond(res, 422, false, 'Validation failed', null, [
+      { field: 'class_ids', message: 'class_ids must be an array' },
+    ]);
+  }
 
   try {
     const existing = await query(
@@ -244,19 +275,44 @@ const updateLearningArea = async (req, res) => {
     if (area.school_id && area.school_id !== school_id && req.user.role !== 'super_admin')
       return respond(res, 403, false, 'You can only edit your own school\'s learning areas');
 
+    // class_ids must reference real, currently-registered classes owned by
+    // the same school as this learning area.
+    let validatedClassIds = undefined; // undefined = leave column untouched (COALESCE)
+    if (Array.isArray(class_ids)) {
+      if (class_ids.length === 0) {
+        validatedClassIds = [];
+      } else {
+        const scopeSchoolId = area.school_id || school_id;
+        const check = await query(
+          `SELECT id FROM classes WHERE id = ANY($1) AND school_id = $2 AND deleted_at IS NULL`,
+          [class_ids, scopeSchoolId]
+        );
+        const foundIds = check.rows.map(r => r.id);
+        const missing = class_ids.filter(cid => !foundIds.includes(cid));
+        if (missing.length > 0) {
+          return respond(res, 422, false, 'Validation failed', null, [
+            { field: 'class_ids', message: `Unknown or inaccessible class id(s): ${missing.join(', ')}` },
+          ]);
+        }
+        validatedClassIds = class_ids;
+      }
+    }
+
     const result = await query(`
       UPDATE learning_areas SET
         name         = COALESCE($1, name),
         code         = COALESCE($2, code),
         description  = COALESCE($3, description),
         grade_levels = COALESCE($4, grade_levels),
-        is_active    = COALESCE($5, is_active),
+        class_ids    = COALESCE($5, class_ids),
+        is_active    = COALESCE($6, is_active),
         updated_at   = NOW(),
-        updated_by   = $6
-      WHERE id = $7 AND deleted_at IS NULL
+        updated_by   = $7
+      WHERE id = $8 AND deleted_at IS NULL
       RETURNING *
     `, [name?.trim() || null, code?.toUpperCase() || null, description?.trim() || null,
-        grade_levels || null, is_active !== undefined ? is_active : null, updated_by, id]);
+        grade_levels || null, validatedClassIds !== undefined ? validatedClassIds : null,
+        is_active !== undefined ? is_active : null, updated_by, id]);
 
     return respond(res, 200, true, 'Learning area updated', { learning_area: result.rows[0] });
 
@@ -1007,4 +1063,3 @@ module.exports = {
   getCurriculumTree,
   seedCBCCurriculum,
 };
-
