@@ -92,6 +92,7 @@ export interface LearningArea {
   description: string | null;
   school_id: string | null;
   grade_levels: string[] | null;
+  class_ids: string[] | null;
   is_active: boolean;
   created_at: string;
   is_national?: boolean;
@@ -233,6 +234,7 @@ export const createLearningArea = async (payload: {
   code?: string;
   description?: string;
   grade_levels?: string[];
+  class_ids?: string[];
 }): Promise<LearningAreaResponse> => {
   const url = `${API_URL}/api/v1/curriculum/learning-areas`;
   const response = await fetch(url, getFetchOptions('POST', payload));
@@ -250,6 +252,7 @@ export const updateLearningArea = async (
     code?: string;
     description?: string;
     grade_levels?: string[];
+    class_ids?: string[];
     is_active?: boolean;
   }
 ): Promise<LearningAreaResponse> => {
