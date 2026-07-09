@@ -206,6 +206,13 @@ export const menuSections: NavigationMenu = [
         ],
       },
       {
+        id: 'marks-entry',
+        label: 'Marks Entry',
+        icon: ClipboardList,
+        href: '/school-admin/marks-entry',
+        description: 'Enter, edit, and delete learner exam marks',
+      },
+      {
         id: 'results',
         label: 'Final Results',
         icon: FileText,
