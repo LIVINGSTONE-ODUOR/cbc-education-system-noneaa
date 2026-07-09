@@ -28,6 +28,7 @@ import CurriculumStats from "./CurriculumStats";
 import LearningAreasTable from "./LearningAreasTable";
 
 import { LEVEL_CONFIG } from "@/services/curriculumService";
+import { getClasses, type ClassApiItem } from "@/lib/api/classApi";
 import {
   getLearningAreas as fetchLearningAreasApi,
   createLearningArea,
@@ -64,6 +65,8 @@ type TableRow = {
   level: string;
   levelId: string;
   grades: string;
+  gradeLevels: string[];
+  classIds: string[];
   strands: number;
   subStrands: number;
   competencies: number;
@@ -108,6 +111,8 @@ const mapApiToTableRows = (data: any[]): TableRow[] => {
       level,
       levelId,
       grades: gradeRange,
+      gradeLevels: grades,
+      classIds: la.class_ids || [],
       strands: typeof la.strand_count === "number" ? la.strand_count : 0,
       subStrands: 0,
       competencies: 0,
@@ -170,6 +175,11 @@ export default function CurriculumDashboard() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [apiData, setApiData] = useState<TableRow[]>([]);
 
+  // Registered classes (fetched live from the classes table, for the
+  // Learning Area class picker -- never a hardcoded list)
+  const [registeredClasses, setRegisteredClasses] = useState<ClassApiItem[]>([]);
+  const [classesLoading, setClassesLoading] = useState(true);
+
   // Filter State
   const [search, setSearch] = useState("");
   const [levelFilter, setLevel] = useState("all");
@@ -199,6 +209,7 @@ export default function CurriculumDashboard() {
   const [newLaCode, setNewLaCode] = useState("");
   const [newLaName, setNewLaName] = useState("");
   const [newLaLevel, setNewLaLevel] = useState("");
+  const [newLaClassIds, setNewLaClassIds] = useState<string[]>([]);
   const [newLaDesc, setNewLaDesc] = useState("");
   const [isAdding, setIsAdding] = useState(false);
 
@@ -207,6 +218,7 @@ export default function CurriculumDashboard() {
   const [editLaCode, setEditLaCode] = useState("");
   const [editLaName, setEditLaName] = useState("");
   const [editLaLevel, setEditLaLevel] = useState("");
+  const [editLaClassIds, setEditLaClassIds] = useState<string[]>([]);
   const [editLaDesc, setEditLaDesc] = useState("");
   const [isEditing, setIsEditing] = useState(false);
 
@@ -234,9 +246,38 @@ export default function CurriculumDashboard() {
     }
   }, []);
 
+  // Fetch the school's actual registered classes (grade + stream), used to
+  // populate the Learning Area class picker. Always live from the DB.
+  const fetchClasses = useCallback(async () => {
+    setClassesLoading(true);
+    try {
+      const response = await getClasses({ is_active: "true", limit: 500 });
+      if (response.success && response.data) {
+        setRegisteredClasses(response.data.classes);
+      }
+    } catch (err) {
+      console.error("Failed to fetch registered classes:", err);
+      toast.error("Could not load registered classes");
+    } finally {
+      setClassesLoading(false);
+    }
+  }, []);
+
+  const toggleNewLaClass = (classId: string) => {
+    setNewLaClassIds((prev) =>
+      prev.includes(classId) ? prev.filter((id) => id !== classId) : [...prev, classId]
+    );
+  };
+
+  const toggleEditLaClass = (classId: string) => {
+    setEditLaClassIds((prev) =>
+      prev.includes(classId) ? prev.filter((id) => id !== classId) : [...prev, classId]
+    );
+  };
+
   const handleAddLearningArea = async () => {
-    if (!newLaCode?.trim() || !newLaName?.trim() || !newLaLevel) {
-      toast.error("Please fill in all required fields", {
+    if (!newLaCode?.trim() || !newLaName?.trim() || newLaClassIds.length === 0) {
+      toast.error("Please fill in all required fields, including at least one class", {
         icon: <AlertCircle className="h-4 w-4" />,
       });
       return;
@@ -244,18 +285,22 @@ export default function CurriculumDashboard() {
 
     setIsAdding(true);
     try {
-      const gradeLevels = getGradeLevelsFromLevel(newLaLevel);
+      const selectedClasses = registeredClasses.filter((c) => newLaClassIds.includes(c.id));
+      const gradeLevels = Array.from(new Set(selectedClasses.map((c) => c.grade_level)));
+
       await createLearningArea({
         code: newLaCode.trim(),
         name: newLaName.trim(),
         description: newLaDesc.trim(),
         grade_levels: gradeLevels,
+        class_ids: newLaClassIds,
       });
 
       await fetchData();
       setNewLaCode("");
       setNewLaName("");
       setNewLaLevel("");
+      setNewLaClassIds([]);
       setNewLaDesc("");
       setAddOpen(false);
 
@@ -274,8 +319,8 @@ export default function CurriculumDashboard() {
   };
 
   const handleEditLearningArea = async () => {
-    if (!editLaCode?.trim() || !editLaName?.trim() || !editLaLevel) {
-      toast.error("Please fill in all required fields", {
+    if (!editLaCode?.trim() || !editLaName?.trim() || editLaClassIds.length === 0) {
+      toast.error("Please fill in all required fields, including at least one class", {
         icon: <AlertCircle className="h-4 w-4" />,
       });
       return;
@@ -283,12 +328,15 @@ export default function CurriculumDashboard() {
 
     setIsEditing(true);
     try {
-      const gradeLevels = getGradeLevelsFromLevel(editLaLevel);
+      const selectedClasses = registeredClasses.filter((c) => editLaClassIds.includes(c.id));
+      const gradeLevels = Array.from(new Set(selectedClasses.map((c) => c.grade_level)));
+
       await updateLearningArea(editLaId, {
         code: editLaCode.trim(),
         name: editLaName.trim(),
         description: editLaDesc.trim(),
         grade_levels: gradeLevels,
+        class_ids: editLaClassIds,
       });
 
       await fetchData();
@@ -360,7 +408,8 @@ export default function CurriculumDashboard() {
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    fetchClasses();
+  }, [fetchData, fetchClasses]);
 
   // ───────────────────────────────────────────────────────────────────────
   // COMPUTED VALUES
@@ -883,6 +932,7 @@ export default function CurriculumDashboard() {
                     setEditLaCode(row.code);
                     setEditLaName(row.name);
                     setEditLaLevel(row.levelId);
+                    setEditLaClassIds(row.classIds || []);
                     setEditLaDesc(row.desc);
                     setEditOpen(true);
                   }}
@@ -1098,9 +1148,20 @@ export default function CurriculumDashboard() {
                 </div>
                 <div>
                   <Label htmlFor="level" className="text-sm font-semibold mb-2 block">
-                    Level *
+                    Level (quick-select)
                   </Label>
-                  <Select value={newLaLevel} onValueChange={setNewLaLevel}>
+                  <Select
+                    value={newLaLevel}
+                    onValueChange={(val) => {
+                      setNewLaLevel(val);
+                      const bandGrades = getGradeLevelsFromLevel(val);
+                      setNewLaClassIds(
+                        registeredClasses
+                          .filter((c) => bandGrades.includes(c.grade_level))
+                          .map((c) => c.id)
+                      );
+                    }}
+                  >
                     <SelectTrigger className="h-10">
                       <SelectValue placeholder="Select level" />
                     </SelectTrigger>
@@ -1112,6 +1173,41 @@ export default function CurriculumDashboard() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">
+                  Class(es) *
+                </Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Select every registered class this learning area applies to
+                </p>
+                {classesLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 border rounded-lg">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Loading registered classes...
+                  </div>
+                ) : registeredClasses.length === 0 ? (
+                  <div className="text-sm text-muted-foreground p-3 border rounded-lg">
+                    No registered classes found. Add classes in Classes Management first.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 border rounded-lg max-h-48 overflow-y-auto">
+                    {registeredClasses.map((cls) => (
+                      <label
+                        key={cls.id}
+                        className="flex items-center gap-2 text-sm cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={newLaClassIds.includes(cls.id)}
+                          onChange={() => toggleNewLaClass(cls.id)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                        {cls.grade_level}{cls.stream_name ? ` - ${cls.stream_name}` : ""}
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -1149,6 +1245,7 @@ export default function CurriculumDashboard() {
                   setNewLaCode("");
                   setNewLaName("");
                   setNewLaLevel("");
+                  setNewLaClassIds([]);
                   setNewLaDesc("");
                 }}
               >
@@ -1190,9 +1287,20 @@ export default function CurriculumDashboard() {
                 </div>
                 <div>
                   <Label htmlFor="edit-level" className="text-sm font-semibold mb-2 block">
-                    Level *
+                    Level (quick-select)
                   </Label>
-                  <Select value={editLaLevel} onValueChange={setEditLaLevel}>
+                  <Select
+                    value={editLaLevel}
+                    onValueChange={(val) => {
+                      setEditLaLevel(val);
+                      const bandGrades = getGradeLevelsFromLevel(val);
+                      setEditLaClassIds(
+                        registeredClasses
+                          .filter((c) => bandGrades.includes(c.grade_level))
+                          .map((c) => c.id)
+                      );
+                    }}
+                  >
                     <SelectTrigger className="h-10">
                       <SelectValue placeholder="Select level" />
                     </SelectTrigger>
@@ -1204,6 +1312,41 @@ export default function CurriculumDashboard() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">
+                  Class(es) *
+                </Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Select every registered class this learning area applies to
+                </p>
+                {classesLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 border rounded-lg">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Loading registered classes...
+                  </div>
+                ) : registeredClasses.length === 0 ? (
+                  <div className="text-sm text-muted-foreground p-3 border rounded-lg">
+                    No registered classes found. Add classes in Classes Management first.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 border rounded-lg max-h-48 overflow-y-auto">
+                    {registeredClasses.map((cls) => (
+                      <label
+                        key={cls.id}
+                        className="flex items-center gap-2 text-sm cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={editLaClassIds.includes(cls.id)}
+                          onChange={() => toggleEditLaClass(cls.id)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                        {cls.grade_level}{cls.stream_name ? ` - ${cls.stream_name}` : ""}
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -1329,6 +1472,7 @@ export default function CurriculumDashboard() {
                     setEditLaCode(viewRow.code);
                     setEditLaName(viewRow.name);
                     setEditLaLevel(viewRow.levelId);
+                    setEditLaClassIds(viewRow.classIds || []);
                     setEditLaDesc(viewRow.desc);
                     setEditOpen(true);
                     setViewRow(null);
