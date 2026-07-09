@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -10,7 +11,17 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, CalendarClock, Clock, MapPin, UserCheck } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { AlertCircle, CalendarClock, Clock, Loader2, MapPin, UserCheck } from 'lucide-react';
+
+import { getTeachers } from '@/lib/api/teacherApi';
+import type { StaffMember } from '@/pages/teacher/StaffManagement/types';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Types
@@ -95,6 +106,11 @@ export const ScheduleExamDialog: React.FC<ScheduleExamDialogProps> = ({
   const [form, setForm] = useState<ScheduleExamFormState>(EMPTY_FORM);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
+  // Invigilators (teachers) — fetched from the existing backend API.
+  const [teachers, setTeachers] = useState<StaffMember[]>([]);
+  const [loadingTeachers, setLoadingTeachers] = useState(false);
+  const [teachersError, setTeachersError] = useState<string | null>(null);
+
   // Reset the form whenever the dialog is opened for a (possibly new) exam.
   useEffect(() => {
     if (open) {
@@ -102,6 +118,38 @@ export const ScheduleExamDialog: React.FC<ScheduleExamDialogProps> = ({
       setTouched({});
     }
   }, [open, exam?.id]);
+
+  // ── Load teachers for the Invigilator dropdown ─────────────────────────
+  const loadTeachers = useCallback(async () => {
+    setLoadingTeachers(true);
+    setTeachersError(null);
+    try {
+      const res = await getTeachers({ limit: 200 });
+      setTeachers(res.teachers || []);
+    } catch (error: any) {
+      console.error('Failed to load teachers:', error);
+      const message = error?.message || 'Could not load teachers. Check your connection and try again.';
+      setTeachersError(message);
+      toast.error(message);
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      void loadTeachers();
+    }
+  }, [open, loadTeachers]);
+
+  // Only active teachers are offered as invigilators.
+  const invigilatorOptions = useMemo(
+    () =>
+      teachers
+        .filter((t) => (t.jobStatus || 'active').toLowerCase() === 'active')
+        .sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)),
+    [teachers]
+  );
 
   // Keep the derived duration field in sync with start/end time.
   useEffect(() => {
@@ -271,18 +319,54 @@ export const ScheduleExamDialog: React.FC<ScheduleExamDialogProps> = ({
           {/* Invigilator */}
           <div className="space-y-1.5">
             <Label htmlFor="schedule-invigilator">Invigilator</Label>
-            <div className="relative">
-              <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                id="schedule-invigilator"
-                placeholder="e.g. Mr. John Kamau"
-                className="rounded-xl pl-9"
-                value={form.invigilator}
-                onChange={(e) => updateField('invigilator', e.target.value)}
-                onBlur={() => markTouched('invigilator')}
-              />
-            </div>
-            {touched.invigilator && errors.invigilator && (
+            <Select
+              value={form.invigilator}
+              onValueChange={(value) => {
+                updateField('invigilator', value);
+                markTouched('invigilator');
+              }}
+              disabled={loadingTeachers || !!teachersError}
+            >
+              <SelectTrigger id="schedule-invigilator" className="rounded-xl">
+                <div className="flex items-center gap-2 truncate">
+                  <UserCheck className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  <SelectValue
+                    placeholder={
+                      loadingTeachers
+                        ? 'Loading teachers...'
+                        : teachersError
+                          ? 'Could not load teachers'
+                          : 'Select an invigilator'
+                    }
+                  />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {invigilatorOptions.length === 0 && !loadingTeachers ? (
+                  <div className="px-2 py-1.5 text-sm text-gray-500">No teachers found</div>
+                ) : (
+                  invigilatorOptions.map((teacher) => (
+                    <SelectItem key={teacher.id} value={teacher.id}>
+                      {`${teacher.firstName} ${teacher.lastName}`.trim()}
+                      {teacher.designation ? ` — ${teacher.designation}` : ''}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            {loadingTeachers && (
+              <p className="flex items-center gap-1 text-xs text-gray-500">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Loading teachers...
+              </p>
+            )}
+            {teachersError && (
+              <p className="flex items-center gap-1 text-xs text-red-600">
+                <AlertCircle className="h-3.5 w-3.5" />
+                {teachersError}
+              </p>
+            )}
+            {touched.invigilator && errors.invigilator && !teachersError && (
               <p className="flex items-center gap-1 text-xs text-red-600">
                 <AlertCircle className="h-3.5 w-3.5" />
                 {errors.invigilator}
