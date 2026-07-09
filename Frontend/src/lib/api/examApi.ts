@@ -63,7 +63,7 @@ export interface ExamApiItem {
   id: string;
   school_id: string;
   term_id: string;
-  class_id: string;
+  class_id: string | null;
   exam_name: string;
   exam_type: ExamType;
   start_date: string;
@@ -122,7 +122,7 @@ export const getExams = async (
 
 export interface ExamPayload {
   term_id: string;
-  class_id: string;
+  class_id?: string | null;
   exam_name: string;
   exam_type: ExamType;
   start_date: string;
