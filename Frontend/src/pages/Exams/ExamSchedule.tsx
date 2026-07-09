@@ -40,6 +40,7 @@ import {
 import { getClasses, ClassApiItem } from '@/lib/api/classApi';
 import { getAcademicTerms, AcademicTerm } from '@/lib/api/academicTermsApi';
 import { getExams, ExamApiItem, ExamType } from '@/lib/api/examApi';
+import { ScheduleExamDialog } from './components/ScheduleExamDialog';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -91,6 +92,15 @@ const ExamSchedule: React.FC = () => {
   const [filterTermId, setFilterTermId] = useState('all');
   const [filterGradeLevel, setFilterGradeLevel] = useState('all');
   const [filterClassId, setFilterClassId] = useState('all');
+
+  // Schedule Exam dialog (UI only — no backend wiring yet)
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [examToSchedule, setExamToSchedule] = useState<ExamApiItem | null>(null);
+
+  const openScheduleDialog = (exam: ExamApiItem) => {
+    setExamToSchedule(exam);
+    setShowScheduleDialog(true);
+  };
 
   // ── Load current user (school scoping) ──────────────────────────────────
   useEffect(() => {
@@ -344,7 +354,7 @@ const ExamSchedule: React.FC = () => {
             Exams ({exams.length})
           </CardTitle>
           <CardDescription>
-            Examinations created in Exam Setup. Scheduling actions are coming soon.
+            Examinations created in Exam Setup. Click Schedule to set the date, time and venue.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -428,8 +438,7 @@ const ExamSchedule: React.FC = () => {
                           size="sm"
                           variant="outline"
                           className="rounded-xl"
-                          disabled
-                          title="Scheduling is coming soon"
+                          onClick={() => openScheduleDialog(exam)}
                         >
                           Schedule
                         </Button>
@@ -442,6 +451,17 @@ const ExamSchedule: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Schedule Exam dialog — UI only, not yet wired to the backend */}
+      <ScheduleExamDialog
+        open={showScheduleDialog}
+        onOpenChange={setShowScheduleDialog}
+        exam={
+          examToSchedule
+            ? { id: examToSchedule.id, exam_name: examToSchedule.exam_name, exam_type: examToSchedule.exam_type }
+            : null
+        }
+      />
     </div>
   );
 };
