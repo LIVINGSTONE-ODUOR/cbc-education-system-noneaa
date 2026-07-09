@@ -75,6 +75,7 @@ import TeacherAttendance from "./pages/Attendance/TeacherAttendance";
 import Calendar from "./pages/Calendar/Calendar";
 import Classes from "./pages/ClassesManagement/ClassManagement";
 import ExamSetup from "./pages/Exams/ExamSetup";
+import ExamSchedule from "./pages/Exams/ExamSchedule";
 import Student from "./pages/auth/school-admin/learners/LearnerProfile";
 import StudentClasses from "./pages/auth/school-admin/learners/StudentClasses";
 import ParentManagement from "./pages/auth/school-admin/parents/parents";
@@ -305,6 +306,7 @@ function AppRoutes() {
                 <Route path="staff-manage" element={<StaffManagement />} />
                 <Route path="classes" element={<Classes />} />
                 <Route path="exams/setup" element={<ExamSetup />} />
+                <Route path="exams/schedule" element={<ExamSchedule />} />
 
                 {/* ── Learners ── */}
                 <Route path="learners" element={<StudentManagement />} />
