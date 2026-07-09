@@ -37,6 +37,16 @@ import {
 } from "@/lib/api/curriculumApi";
 import { toast } from "sonner";
 
+// Turns a CurriculumApiError's field-level errors (if any) into one readable
+// line, e.g. "grade_levels: Invalid grade in array. Valid: PP1, PP2, ..."
+// Falls back to the generic top-level message when there's nothing more specific.
+const describeApiError = (err: any, fallback: string): string => {
+  if (Array.isArray(err?.errors) && err.errors.length > 0) {
+    return err.errors.map((e: { field: string; message: string }) => `${e.field}: ${e.message}`).join(" | ");
+  }
+  return err?.message || fallback;
+};
+
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES & INTERFACES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -309,9 +319,10 @@ export default function CurriculumDashboard() {
         duration: 3000,
       });
     } catch (err: any) {
-      console.error("Failed to create learning area:", err);
-      toast.error(err.message || "Failed to create learning area", {
+      console.error("Failed to create learning area:", err, err?.errors);
+      toast.error(describeApiError(err, "Failed to create learning area"), {
         icon: <AlertCircle className="h-4 w-4" />,
+        duration: 6000,
       });
     } finally {
       setIsAdding(false);
@@ -347,9 +358,10 @@ export default function CurriculumDashboard() {
         duration: 3000,
       });
     } catch (err: any) {
-      console.error("Failed to update learning area:", err);
-      toast.error(err.message || "Failed to update learning area", {
+      console.error("Failed to update learning area:", err, err?.errors);
+      toast.error(describeApiError(err, "Failed to update learning area"), {
         icon: <AlertCircle className="h-4 w-4" />,
+        duration: 6000,
       });
     } finally {
       setIsEditing(false);
