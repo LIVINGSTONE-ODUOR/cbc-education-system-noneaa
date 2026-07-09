@@ -219,7 +219,180 @@ const saveClassAttendance = asyncHandler(async (req, res) => {
   });
 });
 
+// =============================================================================
+// 3. GET /api/v1/attendance/teachers/roster
+//    Query: date (defaults to today)
+//    Returns every active teacher for the school, merged with any
+//    attendance already recorded for that date. Mirrors getClassRoster
+//    but for teachers/staff instead of a class of learners.
+// =============================================================================
+const getTeacherRoster = asyncHandler(async (req, res) => {
+  const { schoolId } = req.user;
+  const attendanceDate = req.query.date || todayISO();
+
+  const { data: teacherRows, error: teacherError } = await supabase
+    .from('teachers')
+    .select(`
+      id,
+      designation,
+      is_active,
+      photo,
+      tsc_number,
+      user:user_id ( id, first_name, last_name, email )
+    `)
+    .eq('school_id', schoolId)
+    .eq('is_active', true);
+
+  if (teacherError) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch teachers', error: teacherError.message });
+  }
+
+  const teachers = (teacherRows || []).filter((t) => t.user);
+  const teacherIds = teachers.map((t) => t.id);
+
+  let attendanceByTeacher = {};
+  if (teacherIds.length > 0) {
+    const { data: existingRecords, error: attError } = await supabase
+      .from('teacher_attendance_records')
+      .select('*')
+      .eq('school_id', schoolId)
+      .eq('attendance_date', attendanceDate)
+      .in('teacher_id', teacherIds);
+
+    if (attError) {
+      return res.status(500).json({ success: false, message: 'Failed to fetch teacher attendance records', error: attError.message });
+    }
+
+    attendanceByTeacher = (existingRecords || []).reduce((acc, r) => {
+      acc[r.teacher_id] = r;
+      return acc;
+    }, {});
+  }
+
+  const roster = teachers
+    .map((t) => {
+      const existing = attendanceByTeacher[t.id];
+      return {
+        teacher_id: t.id,
+        staff_number: t.tsc_number || null,
+        first_name: t.user.first_name,
+        last_name: t.user.last_name,
+        email: t.user.email,
+        designation: t.designation || null,
+        photo_url: t.photo || null,
+        attendance_id: existing?.id || null,
+        status: existing?.status || null,
+        check_in_time: existing?.check_in_time || null,
+        check_out_time: existing?.check_out_time || null,
+        remarks: existing?.remarks || '',
+      };
+    })
+    .sort((a, b) =>
+      `${a.first_name || ''} ${a.last_name || ''}`.localeCompare(
+        `${b.first_name || ''} ${b.last_name || ''}`
+      )
+    );
+
+  const total = roster.length;
+  const present = roster.filter((t) => t.status === 'present').length;
+  const absent = roster.filter((t) => t.status === 'absent').length;
+  const late = roster.filter((t) => t.status === 'late').length;
+  const excused = roster.filter((t) => t.status === 'excused').length;
+  const marked = present + absent + late + excused;
+  const attendance_rate = total > 0 ? Math.round(((present + late) / total) * 100) : 0;
+
+  return res.json({
+    success: true,
+    data: {
+      date: attendanceDate,
+      already_marked: marked > 0,
+      summary: { total, present, absent, late, excused, marked, attendance_rate },
+      teachers: roster,
+    },
+  });
+});
+
+// =============================================================================
+// 4. POST /api/v1/attendance/teachers
+//    Body: { attendance_date, records: [{ teacher_id, status, check_in_time, check_out_time, remarks }] }
+//    Upserts teacher attendance so re-saving the same date updates the
+//    existing rows instead of creating duplicates.
+// =============================================================================
+const saveTeacherAttendance = asyncHandler(async (req, res) => {
+  const { schoolId, role, id: userId } = req.user;
+  const { attendance_date, records } = req.body;
+
+  if (!['school_admin', 'super_admin'].includes(role)) {
+    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+  }
+
+  if (!attendance_date) {
+    return res.status(400).json({ success: false, message: 'attendance_date is required' });
+  }
+  if (!Array.isArray(records) || records.length === 0) {
+    return res.status(400).json({ success: false, message: 'records array is required' });
+  }
+
+  for (const r of records) {
+    if (!r.teacher_id) {
+      return res.status(400).json({ success: false, message: 'Each record requires a teacher_id' });
+    }
+    if (!VALID_STATUSES.includes(r.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status "${r.status}" for teacher ${r.teacher_id}. Must be one of: ${VALID_STATUSES.join(', ')}`,
+      });
+    }
+  }
+
+  // Verify every teacher belongs to this school before writing anything.
+  const teacherIds = records.map((r) => r.teacher_id);
+  const { data: validTeachers, error: verifyError } = await supabase
+    .from('teachers')
+    .select('id')
+    .eq('school_id', schoolId)
+    .in('id', teacherIds);
+
+  if (verifyError) {
+    return res.status(500).json({ success: false, message: 'Failed to verify teachers', error: verifyError.message });
+  }
+  const validIds = new Set((validTeachers || []).map((t) => t.id));
+  const invalid = teacherIds.filter((id) => !validIds.has(id));
+  if (invalid.length > 0) {
+    return res.status(404).json({ success: false, message: `Teacher(s) not found in this school: ${invalid.join(', ')}` });
+  }
+
+  const rows = records.map((r) => ({
+    school_id: schoolId,
+    teacher_id: r.teacher_id,
+    attendance_date,
+    status: r.status,
+    check_in_time: r.check_in_time || null,
+    check_out_time: r.check_out_time || null,
+    remarks: r.remarks?.trim() || null,
+    marked_by: userId || null,
+    updated_at: new Date().toISOString(),
+  }));
+
+  const { data: saved, error } = await supabase
+    .from('teacher_attendance_records')
+    .upsert(rows, { onConflict: 'teacher_id,attendance_date' })
+    .select('*');
+
+  if (error) {
+    return res.status(500).json({ success: false, message: 'Failed to save teacher attendance', error: error.message });
+  }
+
+  return res.json({
+    success: true,
+    message: `Attendance saved for ${saved.length} teacher(s)`,
+    data: { saved_count: saved.length, records: saved },
+  });
+});
+
 module.exports = {
   getClassRoster,
   saveClassAttendance,
+  getTeacherRoster,
+  saveTeacherAttendance,
 };
