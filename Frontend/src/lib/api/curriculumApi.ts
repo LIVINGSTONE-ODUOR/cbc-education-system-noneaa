@@ -36,14 +36,26 @@ const getFetchOptions = (method: string, body?: unknown): RequestInit => {
   };
 };
 
+// Custom error that carries the backend's field-level validation errors
+// (e.g. [{ field: 'grade_levels', message: 'Invalid grade in array...' }])
+// so callers can show the real reason instead of a generic message.
+export class CurriculumApiError extends Error {
+  errors?: { field: string; message: string }[];
+  constructor(message: string, errors?: { field: string; message: string }[]) {
+    super(message);
+    this.name = 'CurriculumApiError';
+    this.errors = errors;
+  }
+}
+
 // Handle API response
 const handleResponse = async <T>(response: Response): Promise<T> => {
   const data = await response.json();
-  
+
   if (!response.ok || !data.success) {
-    throw new Error(data.message || 'An error occurred');
+    throw new CurriculumApiError(data.message || 'An error occurred', data.errors);
   }
-  
+
   // Return the full response data (includes success, message, data)
   return data;
 };
