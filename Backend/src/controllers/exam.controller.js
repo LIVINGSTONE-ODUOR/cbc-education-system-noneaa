@@ -66,9 +66,11 @@ const createExam = asyncHandler(async (req, res) => {
   } = req.body;
 
   // ── Validation ────────────────────────────────────────────────────────────
+  // class_id is OPTIONAL — most exams are whole-school exams (not scoped to
+  // a single grade/class). It's only required if the caller explicitly
+  // wants to restrict the exam to one grade & stream.
   const errors = [];
   if (!term_id) errors.push('term_id (academic year / term) is required');
-  if (!class_id) errors.push('class_id (grade & stream) is required');
   if (!exam_name || !exam_name.trim()) errors.push('exam_name is required');
   if (!exam_type) errors.push('exam_type is required');
   if (exam_type && !EXAM_TYPES.includes(exam_type)) {
@@ -99,16 +101,19 @@ const createExam = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'Academic year / term not found for this school' });
   }
 
-  // Verify class belongs to this school
-  const { data: cls } = await supabase
-    .from('classes')
-    .select('id, school_id')
-    .eq('id', class_id)
-    .eq('school_id', schoolId)
-    .maybeSingle();
+  // Verify class belongs to this school — only when the exam is being
+  // scoped to a specific grade/stream.
+  if (class_id) {
+    const { data: cls } = await supabase
+      .from('classes')
+      .select('id, school_id')
+      .eq('id', class_id)
+      .eq('school_id', schoolId)
+      .maybeSingle();
 
-  if (!cls) {
-    return res.status(400).json({ success: false, message: 'Class / stream not found for this school' });
+    if (!cls) {
+      return res.status(400).json({ success: false, message: 'Class / stream not found for this school' });
+    }
   }
 
   const { data: newExam, error } = await supabase
@@ -116,7 +121,7 @@ const createExam = asyncHandler(async (req, res) => {
     .insert({
       school_id: schoolId,
       term_id,
-      class_id,
+      class_id: class_id || null,
       exam_name: exam_name.trim(),
       exam_type,
       start_date,
@@ -323,7 +328,7 @@ const updateExam = asyncHandler(async (req, res) => {
 
   const updatePayload = { updated_by: userId || null };
   if (term_id !== undefined) updatePayload.term_id = term_id;
-  if (class_id !== undefined) updatePayload.class_id = class_id;
+  if (class_id !== undefined) updatePayload.class_id = class_id || null;
   if (exam_name !== undefined) updatePayload.exam_name = exam_name?.trim();
   if (exam_type !== undefined) updatePayload.exam_type = exam_type;
   if (start_date !== undefined) updatePayload.start_date = start_date;
