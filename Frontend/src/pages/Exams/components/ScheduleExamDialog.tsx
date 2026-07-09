@@ -11,17 +11,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { AlertCircle, CalendarClock, Clock, Loader2, MapPin, UserCheck } from 'lucide-react';
+import { SearchableCombobox, type ComboboxOption } from '@/components/ui/searchable-combobox';
+import { AlertCircle, CalendarClock, Clock, MapPin, UserCheck } from 'lucide-react';
 
 import { getTeachers } from '@/lib/api/teacherApi';
 import type { StaffMember } from '@/pages/teacher/StaffManagement/types';
+import { getClasses } from '@/lib/api/classApi';
+import type { ClassApiItem } from '@/lib/api/classApi';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Types
@@ -75,7 +71,7 @@ const computeDuration = (startTime: string, endTime: string): string => {
 
   if ([startH, startM, endH, endM].some((n) => Number.isNaN(n))) return '';
 
-  let minutes = endH * 60 + endM - (startH * 60 + startM);
+  const minutes = endH * 60 + endM - (startH * 60 + startM);
   if (minutes <= 0) return '';
 
   const hours = Math.floor(minutes / 60);
@@ -110,6 +106,12 @@ export const ScheduleExamDialog: React.FC<ScheduleExamDialogProps> = ({
   const [teachers, setTeachers] = useState<StaffMember[]>([]);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
   const [teachersError, setTeachersError] = useState<string | null>(null);
+
+  // Rooms — sourced from Classes & Streams (e.g. "Grade 7 - Blue") so the
+  // Room field offers real venues instead of free-typed guesses.
+  const [classes, setClasses] = useState<ClassApiItem[]>([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+  const [roomsError, setRoomsError] = useState<string | null>(null);
 
   // Reset the form whenever the dialog is opened for a (possibly new) exam.
   useEffect(() => {
@@ -149,6 +151,60 @@ export const ScheduleExamDialog: React.FC<ScheduleExamDialogProps> = ({
         .filter((t) => (t.jobStatus || 'active').toLowerCase() === 'active')
         .sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)),
     [teachers]
+  );
+
+  const invigilatorSearchOptions: ComboboxOption[] = useMemo(
+    () =>
+      invigilatorOptions.map((teacher) => ({
+        value: teacher.id,
+        label: `${teacher.firstName} ${teacher.lastName}`.trim(),
+        description: teacher.designation || undefined,
+      })),
+    [invigilatorOptions]
+  );
+
+  // ── Load classes/streams for the Room dropdown ──────────────────────────
+  const loadRooms = useCallback(async () => {
+    setLoadingRooms(true);
+    setRoomsError(null);
+    try {
+      const res = await getClasses({ is_active: 'true', limit: 200 });
+      setClasses(res.data?.classes || []);
+    } catch (error: any) {
+      console.error('Failed to load classes/streams:', error);
+      const message =
+        error?.message || 'Could not load rooms. Check your connection and try again.';
+      setRoomsError(message);
+      toast.error(message);
+    } finally {
+      setLoadingRooms(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      void loadRooms();
+    }
+  }, [open, loadRooms]);
+
+  // Each class stream (e.g. "Grade 7 - Blue") becomes a searchable room
+  // option, since exams are typically held in the class's own room.
+  const roomOptions: ComboboxOption[] = useMemo(
+    () =>
+      classes
+        .map((c) => {
+          const label = c.stream_name
+            ? `Grade ${c.grade_level} - ${c.stream_name}`
+            : `Grade ${c.grade_level}`;
+          const branchName = c.branches?.name || c.branch?.name;
+          return {
+            value: label,
+            label,
+            description: branchName || undefined,
+          };
+        })
+        .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true })),
+    [classes]
   );
 
   // Keep the derived duration field in sync with start/end time.
@@ -297,18 +353,28 @@ export const ScheduleExamDialog: React.FC<ScheduleExamDialogProps> = ({
           {/* Room */}
           <div className="space-y-1.5">
             <Label htmlFor="schedule-room">Room</Label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                id="schedule-room"
-                placeholder="e.g. Room 204, Main Hall"
-                className="rounded-xl pl-9"
-                value={form.room}
-                onChange={(e) => updateField('room', e.target.value)}
-                onBlur={() => markTouched('room')}
-              />
-            </div>
-            {touched.room && errors.room && (
+            <SearchableCombobox
+              id="schedule-room"
+              options={roomOptions}
+              value={form.room}
+              onChange={(value) => updateField('room', value)}
+              onBlur={() => markTouched('room')}
+              loading={loadingRooms}
+              loadingText="Loading rooms..."
+              placeholder="Search a room / class stream..."
+              searchPlaceholder="Search rooms..."
+              emptyText={roomsError ? 'Could not load rooms' : 'No class streams found'}
+              icon={<MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />}
+              allowCustomValue
+              aria-invalid={touched.room && !!errors.room}
+            />
+            {roomsError && (
+              <p className="flex items-center gap-1 text-xs text-red-600">
+                <AlertCircle className="h-3.5 w-3.5" />
+                {roomsError}
+              </p>
+            )}
+            {touched.room && errors.room && !roomsError && (
               <p className="flex items-center gap-1 text-xs text-red-600">
                 <AlertCircle className="h-3.5 w-3.5" />
                 {errors.room}
@@ -319,47 +385,21 @@ export const ScheduleExamDialog: React.FC<ScheduleExamDialogProps> = ({
           {/* Invigilator */}
           <div className="space-y-1.5">
             <Label htmlFor="schedule-invigilator">Invigilator</Label>
-            <Select
+            <SearchableCombobox
+              id="schedule-invigilator"
+              options={invigilatorSearchOptions}
               value={form.invigilator}
-              onValueChange={(value) => {
-                updateField('invigilator', value);
-                markTouched('invigilator');
-              }}
-              disabled={loadingTeachers || !!teachersError}
-            >
-              <SelectTrigger id="schedule-invigilator" className="rounded-xl">
-                <div className="flex items-center gap-2 truncate">
-                  <UserCheck className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                  <SelectValue
-                    placeholder={
-                      loadingTeachers
-                        ? 'Loading teachers...'
-                        : teachersError
-                          ? 'Could not load teachers'
-                          : 'Select an invigilator'
-                    }
-                  />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                {invigilatorOptions.length === 0 && !loadingTeachers ? (
-                  <div className="px-2 py-1.5 text-sm text-gray-500">No teachers found</div>
-                ) : (
-                  invigilatorOptions.map((teacher) => (
-                    <SelectItem key={teacher.id} value={teacher.id}>
-                      {`${teacher.firstName} ${teacher.lastName}`.trim()}
-                      {teacher.designation ? ` — ${teacher.designation}` : ''}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-            {loadingTeachers && (
-              <p className="flex items-center gap-1 text-xs text-gray-500">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Loading teachers...
-              </p>
-            )}
+              onChange={(value) => updateField('invigilator', value)}
+              onBlur={() => markTouched('invigilator')}
+              loading={loadingTeachers}
+              loadingText="Loading teachers..."
+              disabled={!!teachersError}
+              placeholder="Search an invigilator..."
+              searchPlaceholder="Search teachers..."
+              emptyText={teachersError ? 'Could not load teachers' : 'No teachers found'}
+              icon={<UserCheck className="h-4 w-4 text-gray-400 flex-shrink-0" />}
+              aria-invalid={touched.invigilator && !!errors.invigilator}
+            />
             {teachersError && (
               <p className="flex items-center gap-1 text-xs text-red-600">
                 <AlertCircle className="h-3.5 w-3.5" />
