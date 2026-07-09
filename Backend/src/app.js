@@ -177,6 +177,7 @@ app.use('/api/v1/learners', require('./routes/learner.routes'));
 // while the backend effectively served '/api/v1/auth/v1/login' (404).
 app.use('/api', require('./routes/auth.routes'));
 app.use('/api/v1/classes', require('./routes/class.routes'));
+app.use('/api/v1/exams', require('./routes/exam.routes'));
 app.use('/api/v1/attendance', require('./routes/attendance.routes'));
 
 app.use('/api/v1/register', require('./routes/register.routes'));
