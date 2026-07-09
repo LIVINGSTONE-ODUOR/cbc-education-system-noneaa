@@ -96,6 +96,8 @@ import AdminCurriculumPage from "@/pages/auth/school-admin/Curriculum";
 import ReportsPage from "@/pages/auth/school-admin/Reports";
 import SettingsPage from "./pages/auth/school-admin/Settings/Settings";
 import ProfileSettings from "./pages/auth/school-admin/Settings/ProfileSettings";
+import ExamGroupsPage from "./pages/auth/school-admin/exam-groups/ExamGroupsPage";
+import PromotionsPage from "./pages/auth/school-admin/promotions/PromotionsPage";
 
 import NotFound from "./pages/website-pages/NotFound";
 import BlogPage from "./pages/website-pages/BlogPage";
@@ -317,6 +319,8 @@ function AppRoutes() {
 
                 {/* ── Other Admin Pages ── */}
                 <Route path="curriculum" element={<AdminCurriculumPage />} />
+                <Route path="exam-groups" element={<ExamGroupsPage />} />
+                <Route path="promotions" element={<PromotionsPage />} />
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="settings/profile" element={<ProfileSettings />} />
