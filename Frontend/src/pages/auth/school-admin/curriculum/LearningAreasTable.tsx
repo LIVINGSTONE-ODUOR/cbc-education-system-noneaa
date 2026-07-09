@@ -25,6 +25,8 @@ interface LearningAreasTableProps {
   onToggleSelect: (code: string) => void;
   onToggleAll: () => void;
   onViewDetails: (row: LearningArea & { levelId: string; level: string; grades: string }) => void;
+  onEdit: (row: LearningArea & { levelId: string; level: string; grades: string }) => void;
+  onDelete: (row: LearningArea & { levelId: string; level: string; grades: string }) => void;
 }
 
 // Sort Icon Component
@@ -66,6 +68,8 @@ const LearningAreasTable: React.FC<LearningAreasTableProps> = ({
   onToggleSelect,
   onToggleAll,
   onViewDetails,
+  onEdit,
+  onDelete,
 }) => {
   return (
     <Card className="shadow-sm border-border/60 overflow-hidden">
@@ -117,7 +121,7 @@ const LearningAreasTable: React.FC<LearningAreasTableProps> = ({
                 <TableHead className="w-24 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700">Type</TableHead>
                 
                 {/* Actions */}
-                <TableHead className="w-20 px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-700">Details</TableHead>
+                <TableHead className="w-32 px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-700">Actions</TableHead>
               </TableRow>
             </TableHeader>
 
@@ -135,6 +139,8 @@ const LearningAreasTable: React.FC<LearningAreasTableProps> = ({
                       isSelected={isSelected}
                       onToggleSelect={() => onToggleSelect(row.code)}
                       onViewDetails={() => onViewDetails(row)}
+                      onEdit={() => onEdit(row)}
+                      onDelete={() => onDelete(row)}
                     />
                   );
                 })
@@ -148,4 +154,3 @@ const LearningAreasTable: React.FC<LearningAreasTableProps> = ({
 };
 
 export default LearningAreasTable;
-
