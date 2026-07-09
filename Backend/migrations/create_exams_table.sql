@@ -1,9 +1,11 @@
 -- =============================================================================
 -- create_exams_table.sql
--- Exam Setup: administrators create/manage examinations scoped to a school,
--- a term (row in academic_years — see academicTermsController.js, which uses
--- "academic_years" as the physical table backing the "Term Management" UI),
--- and a class (a class row already encodes both grade_level + stream_name).
+-- Exam Setup: administrators create/manage examinations scoped to a school
+-- and a term (row in academic_years — see academicTermsController.js, which
+-- uses "academic_years" as the physical table backing the "Term Management"
+-- UI). class_id is OPTIONAL — most exams (Mid-Term, End-Term, Mock, Final)
+-- are whole-school exams and are not tied to a single grade/class; class_id
+-- is only set when an exam is deliberately scoped to one grade & stream.
 -- =============================================================================
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -12,7 +14,7 @@ CREATE TABLE IF NOT EXISTS exams (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   school_id        UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
   term_id          UUID NOT NULL REFERENCES academic_years(id) ON DELETE CASCADE,
-  class_id         UUID NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+  class_id         UUID REFERENCES classes(id) ON DELETE CASCADE,
   exam_name        VARCHAR(160) NOT NULL,
   exam_type        VARCHAR(30) NOT NULL CHECK (exam_type IN ('CAT', 'Mid-Term', 'End-Term', 'Mock', 'Final')),
   start_date       DATE NOT NULL,
