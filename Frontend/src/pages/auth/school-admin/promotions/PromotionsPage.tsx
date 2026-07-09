@@ -458,127 +458,153 @@ export default function PromotionsPage() {
 
   const isBusy = actionLoading || listLoading || refDataLoading;
 
+  const statCards = [
+    {
+      label: 'Total Batches',
+      value: counts.total,
+      hint: 'For promotions & graduations',
+      icon: ClipboardList,
+      chip: 'bg-indigo-50 text-indigo-600',
+      bar: 'bg-indigo-500',
+    },
+    {
+      label: 'Completed',
+      value: counts.completed,
+      hint: 'Results generated',
+      icon: BadgeCheck,
+      chip: 'bg-emerald-50 text-emerald-600',
+      bar: 'bg-emerald-500',
+    },
+    {
+      label: 'Locked',
+      value: counts.locked,
+      hint: 'Decisions protected',
+      icon: Lock,
+      chip: 'bg-sky-50 text-sky-600',
+      bar: 'bg-sky-500',
+    },
+    {
+      label: 'Selected Learners',
+      value: counts.selectedTotal,
+      hint: 'Across all batches',
+      icon: ShieldCheck,
+      chip: 'bg-amber-50 text-amber-600',
+      bar: 'bg-amber-500',
+    },
+  ];
+
+  const activeFilterCount = [
+    filterKind !== 'all',
+    filterYearId !== 'all',
+    filterStatus !== 'all',
+    filterGrade !== 'all',
+    search.trim().length > 0,
+  ].filter(Boolean).length;
+
   return (
-    <div className="min-h-screen w-full p-6 space-y-6 bg-gray-50">
+    <div className="min-h-screen w-full bg-gradient-to-b from-gray-50 to-gray-100/60 p-4 sm:p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm">
-            <GraduationCap className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Promotions & Graduations</h1>
-            <p className="text-sm text-gray-500">
-              Manage promotion batches (learners moving to the next class) and graduation runs (certificates for a level).
-            </p>
-          </div>
-        </div>
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-600 to-violet-600 px-6 py-7 sm:px-8 sm:py-8 shadow-lg shadow-indigo-200/50">
+        <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            className="rounded-xl"
-            onClick={() => loadBatches()}
-            disabled={isBusy}
-          >
-            <RefreshCcw className={`h-4 w-4 mr-2 ${listLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white ring-1 ring-white/25 backdrop-blur">
+              <GraduationCap className="h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white sm:text-3xl">Promotions & Graduations</h1>
+              <p className="mt-1 max-w-xl text-sm text-indigo-100">
+                Manage promotion batches for learners moving to the next class, and graduation runs for certificates at a level.
+              </p>
+            </div>
+          </div>
 
-          <Button
-            className="rounded-xl bg-indigo-600 hover:bg-indigo-700"
-            onClick={openCreate}
-            disabled={isBusy || gradeLevels.length === 0 || academicYears.length === 0}
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            New Batch
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="rounded-xl border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+              onClick={() => loadBatches()}
+              disabled={isBusy}
+            >
+              <RefreshCcw className={`h-4 w-4 mr-2 ${listLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+
+            <Button
+              className="rounded-xl bg-white text-indigo-700 shadow-sm hover:bg-indigo-50"
+              onClick={openCreate}
+              disabled={isBusy || gradeLevels.length === 0 || academicYears.length === 0}
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              New Batch
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <Card className="rounded-2xl shadow-sm border-gray-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <ClipboardList className="h-4 w-4 text-indigo-600" />
-              Total Batches
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{counts.total}</div>
-            <p className="text-xs text-gray-500 mt-1">For promotions & graduations</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl shadow-sm border-gray-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <BadgeCheck className="h-4 w-4 text-emerald-600" />
-              Completed
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{counts.completed}</div>
-            <p className="text-xs text-gray-500 mt-1">Results generated</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl shadow-sm border-gray-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Lock className="h-4 w-4 text-sky-600" />
-              Locked
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{counts.locked}</div>
-            <p className="text-xs text-gray-500 mt-1">Decisions protected</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl shadow-sm border-gray-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-amber-600" />
-              Selected Learners
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{counts.selectedTotal}</div>
-            <p className="text-xs text-gray-500 mt-1">Across all batches</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {statCards.map((s) => (
+          <Card
+            key={s.label}
+            className="group relative overflow-hidden rounded-2xl border-gray-200/80 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <span className={`absolute inset-x-0 top-0 h-1 ${s.bar}`} />
+            <CardContent className="flex items-start justify-between pt-5">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{s.label}</p>
+                <div className="mt-1.5 text-3xl font-bold text-gray-900">{s.value}</div>
+                <p className="mt-1 text-xs text-gray-400">{s.hint}</p>
+              </div>
+              <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${s.chip}`}>
+                <s.icon className="h-5 w-5" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Filters */}
-      <Card className="rounded-2xl border border-gray-200 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-400" />
-            Find a promotion / graduation run
-            <span className="ml-2 text-sm text-gray-500 font-normal">
-              {filteredBatches.length} batch(es)
-            </span>
-          </CardTitle>
+      <Card className="rounded-2xl border-gray-200/80 shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-500">
+                <Filter className="h-4 w-4" />
+              </span>
+              Find a promotion / graduation run
+            </CardTitle>
+            <div className="flex items-center gap-2 text-sm">
+              <Badge variant="outline" className="rounded-full border-indigo-200 bg-indigo-50 text-indigo-700 font-normal">
+                {filteredBatches.length} batch{filteredBatches.length === 1 ? '' : 'es'}
+              </Badge>
+              {activeFilterCount > 0 && (
+                <Badge variant="outline" className="rounded-full border-gray-200 bg-gray-50 text-gray-500 font-normal">
+                  {activeFilterCount} filter{activeFilterCount === 1 ? '' : 's'} active
+                </Badge>
+              )}
+            </div>
+          </div>
           <CardDescription>
             Search by grade/stream, academic year, or learner criteria. Then run, lock, or export results.
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
             <div className="relative md:col-span-2">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
                 placeholder="Search by criteria..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 rounded-xl"
+                className="rounded-xl border-gray-200 bg-gray-50/60 pl-9 focus-visible:bg-white"
               />
             </div>
 
             <Select value={filterKind} onValueChange={(v) => setFilterKind(v as any)}>
-              <SelectTrigger className="rounded-xl">
+              <SelectTrigger className="rounded-xl border-gray-200 bg-gray-50/60">
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
@@ -589,7 +615,7 @@ export default function PromotionsPage() {
             </Select>
 
             <Select value={filterYearId} onValueChange={(v) => setFilterYearId(v as any)}>
-              <SelectTrigger className="rounded-xl">
+              <SelectTrigger className="rounded-xl border-gray-200 bg-gray-50/60">
                 <SelectValue placeholder="Academic year" />
               </SelectTrigger>
               <SelectContent>
@@ -601,7 +627,7 @@ export default function PromotionsPage() {
             </Select>
 
             <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
-              <SelectTrigger className="rounded-xl">
+              <SelectTrigger className="rounded-xl border-gray-200 bg-gray-50/60">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -612,7 +638,7 @@ export default function PromotionsPage() {
             </Select>
 
             <Select value={filterGrade} onValueChange={(v) => setFilterGrade(v as any)}>
-              <SelectTrigger className="rounded-xl">
+              <SelectTrigger className="rounded-xl border-gray-200 bg-gray-50/60 md:col-start-5">
                 <SelectValue placeholder="Grade / Level" />
               </SelectTrigger>
               <SelectContent>
@@ -627,10 +653,12 @@ export default function PromotionsPage() {
       </Card>
 
       {/* Table */}
-      <Card className="rounded-2xl border border-gray-200 shadow-sm">
+      <Card className="rounded-2xl border-gray-200/80 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <CalendarDays className="h-4 w-4 text-gray-400" />
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-500">
+              <CalendarDays className="h-4 w-4" />
+            </span>
             Promotion & Graduation Batches
           </CardTitle>
           <CardDescription>
@@ -644,123 +672,154 @@ export default function PromotionsPage() {
               <p>Loading batches…</p>
             </div>
           ) : filteredBatches.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center text-gray-500">
-              <AlertCircle className="h-10 w-10 mb-3 text-gray-300" />
-              <p className="font-medium">No batches match your filters</p>
-              <p className="text-sm max-w-md">
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 py-16 text-center text-gray-500">
+              <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
+                <AlertCircle className="h-7 w-7 text-gray-300" />
+              </div>
+              <p className="font-medium text-gray-700">No batches match your filters</p>
+              <p className="max-w-md text-sm">
                 Create a new batch using <b>New Batch</b> and then run it to generate promotion/graduation results.
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Batch</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Academic Year</TableHead>
-                    <TableHead>Grade & Stream</TableHead>
-                    <TableHead>Effective</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Counts</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredBatches.map((b) => {
-                    const kind = promotionKindBadge(b.kind);
-                    const sb = statusBadge(b.status);
-                    return (
-                      <TableRow key={b.id}>
-                        <TableCell className="font-medium text-gray-900">
-                          <div className="flex flex-col">
-                            <span className="text-sm">{b.id.slice(0, 8)}</span>
-                            <span className="text-xs text-gray-500">Updated {formatDate(b.updatedAt)}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={kind.className}>{kind.label}</Badge>
-                        </TableCell>
-                        <TableCell className="text-gray-600">{b.academicYear}</TableCell>
-                        <TableCell className="text-gray-600">
-                          <div className="flex flex-col">
-                            <span className="text-sm">
-                              {b.gradeLevel}{b.toGradeLevel ? ` → ${b.toGradeLevel}` : ''}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {b.streamName ? b.streamName : 'No stream'}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-gray-600">{formatDate(b.effectiveDate)}</TableCell>
-                        <TableCell>
-                          <Badge variant={sb.variant} className={sb.className}>{sb.label}</Badge>
-                        </TableCell>
-                        <TableCell className="text-gray-700">
-                          <div className="flex flex-col">
-                            <span className="text-sm">
-                              Selected <b>{b.learnerCountSelected}</b>
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {b.kind === 'graduation' ? 'Graduated' : 'Promoted'} <b>{b.learnerCountPromotedOrGraduated}</b>
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8"
-                              onClick={() => openDetails(b.id)}
-                              title="View details"
+            <div className="overflow-hidden rounded-xl border border-gray-100">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50/80 hover:bg-gray-50/80">
+                      <TableHead className="text-xs font-semibold uppercase tracking-wide text-gray-500">Batch</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase tracking-wide text-gray-500">Type</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase tracking-wide text-gray-500">Academic Year</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase tracking-wide text-gray-500">Grade & Stream</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase tracking-wide text-gray-500">Effective</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase tracking-wide text-gray-500">Status</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase tracking-wide text-gray-500">Progress</TableHead>
+                      <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredBatches.map((b) => {
+                      const kind = promotionKindBadge(b.kind);
+                      const sb = statusBadge(b.status);
+                      const isGraduation = b.kind === 'graduation';
+                      const pct = b.learnerCountTarget > 0
+                        ? Math.min(100, Math.round((b.learnerCountSelected / b.learnerCountTarget) * 100))
+                        : 0;
+                      return (
+                        <TableRow key={b.id} className="transition-colors hover:bg-indigo-50/30">
+                          <TableCell className="font-medium text-gray-900">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl ${
+                                  isGraduation ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'
+                                }`}
+                              >
+                                {isGraduation ? <GraduationCap className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-mono text-sm">{b.id.slice(0, 8)}</span>
+                                <span className="text-xs text-gray-400">Updated {formatDate(b.updatedAt)}</span>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={`rounded-full px-2.5 ${kind.className}`}>{kind.label}</Badge>
+                          </TableCell>
+                          <TableCell className="text-gray-600">{b.academicYear}</TableCell>
+                          <TableCell className="text-gray-600">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-gray-800">
+                                {b.gradeLevel}{b.toGradeLevel ? ` → ${b.toGradeLevel}` : ''}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {b.streamName ? b.streamName : 'No stream'}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-gray-600">{formatDate(b.effectiveDate)}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={sb.variant}
+                              className={`rounded-full px-2.5 ${sb.className} flex w-fit items-center gap-1.5`}
                             >
-                              <Eye className="h-4 w-4" />
-                            </Button>
+                              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                              {sb.label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-gray-700">
+                            <div className="flex w-36 flex-col gap-1">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-gray-500">
+                                  Selected <b className="text-gray-800">{b.learnerCountSelected}</b>/{b.learnerCountTarget}
+                                </span>
+                              </div>
+                              <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                                <div
+                                  className={`h-full rounded-full ${isGraduation ? 'bg-blue-500' : 'bg-emerald-500'}`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-gray-400">
+                                {isGraduation ? 'Graduated' : 'Promoted'} <b className="text-gray-600">{b.learnerCountPromotedOrGraduated}</b>
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 rounded-lg hover:bg-gray-100"
+                                onClick={() => openDetails(b.id)}
+                                title="View details"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
 
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8"
-                              disabled={!canRun(b) || actionLoading}
-                              onClick={() => { setSelectedBatchId(b.id); setShowRunDialog(true); }}
-                              title="Run batch"
-                            >
-                              <ArrowRight className="h-4 w-4" />
-                            </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 rounded-lg hover:bg-indigo-50 hover:text-indigo-700"
+                                disabled={!canRun(b) || actionLoading}
+                                onClick={() => { setSelectedBatchId(b.id); setShowRunDialog(true); }}
+                                title="Run batch"
+                              >
+                                <ArrowRight className="h-4 w-4" />
+                              </Button>
 
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8"
-                              disabled={!(canLock(b) || b.status === 'locked') || actionLoading}
-                              onClick={() => { setSelectedBatchId(b.id); setShowLockDialog(true); }}
-                              title={b.status === 'locked' ? 'Unlock batch' : 'Lock batch'}
-                            >
-                              {b.status === 'locked' ? (
-                                <Unlock className="h-4 w-4 text-sky-700" />
-                              ) : (
-                                <Lock className="h-4 w-4 text-sky-700" />
-                              )}
-                            </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 rounded-lg hover:bg-sky-50"
+                                disabled={!(canLock(b) || b.status === 'locked') || actionLoading}
+                                onClick={() => { setSelectedBatchId(b.id); setShowLockDialog(true); }}
+                                title={b.status === 'locked' ? 'Unlock batch' : 'Lock batch'}
+                              >
+                                {b.status === 'locked' ? (
+                                  <Unlock className="h-4 w-4 text-sky-700" />
+                                ) : (
+                                  <Lock className="h-4 w-4 text-sky-700" />
+                                )}
+                              </Button>
 
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8"
-                              disabled={b.status !== 'completed' && b.status !== 'locked'}
-                              onClick={() => exportBatch(b)}
-                              title="Export summary"
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 rounded-lg hover:bg-gray-100"
+                                disabled={b.status !== 'completed' && b.status !== 'locked'}
+                                onClick={() => exportBatch(b)}
+                                title="Export summary"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
         </CardContent>
@@ -770,7 +829,12 @@ export default function PromotionsPage() {
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="sm:max-w-lg rounded-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create Promotion / Graduation Batch</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                <Sparkles className="h-4 w-4" />
+              </span>
+              Create Promotion / Graduation Batch
+            </DialogTitle>
             <DialogDescription>
               Define which learners will move to the next class or graduate from a level, then run the batch.
             </DialogDescription>
@@ -946,7 +1010,12 @@ export default function PromotionsPage() {
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle>{selectedBatch ? selectedBatch.id.slice(0, 8) : 'Batch details'}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2 font-mono">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-500">
+                <Eye className="h-4 w-4" />
+              </span>
+              {selectedBatch ? selectedBatch.id.slice(0, 8) : 'Batch details'}
+            </DialogTitle>
             <DialogDescription>Review criteria and results summary.</DialogDescription>
           </DialogHeader>
 
