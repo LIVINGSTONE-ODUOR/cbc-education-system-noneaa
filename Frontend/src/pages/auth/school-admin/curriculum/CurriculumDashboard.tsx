@@ -936,6 +936,10 @@ export default function CurriculumDashboard() {
                     setEditLaDesc(row.desc);
                     setEditOpen(true);
                   }}
+                  onDelete={(row) => {
+                    setSelected(new Set([row.code]));
+                    setDeleteOpen(true);
+                  }}
                 />
               </div>
             )}
