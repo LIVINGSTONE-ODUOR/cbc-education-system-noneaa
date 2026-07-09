@@ -76,6 +76,7 @@ import Calendar from "./pages/Calendar/Calendar";
 import Classes from "./pages/ClassesManagement/ClassManagement";
 import ExamSetup from "./pages/Exams/ExamSetup";
 import ExamSchedule from "./pages/Exams/ExamSchedule";
+import MarksEntry from "./pages/Exams/MarksEntry";
 import FinalResults from "./pages/Exams/FinalResults";
 import Student from "./pages/auth/school-admin/learners/LearnerProfile";
 import StudentClasses from "./pages/auth/school-admin/learners/StudentClasses";
@@ -310,6 +311,7 @@ function AppRoutes() {
                 <Route path="classes" element={<Classes />} />
                 <Route path="exams/setup" element={<ExamSetup />} />
                 <Route path="exams/schedule" element={<ExamSchedule />} />
+                <Route path="marks-entry" element={<MarksEntry />} />
                 <Route path="results" element={<FinalResults />} />
 
                 {/* ── Learners ── */}
