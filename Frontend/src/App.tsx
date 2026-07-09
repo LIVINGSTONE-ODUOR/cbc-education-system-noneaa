@@ -49,6 +49,7 @@ import LearningMaterials from "@/pages/student/LearningMaterials";
 import Grade1 from "@/pages/student/Grade1";
 import Grade2 from "@/pages/student/Grade2";
 import StudentPortal from "./pages/Student-Portal/Student";
+import DailyAttendance from "./pages/Attendance/DailyAttendance";
 
 // Teacher Pages
 import TeachingResources from "@/pages/teacher/TeachingResources";
@@ -308,6 +309,10 @@ function AppRoutes() {
                 <Route path="learners/bulk-import" element={<BulkImportPage />} />
                 <Route path="learners/profile" element={<Student />} />
                 <Route path="learners/classes" element={<StudentClasses />} />
+                <Route path="attendance/students" element={<Navigate to="/school-admin/attendance/students/daily" replace />} />
+                <Route path="attendance/students/daily" element={<DailyAttendance />} />
+                <Route path="attendance/students/reports" element={<ReportsPage />} />
+                <Route path="attendance/teachers" element={<AdminAttendance />} />
 
                 {/* ── Other Admin Pages ── */}
                 <Route path="curriculum" element={<AdminCurriculumPage />} />
