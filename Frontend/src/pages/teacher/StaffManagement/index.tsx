@@ -1,4 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
+
+import TeacherStaffManagementSkeleton from "@/components/skeletons/TeacherStaffManagementSkeleton";
+
+
+
 import { useAuth } from "@/contexts/AuthContext";
 import type { StaffMember, StaffManagementProps } from "./types";
 import { 
@@ -7,6 +12,8 @@ import {
   updateTeacher, 
   deleteTeacher
 } from "@/lib/api/teacherApi";
+import { Button } from "@/components/ui/button";
+
 import { getBranches, type Branch } from "@/lib/api/schoolsApi";
 import { uploadStaffPhoto } from "./photoUtils";
 
@@ -259,6 +266,11 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
 
   /* ══════════ RENDER VIEWS ══════════ */
   
+  // Initial load skeleton
+  if (loading && staff.length === 0) {
+    return <TeacherStaffManagementSkeleton variant={view === "dashboard" ? "dashboard" : "dashboard"} />;
+  }
+
   // Dashboard View
   if (view === "dashboard") {
     return (
