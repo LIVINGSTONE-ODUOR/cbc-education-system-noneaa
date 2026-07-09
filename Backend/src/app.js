@@ -178,6 +178,7 @@ app.use('/api/v1/learners', require('./routes/learner.routes'));
 app.use('/api', require('./routes/auth.routes'));
 app.use('/api/v1/classes', require('./routes/class.routes'));
 app.use('/api/v1/exams', require('./routes/exam.routes'));
+app.use('/api/v1/promotions', require('./routes/promotion.routes'));
 app.use('/api/v1/attendance', require('./routes/attendance.routes'));
 
 app.use('/api/v1/register', require('./routes/register.routes'));
