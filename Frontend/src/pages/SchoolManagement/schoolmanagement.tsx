@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useMemo, useCallback } from "react"
+import { useToast } from "@/hooks/use-toast"
 import { SchoolForm } from "./SchoolForm"
 import { PaymentModal } from "./PaymentModal"
 import { Card, CardContent } from "@/components/ui/card"
@@ -109,6 +110,7 @@ const EMPTY_FORM = {
   phone_number: "",
   email: "",
   admin_email: "",
+  admin_name: "",
   website: "",
   year_established: "",
   student_capacity: "",
@@ -230,6 +232,7 @@ const StatsCard = ({ title, value, type }: { title: string; value: number | stri
 
 
 const SchoolManagement = () => {
+  const { toast } = useToast()
   const [schools, setSchools] = useState<any[]>(INITIAL_SCHOOLS)
 
   // Load schools from backend
@@ -370,6 +373,7 @@ const SchoolManagement = () => {
           phone: schoolData.phone_number,
           email: schoolData.email,
           admin_email: schoolData.admin_email,
+          admin_name: schoolData.admin_name,
           website: schoolData.website,
           year_established: schoolData.year_established,
           student_capacity: schoolData.student_capacity,
@@ -405,6 +409,27 @@ const SchoolManagement = () => {
       setSchools((prev) => [newSchool, ...prev])
       setAddOpen(false)
       setAddForm({ ...EMPTY_FORM })
+
+      if (schoolData.admin_email) {
+        if (data.data.admin_account_created && data.data.admin_email_sent) {
+          toast({
+            title: "School created",
+            description: `An admin account was created and login details were emailed to ${schoolData.admin_email}.`,
+          })
+        } else if (data.data.admin_account_created && !data.data.admin_email_sent) {
+          toast({
+            title: "Admin account created — email not sent",
+            description: `The account for ${schoolData.admin_email} was created, but the welcome email failed to send. Check email server settings and resend manually.`,
+            variant: "destructive",
+          })
+        } else {
+          toast({
+            title: "School created — admin account not set up",
+            description: `${schoolData.admin_email} may already have an account, or setup failed. Check School Management for details.`,
+            variant: "destructive",
+          })
+        }
+      }
 
       setPaymentSchool(newSchool)
       setPaymentOpen(true)
