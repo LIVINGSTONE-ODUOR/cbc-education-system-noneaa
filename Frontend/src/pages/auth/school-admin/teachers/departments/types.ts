@@ -1,4 +1,5 @@
 // Department types
+
 export interface Department {
   id: string;
   name: string;
@@ -10,19 +11,8 @@ export interface Department {
   subjectCount: number;
   status: 'active' | 'inactive';
   createdAt: string;
-}
-
-export interface Teacher {
-  id: string;
-  name: string;
-  role: 'HOD' | 'Teacher' | 'Assistant';
-  subjects: string[];
-}
-
-export interface Subject {
-  id: string;
-  name: string;
-  code: string;
+  /** IDs of learning_areas rows (fetched from the DB) this department covers */
+  learningAreaIds: string[];
 }
 
 export interface DepartmentTeacher {
@@ -30,13 +20,12 @@ export interface DepartmentTeacher {
   teacherId: string;
   teacherName: string;
   role: 'HOD' | 'Teacher' | 'Assistant';
-  subjects: string[];
 }
 
-export interface DepartmentSubject {
+/** A learning area as attached to a department (name/code come from the real learning_areas table) */
+export interface DepartmentLearningArea {
   id: string;
-  subjectId: string;
-  subjectName: string;
+  name: string;
   code: string;
 }
 
@@ -47,4 +36,6 @@ export type DepartmentFormData = {
   hodName: string;
   code: string;
   status: 'active' | 'inactive';
+  /** Learning areas selected in the form, fetched live from the database */
+  learningAreaIds: string[];
 };
