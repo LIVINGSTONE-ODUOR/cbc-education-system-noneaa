@@ -112,6 +112,7 @@ export default function AdminRegistrationPage() {
       const payload = {
         school_name: step1Data.name,
         school_code: step1Data.code,
+        subdomain: step1Data.subdomain,
         school_type: step1Data.schoolType || 'private',
         level: backendLevel,
         year_established: step1Data.yearEstablished ? parseInt(step1Data.yearEstablished) : null,
