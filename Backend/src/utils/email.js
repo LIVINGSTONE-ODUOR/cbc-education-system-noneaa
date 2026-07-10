@@ -76,4 +76,44 @@ const getDeviceInfo = (userAgent) => {
   return { deviceType, deviceName: `${deviceName} on ${os}` };
 };
 
-module.exports = { sendLoginAlertEmail };
+// Sends the school-admin welcome email (login URL + email + temp password)
+// via a Supabase Edge Function that calls Resend, sending from
+// welcome@noneaa.com. See: supabase/functions/send-school-admin-welcome
+const sendSchoolAdminWelcomeEmail = async (email, firstName, schoolName, tempPassword) => {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error('❌ Cannot send welcome email: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set');
+    return false;
+  }
+
+  const functionUrl = `${supabaseUrl.replace(/\/+$/, '')}/functions/v1/send-school-admin-welcome`;
+  const loginUrl = `${process.env.FRONTEND_URL || 'https://yourapp.com'}/login`;
+
+  try {
+    const response = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify({ email, firstName, schoolName, tempPassword, loginUrl }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      console.error('❌ send-school-admin-welcome edge function error:', data);
+      return false;
+    }
+
+    console.log(`✅ School admin welcome email sent to ${email} (Resend id: ${data.id})`);
+    return true;
+  } catch (error) {
+    console.error('❌ Failed to call send-school-admin-welcome edge function:', error);
+    return false;
+  }
+};
+
+module.exports = { sendLoginAlertEmail, sendSchoolAdminWelcomeEmail };
