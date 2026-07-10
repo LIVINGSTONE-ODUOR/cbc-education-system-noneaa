@@ -60,6 +60,7 @@ export enum AdministratorRole {
 export interface SchoolRegistrationStep1 {
   name: string;
   code: string;
+  subdomain: string;
   schoolType?: SchoolType;
   levelsOffered: LevelOffered[];
   yearEstablished?: string;
