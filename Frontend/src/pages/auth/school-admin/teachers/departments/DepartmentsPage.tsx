@@ -37,7 +37,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import type { Department, DepartmentFormData } from './types';
-import { getDepartments, createDepartment, updateDepartment, deleteDepartment } from './mockData';
+import { getDepartments, createDepartment, updateDepartment, deleteDepartment } from './departmentApi';
 import AddEditDepartmentModal from './AddEditDepartmentModal';
 
 function StatusBadge({ status }: { status: 'active' | 'inactive' }) {
