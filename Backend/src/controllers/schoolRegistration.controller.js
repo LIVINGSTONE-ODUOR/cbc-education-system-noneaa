@@ -12,6 +12,7 @@
 
 const bcrypt    = require('bcryptjs');
 const { createClient } = require('@supabase/supabase-js');
+const { sendSchoolAdminWelcomeEmail } = require('../utils/email');
 
 // ----------------------------------------------------------------
 // Supabase admin client (service_role key — bypasses RLS)
@@ -348,6 +349,21 @@ const registerSchoolAdmin = async (req, res) => {
         { school_id: school.id, series: 'ADM', last_value: 0 },
       ])
       .select(); // ignore errors — might already exist from a retry
+
+    // ── Step 9b: Send welcome email (login URL + email + temp password) ──
+    // Fire-and-forget-ish: don't fail registration if the email fails to send,
+    // just log it so support can manually resend if needed.
+
+    const emailSent = await sendSchoolAdminWelcomeEmail(
+      normalizedEmail,
+      firstName,
+      school.name,
+      password
+    );
+
+    if (!emailSent) {
+      console.error(`[registerSchoolAdmin] Welcome email failed to send for ${normalizedEmail} (school: ${school.name}). Registration still succeeded.`);
+    }
 
     // ── Step 10: Generate session token for immediate login ────
 
