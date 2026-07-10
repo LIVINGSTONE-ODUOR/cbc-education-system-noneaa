@@ -110,6 +110,16 @@ const DEFAULT_STATS: DashboardStats = {
   attendanceRate: 0,
 };
 
+// Returns "Good Morning" / "Good Afternoon" / "Good Evening" / "Good Night"
+// based on the visitor's local device time.
+const getTimeBasedGreeting = (date: Date = new Date()): string => {
+  const hour = date.getHours();
+  if (hour >= 5 && hour < 12) return 'Good Morning';
+  if (hour >= 12 && hour < 17) return 'Good Afternoon';
+  if (hour >= 17 && hour < 21) return 'Good Evening';
+  return 'Good Night';
+};
+
 const DashboardWidgets = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -120,6 +130,16 @@ const DashboardWidgets = () => {
   const [assessmentDistribution, setAssessmentDistribution] = useState<AssessmentDist[]>([]);
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [greeting, setGreeting] = useState<string>(getTimeBasedGreeting());
+
+  // Keep the greeting current if the dashboard is left open across a
+  // morning/afternoon/evening boundary (checks once a minute).
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGreeting(getTimeBasedGreeting());
+    }, 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchDashboardData = useCallback(async (showRefresh = false) => {
     if (!supabase) {
@@ -489,7 +509,7 @@ const DashboardWidgets = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold">
-              Welcome back{user?.firstName ? `, ${user.firstName}` : ''}!
+              {greeting}{user?.firstName ? `, ${user.firstName}` : ''}!
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Here's what's happening at your school today.
