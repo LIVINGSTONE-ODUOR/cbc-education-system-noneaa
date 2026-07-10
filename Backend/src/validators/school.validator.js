@@ -58,6 +58,18 @@ const schoolAdminRegistrationSchema = Joi.object({
       'any.required': 'School type is required',
     }),
 
+  subdomain: Joi.string()
+    .min(3)
+    .max(63)
+    .lowercase()
+    .pattern(/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/)
+    .required()
+    .messages({
+      'any.required': 'Subdomain is required',
+      'string.min': 'Subdomain must be at least 3 characters',
+      'string.pattern.base': 'Subdomain can only contain lowercase letters, numbers, and hyphens, and cannot start or end with a hyphen',
+    }),
+
   // Maps to schools.level CHECK constraint values
   level: Joi.string()
     .valid('ecde', 'primary', 'junior_secondary', 'senior_secondary')
