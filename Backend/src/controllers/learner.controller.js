@@ -196,6 +196,80 @@ const registerLearner = asyncHandler(async (req, res) => {
     });
   }
 
+  // ✅ Create the student's own login account.
+  // Username: `{admission_number}@{school_subdomain}` (e.g. "5339@maseno").
+  // Password: the parent/guardian's phone number if one was given, otherwise
+  // a randomly generated temporary password (so every student always gets
+  // a login, even when no guardian phone number was captured at admission).
+  let learnerAccountWarning = null;
+  let studentCredentials = null;
+  const parentPhoneForLogin = parent_info?.phone_number?.trim();
+
+  const { data: schoolRow, error: schoolLookupErr } = await supabase
+    .from('schools')
+    .select('subdomain')
+    .eq('id', school_id)
+    .maybeSingle();
+
+  if (schoolLookupErr || !schoolRow?.subdomain) {
+    console.error('[registerLearner] Could not resolve school subdomain for student login:', schoolLookupErr?.message);
+    learnerAccountWarning = 'Learner registered, but a student login could not be created (school subdomain missing).';
+  } else {
+    const studentUsername = `${admission_number}@${schoolRow.subdomain}`;
+
+    const { data: existingStudentUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', studentUsername)
+      .maybeSingle();
+
+    if (existingStudentUser) {
+      // Extremely unlikely (admission_number already checked unique per school),
+      // but never silently overwrite an existing account.
+      learnerAccountWarning = 'Learner registered, but a login with this admission number already exists.';
+    } else {
+      // Use the parent's phone number as the password when we have one
+      // (matches the school's existing convention); otherwise generate a
+      // random temporary password so the student still gets an account.
+      const usingGeneratedPassword = !parentPhoneForLogin;
+      const studentPassword = usingGeneratedPassword
+        ? crypto.randomBytes(6).toString('hex')
+        : parentPhoneForLogin;
+      const studentPasswordHash = await bcrypt.hash(studentPassword, 10);
+
+      const { error: studentUserErr } = await supabase
+        .from('users')
+        .insert({
+          email: studentUsername,
+          password_hash: studentPasswordHash,
+          first_name: first_name.trim(),
+          last_name: last_name.trim(),
+          role: 'student',
+          status: 'active',
+          email_verified: false,
+          school_id,
+          is_active: true,
+        });
+
+      if (studentUserErr) {
+        console.error('[registerLearner] Failed to create student login:', studentUserErr.message);
+        learnerAccountWarning = `Learner registered, but the student login could not be created: ${studentUserErr.message}`;
+      } else {
+        studentCredentials = {
+          username: studentUsername,
+          // Only surface the plaintext password here when we generated it —
+          // if it's the parent's phone number, the school already has it.
+          ...(usingGeneratedPassword
+            ? { temporary_password: studentPassword, password_source: 'generated' }
+            : { password_source: 'parent_phone' }),
+        };
+        if (usingGeneratedPassword) {
+          learnerAccountWarning = `Student login created with a generated temporary password (no guardian phone number was provided): ${studentUsername} / ${studentPassword}. Please share this with the student/guardian securely.`;
+        }
+      }
+    }
+  }
+
   // ✅ Create parent if parent_info provided
   let parentInfo = null;
   let parentWarning = null;
@@ -349,6 +423,9 @@ const registerLearner = asyncHandler(async (req, res) => {
     }
   }
 
+  const combinedWarnings = [parentWarning, learnerAccountWarning].filter(Boolean);
+  const combinedWarningMessage = combinedWarnings.join(' ');
+
   // ✅ Option A: Create enrollment atomically during registration (if class_id provided)
   // This ensures /learners and /learners/classes stay consistent and class learner_count matches.
   if (class_id) {
@@ -417,28 +494,30 @@ const registerLearner = asyncHandler(async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: parentWarning
-        ? `Learner registered successfully. ${parentWarning}`
+      message: combinedWarningMessage
+        ? `Learner registered successfully. ${combinedWarningMessage}`
         : 'Learner registered successfully',
       data: {
         ...learner,
         parent: parentInfo,
         enrollment,
+        ...(studentCredentials ? { student_login: studentCredentials } : {}),
       },
-      ...(parentWarning ? { warnings: [{ field: 'parent_info', message: parentWarning }] } : {}),
+      ...(combinedWarnings.length ? { warnings: combinedWarnings.map(message => ({ field: 'registration', message })) } : {}),
     });
   }
 
   res.status(201).json({
     success: true,
-    message: parentWarning
-      ? `Learner registered successfully. ${parentWarning}`
+    message: combinedWarningMessage
+      ? `Learner registered successfully. ${combinedWarningMessage}`
       : 'Learner registered successfully',
     data: {
       ...learner,
-      parent: parentInfo
+      parent: parentInfo,
+      ...(studentCredentials ? { student_login: studentCredentials } : {}),
     },
-    ...(parentWarning ? { warnings: [{ field: 'parent_info', message: parentWarning }] } : {}),
+    ...(combinedWarnings.length ? { warnings: combinedWarnings.map(message => ({ field: 'registration', message })) } : {}),
   });
 });
 
@@ -453,13 +532,15 @@ const listLearners = asyncHandler(async (req, res) => {
 
   // Student users must only be able to fetch their own learner details.
   if (role === 'student') {
-    const admissionEmail = req.user.email; // per requirement: admission_number used as email
+    // Student usernames are `{admission_number}@{school_subdomain}`
+    // (see registerLearner). Strip the subdomain part before matching.
+    const admissionNumber = (req.user.email || '').split('@')[0];
 
     // Find learner by admission_number (which is stored as learners.admission_number)
     const { data: learner, error: learnerErr } = await supabase
       .from('learners')
       .select('*')
-      .eq('admission_number', admissionEmail)
+      .eq('admission_number', admissionNumber)
       .maybeSingle();
 
     if (learnerErr || !learner) {
@@ -754,14 +835,16 @@ const getLearner = asyncHandler(async (req, res) => {
 
   // Student users must only be able to fetch their own learner details.
   if (role === 'student') {
-    const admissionEmail = req.user.email;
+    // Student usernames are `{admission_number}@{school_subdomain}`
+    // (see registerLearner). Strip the subdomain part before matching.
+    const admissionNumber = (req.user.email || '').split('@')[0];
 
     // Prefer strict match by admission_number.
     // Ignore req.params.id to prevent IDOR.
     const { data: learnerByAdmission, error: learnerErr } = await supabase
       .from('learners')
       .select('*')
-      .eq('admission_number', admissionEmail)
+      .eq('admission_number', admissionNumber)
       .maybeSingle();
 
     if (learnerErr || !learnerByAdmission) {
