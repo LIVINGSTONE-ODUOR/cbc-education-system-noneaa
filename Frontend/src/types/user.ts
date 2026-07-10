@@ -9,6 +9,7 @@ export interface User {
   phoneNumber?: string;
   avatarUrl?: string;
   schoolId?: string;
+  schoolName?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
