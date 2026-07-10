@@ -30,7 +30,7 @@ const DEPARTMENT_SELECT = `
     d.code,
     d.description,
     d.hod_id,
-    TRIM(CONCAT(t.first_name, ' ', t.last_name)) AS hod_name,
+    TRIM(CONCAT(u.first_name, ' ', u.last_name)) AS hod_name,
     d.learning_area_ids,
     d.is_active,
     d.created_at,
@@ -40,6 +40,7 @@ const DEPARTMENT_SELECT = `
        WHERE dt.department_id = d.id) AS teacher_count
   FROM departments d
   LEFT JOIN teachers t ON t.id = d.hod_id
+  LEFT JOIN users u ON u.id = t.user_id
 `;
 
 // Maps a DB row -> the exact shape the frontend's `Department` type expects.
@@ -372,9 +373,10 @@ const getDepartmentTeachers = async (req, res) => {
     if (dept.rows.length === 0) return respond(res, 404, false, 'Department not found');
 
     const result = await query(
-      `SELECT dt.id, dt.teacher_id, TRIM(CONCAT(t.first_name, ' ', t.last_name)) AS teacher_name, dt.role
+      `SELECT dt.id, dt.teacher_id, TRIM(CONCAT(u.first_name, ' ', u.last_name)) AS teacher_name, dt.role
        FROM department_teachers dt
        JOIN teachers t ON t.id = dt.teacher_id
+       JOIN users u ON u.id = t.user_id
        WHERE dt.department_id = $1
        ORDER BY dt.created_at`,
       [id]
@@ -417,7 +419,10 @@ const assignDepartmentTeacher = async (req, res) => {
     );
 
     const teacherRow = await query(
-      `SELECT TRIM(CONCAT(first_name, ' ', last_name)) AS name FROM teachers WHERE id = $1`,
+      `SELECT TRIM(CONCAT(u.first_name, ' ', u.last_name)) AS name
+       FROM teachers t
+       JOIN users u ON u.id = t.user_id
+       WHERE t.id = $1`,
       [teacherId]
     );
 
