@@ -399,6 +399,109 @@ const listLearners = asyncHandler(async (req, res) => {
   const school_id = getSchoolId(req);
   const { role } = req.user;
 
+  // Student users must only be able to fetch their own learner details.
+  if (role === 'student') {
+    const admissionEmail = req.user.email; // per requirement: admission_number used as email
+
+    // Find learner by admission_number (which is stored as learners.admission_number)
+    const { data: learner, error: learnerErr } = await supabase
+      .from('learners')
+      .select('*')
+      .eq('admission_number', admissionEmail)
+      .maybeSingle();
+
+    if (learnerErr || !learner) {
+      return res.status(404).json({
+        success: false,
+        message: 'Learner not found'
+      });
+    }
+
+    // Enrich with current enrollment and parents (minimal enrichment).
+    const learnerIds = [learner.id];
+
+    // Parent info
+    let parentInfo = null;
+    const { data: parentRelationships } = await supabase
+      .from('learner_parents')
+      .select(`
+        id,
+        relationship,
+        is_primary,
+        parents (
+          id,
+          first_name,
+          last_name,
+          email,
+          phone_number,
+          national_id,
+          occupation,
+          relationship,
+          users (
+            id,
+            email,
+            first_name,
+            last_name,
+            phone_number
+          )
+        )
+      `)
+      .eq('learner_id', learner.id)
+      .order('is_primary', { ascending: false });
+
+    if (parentRelationships && parentRelationships.length > 0) {
+      const primaryParent = parentRelationships.find((p) => p.is_primary) || parentRelationships[0];
+      parentInfo = {
+        ...primaryParent.parents,
+        relationship: primaryParent.relationship || primaryParent.parents?.relationship
+      };
+    }
+
+    // Current enrollment
+    let currentEnrollment = null;
+    const { data: enrollments } = await supabase
+      .from('learner_enrollments')
+      .select(`
+        learner_id,
+        class_id,
+        status,
+        classes!inner (
+          id,
+          grade_level,
+          stream_name
+        )
+      `)
+      .eq('learner_id', learner.id)
+      .eq('status', 'enrolled')
+      .limit(1);
+
+    if (enrollments && enrollments.length > 0) {
+      const e = enrollments[0];
+      currentEnrollment = {
+        class_id: e.class_id,
+        grade_level: e.classes?.grade_level,
+        stream_name: e.classes?.stream_name,
+      };
+    }
+
+    return res.json({
+      success: true,
+      data: [
+        {
+          ...learner,
+          current_class: currentEnrollment ? { id: currentEnrollment.class_id, grade_level: currentEnrollment.grade_level, stream_name: currentEnrollment.stream_name } : null,
+          parent: parentInfo,
+        }
+      ],
+      pagination: {
+        page: 1,
+        limit: 1,
+        total: 1,
+        pages: 1
+      }
+    });
+  }
+
   if (!school_id && role !== 'super_admin') {
     return res.status(400).json({
       success: false,
@@ -596,6 +699,29 @@ const getLearner = asyncHandler(async (req, res) => {
   const school_id = getSchoolId(req);
   const { role } = req.user;
   const { id } = req.params;
+
+  // Student users must only be able to fetch their own learner details.
+  if (role === 'student') {
+    const admissionEmail = req.user.email;
+
+    // Prefer strict match by admission_number.
+    // Ignore req.params.id to prevent IDOR.
+    const { data: learnerByAdmission, error: learnerErr } = await supabase
+      .from('learners')
+      .select('*')
+      .eq('admission_number', admissionEmail)
+      .maybeSingle();
+
+    if (learnerErr || !learnerByAdmission) {
+      return res.status(404).json({
+        success: false,
+        message: 'Learner not found'
+      });
+    }
+
+    // Re-run the existing getLearner logic but with the resolved learner id.
+    req.params.id = learnerByAdmission.id;
+  }
 
   // ✅ Build query with ALL new columns
   let query = supabase
