@@ -79,7 +79,7 @@ const getDeviceInfo = (userAgent) => {
 // Sends the school-admin welcome email (login URL + email + temp password)
 // via a Supabase Edge Function that calls Resend, sending from
 // welcome@noneaa.com. See: supabase/functions/send-school-admin-welcome
-const sendSchoolAdminWelcomeEmail = async (email, firstName, schoolName, tempPassword) => {
+const sendSchoolAdminWelcomeEmail = async (email, firstName, schoolName, tempPassword, subdomain = null) => {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
@@ -89,7 +89,15 @@ const sendSchoolAdminWelcomeEmail = async (email, firstName, schoolName, tempPas
   }
 
   const functionUrl = `${supabaseUrl.replace(/\/+$/, '')}/functions/v1/send-school-admin-welcome`;
-  const loginUrl = `${process.env.FRONTEND_URL || 'https://yourapp.com'}/login`;
+
+  // Prefer the school's own subdomain (e.g. https://ekwanda.noneaa.com/login)
+  // so the admin lands straight on their school's branded login page.
+  // Falls back to the generic FRONTEND_URL if no subdomain was set
+  // (e.g. schools registered before this feature existed).
+  const rootDomain = process.env.ROOT_DOMAIN || 'noneaa.com';
+  const loginUrl = subdomain
+    ? `https://${subdomain}.${rootDomain}/login`
+    : `${process.env.FRONTEND_URL || 'https://yourapp.com'}/login`;
 
   try {
     const response = await fetch(functionUrl, {
