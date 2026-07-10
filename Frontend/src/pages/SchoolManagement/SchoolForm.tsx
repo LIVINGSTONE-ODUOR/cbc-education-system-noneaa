@@ -191,6 +191,15 @@ export const SchoolForm = ({ form, setForm }) => {
               className="bg-white dark:bg-slate-900"
             />
           </FormField>
+          <FormField label="Admin Full Name" id="admin_name" icon={Users}>
+            <Input
+              id="admin_name"
+              value={form.admin_name}
+              onChange={(e) => upd("admin_name", e.target.value)}
+              placeholder="e.g. Jane Wanjiru"
+              className="bg-white dark:bg-slate-900"
+            />
+          </FormField>
           <FormField label="Admin Email" id="admin_email" icon={Mail}>
             <Input
               id="admin_email"
