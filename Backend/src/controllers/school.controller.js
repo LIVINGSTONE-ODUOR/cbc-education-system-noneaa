@@ -1,4 +1,7 @@
 const { query, transaction } = require('../config/database');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const { sendSchoolAdminWelcomeEmail } = require('../utils/email');
 
 const respond = (res, statusCode, success, message, data = null, errors = null) => {
   const payload = { success, message };
@@ -21,6 +24,25 @@ const parseDate = (value) => {
 const sanitizeText = (value) => {
   if (typeof value !== 'string') return '';
   return value.trim();
+};
+
+// Generates a readable temp password, e.g. "Kj4-Xp92-Qw"
+const generateTempPassword = () => {
+  const raw = crypto.randomBytes(9).toString('base64')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .slice(0, 10);
+  return `${raw.slice(0, 4)}-${raw.slice(4, 8)}${raw.slice(8, 10)}`;
+};
+
+const splitFullName = (fullName) => {
+  const trimmed = (fullName || '').trim();
+  const spaceIndex = trimmed.indexOf(' ');
+  if (!trimmed) return { firstName: 'Admin', lastName: '' };
+  if (spaceIndex === -1) return { firstName: trimmed, lastName: '' };
+  return {
+    firstName: trimmed.slice(0, spaceIndex).trim(),
+    lastName: trimmed.slice(spaceIndex + 1).trim(),
+  };
 };
 
 const calculateExpiryDate = (billingCycle) => {
@@ -238,6 +260,7 @@ const createSchool = async (req, res) => {
       phone_number,
       email,
       admin_email,
+      admin_name,
       website,
       year_established,
       student_capacity,
@@ -276,7 +299,67 @@ const createSchool = async (req, res) => {
       ]
     );
 
-    return respond(res, 201, true, 'School created successfully.', result.rows[0]);
+    const school = result.rows[0];
+
+    // ── Create a login-capable admin account for this school ──────────
+    // (createSchool is the owner-driven onboarding path — after a demo or
+    // registration, the platform owner creates the school and its first
+    // admin account here, rather than the school self-registering.)
+    let adminAccountCreated = false;
+    let adminEmailSent = false;
+
+    if (sanitizeText(admin_email)) {
+      const normalizedAdminEmail = admin_email.trim().toLowerCase();
+      const { firstName, lastName } = splitFullName(admin_name);
+      const tempPassword = generateTempPassword();
+
+      try {
+        const existingAdmin = await query(
+          `SELECT id FROM users WHERE email = $1 AND status != 'deleted' LIMIT 1`,
+          [normalizedAdminEmail]
+        );
+
+        if (existingAdmin.rows.length === 0) {
+          const passwordHash = await bcrypt.hash(tempPassword, 12);
+
+          const adminUserResult = await query(
+            `INSERT INTO users (email, password_hash, first_name, last_name, role, status,
+                    email_verified, school_id, is_active)
+             VALUES ($1,$2,$3,$4,'school_admin','active', TRUE, $5, TRUE)
+             RETURNING id`,
+            [normalizedAdminEmail, passwordHash, firstName, lastName, school.id]
+          );
+
+          const adminUserId = adminUserResult.rows[0].id;
+
+          await query(
+            `INSERT INTO school_admins (user_id, school_id, appointment_date)
+             VALUES ($1, $2, CURRENT_DATE)`,
+            [adminUserId, school.id]
+          );
+
+          adminAccountCreated = true;
+
+          adminEmailSent = await sendSchoolAdminWelcomeEmail(
+            normalizedAdminEmail,
+            firstName,
+            school.name,
+            tempPassword
+          );
+        }
+      } catch (adminSetupError) {
+        // Don't fail the whole request if admin account creation has an
+        // issue — the school record still exists and can be retried/fixed
+        // from the School Management screen.
+        console.error('[createSchool] Failed to create admin account:', adminSetupError);
+      }
+    }
+
+    return respond(res, 201, true, 'School created successfully.', {
+      ...school,
+      admin_account_created: adminAccountCreated,
+      admin_email_sent: adminEmailSent,
+    });
   } catch (error) {
     return dbFailure(res, error, 'Failed to create school.');
   }
