@@ -44,6 +44,7 @@ export type DepartmentFormData = {
   name: string;
   description: string;
   hodId: string;
+  hodName: string;
   code: string;
   status: 'active' | 'inactive';
 };
