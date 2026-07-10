@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -29,8 +29,15 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import type { Department, DepartmentFormData } from './types';
-import { mockTeachers } from './mockData';
+
+interface TeacherOption {
+  id: string;
+  name: string;
+}
 
 const schema = z.object({
   name: z.string().min(2, 'Department name must be at least 2 characters'),
@@ -51,6 +58,47 @@ interface Props {
 
 export default function AddEditDepartmentModal({ open, onOpenChange, department, onSave }: Props) {
   const isEdit = !!department;
+  const { user } = useAuth();
+  const [teachers, setTeachers] = useState<TeacherOption[]>([]);
+  const [loadingTeachers, setLoadingTeachers] = useState(false);
+  const [teachersError, setTeachersError] = useState<string | null>(null);
+
+  const fetchTeachers = useCallback(async () => {
+    if (!user?.schoolId) return;
+    try {
+      setLoadingTeachers(true);
+      setTeachersError(null);
+
+      const { data, error } = await supabase
+        .from('teachers')
+        .select('id, first_name, last_name')
+        .eq('school_id', user.schoolId)
+        .eq('is_active', true)
+        .order('first_name', { ascending: true });
+
+      if (error) throw error;
+
+      setTeachers(
+        (data || []).map(t => ({
+          id: t.id,
+          name: `${t.first_name} ${t.last_name}`.trim(),
+        }))
+      );
+    } catch (err) {
+      console.error('Error fetching teachers:', err);
+      setTeachersError('Failed to load teachers.');
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, [user?.schoolId]);
+
+  // Fetch the real teacher list from the database whenever the modal opens,
+  // so the HOD dropdown always reflects the school's current teachers.
+  useEffect(() => {
+    if (open) {
+      void fetchTeachers();
+    }
+  }, [open, fetchTeachers]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -80,10 +128,12 @@ export default function AddEditDepartmentModal({ open, onOpenChange, department,
   }, [open, department, form]);
 
   const onSubmit = async (values: FormValues) => {
+    const selectedTeacher = teachers.find(t => t.id === values.hodId);
     await onSave({
       name: values.name,
       description: values.description ?? '',
       hodId: values.hodId,
+      hodName: selectedTeacher?.name ?? '',
       code: values.code ?? '',
       status: values.status,
     });
@@ -155,18 +205,37 @@ export default function AddEditDepartmentModal({ open, onOpenChange, department,
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Head of Department <span className="text-destructive">*</span></FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={loadingTeachers}
+                  >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select HOD" />
+                        {loadingTeachers ? (
+                          <span className="flex items-center gap-2 text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin" /> Loading teachers...
+                          </span>
+                        ) : (
+                          <SelectValue placeholder="Select HOD" />
+                        )}
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {mockTeachers.map(t => (
-                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                      ))}
+                      {teachers.length === 0 && !loadingTeachers ? (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                          No teachers found
+                        </div>
+                      ) : (
+                        teachers.map(t => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
+                  {teachersError && (
+                    <p className="text-sm text-destructive">{teachersError}</p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
