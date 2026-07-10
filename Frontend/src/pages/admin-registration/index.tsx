@@ -17,13 +17,12 @@ import {
 import PageLoader from '@/components/PageLoader';
 
 const getApiUrl = () => {
-  if (import.meta.env.PROD) return '';
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
   return '';
 };
 
 const API_URL = getApiUrl();
-const AUTH_API_URL = `${API_URL}/api/auth`;
+const AUTH_API_URL = `${API_URL}/api`;
 
 const STEPS = [
   {
