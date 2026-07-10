@@ -1473,6 +1473,31 @@ export default function CurriculumDashboard() {
                   <p className="text-xs text-muted-foreground mb-1">Grade Levels</p>
                   <p className="text-sm text-foreground">{viewRow.grades}</p>
                 </div>
+
+                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Classes ({(viewRow.classIds || []).length})
+                  </p>
+                  {(viewRow.classIds || []).length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Applies to every class matching the grade levels above.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {viewRow.classIds!.map((classId) => {
+                        const cls = registeredClasses.find((c) => c.id === classId);
+                        const label = cls
+                          ? `${cls.grade_level}${cls.stream_name ? ` - ${cls.stream_name}` : ''}`
+                          : 'Unknown class';
+                        return (
+                          <Badge key={classId} variant="outline">
+                            {label}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <DialogFooter className="gap-2">

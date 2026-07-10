@@ -198,19 +198,26 @@ const registerLearner = asyncHandler(async (req, res) => {
 
   // ✅ Create parent if parent_info provided
   let parentInfo = null;
+  let parentWarning = null;
+
   if (parent_info && parent_info.email) {
+    const parentEmail = parent_info.email.toLowerCase().trim();
+
     try {
-      // Check if parent already exists with this email
-      const { data: existingParent } = await supabase
+      // Check if a parent already exists with this email FOR THIS SCHOOL
+      const { data: existingParent, error: existingParentErr } = await supabase
         .from('parents')
-        .select('id, first_name, last_name, email')
-        .eq('email', parent_info.email.toLowerCase().trim())
+        .select('id, first_name, last_name, email, user_id')
+        .eq('email', parentEmail)
         .eq('school_id', school_id)
         .maybeSingle();
 
-      if (existingParent) {
+      if (existingParentErr) {
+        console.error('[registerLearner] Failed to look up existing parent:', existingParentErr.message);
+        parentWarning = 'Could not look up parent record; learner saved without a linked parent.';
+      } else if (existingParent) {
         parentInfo = existingParent;
-        
+
         // Link existing parent to learner
         const { data: existingLink } = await supabase
           .from('learner_parents')
@@ -220,7 +227,7 @@ const registerLearner = asyncHandler(async (req, res) => {
           .maybeSingle();
 
         if (!existingLink) {
-          await supabase
+          const { error: linkErr } = await supabase
             .from('learner_parents')
             .insert({
               learner_id: learner.id,
@@ -228,78 +235,117 @@ const registerLearner = asyncHandler(async (req, res) => {
               relationship: parent_info.relationship || 'guardian',
               is_primary: true
             });
+          if (linkErr) console.error('[registerLearner] Failed to link existing parent:', linkErr.message);
 
-          await supabase
+          const { error: updateErr } = await supabase
             .from('learners')
             .update({ parent_id: existingParent.id })
             .eq('id', learner.id);
+          if (updateErr) console.error('[registerLearner] Failed to set learner.parent_id:', updateErr.message);
         }
       } else {
-        // ✅ CREATE USER FIRST
-        const tempPassword = crypto.randomBytes(12).toString('hex');
-        const passwordHash = await bcrypt.hash(tempPassword, 10);
-
-        const { data: newUser, error: userError } = await supabase
+        // ✅ No parent row for this school yet. Before creating a brand-new
+        // `users` row, check whether a user with this email ALREADY exists
+        // ANYWHERE (users.email is a global-unique column, unlike parents,
+        // which is scoped per school). Skipping this check used to throw a
+        // duplicate-key error on the insert below and silently abort the
+        // whole request before the `parents` row (or the response) was ever
+        // written.
+        const { data: existingUser, error: existingUserErr } = await supabase
           .from('users')
-          .insert({
-            email: parent_info.email.toLowerCase().trim(),
-            password_hash: passwordHash,
-            first_name: parent_info.first_name,
-            last_name: parent_info.last_name,
-            phone_number: parent_info.phone_number || null,
-            role: 'parent',
-            status: 'pending',
-            email_verified: false,
-            school_id,
-            is_active: true
-          })
-          .select('id')
-          .single();
+          .select('id, role')
+          .eq('email', parentEmail)
+          .maybeSingle();
 
-        if (userError) {
-          console.warn('Failed to create parent user:', userError);
-          return;
-        }
+        if (existingUserErr) {
+          console.error('[registerLearner] Failed to look up existing user:', existingUserErr.message);
+          parentWarning = 'Could not verify parent email; learner saved without a linked parent.';
+        } else {
+          let parentUserId = existingUser?.id || null;
 
-        // ✅ CREATE PARENT WITH USER_ID
-        const { data: parentRecord, error: parentError } = await supabase
-          .from('parents')
-          .insert({
-            user_id: newUser.id, // ✅ THIS IS REQUIRED
-            school_id,
-            first_name: parent_info.first_name,
-            last_name: parent_info.last_name,
-            email: parent_info.email.toLowerCase().trim(),
-            phone_number: parent_info.phone_number || null,
-            national_id: parent_info.national_id || null,
-            occupation: parent_info.occupation || null,
-            relationship: parent_info.relationship || 'guardian',
-            is_active: true
-          })
-          .select()
-          .single();
+          if (!parentUserId) {
+            // ✅ CREATE USER FIRST
+            const tempPassword = crypto.randomBytes(12).toString('hex');
+            const passwordHash = await bcrypt.hash(tempPassword, 10);
 
-        if (!parentError && parentRecord) {
-          parentInfo = parentRecord;
+            const { data: newUser, error: userError } = await supabase
+              .from('users')
+              .insert({
+                email: parentEmail,
+                password_hash: passwordHash,
+                first_name: parent_info.first_name,
+                last_name: parent_info.last_name,
+                phone_number: parent_info.phone_number || null,
+                role: 'parent',
+                status: 'pending',
+                email_verified: false,
+                school_id,
+                is_active: true
+              })
+              .select('id')
+              .single();
 
-          // Link parent to learner
-          await supabase
-            .from('learner_parents')
-            .insert({
-              learner_id: learner.id,
-              parent_id: parentRecord.id,
-              relationship: parent_info.relationship || 'guardian',
-              is_primary: true
-            });
+            if (userError) {
+              // Do NOT `return` here — the learner is already saved and the
+              // caller still needs an HTTP response. Just record a warning
+              // and skip parent creation; the response is still sent below.
+              console.error('[registerLearner] Failed to create parent user:', userError.message);
+              parentWarning = `Learner registered, but parent account could not be created: ${userError.message}`;
+            } else {
+              parentUserId = newUser.id;
+            }
+          }
 
-          await supabase
-            .from('learners')
-            .update({ parent_id: parentRecord.id })
-            .eq('id', learner.id);
+          if (parentUserId) {
+            // ✅ CREATE (OR REUSE) PARENT ROW, ALWAYS SCOPED TO THIS SCHOOL
+            const { data: parentRecord, error: parentError } = await supabase
+              .from('parents')
+              .insert({
+                user_id: parentUserId, // ✅ THIS IS REQUIRED
+                school_id,
+                first_name: parent_info.first_name,
+                last_name: parent_info.last_name,
+                email: parentEmail,
+                phone_number: parent_info.phone_number || null,
+                national_id: parent_info.national_id || null,
+                occupation: parent_info.occupation || null,
+                relationship: parent_info.relationship || 'guardian',
+                is_active: true
+              })
+              .select()
+              .single();
+
+            if (parentError) {
+              console.error('[registerLearner] Failed to create parent record:', parentError.message);
+              parentWarning = `Learner registered, but parent record could not be saved: ${parentError.message}`;
+            } else {
+              parentInfo = parentRecord;
+
+              // Link parent to learner
+              const { error: linkErr } = await supabase
+                .from('learner_parents')
+                .insert({
+                  learner_id: learner.id,
+                  parent_id: parentRecord.id,
+                  relationship: parent_info.relationship || 'guardian',
+                  is_primary: true
+                });
+              if (linkErr) console.error('[registerLearner] Failed to link new parent:', linkErr.message);
+
+              const { error: updateErr } = await supabase
+                .from('learners')
+                .update({ parent_id: parentRecord.id })
+                .eq('id', learner.id);
+              if (updateErr) console.error('[registerLearner] Failed to set learner.parent_id:', updateErr.message);
+            }
+          }
         }
       }
     } catch (error) {
-      console.warn('Error handling parent creation:', error);
+      // Catch-all: never let a parent-creation problem take down the
+      // response for an already-saved learner.
+      console.error('[registerLearner] Error handling parent creation:', error.message);
+      parentWarning = 'Learner registered, but an unexpected error occurred while saving the parent.';
     }
   }
 
@@ -371,22 +417,28 @@ const registerLearner = asyncHandler(async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: 'Learner registered successfully',
+      message: parentWarning
+        ? `Learner registered successfully. ${parentWarning}`
+        : 'Learner registered successfully',
       data: {
         ...learner,
         parent: parentInfo,
         enrollment,
       },
+      ...(parentWarning ? { warnings: [{ field: 'parent_info', message: parentWarning }] } : {}),
     });
   }
 
   res.status(201).json({
     success: true,
-    message: 'Learner registered successfully',
+    message: parentWarning
+      ? `Learner registered successfully. ${parentWarning}`
+      : 'Learner registered successfully',
     data: {
       ...learner,
       parent: parentInfo
-    }
+    },
+    ...(parentWarning ? { warnings: [{ field: 'parent_info', message: parentWarning }] } : {}),
   });
 });
 

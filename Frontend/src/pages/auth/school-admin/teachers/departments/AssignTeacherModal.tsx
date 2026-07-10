@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,8 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { getTeachers } from '@/lib/api/teacherApi';
+import type { StaffMember } from '@/pages/teacher/StaffManagement/types';
 import type { DepartmentTeacher } from './types';
-import { mockTeachers } from './mockData';
 
 interface Props {
   open: boolean;
@@ -30,8 +31,28 @@ export default function AssignTeacherModal({ open, onOpenChange, existingTeacher
   const [role, setRole] = useState<'HOD' | 'Teacher' | 'Assistant'>('Teacher');
   const [saving, setSaving] = useState(false);
 
+  const [teachers, setTeachers] = useState<StaffMember[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Teachers are always fetched live from the backend — no mock list.
+  const loadTeachers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await getTeachers({ limit: 200 });
+      setTeachers(res.teachers || []);
+    } catch (error) {
+      console.error('Error fetching teachers:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) void loadTeachers();
+  }, [open, loadTeachers]);
+
   const existingIds = new Set(existingTeachers.map(t => t.teacherId));
-  const available = mockTeachers.filter(t => !existingIds.has(t.id));
+  const available = teachers.filter(t => !existingIds.has(t.id));
 
   const handleSave = async () => {
     if (!teacherId) return;
@@ -58,14 +79,16 @@ export default function AssignTeacherModal({ open, onOpenChange, existingTeacher
             <Label>Teacher <span className="text-destructive">*</span></Label>
             <Select value={teacherId} onValueChange={setTeacherId}>
               <SelectTrigger>
-                <SelectValue placeholder="Select teacher" />
+                <SelectValue placeholder={loading ? 'Loading teachers...' : 'Select teacher'} />
               </SelectTrigger>
               <SelectContent>
                 {available.length === 0 ? (
-                  <SelectItem value="none" disabled>All teachers assigned</SelectItem>
+                  <SelectItem value="none" disabled>
+                    {loading ? 'Loading teachers...' : 'All teachers assigned'}
+                  </SelectItem>
                 ) : (
                   available.map(t => (
-                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    <SelectItem key={t.id} value={t.id}>{t.firstName} {t.lastName}</SelectItem>
                   ))
                 )}
               </SelectContent>

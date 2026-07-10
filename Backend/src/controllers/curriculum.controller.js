@@ -192,20 +192,27 @@ const createLearningArea = async (req, res) => {
     errors.push({ field: 'class_ids', message: 'class_ids must be an array' });
   if (errors.length > 0) return respond(res, 422, false, 'Validation failed', null, errors);
 
-  // class_ids must reference real, currently-registered classes for this
-  // school -- never accept ids the UI didn't actually fetch from /classes.
+  // class_ids must reference real, currently-registered, active classes.
+  // school_admin is restricted to their own school's classes; super_admin
+  // creates national items (school_id = NULL) which aren't tied to one
+  // school, so no school_id filter is applied for them.
   let validatedClassIds = null;
   if (Array.isArray(class_ids) && class_ids.length > 0) {
-    const { data: foundClasses, error: classCheckErr } = await supabaseAdmin
+    let classQuery = supabaseAdmin
       .from('classes')
       .select('id')
       .in('id', class_ids)
-      .eq('school_id', school_id)
-      .is('deleted_at', null);
+      .eq('is_active', true);
+
+    if (school_id !== null) {
+      classQuery = classQuery.eq('school_id', school_id);
+    }
+
+    const { data: foundClasses, error: classCheckErr } = await classQuery;
 
     if (classCheckErr) {
       console.error('[createLearningArea] class_ids check failed:', classCheckErr.message);
-      return respond(res, 500, false, 'Failed to validate class_ids');
+      return respond(res, 500, false, `Failed to validate class_ids: ${classCheckErr.message}`);
     }
 
     const foundIds = (foundClasses || []).map(r => r.id);
@@ -291,16 +298,21 @@ const updateLearningArea = async (req, res) => {
         validatedClassIds = [];
       } else {
         const scopeSchoolId = area.school_id || school_id;
-        const { data: foundClasses, error: classCheckErr } = await supabaseAdmin
+        let classQuery = supabaseAdmin
           .from('classes')
           .select('id')
           .in('id', class_ids)
-          .eq('school_id', scopeSchoolId)
-          .is('deleted_at', null);
+          .eq('is_active', true);
+
+        if (scopeSchoolId !== null) {
+          classQuery = classQuery.eq('school_id', scopeSchoolId);
+        }
+
+        const { data: foundClasses, error: classCheckErr } = await classQuery;
 
         if (classCheckErr) {
           console.error('[updateLearningArea] class_ids check failed:', classCheckErr.message);
-          return respond(res, 500, false, 'Failed to validate class_ids');
+          return respond(res, 500, false, `Failed to validate class_ids: ${classCheckErr.message}`);
         }
 
         const foundIds = (foundClasses || []).map(r => r.id);

@@ -6,7 +6,7 @@ import loginBg from '@/assets/hero-bg.png';
 import PageLoader from '@/components/PageLoader';
 import { cn } from '@/lib/utils';
 
-type LoginUserType = 'admin' | 'super_admin' | 'teacher' | 'parent';
+type LoginUserType = 'admin' | 'super_admin' | 'teacher' | 'parent' | 'student';
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof Error && error.message) return error.message;
@@ -98,6 +98,9 @@ export default function LoginPage() {
             break;
           case 'teacher':
             navigate('/teacher/portal');
+            break;
+          case 'student':
+            navigate('/student/portal');
             break;
           case 'parent':
             navigate('/parent/portal');
