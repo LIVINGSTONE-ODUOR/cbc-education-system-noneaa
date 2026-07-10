@@ -42,6 +42,7 @@ const defaultOrigins = [
   'https://cbc-education-system-1.onrender.com',
   // Additional production frontend origins
   'https://www.noneaa.com',
+  'https://noneaa.com',
   // GitHub Codespaces patterns
 
   'https://*.app.github.dev',
@@ -67,6 +68,8 @@ const isAllowedDynamicOrigin = (origin) => {
     /^https:\/\/[a-zA-Z0-9\-]+-5173\.app\.github\.dev$/,
     /^https:\/\/[a-zA-Z0-9\-]+\.vercel\.app$/,
     /^https:\/\/[a-zA-Z0-9\-]+\.onrender\.com$/,
+    // School subdomains, e.g. https://maseno.noneaa.com
+    /^https:\/\/[a-zA-Z0-9\-]+\.noneaa\.com$/,
     /^https:\/\/[a-zA-Z0-9\-]+\.render\.com$/
   ];
   return patterns.some(pattern => pattern.test(origin));
