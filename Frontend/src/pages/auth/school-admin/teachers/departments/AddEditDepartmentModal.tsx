@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,24 +20,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { SearchableCombobox, type ComboboxOption } from '@/components/ui/searchable-combobox';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { getTeachers } from '@/lib/api/teacherApi';
+import type { StaffMember } from '@/pages/teacher/StaffManagement/types';
 import type { Department, DepartmentFormData } from './types';
-
-interface TeacherOption {
-  id: string;
-  name: string;
-}
 
 const schema = z.object({
   name: z.string().min(2, 'Department name must be at least 2 characters'),
@@ -58,47 +46,50 @@ interface Props {
 
 export default function AddEditDepartmentModal({ open, onOpenChange, department, onSave }: Props) {
   const isEdit = !!department;
-  const { user } = useAuth();
-  const [teachers, setTeachers] = useState<TeacherOption[]>([]);
+  const [teachers, setTeachers] = useState<StaffMember[]>([]);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
   const [teachersError, setTeachersError] = useState<string | null>(null);
 
-  const fetchTeachers = useCallback(async () => {
-    if (!user?.schoolId) return;
+  const loadTeachers = useCallback(async () => {
+    setLoadingTeachers(true);
+    setTeachersError(null);
     try {
-      setLoadingTeachers(true);
-      setTeachersError(null);
-
-      const { data, error } = await supabase
-        .from('teachers')
-        .select('id, first_name, last_name')
-        .eq('school_id', user.schoolId)
-        .eq('is_active', true)
-        .order('first_name', { ascending: true });
-
-      if (error) throw error;
-
-      setTeachers(
-        (data || []).map(t => ({
-          id: t.id,
-          name: `${t.first_name} ${t.last_name}`.trim(),
-        }))
-      );
-    } catch (err) {
-      console.error('Error fetching teachers:', err);
-      setTeachersError('Failed to load teachers.');
+      const res = await getTeachers({ limit: 200 });
+      setTeachers(res.teachers || []);
+    } catch (error: any) {
+      console.error('Error fetching teachers:', error);
+      setTeachersError(error?.message || 'Failed to load teachers.');
     } finally {
       setLoadingTeachers(false);
     }
-  }, [user?.schoolId]);
+  }, []);
 
-  // Fetch the real teacher list from the database whenever the modal opens,
+  // Fetch the real teacher list from the backend whenever the modal opens,
   // so the HOD dropdown always reflects the school's current teachers.
   useEffect(() => {
     if (open) {
-      void fetchTeachers();
+      void loadTeachers();
     }
-  }, [open, fetchTeachers]);
+  }, [open, loadTeachers]);
+
+  // Only active teachers make sense as a Head of Department.
+  const activeTeachers = useMemo(
+    () =>
+      teachers
+        .filter(t => (t.jobStatus || 'active').toLowerCase() === 'active')
+        .sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)),
+    [teachers]
+  );
+
+  const hodOptions: ComboboxOption[] = useMemo(
+    () =>
+      activeTeachers.map(t => ({
+        value: t.id,
+        label: `${t.firstName} ${t.lastName}`.trim(),
+        description: t.designation || undefined,
+      })),
+    [activeTeachers]
+  );
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -128,12 +119,12 @@ export default function AddEditDepartmentModal({ open, onOpenChange, department,
   }, [open, department, form]);
 
   const onSubmit = async (values: FormValues) => {
-    const selectedTeacher = teachers.find(t => t.id === values.hodId);
+    const selectedTeacher = activeTeachers.find(t => t.id === values.hodId);
     await onSave({
       name: values.name,
       description: values.description ?? '',
       hodId: values.hodId,
-      hodName: selectedTeacher?.name ?? '',
+      hodName: selectedTeacher ? `${selectedTeacher.firstName} ${selectedTeacher.lastName}`.trim() : '',
       code: values.code ?? '',
       status: values.status,
     });
@@ -205,34 +196,19 @@ export default function AddEditDepartmentModal({ open, onOpenChange, department,
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Head of Department <span className="text-destructive">*</span></FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={loadingTeachers}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        {loadingTeachers ? (
-                          <span className="flex items-center gap-2 text-muted-foreground">
-                            <Loader2 className="h-4 w-4 animate-spin" /> Loading teachers...
-                          </span>
-                        ) : (
-                          <SelectValue placeholder="Select HOD" />
-                        )}
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {teachers.length === 0 && !loadingTeachers ? (
-                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                          No teachers found
-                        </div>
-                      ) : (
-                        teachers.map(t => (
-                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <SearchableCombobox
+                      options={hodOptions}
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder="Select HOD"
+                      searchPlaceholder="Search teachers..."
+                      emptyText={teachersError ? teachersError : 'No teachers found.'}
+                      loading={loadingTeachers}
+                      loadingText="Loading teachers..."
+                    />
+                  </FormControl>
                   {teachersError && (
                     <p className="text-sm text-destructive">{teachersError}</p>
                   )}
