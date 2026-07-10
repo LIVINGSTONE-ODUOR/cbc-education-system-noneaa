@@ -5,6 +5,7 @@ import { Eye, EyeOff, ArrowLeft, Building2, Shield, GraduationCap, Users, Check,
 import loginBg from '@/assets/hero-bg.png';
 import PageLoader from '@/components/PageLoader';
 import { cn } from '@/lib/utils';
+import { getCurrentSubdomain, resolveSchoolBySubdomain, SubdomainSchool } from '@/lib/subdomain';
 
 type LoginUserType = 'admin' | 'super_admin' | 'teacher' | 'parent' | 'student';
 
@@ -37,6 +38,23 @@ export default function LoginPage() {
   const [countdown, setCountdown] = useState(0);
   const [lockoutDurationMins, setLockoutDurationMins] = useState<number | null>(null);
   const [failedAttempts, setFailedAttempts] = useState(0);
+  const [subdomainSchool, setSubdomainSchool] = useState<SubdomainSchool | null>(null);
+  const [subdomainNotFound, setSubdomainNotFound] = useState(false);
+
+  // If the visitor is on {school}.noneaa.com, resolve and show which
+  // school they're logging into instead of the generic login screen.
+  useEffect(() => {
+    const subdomain = getCurrentSubdomain();
+    if (!subdomain) return;
+
+    resolveSchoolBySubdomain(subdomain).then((school) => {
+      if (school) {
+        setSubdomainSchool(school);
+      } else {
+        setSubdomainNotFound(true);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (!lockedUntil) {
@@ -244,6 +262,22 @@ export default function LoginPage() {
             {/* RIGHT — Form */}
             <div className="md:w-[55%] p-8 md:p-10 flex flex-col justify-center">
               <div className="mb-8">
+                {subdomainSchool && (
+                  <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2 mb-4">
+                    <Building2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <span className="text-sm font-medium text-indigo-700 truncate">
+                      Logging in to {subdomainSchool.name}
+                    </span>
+                  </div>
+                )}
+                {subdomainNotFound && (
+                  <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 mb-4">
+                    <Building2 className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span className="text-sm font-medium text-amber-700">
+                      We couldn't find a school at this address. Double-check the link, or go to noneaa.com/login.
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 mb-2">
                   <div className={cn('w-2 h-2 rounded-full bg-gradient-to-r', selectedRole.color)} />
                   <span className={cn('text-xs font-semibold uppercase tracking-wider', selectedRole.text)}>
