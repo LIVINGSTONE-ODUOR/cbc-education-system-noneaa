@@ -41,11 +41,14 @@ exports.login = async (req, res) => {
     try {
       userResult = await query(`
         SELECT u.id, u.email, u.password_hash, u.role, u.status,
+               u.first_name, u.last_name,
                COALESCE(u.school_id, sa.school_id) as school_id,
+               s.name as school_name,
                COALESCE(u.login_attempts, 0) as login_attempts,
                u.locked_until, COALESCE(u.email_verified, false) as email_verified
         FROM users u
         LEFT JOIN school_admins sa ON sa.user_id = u.id
+        LEFT JOIN schools s ON s.id = COALESCE(u.school_id, sa.school_id)
         WHERE u.email = $1 AND u.status != 'deleted'
         LIMIT 1`, [email]);
     } catch (dbError) {
@@ -148,7 +151,10 @@ exports.login = async (req, res) => {
           id: user.id,
           email: user.email,
           role: user.role,
-          schoolId: user.school_id
+          firstName: user.first_name,
+          lastName: user.last_name,
+          schoolId: user.school_id,
+          schoolName: user.school_name
         },
         tokens
       }
@@ -278,7 +284,7 @@ const fetchUserFromSupabase = async (email) => {
 
   let { data, error } = await supabaseAdmin
     .from('users')
-    .select('id, email, password_hash, role, status, school_id, login_attempts, locked_until, email_verified')
+    .select('id, email, password_hash, role, status, first_name, last_name, school_id, login_attempts, locked_until, email_verified')
     .eq('email', email)
     .neq('status', 'deleted')
     .limit(1)
@@ -287,7 +293,7 @@ const fetchUserFromSupabase = async (email) => {
   if (error) {
     ({ data, error } = await supabaseAdmin
       .from('users')
-      .select('id, email, password_hash, role, status, school_id, email_verified')
+      .select('id, email, password_hash, role, status, first_name, last_name, school_id, email_verified')
       .eq('email', email)
       .neq('status', 'deleted')
       .limit(1)
@@ -295,6 +301,15 @@ const fetchUserFromSupabase = async (email) => {
   }
 
   if (error || !data) return null;
+
+  if (data.school_id) {
+    const { data: school } = await supabaseAdmin
+      .from('schools')
+      .select('name')
+      .eq('id', data.school_id)
+      .maybeSingle();
+    data.school_name = school?.name ?? null;
+  }
 
   // ... rest of your original fetchUserFromSupabase logic
   return data; // simplified
