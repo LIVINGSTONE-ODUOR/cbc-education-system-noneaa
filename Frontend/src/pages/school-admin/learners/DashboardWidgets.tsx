@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import StatCard from '@/components/dashboard/StatCard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import SchoolSetupWizard from '@/components/SchoolSetupWizard';
 import {
   GraduationCap,
   Users,
@@ -15,6 +17,9 @@ import {
   School,
   UserCheck,
   CalendarDays,
+  Building2,
+  Plus,
+  TrendingUp,
 } from 'lucide-react';
 import {
   BarChart,
@@ -124,8 +129,10 @@ const DashboardWidgets = () => {
     }
 
     if (!user?.schoolId) {
+      // No school set up yet — this is handled by the setup wizard render below,
+      // not treated as an error state.
       setLoading(false);
-      setError('No school associated with your account. Please contact support.');
+      setError(null);
       return;
     }
 
@@ -451,28 +458,65 @@ const DashboardWidgets = () => {
     );
   }
 
+  // No school associated with this account yet — walk them through setup
+  // instead of showing an error state.
+  if (!user?.schoolId) {
+    return (
+      <div className="p-2 sm:p-4 md:p-6 space-y-6">
+        <div className="text-center py-8">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Building2 className="w-8 h-8 text-blue-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            Welcome to CBE Education System, {user?.firstName}!
+          </h1>
+          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
+            To get started, you need to set up your school. This will only take a few minutes
+            and will give you access to all the features including fees management, payroll,
+            teacher and learner management, and much more.
+          </p>
+        </div>
+
+        <SchoolSetupWizard />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="p-2 sm:p-4 md:p-6 space-y-6">
-        {/* Header with refresh */}
+        {/* Header with welcome message, refresh, and quick add */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <h1 className="text-2xl font-bold">
+              Welcome back{user?.firstName ? `, ${user.firstName}` : ''}!
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Here's what's happening at your school today.
+            </p>
             {lastUpdated && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-1">
                 Last updated: {lastUpdated.toLocaleString()}
               </p>
             )}
           </div>
-          <Button 
-            onClick={handleRefresh} 
-            disabled={refreshing}
-            variant="outline"
-            size="sm"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild>
+              <Link to="/school-admin/learners/add">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Learner
+              </Link>
+            </Button>
+            <Button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              variant="outline"
+              size="sm"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -530,6 +574,34 @@ const DashboardWidgets = () => {
             )}
           </div>
         ) : null}
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Quick Actions</CardTitle>
+            <CardDescription>Common tasks and shortcuts</CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <Button variant="outline" className="w-full justify-start" asChild>
+              <Link to="/school-admin/teachers?add=1">
+                <Plus className="w-4 h-4 mr-2" />
+                Add New Teacher
+              </Link>
+            </Button>
+            <Button variant="outline" className="w-full justify-start" asChild>
+              <Link to="/school-admin/learners/add">
+                <Plus className="w-4 h-4 mr-2" />
+                Enroll New Learner
+              </Link>
+            </Button>
+            <Button variant="outline" className="w-full justify-start" asChild>
+              <Link to="/school-admin/reports">
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Generate Reports
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Charts Row */}
         <div className="grid gap-6 lg:grid-cols-2">
