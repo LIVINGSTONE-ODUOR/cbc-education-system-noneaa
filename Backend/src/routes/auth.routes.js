@@ -114,6 +114,17 @@ router.get('/v1/school/:code',
   schoolRegistrationController.getSchoolByCode
 );
 
+// Check Subdomain Availability (live, as admin types during registration)
+router.get('/v1/check-subdomain/:subdomain',
+  schoolRegistrationController.checkSubdomain
+);
+
+// Get School by Subdomain (used by the login page to resolve
+// {subdomain}.noneaa.com to a specific school)
+router.get('/v1/school/by-subdomain/:subdomain',
+  schoolRegistrationController.getSchoolBySubdomain
+);
+
 // ==================== Legacy Routes (for backward compatibility) ====================
 // Login endpoint (legacy)
 router.post('/login',
