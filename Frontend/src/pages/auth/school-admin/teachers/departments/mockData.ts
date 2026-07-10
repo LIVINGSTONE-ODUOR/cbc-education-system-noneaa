@@ -150,14 +150,13 @@ export async function getDepartments(): Promise<Department[]> {
 
 export async function createDepartment(data: DepartmentFormData): Promise<Department> {
   await delay();
-  const teacher = mockTeachers.find(t => t.id === data.hodId);
   const newDept: Department = {
     id: `d${Date.now()}`,
     name: data.name,
     code: data.code,
     description: data.description,
     hodId: data.hodId,
-    hodName: teacher?.name ?? '',
+    hodName: data.hodName,
     teacherCount: 0,
     subjectCount: 0,
     status: data.status,
@@ -169,10 +168,9 @@ export async function createDepartment(data: DepartmentFormData): Promise<Depart
 
 export async function updateDepartment(id: string, data: DepartmentFormData): Promise<Department> {
   await delay();
-  const teacher = mockTeachers.find(t => t.id === data.hodId);
   departments = departments.map(d =>
     d.id === id
-      ? { ...d, ...data, hodName: teacher?.name ?? d.hodName }
+      ? { ...d, ...data, hodName: data.hodName || d.hodName }
       : d
   );
   return departments.find(d => d.id === id)!;
