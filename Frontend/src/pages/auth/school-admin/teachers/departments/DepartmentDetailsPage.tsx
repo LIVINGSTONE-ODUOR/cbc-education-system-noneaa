@@ -25,16 +25,16 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { ArrowLeft, Plus, Trash2, Users, BookOpen, UserCheck } from 'lucide-react';
-import type { Department, DepartmentTeacher, DepartmentSubject } from './types';
+import type { Department, DepartmentTeacher, DepartmentLearningArea } from './types';
 import {
   getDepartments,
   getDepartmentTeachers,
-  getDepartmentSubjects,
+  getDepartmentLearningAreas,
   assignTeacher,
   removeTeacher,
-  assignSubject,
-  removeSubject,
-} from './mockData';
+  assignLearningAreaToDepartment,
+  removeLearningAreaFromDepartment,
+} from './departmentApi';
 import AssignTeacherModal from './AssignTeacherModal';
 import AssignSubjectModal from './AssignSubjectModal';
 
@@ -44,14 +44,14 @@ export default function DepartmentDetailsPage() {
 
   const [department, setDepartment] = useState<Department | null>(null);
   const [teachers, setTeachers] = useState<DepartmentTeacher[]>([]);
-  const [subjects, setSubjects] = useState<DepartmentSubject[]>([]);
+  const [subjects, setSubjects] = useState<DepartmentLearningArea[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [assignTeacherOpen, setAssignTeacherOpen] = useState(false);
   const [assignSubjectOpen, setAssignSubjectOpen] = useState(false);
 
   const [removeTeacherTarget, setRemoveTeacherTarget] = useState<DepartmentTeacher | null>(null);
-  const [removeSubjectTarget, setRemoveSubjectTarget] = useState<DepartmentSubject | null>(null);
+  const [removeSubjectTarget, setRemoveSubjectTarget] = useState<DepartmentLearningArea | null>(null);
 
   const loadData = useCallback(async () => {
     if (!id) return;
@@ -60,7 +60,7 @@ export default function DepartmentDetailsPage() {
       const [depts, teacherList, subjectList] = await Promise.all([
         getDepartments(),
         getDepartmentTeachers(id),
-        getDepartmentSubjects(id),
+        getDepartmentLearningAreas(id),
       ]);
       const dept = depts.find(d => d.id === id) ?? null;
       setDepartment(dept);
@@ -96,24 +96,25 @@ export default function DepartmentDetailsPage() {
     }
   };
 
-  const handleAssignSubject = async (subjectId: string) => {
+  const handleAssignSubject = async (learningAreaId: string) => {
     try {
-      const entry = await assignSubject(id!, subjectId);
-      setSubjects(prev => [...prev, entry]);
-      toast.success('Subject assigned successfully');
+      await assignLearningAreaToDepartment(id!, learningAreaId);
+      const updated = await getDepartmentLearningAreas(id!);
+      setSubjects(updated);
+      toast.success('Learning area assigned successfully');
     } catch {
-      toast.error('Failed to assign subject');
+      toast.error('Failed to assign learning area');
     }
   };
 
   const handleRemoveSubject = async () => {
     if (!removeSubjectTarget) return;
     try {
-      await removeSubject(id!, removeSubjectTarget.id);
+      await removeLearningAreaFromDepartment(id!, removeSubjectTarget.id);
       setSubjects(prev => prev.filter(s => s.id !== removeSubjectTarget.id));
-      toast.success('Subject removed');
+      toast.success('Learning area removed');
     } catch {
-      toast.error('Failed to remove subject');
+      toast.error('Failed to remove learning area');
     } finally {
       setRemoveSubjectTarget(null);
     }
@@ -255,7 +256,6 @@ export default function DepartmentDetailsPage() {
                     <TableRow>
                       <TableHead>Teacher Name</TableHead>
                       <TableHead>Role</TableHead>
-                      <TableHead>Subjects</TableHead>
                       <TableHead className="w-[80px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -274,13 +274,6 @@ export default function DepartmentDetailsPage() {
                           <Badge variant={t.role === 'HOD' ? 'default' : 'secondary'}>
                             {t.role}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {t.subjects.map(s => (
-                              <Badge key={s} variant="outline" className="text-xs">{s}</Badge>
-                            ))}
-                          </div>
                         </TableCell>
                         <TableCell>
                           <Button
@@ -328,7 +321,7 @@ export default function DepartmentDetailsPage() {
                   <TableBody>
                     {subjects.map(s => (
                       <TableRow key={s.id}>
-                        <TableCell className="font-medium">{s.subjectName}</TableCell>
+                        <TableCell className="font-medium">{s.name}</TableCell>
                         <TableCell className="font-mono text-sm">{s.code}</TableCell>
                         <TableCell>
                           <Button
@@ -362,7 +355,7 @@ export default function DepartmentDetailsPage() {
       <AssignSubjectModal
         open={assignSubjectOpen}
         onOpenChange={setAssignSubjectOpen}
-        existingSubjects={subjects}
+        existingLearningAreas={subjects}
         onSave={handleAssignSubject}
       />
 
@@ -390,7 +383,7 @@ export default function DepartmentDetailsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Subject</AlertDialogTitle>
             <AlertDialogDescription>
-              Remove <strong>{removeSubjectTarget?.subjectName}</strong> from this department?
+              Remove <strong>{removeSubjectTarget?.name}</strong> from this department?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
