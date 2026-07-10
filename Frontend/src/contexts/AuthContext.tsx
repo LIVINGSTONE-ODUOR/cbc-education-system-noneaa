@@ -503,6 +503,11 @@ export function AuthProvider({
           userData.school_id ||
           null,
 
+        schoolName:
+          userData.schoolName ||
+          userData.school_name ||
+          undefined,
+
         isActive: true,
 
         createdAt: new Date().toISOString(),
