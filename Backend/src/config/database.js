@@ -67,11 +67,28 @@ const query = async (text, params = []) => {
       console.log(`Query OK [${Date.now() - start}ms]`, { rows: res.rowCount });
       return res;
     } catch (error) {
-      console.error('Direct Postgres failed:', error.message);
+      // Only fall back to the REST shim for connection-level failures.
+      // Real query errors (constraint violations, syntax errors, missing
+      // tables, etc.) must propagate as-is so callers can inspect
+      // error.code (e.g. '23505' for duplicate key) and respond correctly.
+      const CONNECTION_ERROR_CODES = new Set([
+        'ECONNREFUSED', 'ETIMEDOUT', 'ENOTFOUND', 'EHOSTUNREACH',
+        '57P01', // admin_shutdown
+        '57P02', // crash_shutdown
+        '57P03', // cannot_connect_now
+        '08000', '08003', '08006', '08001', '08004', // connection_exception family
+      ]);
+
+      if (!CONNECTION_ERROR_CODES.has(error.code)) {
+        console.error('Postgres query failed:', error.message);
+        throw error;
+      }
+
+      console.error('Direct Postgres connection failed, falling back to REST:', error.message);
     }
   }
 
-  // Fallback to Supabase JS client
+  // Fallback to Supabase JS client (connection outages only)
   console.log('Falling back to Supabase REST...');
   return executeViaRest(text, params);
 };
