@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,12 @@ interface Props {
   onBack: () => void;
 }
 
+const getApiUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  return '';
+};
+const API_URL = getApiUrl();
+
 const levelOptions = [
   LevelOffered.PRE_PRIMARY,
   LevelOffered.LOWER_PRIMARY,
@@ -31,6 +37,51 @@ const levelOptions = [
 export default function SchoolBasicInfoStep({ initialData, onSubmit, onBack }: Props) {
   const [formData, setFormData] = useState<SchoolRegistrationStep1>(initialData);
   const [logoPreview, setLogoPreview] = useState<string>('');
+  const [subdomainStatus, setSubdomainStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
+  const [subdomainMessage, setSubdomainMessage] = useState<string>('');
+
+  // Debounced live availability check as the admin types a subdomain
+  useEffect(() => {
+    const raw = formData.subdomain.trim().toLowerCase();
+
+    if (!raw) {
+      setSubdomainStatus('idle');
+      setSubdomainMessage('');
+      return;
+    }
+    if (raw.length < 3) {
+      setSubdomainStatus('invalid');
+      setSubdomainMessage('Must be at least 3 characters');
+      return;
+    }
+    if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(raw)) {
+      setSubdomainStatus('invalid');
+      setSubdomainMessage('Only lowercase letters, numbers, and hyphens (no leading/trailing hyphen)');
+      return;
+    }
+
+    setSubdomainStatus('checking');
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/v1/check-subdomain/${encodeURIComponent(raw)}`);
+        const result = await res.json();
+        if (result?.data?.available) {
+          setSubdomainStatus('available');
+          setSubdomainMessage(`${raw}.noneaa.com is available`);
+        } else {
+          setSubdomainStatus('taken');
+          setSubdomainMessage(result?.message || 'This subdomain is already taken');
+        }
+      } catch {
+        // If the check fails (e.g. offline), don't block typing —
+        // the backend will re-validate on submit regardless.
+        setSubdomainStatus('idle');
+        setSubdomainMessage('');
+      }
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [formData.subdomain]);
 
   const handleChange = <K extends keyof SchoolRegistrationStep1>(
     field: K,
@@ -73,6 +124,9 @@ export default function SchoolBasicInfoStep({ initialData, onSubmit, onBack }: P
   const isValid =
     formData.name &&
     formData.code &&
+    formData.subdomain &&
+    subdomainStatus !== 'taken' &&
+    subdomainStatus !== 'invalid' &&
     formData.schoolType &&
     formData.levelsOffered.length > 0;
 
@@ -142,6 +196,49 @@ export default function SchoolBasicInfoStep({ initialData, onSubmit, onBack }: P
           </Select>
         </motion.div>
       </div>
+
+      {/* Subdomain */}
+      <motion.div
+        className="space-y-1.5"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.18 }}
+      >
+        <Label htmlFor="subdomain" className="text-[13px] font-semibold text-gray-800 tracking-wide uppercase">
+          Your School's Login Address <span className="text-red-500">*</span>
+        </Label>
+        <div className="flex items-center h-12 bg-gray-50 border border-gray-200 rounded-xl overflow-hidden focus-within:bg-white focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+          <Input
+            id="subdomain"
+            value={formData.subdomain}
+            onChange={(e) =>
+              handleChange('subdomain', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))
+            }
+            placeholder="ekwanda"
+            className="h-full text-base border-0 rounded-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-gray-300"
+            required
+          />
+          <span className="pr-4 text-sm text-gray-400 whitespace-nowrap">.noneaa.com</span>
+        </div>
+        {subdomainStatus !== 'idle' && (
+          <p
+            className={`text-xs mt-1 ${
+              subdomainStatus === 'available'
+                ? 'text-emerald-600'
+                : subdomainStatus === 'checking'
+                  ? 'text-gray-400'
+                  : 'text-red-500'
+            }`}
+          >
+            {subdomainStatus === 'checking' ? 'Checking availability…' : subdomainMessage}
+          </p>
+        )}
+        {subdomainStatus === 'idle' && (
+          <p className="text-xs text-gray-400 mt-1">
+            This is where your admin and staff will log in, e.g. ekwanda.noneaa.com
+          </p>
+        )}
+      </motion.div>
 
       {/* Levels Offered */}
       <motion.div
