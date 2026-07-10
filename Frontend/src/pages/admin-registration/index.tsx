@@ -72,7 +72,7 @@ export default function AdminRegistrationPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const [step1Data, setStep1Data] = useState<SchoolRegistrationStep1>({
-    name: '', code: '', schoolType: undefined, levelsOffered: [],
+    name: '', code: '', subdomain: '', schoolType: undefined, levelsOffered: [],
     yearEstablished: '', motto: '', logo: undefined,
   });
   const [step2Data, setStep2Data] = useState<SchoolRegistrationStep2>({
