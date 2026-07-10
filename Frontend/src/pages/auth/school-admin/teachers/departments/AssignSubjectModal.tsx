@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,29 +15,51 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { DepartmentSubject } from './types';
-import { mockSubjects } from './mockData';
+import { getLearningAreas, type LearningArea } from '@/lib/api/curriculumApi';
+import type { DepartmentLearningArea } from './types';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  existingSubjects: DepartmentSubject[];
-  onSave: (subjectId: string) => Promise<void>;
+  existingLearningAreas: DepartmentLearningArea[];
+  onSave: (learningAreaId: string) => Promise<void>;
 }
 
-export default function AssignSubjectModal({ open, onOpenChange, existingSubjects, onSave }: Props) {
-  const [subjectId, setSubjectId] = useState('');
+// Assigns a learning area (CBC "subject") to a department. The list is
+// always fetched live from /api/v1/curriculum/learning-areas — never a
+// hardcoded/mock subject list.
+export default function AssignSubjectModal({ open, onOpenChange, existingLearningAreas, onSave }: Props) {
+  const [learningAreaId, setLearningAreaId] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const existingIds = new Set(existingSubjects.map(s => s.subjectId));
-  const available = mockSubjects.filter(s => !existingIds.has(s.id));
+  const [learningAreas, setLearningAreas] = useState<LearningArea[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const loadLearningAreas = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await getLearningAreas({ is_active: true });
+      setLearningAreas(res.data.learning_areas || []);
+    } catch (error) {
+      console.error('Error fetching learning areas:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) void loadLearningAreas();
+  }, [open, loadLearningAreas]);
+
+  const existingIds = new Set(existingLearningAreas.map(la => la.id));
+  const available = learningAreas.filter(la => !existingIds.has(la.id));
 
   const handleSave = async () => {
-    if (!subjectId) return;
+    if (!learningAreaId) return;
     setSaving(true);
     try {
-      await onSave(subjectId);
-      setSubjectId('');
+      await onSave(learningAreaId);
+      setLearningAreaId('');
       onOpenChange(false);
     } finally {
       setSaving(false);
@@ -48,22 +70,24 @@ export default function AssignSubjectModal({ open, onOpenChange, existingSubject
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle>Assign Subject</DialogTitle>
+          <DialogTitle>Assign Learning Area</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <div className="space-y-2">
-            <Label>Subject <span className="text-destructive">*</span></Label>
-            <Select value={subjectId} onValueChange={setSubjectId}>
+            <Label>Learning Area <span className="text-destructive">*</span></Label>
+            <Select value={learningAreaId} onValueChange={setLearningAreaId}>
               <SelectTrigger>
-                <SelectValue placeholder="Select subject" />
+                <SelectValue placeholder={loading ? 'Loading learning areas...' : 'Select learning area'} />
               </SelectTrigger>
               <SelectContent>
                 {available.length === 0 ? (
-                  <SelectItem value="none" disabled>All subjects assigned</SelectItem>
+                  <SelectItem value="none" disabled>
+                    {loading ? 'Loading learning areas...' : 'All learning areas assigned'}
+                  </SelectItem>
                 ) : (
-                  available.map(s => (
-                    <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
+                  available.map(la => (
+                    <SelectItem key={la.id} value={la.id}>{la.name} ({la.code})</SelectItem>
                   ))
                 )}
               </SelectContent>
@@ -73,7 +97,7 @@ export default function AssignSubjectModal({ open, onOpenChange, existingSubject
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSave} disabled={!subjectId || saving}>
+          <Button onClick={handleSave} disabled={!learningAreaId || saving}>
             {saving ? 'Assigning...' : 'Assign'}
           </Button>
         </DialogFooter>
