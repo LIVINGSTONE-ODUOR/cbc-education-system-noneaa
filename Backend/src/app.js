@@ -194,6 +194,7 @@ app.use('/api/v1/academic-terms', require('./routes/academicTermsRoutes'));
 app.use('/api/v1/academic-years', require('./routes/academicYear.routes'));
 app.use('/api/v1/teachers', require('./routes/teacher.routes'));
 app.use('/api/v1/curriculum', require('./routes/curriculum.routes'));
+app.use('/api/v1/departments', require('./routes/department.routes'));
 app.use('/api/v1/fee-structure', require('./routes/feeStructure.routes'));
 app.use('/api/v1/ai', require('./routes/ai.routes'));
 app.use('/api/v1/ai-assistant', require('./routes/aiAssistant.routes'));
