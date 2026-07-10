@@ -108,7 +108,9 @@ const Sidebar = ({
                 />
               </div>
               <div className="min-w-0">
-                <p className="font-bold text-sm text-gray-900 dark:text-white truncate">CBE</p>
+                <p className="font-bold text-sm text-gray-900 dark:text-white truncate">
+                  {user?.schoolName || 'CBE'}
+                </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Education</p>
               </div>
             </Link>
