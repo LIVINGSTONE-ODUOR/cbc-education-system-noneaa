@@ -201,7 +201,7 @@ const createLearningArea = async (req, res) => {
       .select('id')
       .in('id', class_ids)
       .eq('school_id', school_id)
-      .is('deleted_at', null);
+      .eq('is_active', true);
 
     if (classCheckErr) {
       console.error('[createLearningArea] class_ids check failed:', classCheckErr.message);
@@ -296,7 +296,7 @@ const updateLearningArea = async (req, res) => {
           .select('id')
           .in('id', class_ids)
           .eq('school_id', scopeSchoolId)
-          .is('deleted_at', null);
+          .eq('is_active', true);
 
         if (classCheckErr) {
           console.error('[updateLearningArea] class_ids check failed:', classCheckErr.message);
