@@ -85,8 +85,44 @@ const splitFullName = (fullName) => {
 };
 
 // ----------------------------------------------------------------
-// HELPER — structured API response
+// HELPER — validate a chosen subdomain (DNS-label safe)
+// Mirrors the DB CHECK constraint in add_subdomain_to_schools.sql
 // ----------------------------------------------------------------
+
+const SUBDOMAIN_REGEX = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
+
+// Reserved words that must never be claimable as a school subdomain,
+// since they're used by the platform itself or would be confusing/
+// impersonation-risk (e.g. "admin.noneaa.com", "api.noneaa.com").
+const RESERVED_SUBDOMAINS = new Set([
+  'www', 'app', 'api', 'admin', 'mail', 'smtp', 'ftp', 'noneaa',
+  'staging', 'dev', 'test', 'demo', 'support', 'help', 'status',
+  'blog', 'docs', 'cdn', 'assets', 'static', 'login', 'auth',
+  'dashboard', 'school-admin', 'root', 'null', 'undefined',
+]);
+
+const validateSubdomain = (raw) => {
+  if (!raw || typeof raw !== 'string') {
+    return { valid: false, error: 'Subdomain is required' };
+  }
+  const normalized = raw.trim().toLowerCase();
+
+  if (normalized.length < 3 || normalized.length > 63) {
+    return { valid: false, error: 'Subdomain must be 3-63 characters' };
+  }
+  if (!SUBDOMAIN_REGEX.test(normalized)) {
+    return {
+      valid: false,
+      error: 'Subdomain can only contain lowercase letters, numbers, and hyphens, and cannot start or end with a hyphen',
+    };
+  }
+  if (RESERVED_SUBDOMAINS.has(normalized)) {
+    return { valid: false, error: 'This subdomain is reserved and cannot be used' };
+  }
+
+  return { valid: true, normalized };
+};
+
 
 const respond = (res, statusCode, success, message, data = null, errors = null) => {
   const payload = { success, message };
@@ -136,7 +172,7 @@ const registerSchoolAdmin = async (req, res) => {
     school_name, school_code, school_type, level,
     phone_number, county, sub_county, ward,
     year_established, student_capacity,
-    physical_address, postal_address, website,
+    physical_address, postal_address, website, subdomain,
     // Admin fields
     admin_name, admin_email, password,
     tsc_number, appointment_date, role,
@@ -175,6 +211,29 @@ const registerSchoolAdmin = async (req, res) => {
       ]);
     }
 
+    // ── Step 1b: Validate + check subdomain uniqueness ────────
+
+    const subdomainValidation = validateSubdomain(subdomain);
+    if (!subdomainValidation.valid) {
+      return respond(res, 400, false, subdomainValidation.error, null, [
+        { field: 'subdomain', message: subdomainValidation.error },
+      ]);
+    }
+    const normalizedSubdomain = subdomainValidation.normalized;
+
+    const { data: existingSubdomain } = await supabaseAdmin
+      .from('schools')
+      .select('id')
+      .eq('subdomain', normalizedSubdomain)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (existingSubdomain) {
+      return respond(res, 409, false, 'Subdomain already taken', null, [
+        { field: 'subdomain', message: `"${normalizedSubdomain}.noneaa.com" is already taken` },
+      ]);
+    }
+
     // ── Step 2: Check admin email uniqueness ──────────────────
 
     const { data: existingUser } = await supabaseAdmin
@@ -209,6 +268,7 @@ const registerSchoolAdmin = async (req, res) => {
       .insert({
         name:              school_name.trim(),
         code:              normalizedCode,
+        subdomain:         normalizedSubdomain,
         level,
         levels_offered: [level],
         school_type,
@@ -350,6 +410,36 @@ const registerSchoolAdmin = async (req, res) => {
       ])
       .select(); // ignore errors — might already exist from a retry
 
+    // ── Step 9a: Seed a default current academic year ─────────
+    // Classes, terms, fees, and exams all require an academic_years
+    // row with is_current = true before they'll work. Without this,
+    // brand-new schools hit "No active academic year found" on their
+    // very first action (e.g. creating a class) until someone finds
+    // Term Management and manually adds a year. Seed the calendar-year
+    // default here so the school admin can start working immediately;
+    // they can still adjust dates or add subsequent years later.
+
+    const currentYear = new Date().getFullYear();
+    const { error: academicYearError } = await supabaseAdmin
+      .from('academic_years')
+      .insert({
+        school_id:  school.id,
+        name:       `${currentYear} Academic Year`,
+        year:       currentYear,
+        start_date: `${currentYear}-01-01`,
+        end_date:   `${currentYear}-12-31`,
+        is_current: true,
+        is_active:  true,
+        created_by: authUserId,
+        updated_by: authUserId,
+      });
+
+    if (academicYearError) {
+      // Don't fail registration over this — log it so it can be
+      // fixed manually via Term Management, but let the admin in.
+      console.error('[registerSchoolAdmin] Default academic year seed failed:', academicYearError);
+    }
+
     // ── Step 9b: Send welcome email (login URL + email + temp password) ──
     // Fire-and-forget-ish: don't fail registration if the email fails to send,
     // just log it so support can manually resend if needed.
@@ -358,7 +448,8 @@ const registerSchoolAdmin = async (req, res) => {
       normalizedEmail,
       firstName,
       school.name,
-      password
+      password,
+      normalizedSubdomain
     );
 
     if (!emailSent) {
@@ -800,6 +891,77 @@ const getSchoolByCode = async (req, res) => {
 };
 
 
+// ================================================================
+// CONTROLLER 7 — Check Subdomain Availability
+// Called live as the admin types their chosen subdomain during
+// registration (e.g. "ekwanda" -> ekwanda.noneaa.com)
+//
+// GET /api/v1/auth/check-subdomain/:subdomain
+// ================================================================
+
+const checkSubdomain = async (req, res) => {
+  const { subdomain } = req.params;
+
+  const validation = validateSubdomain(subdomain);
+  if (!validation.valid) {
+    return respond(res, 200, false, validation.error, { available: false });
+  }
+
+  const { data } = await supabaseAdmin
+    .from('schools')
+    .select('id, name')
+    .eq('subdomain', validation.normalized)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (data) {
+    return respond(res, 200, false, 'Subdomain already taken', {
+      available: false,
+      school_name: data.name,
+    });
+  }
+
+  return respond(res, 200, true, 'Subdomain is available', {
+    available: true,
+    preview_url: `https://${validation.normalized}.noneaa.com`,
+  });
+};
+
+
+// ================================================================
+// CONTROLLER 8 — Get School by Subdomain (for the login page)
+// Called by the frontend on page load when it detects the visitor
+// is on {subdomain}.noneaa.com, so it can show the right school's
+// branding and scope the login request to that school.
+//
+// GET /api/v1/auth/school/by-subdomain/:subdomain
+// ================================================================
+
+const getSchoolBySubdomain = async (req, res) => {
+  const { subdomain } = req.params;
+
+  if (!subdomain) {
+    return respond(res, 400, false, 'Subdomain is required');
+  }
+
+  const { data: school, error } = await supabaseAdmin
+    .from('schools')
+    .select('id, name, code, subdomain, level, school_type, county')
+    .eq('subdomain', subdomain.toLowerCase())
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (error || !school) {
+    return respond(res, 404, false, 'School not found', null, [
+      { field: 'subdomain', message: `No active school found at "${subdomain}"` },
+    ]);
+  }
+
+  return respond(res, 200, true, 'School found', { school });
+};
+
+
 module.exports = {
   registerSchoolAdmin,
   registerTeacher,
@@ -807,4 +969,6 @@ module.exports = {
   checkSchoolCode,
   checkEmail,
   getSchoolByCode,
+  checkSubdomain,
+  getSchoolBySubdomain,
 };
