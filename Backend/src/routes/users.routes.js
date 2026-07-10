@@ -408,7 +408,7 @@ router.post('/', authenticate, authorize('super_admin', 'school_admin'), [
       return res.status(500).json({ success: false, message: 'Database not configured' });
     }
 
-    const { email, first_name, last_name, phone_number, role, school_id } = req.body;
+    let { email, first_name, last_name, phone_number, role, school_id } = req.body;
 
     const checkResult = await db.query('SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL', [email]);
     if (checkResult.rows.length > 0) {
@@ -416,11 +416,16 @@ router.post('/', authenticate, authorize('super_admin', 'school_admin'), [
     }
 
     if (req.user.role === 'school_admin') {
-      if (!['teacher', 'parent'].includes(role)) {
-        return res.status(403).json({ success: false, message: 'School admins can only create teachers and parents' });
+      if (!['teacher', 'parent', 'student'].includes(role)) {
+        return res.status(403).json({ success: false, message: 'School admins can only create teachers, parents, and students' });
       }
+      // SECURITY: never trust a client-supplied school_id for a school_admin.
+      // Always scope the new user to the admin's own school, regardless of
+      // what (if anything) was sent in the request body — otherwise a
+      // school_admin could create/attach users to a different school.
+      school_id = req.user.schoolId;
       if (!school_id) {
-        return res.status(400).json({ success: false, message: 'School ID is required' });
+        return res.status(400).json({ success: false, message: 'Your account is not associated with a school' });
       }
     }
 
@@ -446,7 +451,7 @@ router.put('/:id', authenticate, authorize('super_admin', 'school_admin'), audit
     }
 
     const { id } = req.params;
-    const { first_name, last_name, phone_number, role, is_active, school_id } = req.body;
+    let { first_name, last_name, phone_number, role, is_active, school_id } = req.body;
 
     if (req.user.role === 'school_admin') {
       const checkResult = await db.query('SELECT school_id, role FROM users WHERE id = $1 AND deleted_at IS NULL', [id]);
@@ -460,6 +465,9 @@ router.put('/:id', authenticate, authorize('super_admin', 'school_admin'), audit
       if (role && ['super_admin', 'school_admin'].includes(role)) {
         return res.status(403).json({ success: false, message: 'Not authorized to assign admin roles' });
       }
+      // SECURITY: never let a school_admin move a user to a different
+      // school via this body field — always pin it to their own school.
+      school_id = req.user.schoolId;
     }
 
     const result = await db.query(
