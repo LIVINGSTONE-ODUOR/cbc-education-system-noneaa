@@ -87,16 +87,42 @@ const inviteTeacher = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'first_name, last_name and email are required' });
   }
 
-  // Check for duplicate email
-  const { data: existing } = await supabase
+  const normalizedEmail = email.toLowerCase().trim();
+
+  // Check for duplicate email.
+  // ⚠️ IMPORTANT: `users.email` is UNIQUE across the ENTIRE table, not just
+  // within one school. The old check here scoped the lookup with
+  // `.eq('school_id', school_id)`, so an email already used by a user in a
+  // DIFFERENT school (or a user with no school_id at all) would sail past
+  // this check, then hit the insert below and fail with a raw duplicate-key
+  // error — which is exactly the "Failed to create user" / 500 you were
+  // seeing in the console. The lookup below is now global, so we catch it
+  // here and return a clean, actionable message instead.
+  const { data: existingUser, error: existingUserErr } = await supabase
     .from('users')
-    .select('id')
-    .eq('email', email.toLowerCase().trim())
-    .eq('school_id', school_id)
+    .select('id, school_id, role')
+    .eq('email', normalizedEmail)
     .maybeSingle();
 
-  if (existing) {
-    return res.status(409).json({ success: false, message: 'A user with this email already exists' });
+  if (existingUserErr) {
+    console.error('[inviteTeacher] Failed to check existing user:', existingUserErr.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to check for an existing account with this email',
+      error: existingUserErr.message,
+    });
+  }
+
+  if (existingUser) {
+    if (existingUser.school_id === school_id) {
+      return res.status(409).json({ success: false, message: 'A user with this email already exists in your school' });
+    }
+    return res.status(409).json({
+      success: false,
+      message: existingUser.role
+        ? `This email is already registered as a ${existingUser.role} account under a different school. Please use a different email address.`
+        : 'This email is already registered under a different school. Please use a different email address.',
+    });
   }
 
   // Generate temporary password
@@ -109,7 +135,7 @@ const inviteTeacher = asyncHandler(async (req, res) => {
   const { data: newUser, error: userError } = await supabase
     .from('users')
     .insert({
-      email: email.toLowerCase().trim(),
+      email: normalizedEmail,
       password_hash: passwordHash,
       first_name: first_name.trim(),
       last_name: last_name.trim(),
@@ -124,6 +150,16 @@ const inviteTeacher = asyncHandler(async (req, res) => {
     .single();
 
   if (userError) {
+    // Duplicate-key errors (e.g. a race condition between the check above
+    // and this insert) get a friendly 409 instead of a raw 500.
+    if (userError.code === '23505') {
+      return res.status(409).json({
+        success: false,
+        message: 'A user with this email already exists',
+        error: userError.message,
+      });
+    }
+    console.error('[inviteTeacher] Failed to create user:', userError.message);
     return res.status(500).json({ success: false, message: 'Failed to create user', error: userError.message });
   }
 
