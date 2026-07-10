@@ -17,7 +17,7 @@
 //   • All deletes are soft (deleted_at) — never hard DELETE
 // ================================================================
 
-const { query, pool } = require('../config/database');
+const { query, pool, supabaseAdmin } = require('../config/database');
 
 // ----------------------------------------------------------------
 // Shared helpers
@@ -196,11 +196,19 @@ const createLearningArea = async (req, res) => {
   // school -- never accept ids the UI didn't actually fetch from /classes.
   let validatedClassIds = null;
   if (Array.isArray(class_ids) && class_ids.length > 0) {
-    const check = await query(
-      `SELECT id FROM classes WHERE id = ANY($1) AND school_id = $2 AND deleted_at IS NULL`,
-      [class_ids, school_id]
-    );
-    const foundIds = check.rows.map(r => r.id);
+    const { data: foundClasses, error: classCheckErr } = await supabaseAdmin
+      .from('classes')
+      .select('id')
+      .in('id', class_ids)
+      .eq('school_id', school_id)
+      .is('deleted_at', null);
+
+    if (classCheckErr) {
+      console.error('[createLearningArea] class_ids check failed:', classCheckErr.message);
+      return respond(res, 500, false, 'Failed to validate class_ids');
+    }
+
+    const foundIds = (foundClasses || []).map(r => r.id);
     const missing = class_ids.filter(id => !foundIds.includes(id));
     if (missing.length > 0) {
       return respond(res, 422, false, 'Validation failed', null, [
@@ -283,11 +291,19 @@ const updateLearningArea = async (req, res) => {
         validatedClassIds = [];
       } else {
         const scopeSchoolId = area.school_id || school_id;
-        const check = await query(
-          `SELECT id FROM classes WHERE id = ANY($1) AND school_id = $2 AND deleted_at IS NULL`,
-          [class_ids, scopeSchoolId]
-        );
-        const foundIds = check.rows.map(r => r.id);
+        const { data: foundClasses, error: classCheckErr } = await supabaseAdmin
+          .from('classes')
+          .select('id')
+          .in('id', class_ids)
+          .eq('school_id', scopeSchoolId)
+          .is('deleted_at', null);
+
+        if (classCheckErr) {
+          console.error('[updateLearningArea] class_ids check failed:', classCheckErr.message);
+          return respond(res, 500, false, 'Failed to validate class_ids');
+        }
+
+        const foundIds = (foundClasses || []).map(r => r.id);
         const missing = class_ids.filter(cid => !foundIds.includes(cid));
         if (missing.length > 0) {
           return respond(res, 422, false, 'Validation failed', null, [
