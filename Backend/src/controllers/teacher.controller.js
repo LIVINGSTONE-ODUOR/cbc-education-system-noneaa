@@ -426,15 +426,13 @@ const listTeachers = asyncHandler(async (req, res) => {
 //    Get single teacher by ID with all details
 // =============================================================================
 const getTeacher = asyncHandler(async (req, res) => {
-  const { school_id, role } = req.user;
+  const { schoolId: school_id, role } = req.user;
   const { id } = req.params;
 
   console.log('[DEBUG] getTeacher called for ID:', id);
   console.log('[DEBUG] User role:', role, 'School ID:', school_id);
 
-  let query = supabase
-    .from('teachers')
-    .select(`
+  const baseFields = `
       id,
       tsc_number,
       qualifications,
@@ -465,7 +463,28 @@ const getTeacher = asyncHandler(async (req, res) => {
         last_login,
         email_verified,
         created_at
-      ),
+      )
+  `;
+
+  const buildQuery = (selectStr) => {
+    let q = supabase.from('teachers').select(selectStr).eq('id', id);
+    // Only filter by school_id if not super_admin
+    if (role !== 'super_admin' && school_id) {
+      q = q.eq('school_id', school_id);
+    }
+    return q;
+  };
+
+  // 1) Try the full query with deep-nested assignment relationships.
+  // ⚠️ These embeds (academic_year_id / term_id / class_id / learning_area_id
+  // on teacher_assignments) depend on PostgREST recognizing specific FK
+  // relationships. If that schema/relationship lookup fails, Supabase
+  // returns an `error` for the WHOLE query — even though the teacher row
+  // itself exists — and this used to be reported as a flat 404 "Teacher not
+  // found", which is misleading and made this bug look like a missing
+  // record. We now fall back to progressively simpler selects (mirroring
+  // the same pattern already used in listTeachers) instead of giving up.
+  const fullSelect = `${baseFields},
       assignments:teacher_assignments (
         id,
         is_active,
@@ -474,22 +493,47 @@ const getTeacher = asyncHandler(async (req, res) => {
         class:class_id ( id, grade_level, stream_name ),
         learning_area:learning_area_id ( id, name, code )
       )
-    `)
-    .eq('id', id);
+  `;
 
-  // Only filter by school_id if not super_admin
-  if (role !== 'super_admin' && school_id) {
-    query = query.eq('school_id', school_id);
-  }
-
-  const { data: teacher, error } = await query.single();
+  let { data: teacher, error } = await buildQuery(fullSelect).single();
 
   if (error) {
-    console.error('[ERROR] getTeacher error:', error);
+    console.error('[getTeacher] Full join failed, retrying with simpler assignments join:', {
+      message: error.message, code: error.code, hint: error.hint, id,
+    });
+
+    // 2) Fallback: assignments without the deep academic_year/term embed
+    // (this is the same shape listTeachers uses successfully).
+    const simplerSelect = `${baseFields},
+      assignments:teacher_assignments (
+        id,
+        is_active,
+        class:class_id ( id, grade_level, stream_name ),
+        learning_area:learning_area_id ( id, name, code )
+      )
+    `;
+    ({ data: teacher, error } = await buildQuery(simplerSelect).single());
+  }
+
+  if (error) {
+    console.error('[getTeacher] Simpler join also failed, retrying with no assignments join:', {
+      message: error.message, code: error.code, hint: error.hint, id,
+    });
+
+    // 3) Final fallback: teacher + user only, no assignments at all.
+    ({ data: teacher, error } = await buildQuery(baseFields).single());
+  }
+
+  if (error) {
+    // At this point the teacher row genuinely doesn't exist / isn't
+    // accessible to this user — a real 404.
+    console.error('[getTeacher] Teacher truly not found:', {
+      message: error.message, code: error.code, id, role, school_id,
+    });
     return res.status(404).json({
       success: false,
       message: 'Teacher not found',
-      error: error.message
+      error: error.message,
     });
   }
 
@@ -516,7 +560,7 @@ const getTeacher = asyncHandler(async (req, res) => {
 //    Update teacher profile (qualifications, TSC, date_joined, phone)
 // =============================================================================
 const updateTeacher = asyncHandler(async (req, res) => {
-  const { school_id: user_school_id, role } = req.user;
+  const { schoolId: user_school_id, role } = req.user;
   const { id } = req.params;
   const query_school_id = req.query.school_id;
 
