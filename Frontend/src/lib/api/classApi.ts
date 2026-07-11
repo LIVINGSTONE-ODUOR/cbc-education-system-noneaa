@@ -3,6 +3,8 @@
  * Handles HTTP requests for the Classes Management backend endpoints.
  */
 
+import { refreshToken as refreshAccessToken } from '@/lib/auth';
+
 const getApiUrl = (): string => {
   const raw = import.meta.env.VITE_API_URL || '';
   if (!raw) return '';
@@ -33,10 +35,44 @@ const getFetchOptions = (method: string, body?: unknown): RequestInit => {
   };
 };
 
+// Wraps `fetch` so a 401 (expired access token) transparently refreshes and
+// retries once, matching the behavior lib/auth.ts's ApiClient already has.
+// Without this, classApi calls (createClass, getBranches-adjacent calls,
+// etc.) failed hard the moment the 1h access token expired, while other
+// modules (learnersApi/profileApi, which go through lib/auth.ts) silently
+// refreshed and kept working — which is why "create learner" could
+// succeed in the same session where "create class" failed.
+const fetchWithAuth = async (url: string, options: RequestInit): Promise<Response> => {
+  let response = await fetch(url, options);
+
+  if (response.status === 401) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      const retryHeaders = {
+        ...(options.headers as Record<string, string>),
+        Authorization: `Bearer ${getAuthToken()}`,
+      };
+      response = await fetch(url, { ...options, headers: retryHeaders });
+    }
+  }
+
+  return response;
+};
+
 const handleResponse = async <T>(response: Response): Promise<T> => {
   const data = await response.json();
 
   if (!response.ok || !data.success) {
+    // 403 here means the *current* account role genuinely isn't allowed
+    // to do this — not an expired token (that's the 401 case above).
+    // Surface that distinction instead of a generic error, since a stale
+    // cached session (see AuthContext.tsx) is the most common cause.
+    if (response.status === 403) {
+      throw new Error(
+        data.message ||
+          "Your account doesn't have permission for this action. If your role recently changed, try logging out and back in."
+      );
+    }
     throw new Error(data.message || 'An error occurred while communicating with the classes API.');
   }
 
@@ -101,7 +137,7 @@ export const getClasses = async (params: {
   const query = searchParams.toString();
   const url = `${API_URL}/api/v1/classes${query ? `?${query}` : ''}`;
 
-  const response = await fetch(url, getFetchOptions('GET'));
+  const response = await fetchWithAuth(url, getFetchOptions('GET'));
   // Helpful debug when creation succeeds but subsequent list is empty.
   // NOTE: read a clone, not the original — reading .text()/.json() on the
   // original consumes its body stream, which made the later handleResponse()
@@ -123,7 +159,7 @@ export const createClass = async (payload: {
   learning_area_ids?: string[];
 }): Promise<ApiResponse<ClassApiItem>> => {
   const url = `${API_URL}/api/v1/classes`;
-  const response = await fetch(url, getFetchOptions('POST', payload));
+  const response = await fetchWithAuth(url, getFetchOptions('POST', payload));
   if (!response.ok) {
     const txt = await response.clone().text().catch(() => '');
     console.error('[classApi:createClass] request failed', { url, status: response.status, body: txt });
@@ -144,7 +180,7 @@ export const updateClass = async (
   }
 ): Promise<ApiResponse<ClassApiItem>> => {
   const url = `${API_URL}/api/v1/classes/${id}`;
-  const response = await fetch(url, getFetchOptions('PUT', payload));
+  const response = await fetchWithAuth(url, getFetchOptions('PUT', payload));
   if (!response.ok) {
     const txt = await response.clone().text().catch(() => '');
     console.error('[classApi:updateClass] request failed', { url, status: response.status, body: txt });
@@ -153,7 +189,7 @@ export const updateClass = async (
 };
 
 export const deleteClass = async (id: string): Promise<ApiResponse<{ message: string }>> => {
-  const response = await fetch(`${API_URL}/api/v1/classes/${id}`, getFetchOptions('DELETE'));
+  const response = await fetchWithAuth(`${API_URL}/api/v1/classes/${id}`, getFetchOptions('DELETE'));
   return handleResponse<ApiResponse<{ message: string }>>(response);
 };
 
@@ -180,7 +216,7 @@ export interface ClassLearningAreasApiResponse {
 export const getClassLearningAreas = async (
   classId: string
 ): Promise<ApiResponse<ClassLearningAreasApiResponse>> => {
-  const response = await fetch(
+  const response = await fetchWithAuth(
     `${API_URL}/api/v1/classes/${classId}/learning-areas`,
     getFetchOptions('GET')
   );
@@ -194,7 +230,7 @@ export const setClassLearningAreas = async (
   classId: string,
   learning_area_ids: string[]
 ): Promise<ApiResponse<{ message: string }>> => {
-  const response = await fetch(
+  const response = await fetchWithAuth(
     `${API_URL}/api/v1/classes/${classId}/learning-areas`,
     getFetchOptions('PUT', { learning_area_ids })
   );
@@ -251,7 +287,7 @@ export const getClassLearners = async (
   const query = searchParams.toString();
   const url = `${API_URL}/api/v1/classes/${classId}/learners${query ? `?${query}` : ''}`;
 
-  const response = await fetch(url, getFetchOptions('GET'));
+  const response = await fetchWithAuth(url, getFetchOptions('GET'));
   if (!response.ok) {
     const txt = await response.clone().text().catch(() => '');
     console.error('[classApi:getClassLearners] request failed', { url, status: response.status, body: txt });
