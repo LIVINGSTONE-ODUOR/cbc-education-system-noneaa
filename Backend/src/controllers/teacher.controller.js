@@ -100,7 +100,18 @@ const inviteTeacher = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'first_name, last_name and email are required' });
   }
 
+  // ⚠️ Teachers log in with EMAIL + EMPLOYEE NUMBER (no separate password
+  // is issued to them). The employee number therefore doubles as their
+  // login credential, so it must always be supplied and unique.
+  if (!tsc_number || !String(tsc_number).trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Employee number is required. It is used as the teacher\'s login credential.',
+    });
+  }
+
   const normalizedEmail = email.toLowerCase().trim();
+  const normalizedEmployeeNumber = String(tsc_number).trim();
 
   // Check for duplicate email.
   // ⚠️ IMPORTANT: `users.email` is UNIQUE across the ENTIRE table, not just
@@ -138,9 +149,36 @@ const inviteTeacher = asyncHandler(async (req, res) => {
     });
   }
 
-  // Generate temporary password
-  const tempPassword = crypto.randomBytes(8).toString('hex');
-  const passwordHash = await bcrypt.hash(tempPassword, 10);
+  // Check the employee number isn't already used by another teacher in
+  // this school (it must be unique since it's used to log in).
+  const { data: existingEmployeeNumber, error: employeeNumberErr } = await supabase
+    .from('teachers')
+    .select('id')
+    .eq('school_id', school_id)
+    .eq('tsc_number', normalizedEmployeeNumber)
+    .maybeSingle();
+
+  if (employeeNumberErr) {
+    console.error('[inviteTeacher] Failed to check existing employee number:', employeeNumberErr.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to check for an existing employee number',
+      error: employeeNumberErr.message,
+    });
+  }
+
+  if (existingEmployeeNumber) {
+    return res.status(409).json({
+      success: false,
+      message: 'A teacher with this employee number already exists in your school. Please use a different employee number.',
+    });
+  }
+
+  // The teacher's login password IS their employee number (hashed the same
+  // way a normal password would be). This lets the existing email+password
+  // /auth/login endpoint work unchanged — the teacher just types their
+  // employee number into the password field.
+  const passwordHash = await bcrypt.hash(normalizedEmployeeNumber, 10);
   const inviteToken = crypto.randomBytes(32).toString('hex');
   const inviteExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
@@ -154,7 +192,10 @@ const inviteTeacher = asyncHandler(async (req, res) => {
       last_name: last_name.trim(),
       phone_number: phone_number || null,
       role: 'teacher',
-      status: 'pending',
+      // No invite-acceptance step anymore — the teacher can log in
+      // immediately with email + employee number, so the account is
+      // active right away instead of sitting in 'pending'.
+      status: 'active',
       email_verified: false,
       school_id,
       is_active: true,
@@ -182,7 +223,7 @@ const inviteTeacher = asyncHandler(async (req, res) => {
     .insert({
       user_id: newUser.id,
       school_id,
-      tsc_number: tsc_number || null,
+      tsc_number: normalizedEmployeeNumber,
       qualifications: qualifications ? JSON.stringify(qualifications) : '[]',
       date_joined: date_joined || new Date().toISOString().split('T')[0],
       is_active: true,
@@ -217,16 +258,14 @@ const inviteTeacher = asyncHandler(async (req, res) => {
     expires_at: inviteExpiry.toISOString(),
   });
 
-  const isDev = process.env.NODE_ENV !== 'production';
-
   res.status(201).json({
     success: true,
-    message: `Invite sent to ${email}`,
+    message: `Teacher account created. They can log in at /login with email "${newUser.email}" and employee number "${normalizedEmployeeNumber}".`,
     data: {
       teacher_id: newTeacher.id,
       user_id: newUser.id,
       email: newUser.email,
-      ...(isDev && { invite_token: inviteToken, temp_password: tempPassword }),
+      employee_number: normalizedEmployeeNumber,
     },
   });
 });
@@ -683,6 +722,16 @@ const updateTeacher = asyncHandler(async (req, res) => {
   // Skip email updates for security
   if (email !== undefined) {
     console.warn('[WARN] Email update ignored for security');
+  }
+
+  // Teachers log in with email + employee number, so if the admin changes
+  // the employee number here, the login password (which is the hashed
+  // employee number) must be updated to match — otherwise the teacher
+  // would be locked out.
+  if (tsc_number !== undefined && String(tsc_number).trim()) {
+    const newEmployeeNumber = String(tsc_number).trim();
+    const newPasswordHash = await bcrypt.hash(newEmployeeNumber, 10);
+    userUpdates.password_hash = newPasswordHash;
   }
 
   if (Object.keys(userUpdates).length > 0) {
