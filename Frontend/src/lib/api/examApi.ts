@@ -152,3 +152,32 @@ export const deleteExam = async (id: string): Promise<ApiResponse<{ message: str
   const response = await fetch(url, getFetchOptions('DELETE'));
   return handleResponse<ApiResponse<{ message: string }>>(response);
 };
+
+// ─────────────────────────────────────────────────────────────────────────
+// Learner upcoming exams — GET /api/v1/exams/learner/:learnerId/upcoming
+// Used by the Parent Portal dashboard's "Upcoming exams" card.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface LearnerUpcomingExam {
+  id: string;
+  exam_name: string;
+  exam_type: ExamType;
+  start_date: string;
+  end_date: string;
+  term: { id: string; name: string; year: number } | null;
+}
+
+export interface LearnerUpcomingExamsResponse {
+  learner: { id: string; first_name: string; last_name: string };
+  class: ExamApiClass | null;
+  upcoming_exams: LearnerUpcomingExam[];
+}
+
+export const getLearnerUpcomingExams = async (
+  learnerId: string,
+  limit = 5
+): Promise<ApiResponse<LearnerUpcomingExamsResponse>> => {
+  const url = `${API_URL}/api/v1/exams/learner/${learnerId}/upcoming?limit=${limit}`;
+  const response = await fetch(url, getFetchOptions('GET'));
+  return handleResponse<ApiResponse<LearnerUpcomingExamsResponse>>(response);
+};
