@@ -2,8 +2,9 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, UserRound } from 'lucide-react';
+import { UserRound } from 'lucide-react';
 import type { MyClassStudent } from '@/lib/api/teacherApi';
+import { ClassSelectSkeleton, StudentRowsSkeleton } from './skeletons';
 
 interface ClassOption {
   id: string;
@@ -38,9 +39,7 @@ const StudentProfiles: React.FC<StudentProfilesProps> = ({
       </CardHeader>
       <CardContent className="space-y-4">
         {classesLoading ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading your classes...
-          </div>
+          <ClassSelectSkeleton />
         ) : classes.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             You haven't been assigned to any classes yet. Contact your school admin.
@@ -59,9 +58,7 @@ const StudentProfiles: React.FC<StudentProfilesProps> = ({
             </Select>
 
             {studentsLoading ? (
-              <div className="flex justify-center py-10 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" />
-              </div>
+              <StudentRowsSkeleton />
             ) : students.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">
                 No students are enrolled in this class yet.
