@@ -46,6 +46,14 @@ const formatClassName = (cls: MyClassAssignment['class']) => {
   return `Grade ${cls.grade_level}${cls.stream_name ? cls.stream_name : ''}`;
 };
 
+const getPerformanceIndicator = (performance: number | null): { label: string; className: string } => {
+  if (performance === null) return { label: 'No data', className: 'bg-muted text-muted-foreground' };
+  if (performance >= 80) return { label: 'Excellent', className: 'bg-green-100 text-green-700' };
+  if (performance >= 70) return { label: 'Good', className: 'bg-blue-100 text-blue-700' };
+  if (performance >= 50) return { label: 'Average', className: 'bg-amber-100 text-amber-700' };
+  return { label: 'Needs Improvement', className: 'bg-red-100 text-red-700' };
+};
+
 // Based on the teacher's own device clock, so it always matches their
 // local time regardless of which timezone the school or server is in.
 const getGreeting = (hour: number) => {
@@ -402,11 +410,16 @@ const TeacherPortal = () => {
                                   <div>
                                     <h4 className="font-semibold">{student.name}</h4>
                                     <p className="text-sm text-muted-foreground">ID: {student.admission_number}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {student.parent_contact
+                                        ? `Parent: ${student.parent_contact.name || 'Unnamed'}${student.parent_contact.phone ? ` · ${student.parent_contact.phone}` : ''}`
+                                        : 'No parent contact on file'}
+                                    </p>
                                   </div>
                                 </div>
                                 <div className="flex items-center space-x-6">
                                   <div className="text-center">
-                                    <div className="text-sm text-muted-foreground">Performance</div>
+                                    <div className="text-sm text-muted-foreground">Current Average</div>
                                     <div className={`font-bold ${
                                       student.performance === null ? 'text-muted-foreground' :
                                       student.performance >= 90 ? 'text-green-600' :
@@ -415,6 +428,9 @@ const TeacherPortal = () => {
                                     }`}>
                                       {student.performance !== null ? `${student.performance}%` : 'No data'}
                                     </div>
+                                    <span className={`inline-block mt-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${getPerformanceIndicator(student.performance).className}`}>
+                                      {getPerformanceIndicator(student.performance).label}
+                                    </span>
                                   </div>
                                   <div className="text-center">
                                     <div className="text-sm text-muted-foreground">Attendance</div>
@@ -432,6 +448,32 @@ const TeacherPortal = () => {
                                       <ChevronDown className="h-4 w-4" />}
                                   </Button>
                                 </div>
+                              </div>
+
+                              {/* Always-visible per-student actions */}
+                              <div
+                                className="px-4 pb-4 flex flex-wrap gap-2 justify-end"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Button variant="outline" size="sm" onClick={() => toggleStudentDetails(student.learner_id)}>
+                                  View Student
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => handleAddAssessment(student)}>
+                                  Enter Marks
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={!student.parent_contact?.email}
+                                  title={student.parent_contact?.email ? undefined : 'No parent email on file'}
+                                  onClick={() => {
+                                    if (student.parent_contact?.email) {
+                                      window.location.href = `mailto:${student.parent_contact.email}`;
+                                    }
+                                  }}
+                                >
+                                  Send Message
+                                </Button>
                               </div>
 
                               {/* Expanded student details */}
@@ -478,10 +520,6 @@ const TeacherPortal = () => {
                                         </div>
                                       )}
                                     </div>
-                                  </div>
-                                  <div className="mt-4 flex justify-end space-x-2">
-                                    <Button variant="outline" size="sm">View Full Profile</Button>
-                                    <Button size="sm" onClick={() => handleAddAssessment(student)}>Add Assessment</Button>
                                   </div>
                                 </div>
                               )}
