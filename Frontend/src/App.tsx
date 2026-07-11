@@ -267,6 +267,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/teacher/marks-entry"
+        element={
+          <ProtectedRoute requiredRole="teacher">
+            <MarksEntry />
+          </ProtectedRoute>
+        }
+      />
 
       {/* ── Student Routes (Standalone Portal) ── */}
       <Route
