@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   Card,
@@ -91,6 +92,7 @@ interface MarkRow {
 const MarksEntry: React.FC = () => {
   const { user } = useAuth();
   const isTeacherRole = user?.role === 'teacher';
+  const location = useLocation();
 
   // Reference data
   const [exams, setExams] = useState<ExamApiItem[]>([]);
@@ -103,6 +105,14 @@ const MarksEntry: React.FC = () => {
   const [matches, setMatches] = useState<ResultLearner[]>([]);
   const [searching, setSearching] = useState(false);
   const [selectedLearner, setSelectedLearner] = useState<ResultLearner | null>(null);
+
+  // Arriving from the Teacher Portal's "Add Assessment" button skips the
+  // manual search step — the student is already known. handleExamChange
+  // (below) picks up from here once the teacher selects an exam.
+  useEffect(() => {
+    const prefill = (location.state as { prefillLearner?: ResultLearner } | null)?.prefillLearner;
+    if (prefill) setSelectedLearner(prefill);
+  }, [location.state]);
 
   // Marks sheet for the selected learner + exam
   const [rows, setRows] = useState<MarkRow[]>([]);
