@@ -576,6 +576,161 @@ const submitAssignment = asyncHandler(async (req, res) => {
   return res.status(201).json({ success: true, data: submission });
 });
 
+// =============================================================================
+// 9. GET /api/v1/assignments/learner/:learnerId/due
+//    Returns this learner's upcoming/overdue assignments for their current
+//    class, each annotated with the learner's own submission status. Used by
+//    the Parent Portal dashboard ("Assignments due" card).
+//
+//    Authorization mirrors attendance.controller.js's getLearnerAttendanceSummary:
+//      - parent  -> must have a learner_parents link to this exact learner
+//      - student -> may only ever view their OWN record (id resolved from
+//                   their own login, URL param is ignored)
+//      - teacher/school_admin/super_admin -> any learner in their own school
+// =============================================================================
+const getLearnerAssignmentsDue = asyncHandler(async (req, res) => {
+  const { schoolId, id: userId, role } = req.user;
+  let { learnerId } = req.params;
+  const { include_submitted } = req.query;
+
+  if (role === 'student') {
+    const admissionNumber = (req.user.email || '').split('@')[0];
+    const { data: ownLearner } = await supabase
+      .from('learners')
+      .select('id')
+      .eq('admission_number', admissionNumber)
+      .eq('school_id', schoolId)
+      .maybeSingle();
+
+    if (!ownLearner) {
+      return res.status(404).json({ success: false, message: 'Learner not found' });
+    }
+    learnerId = ownLearner.id;
+  }
+
+  let learnerQuery = supabase
+    .from('learners')
+    .select('id, first_name, last_name, admission_number')
+    .eq('id', learnerId);
+
+  if (role !== 'parent') {
+    learnerQuery = learnerQuery.eq('school_id', schoolId);
+  }
+
+  const { data: learner } = await learnerQuery.maybeSingle();
+
+  if (!learner) {
+    return res.status(404).json({ success: false, message: 'Learner not found' });
+  }
+
+  if (role === 'parent') {
+    const { data: parentRow } = await supabase
+      .from('parents')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const { data: link } = parentRow
+      ? await supabase
+          .from('learner_parents')
+          .select('id')
+          .eq('parent_id', parentRow.id)
+          .eq('learner_id', learnerId)
+          .maybeSingle()
+      : { data: null };
+
+    if (!link) {
+      return res.status(403).json({ success: false, message: "Not authorized to view this learner's assignments" });
+    }
+  }
+
+  // Resolve the learner's current class the same way results/attendance do —
+  // via learner_enrollments, not a direct learners.class_id column.
+  const { data: enrollment } = await supabase
+    .from('learner_enrollments')
+    .select('class_id, classes:class_id ( id, grade_level, stream_name )')
+    .eq('learner_id', learnerId)
+    .eq('status', 'enrolled')
+    .maybeSingle();
+
+  if (!enrollment) {
+    return res.json({
+      success: true,
+      data: {
+        learner: { id: learner.id, first_name: learner.first_name, last_name: learner.last_name },
+        class: null,
+        total_due: 0,
+        assignments: [],
+      },
+    });
+  }
+
+  const { data: assignments, error: assignmentsError } = await supabase
+    .from('assignments')
+    .select(`
+      id, title, description, due_date, max_grade,
+      learning_areas:learning_area_id ( id, name, code )
+    `)
+    .eq('class_id', enrollment.class_id)
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .order('due_date', { ascending: true });
+
+  if (assignmentsError) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch assignments', error: assignmentsError.message });
+  }
+
+  const all = assignments || [];
+  const ids = all.map((a) => a.id);
+
+  let submissionByAssignment = {};
+  if (ids.length > 0) {
+    const { data: subs } = await supabase
+      .from('assignment_submissions')
+      .select('assignment_id, status, submitted_at, grade')
+      .eq('learner_id', learnerId)
+      .in('assignment_id', ids);
+
+    submissionByAssignment = (subs || []).reduce((acc, s) => {
+      acc[s.assignment_id] = s;
+      return acc;
+    }, {});
+  }
+
+  const now = new Date();
+  const enriched = all.map((a) => {
+    const submission = submissionByAssignment[a.id] || null;
+    const dueDate = new Date(a.due_date);
+    return {
+      id: a.id,
+      title: a.title,
+      learning_area: a.learning_areas ? { id: a.learning_areas.id, name: a.learning_areas.name, code: a.learning_areas.code } : null,
+      due_date: a.due_date,
+      max_grade: a.max_grade,
+      submission_status: submission?.status || 'not_submitted',
+      grade: submission?.grade ?? null,
+      is_overdue: !submission && dueDate < now,
+    };
+  });
+
+  // By default only show what the parent actually cares about: work that
+  // still needs to be done. include_submitted=true returns everything,
+  // useful for a future "assignment history" view.
+  const dueList = include_submitted === 'true'
+    ? enriched
+    : enriched.filter((a) => a.submission_status === 'not_submitted');
+
+  return res.json({
+    success: true,
+    data: {
+      learner: { id: learner.id, first_name: learner.first_name, last_name: learner.last_name },
+      class: enrollment.classes,
+      total_due: dueList.filter((a) => a.submission_status === 'not_submitted').length,
+      assignments: dueList.slice(0, 10),
+    },
+  });
+});
+
 module.exports = {
   createAssignment,
   listAssignments,
@@ -585,4 +740,5 @@ module.exports = {
   listSubmissions,
   gradeSubmission,
   submitAssignment,
+  getLearnerAssignmentsDue,
 };
