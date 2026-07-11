@@ -40,6 +40,19 @@ const paginate = (query, page = 1, limit = 20) => {
   return query.range(from, to);
 };
 
+// ---------------------------------------------------------------------------
+// Helper: resolve current academic year for a school
+// ---------------------------------------------------------------------------
+const getCurrentAcademicYear = async (school_id) => {
+  const { data } = await supabase
+    .from('academic_years')
+    .select('id, name')
+    .eq('school_id', school_id)
+    .eq('is_current', true)
+    .maybeSingle();
+  return data;
+};
+
 
 // =============================================================================
 // 1. POST /api/v1/teachers/invite
@@ -1031,6 +1044,266 @@ const getTeacherClasses = asyncHandler(async (req, res) => {
 // =============================================================================
 // Export
 // =============================================================================
+const assignTeacherToClasses = asyncHandler(async (req, res) => {
+  const { schoolId, role } = req.user;
+  const { id: teacherId } = req.params;
+
+  if (!['school_admin', 'super_admin'].includes(role)) {
+    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+  }
+
+  const { assignments, academic_year_id, term_id } = req.body;
+
+  if (!Array.isArray(assignments) || assignments.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'assignments must be a non-empty array of { class_id, learning_area_id }',
+    });
+  }
+
+  const { data: teacher } = await supabase
+    .from('teachers')
+    .select('id')
+    .eq('id', teacherId)
+    .eq('school_id', schoolId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (!teacher) {
+    return res.status(404).json({ success: false, message: 'Teacher not found' });
+  }
+
+  let yearId = academic_year_id;
+  if (!yearId) {
+    const current = await getCurrentAcademicYear(schoolId);
+    yearId = current?.id;
+  }
+  if (!yearId) {
+    return res.status(400).json({
+      success: false,
+      message: 'No active academic year found. Provide academic_year_id explicitly.',
+    });
+  }
+
+  const rowErrors = [];
+  assignments.forEach((a, idx) => {
+    if (!a || !a.class_id) rowErrors.push(`Row ${idx + 1}: class_id is required`);
+    if (!a || !a.learning_area_id) rowErrors.push(`Row ${idx + 1}: learning_area_id is required`);
+  });
+  if (rowErrors.length) {
+    return res.status(400).json({ success: false, message: 'Validation failed', errors: rowErrors });
+  }
+
+  const classIds = [...new Set(assignments.map((a) => a.class_id))];
+  const { data: foundClasses } = await supabase
+    .from('classes')
+    .select('id')
+    .in('id', classIds)
+    .eq('school_id', schoolId)
+    .is('deleted_at', null);
+  const validClassIds = new Set((foundClasses || []).map((c) => c.id));
+  const missingClasses = classIds.filter((cid) => !validClassIds.has(cid));
+
+  const learningAreaIds = [...new Set(assignments.map((a) => a.learning_area_id))];
+  const { data: foundAreas } = await supabase
+    .from('learning_areas')
+    .select('id, school_id')
+    .in('id', learningAreaIds)
+    .is('deleted_at', null);
+  const validAreaIds = new Set(
+    (foundAreas || [])
+      .filter((la) => la.school_id === null || la.school_id === schoolId)
+      .map((la) => la.id)
+  );
+  const missingAreas = learningAreaIds.filter((laId) => !validAreaIds.has(laId));
+
+  if (missingClasses.length || missingAreas.length) {
+    return res.status(400).json({
+      success: false,
+      message: 'One or more classes/subjects are invalid or do not belong to this school',
+      errors: { invalid_class_ids: missingClasses, invalid_learning_area_ids: missingAreas },
+    });
+  }
+
+  const saved = [];
+  const failed = [];
+
+  for (const a of assignments) {
+    const { data: existing } = await supabase
+      .from('teacher_assignments')
+      .select('id')
+      .eq('teacher_id', teacherId)
+      .eq('class_id', a.class_id)
+      .eq('learning_area_id', a.learning_area_id)
+      .eq('academic_year_id', yearId)
+      .maybeSingle();
+
+    const rowTermId = term_id || a.term_id || null;
+
+    if (existing) {
+      const { data: updated, error: updErr } = await supabase
+        .from('teacher_assignments')
+        .update({
+          is_active: true,
+          deleted_at: null,
+          term_id: rowTermId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existing.id)
+        .select('id, teacher_id, class_id, learning_area_id, academic_year_id, term_id, is_active')
+        .single();
+
+      if (updErr) failed.push({ class_id: a.class_id, learning_area_id: a.learning_area_id, error: updErr.message });
+      else saved.push(updated);
+    } else {
+      const { data: inserted, error: insErr } = await supabase
+        .from('teacher_assignments')
+        .insert({
+          teacher_id: teacherId,
+          class_id: a.class_id,
+          learning_area_id: a.learning_area_id,
+          academic_year_id: yearId,
+          term_id: rowTermId,
+          is_active: true,
+        })
+        .select('id, teacher_id, class_id, learning_area_id, academic_year_id, term_id, is_active')
+        .single();
+
+      if (insErr) failed.push({ class_id: a.class_id, learning_area_id: a.learning_area_id, error: insErr.message });
+      else saved.push(inserted);
+    }
+  }
+
+  if (failed.length && saved.length === 0) {
+    return res.status(500).json({ success: false, message: 'Failed to save assignments', errors: failed });
+  }
+
+  return res.status(201).json({
+    success: true,
+    message: `${saved.length} assignment(s) saved${failed.length ? `, ${failed.length} failed` : ''}`,
+    data: { saved, failed },
+  });
+});
+
+const listTeacherAssignments = asyncHandler(async (req, res) => {
+  const { schoolId, role, id: actorId } = req.user;
+  const { id: teacherId } = req.params;
+  const { academic_year_id, include_inactive } = req.query;
+
+  const { data: teacher } = await supabase
+    .from('teachers')
+    .select('id, user_id')
+    .eq('id', teacherId)
+    .eq('school_id', schoolId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (!teacher) {
+    return res.status(404).json({ success: false, message: 'Teacher not found' });
+  }
+
+  const isAdmin = ['school_admin', 'super_admin'].includes(role);
+  const isSelf = teacher.user_id === actorId;
+  if (!isAdmin && !isSelf) {
+    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+  }
+
+  let query = supabase
+    .from('teacher_assignments')
+    .select(`
+      id,
+      is_active,
+      academic_year_id,
+      term_id,
+      class:class_id ( id, grade_level, stream_name ),
+      learning_area:learning_area_id ( id, name, code ),
+      academic_year:academic_year_id ( id, name, is_current ),
+      term:term_id ( id, name, term_number )
+    `)
+    .eq('teacher_id', teacherId)
+    .is('deleted_at', null);
+
+  if (academic_year_id) query = query.eq('academic_year_id', academic_year_id);
+  if (include_inactive !== 'true') query = query.eq('is_active', true);
+
+  const { data: assignments, error } = await query;
+
+  if (error) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch assignments', error: error.message });
+  }
+
+  return res.json({ success: true, data: { teacher_id: teacherId, assignments: assignments || [] } });
+});
+
+const removeTeacherAssignment = asyncHandler(async (req, res) => {
+  const { schoolId, role } = req.user;
+  const { id: teacherId, assignmentId } = req.params;
+
+  if (!['school_admin', 'super_admin'].includes(role)) {
+    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+  }
+
+  const { data: teacher } = await supabase
+    .from('teachers')
+    .select('id')
+    .eq('id', teacherId)
+    .eq('school_id', schoolId)
+    .maybeSingle();
+
+  if (!teacher) {
+    return res.status(404).json({ success: false, message: 'Teacher not found' });
+  }
+
+  const { data: existing } = await supabase
+    .from('teacher_assignments')
+    .select('id')
+    .eq('id', assignmentId)
+    .eq('teacher_id', teacherId)
+    .maybeSingle();
+
+  if (!existing) {
+    return res.status(404).json({ success: false, message: 'Assignment not found' });
+  }
+
+  const { error } = await supabase
+    .from('teacher_assignments')
+    .update({
+      is_active: false,
+      deleted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', assignmentId);
+
+  if (error) {
+    return res.status(500).json({ success: false, message: 'Failed to remove assignment', error: error.message });
+  }
+
+  return res.json({ success: true, message: 'Assignment removed' });
+});
+
+const getMyClasses = asyncHandler(async (req, res) => {
+  const { schoolId, id: userId, role } = req.user;
+
+  if (role !== 'teacher') {
+    return res.status(403).json({ success: false, message: 'This endpoint is for teacher accounts only' });
+  }
+
+  const { data: teacher } = await supabase
+    .from('teachers')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('school_id', schoolId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (!teacher) {
+    return res.status(404).json({ success: false, message: 'No teacher record found for this account' });
+  }
+
+  req.params.id = teacher.id;
+  return getTeacherClasses(req, res);
+});
+
 module.exports = {
   inviteTeacher,
   listTeachers,
@@ -1040,4 +1313,8 @@ module.exports = {
   deleteTeacher,
   getTeacherTimetable,
   getTeacherClasses,
+  assignTeacherToClasses,
+  listTeacherAssignments,
+  removeTeacherAssignment,
+  getMyClasses,
 };
