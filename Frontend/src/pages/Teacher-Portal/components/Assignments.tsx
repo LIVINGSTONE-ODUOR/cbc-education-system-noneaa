@@ -39,6 +39,7 @@ import {
   Send,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ClassSelectSkeleton, ListBlockSkeleton } from './skeletons';
 import { getMyClasses, type MyClassAssignment } from '@/lib/api/teacherApi';
 import {
   createAssignment,
@@ -355,9 +356,7 @@ const Assignments: React.FC = () => {
         {/* Class + subject */}
         <div className="flex flex-wrap gap-3">
           {classesLoading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading your classes...
-            </div>
+            <ClassSelectSkeleton />
           ) : classes.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               You aren't assigned to teach any class yet. Contact your school admin.
@@ -395,9 +394,7 @@ const Assignments: React.FC = () => {
 
         {/* Assignment list */}
         {assignmentsLoading ? (
-          <div className="flex items-center justify-center py-10 text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading assignments...
-          </div>
+          <ListBlockSkeleton />
         ) : assignments.length === 0 ? (
           selectedClass &&
           selectedSubject && (
@@ -464,9 +461,7 @@ const Assignments: React.FC = () => {
             </CardHeader>
             <CardContent>
               {submissionsLoading ? (
-                <div className="flex items-center justify-center py-10 text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading submissions...
-                </div>
+                <ListBlockSkeleton count={4} />
               ) : submissions.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-6 text-center">
                   No students are enrolled in this class yet.
