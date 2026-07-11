@@ -13,8 +13,9 @@ import {
   TableRow
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Calendar, User, ChevronDown, ChevronUp, Users, Loader2, UserRound } from 'lucide-react';
+import { BookOpen, Calendar, User, ChevronDown, ChevronUp, Users, Loader2, UserRound, ClipboardCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import MarkAttendance from './components/MarkAttendance';
 import {
   getMyProfile,
   getMyClasses,
@@ -79,6 +80,11 @@ const TeacherPortal = () => {
   const [students, setStudents] = useState<MyClassStudent[]>([]);
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
+
+  // Attendance marking dialog — only ever opened for a class from the
+  // `classes` list above, which is already scoped server-side to classes
+  // this teacher is assigned to (GET /api/v1/teachers/me/classes).
+  const [attendanceDialogOpen, setAttendanceDialogOpen] = useState(false);
 
   // Real weekly timetable — GET /api/v1/teachers/me/timetable
   const [timetable, setTimetable] = useState<Record<string, MyTimetableSlot[]>>({});
@@ -338,11 +344,16 @@ const TeacherPortal = () => {
                 {/* Student List */}
                 {selectedClass && (
                   <Card>
-                    <CardHeader>
-                      <CardTitle>{selectedClassInfo?.name || 'Class'} Students</CardTitle>
-                      <CardDescription>
-                        {studentsLoading ? 'Loading...' : `${students.length} students enrolled in this class`}
-                      </CardDescription>
+                    <CardHeader className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                      <div>
+                        <CardTitle>{selectedClassInfo?.name || 'Class'} Students</CardTitle>
+                        <CardDescription>
+                          {studentsLoading ? 'Loading...' : `${students.length} students enrolled in this class`}
+                        </CardDescription>
+                      </div>
+                      <Button onClick={() => setAttendanceDialogOpen(true)} disabled={students.length === 0}>
+                        <ClipboardCheck className="mr-2 h-4 w-4" /> Mark Attendance
+                      </Button>
                     </CardHeader>
                     <CardContent>
                       {studentsLoading ? (
@@ -593,6 +604,15 @@ const TeacherPortal = () => {
             </Tabs>
           </div>
         </div>
+
+        {selectedClass && (
+          <MarkAttendance
+            classId={selectedClass}
+            className={selectedClassInfo?.name || 'Class'}
+            open={attendanceDialogOpen}
+            onOpenChange={setAttendanceDialogOpen}
+          />
+        )}
       </div>
 
   );
