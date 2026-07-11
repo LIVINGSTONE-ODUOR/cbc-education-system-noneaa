@@ -408,6 +408,13 @@ export const getMyTimetable = async (): Promise<
  * Real class roster (enrollment + attendance + exam performance) for one of
  * the logged-in teacher's classes — powers the Classes tab student list.
  */
+export interface MyClassStudentParentContact {
+  name: string | null;
+  phone: string | null;
+  email: string | null;
+  relationship: string | null;
+}
+
 export interface MyClassStudent {
   learner_id: string;
   admission_number: string;
@@ -419,6 +426,7 @@ export interface MyClassStudent {
   strengths: string;
   areas_for_improvement: string;
   recent_scores: number[];
+  parent_contact: MyClassStudentParentContact | null;
 }
 
 export const getMyClassStudents = async (
