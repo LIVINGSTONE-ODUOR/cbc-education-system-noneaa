@@ -864,7 +864,7 @@ const toggleTeacherActive = asyncHandler(async (req, res) => {
 //    Soft-delete (sets deleted_at, deactivates user)
 // =============================================================================
 const deleteTeacher = asyncHandler(async (req, res) => {
-  const { school_id, role, id: requesterId } = req.user;
+  const { schoolId: school_id, role, id: requesterId } = req.user;
   const { id } = req.params;
 
   if (!['school_admin', 'super_admin'].includes(role)) {
@@ -921,7 +921,7 @@ const deleteTeacher = asyncHandler(async (req, res) => {
 //    Weekly timetable for this teacher (current academic year)
 // =============================================================================
 const getTeacherTimetable = asyncHandler(async (req, res) => {
-  const { school_id } = req.user;
+  const { schoolId: school_id } = req.user;
   const { id } = req.params;
   const { academic_year_id, term_id } = req.query;
 
@@ -999,7 +999,7 @@ const getTeacherTimetable = asyncHandler(async (req, res) => {
 //    Classes assigned to this teacher in the current academic year
 // =============================================================================
 const getTeacherClasses = asyncHandler(async (req, res) => {
-  const { school_id } = req.user;
+  const { schoolId: school_id } = req.user;
   const { id } = req.params;
   const { academic_year_id } = req.query;
 
@@ -1330,6 +1330,247 @@ const removeTeacherAssignment = asyncHandler(async (req, res) => {
   return res.json({ success: true, message: 'Assignment removed' });
 });
 
+// =============================================================================
+// 9. GET /api/v1/teachers/me
+//    The logged-in teacher's OWN profile — for the Teacher Portal sidebar.
+//    No id param needed; resolved from the JWT.
+// =============================================================================
+const getMyProfile = asyncHandler(async (req, res) => {
+  const { schoolId, id: userId, role } = req.user;
+
+  if (role !== 'teacher') {
+    return res.status(403).json({ success: false, message: 'This endpoint is for teacher accounts only' });
+  }
+
+  const { data: teacher, error } = await supabase
+    .from('teachers')
+    .select(`
+      id, tsc_number, designation, date_joined, photo,
+      user:user_id ( id, first_name, last_name, email, phone_number ),
+      school:school_id ( id, name )
+    `)
+    .eq('user_id', userId)
+    .eq('school_id', schoolId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (error) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch profile', error: error.message });
+  }
+  if (!teacher || !teacher.user) {
+    return res.status(404).json({ success: false, message: 'No teacher record found for this account' });
+  }
+
+  // Experience, computed from date_joined (real data, not hardcoded).
+  let experience = null;
+  if (teacher.date_joined) {
+    const joined = new Date(teacher.date_joined);
+    const now = new Date();
+    let years = now.getFullYear() - joined.getFullYear();
+    const beforeAnniversary =
+      now.getMonth() < joined.getMonth() ||
+      (now.getMonth() === joined.getMonth() && now.getDate() < joined.getDate());
+    if (beforeAnniversary) years -= 1;
+
+    if (years < 1) {
+      const months = Math.max(1, Math.floor((now - joined) / (1000 * 60 * 60 * 24 * 30)));
+      experience = `${months} month${months === 1 ? '' : 's'}`;
+    } else {
+      experience = `${years} year${years === 1 ? '' : 's'}`;
+    }
+  }
+
+  res.json({
+    success: true,
+    data: {
+      teacher_id: teacher.id,
+      employee_number: teacher.tsc_number,
+      designation: teacher.designation,
+      first_name: teacher.user.first_name,
+      last_name: teacher.user.last_name,
+      full_name: `${teacher.user.first_name || ''} ${teacher.user.last_name || ''}`.trim(),
+      email: teacher.user.email,
+      phone: teacher.user.phone_number,
+      photo: teacher.photo,
+      school_name: teacher.school?.name || null,
+      date_joined: teacher.date_joined,
+      experience,
+    },
+  });
+});
+
+// =============================================================================
+// 10. GET /api/v1/teachers/me/timetable
+//     Weekly timetable for the logged-in teacher (no id param needed).
+// =============================================================================
+const getMyTimetable = asyncHandler(async (req, res) => {
+  const { schoolId, id: userId, role } = req.user;
+
+  if (role !== 'teacher') {
+    return res.status(403).json({ success: false, message: 'This endpoint is for teacher accounts only' });
+  }
+
+  const { data: teacher } = await supabase
+    .from('teachers')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('school_id', schoolId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (!teacher) {
+    return res.status(404).json({ success: false, message: 'No teacher record found for this account' });
+  }
+
+  req.params.id = teacher.id;
+  return getTeacherTimetable(req, res);
+});
+
+// =============================================================================
+// 11. GET /api/v1/teachers/me/classes/:classId/students
+//     Real class roster for a class the logged-in teacher is assigned to,
+//     enriched with real attendance and exam performance — replaces the
+//     hardcoded student cards in the Teacher Portal "Classes" tab.
+// =============================================================================
+const getMyClassStudents = asyncHandler(async (req, res) => {
+  const { schoolId, id: userId, role } = req.user;
+  const { classId } = req.params;
+
+  if (role !== 'teacher') {
+    return res.status(403).json({ success: false, message: 'This endpoint is for teacher accounts only' });
+  }
+
+  const { data: teacher } = await supabase
+    .from('teachers')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('school_id', schoolId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (!teacher) {
+    return res.status(404).json({ success: false, message: 'No teacher record found for this account' });
+  }
+
+  // Only allow viewing classes this teacher is actually assigned to.
+  const { data: assignment } = await supabase
+    .from('teacher_assignments')
+    .select('id')
+    .eq('teacher_id', teacher.id)
+    .eq('class_id', classId)
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (!assignment) {
+    return res.status(403).json({ success: false, message: 'You are not assigned to this class' });
+  }
+
+  // Enrolled learners (real roster)
+  const { data: enrollments, error: enrollErr } = await supabase
+    .from('learner_enrollments')
+    .select(`
+      learner_id,
+      learners:learner_id ( id, first_name, last_name, admission_number, profile_photo )
+    `)
+    .eq('class_id', classId)
+    .eq('status', 'enrolled');
+
+  if (enrollErr) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch class roster', error: enrollErr.message });
+  }
+
+  const roster = (enrollments || []).filter((e) => e.learners);
+  const learnerIds = roster.map((e) => e.learner_id);
+
+  if (learnerIds.length === 0) {
+    return res.json({ success: true, data: { class_id: classId, students: [] } });
+  }
+
+  // Real attendance aggregate for this class
+  const { data: attendanceRows } = await supabase
+    .from('attendance_records')
+    .select('learner_id, status')
+    .eq('class_id', classId)
+    .in('learner_id', learnerIds);
+
+  const attendanceByLearner = {};
+  (attendanceRows || []).forEach((r) => {
+    if (!attendanceByLearner[r.learner_id]) attendanceByLearner[r.learner_id] = { total: 0, present: 0 };
+    attendanceByLearner[r.learner_id].total += 1;
+    if (r.status === 'present' || r.status === 'late') attendanceByLearner[r.learner_id].present += 1;
+  });
+
+  // Real exam results for this class
+  const { data: resultRows } = await supabase
+    .from('exam_results')
+    .select(`
+      learner_id, marks_obtained, max_marks, is_absent,
+      learning_areas:learning_area_id ( name ),
+      exams:exam_id ( exam_name, start_date )
+    `)
+    .eq('school_id', schoolId)
+    .eq('class_id', classId)
+    .in('learner_id', learnerIds);
+
+  const resultsByLearner = {};
+  (resultRows || []).forEach((r) => {
+    if (r.is_absent || !r.max_marks) return;
+    if (!resultsByLearner[r.learner_id]) resultsByLearner[r.learner_id] = [];
+    resultsByLearner[r.learner_id].push(r);
+  });
+
+  const students = roster.map((e) => {
+    const learner = e.learners;
+    const att = attendanceByLearner[e.learner_id];
+    const attendance = att && att.total > 0 ? Math.round((att.present / att.total) * 100) : null;
+
+    const results = resultsByLearner[e.learner_id] || [];
+    const performance = results.length
+      ? Math.round(
+          (results.reduce((sum, r) => sum + (Number(r.marks_obtained) / Number(r.max_marks)) * 100, 0) /
+            results.length) * 10
+        ) / 10
+      : null;
+
+    // Strengths / areas for improvement — derived from real per-subject averages,
+    // not hardcoded text.
+    const bySubject = {};
+    results.forEach((r) => {
+      const name = r.learning_areas?.name || 'Unknown';
+      const pct = (Number(r.marks_obtained) / Number(r.max_marks)) * 100;
+      (bySubject[name] = bySubject[name] || []).push(pct);
+    });
+    const subjectAverages = Object.entries(bySubject)
+      .map(([name, pcts]) => ({ name, avg: pcts.reduce((a, b) => a + b, 0) / pcts.length }))
+      .sort((a, b) => b.avg - a.avg);
+
+    const strengths = subjectAverages.filter((s) => s.avg >= 75).slice(0, 3).map((s) => s.name);
+    const areasForImprovement = subjectAverages.filter((s) => s.avg < 60).slice(0, 3).map((s) => s.name);
+
+    // Most recent exam scores (real, not fabricated)
+    const recentScores = [...results]
+      .sort((a, b) => new Date(a.exams?.start_date || 0) - new Date(b.exams?.start_date || 0))
+      .slice(-4)
+      .map((r) => Math.round((Number(r.marks_obtained) / Number(r.max_marks)) * 100));
+
+    return {
+      learner_id: e.learner_id,
+      admission_number: learner.admission_number,
+      name: `${learner.first_name} ${learner.last_name}`.trim(),
+      photo: learner.profile_photo || null,
+      performance,
+      attendance,
+      exams_recorded: results.length,
+      strengths: strengths.length ? strengths.join(', ') : 'Not enough exam data yet',
+      areas_for_improvement: areasForImprovement.length ? areasForImprovement.join(', ') : 'None significant',
+      recent_scores: recentScores,
+    };
+  });
+
+  res.json({ success: true, data: { class_id: classId, students } });
+});
+
 const getMyClasses = asyncHandler(async (req, res) => {
   const { schoolId, id: userId, role } = req.user;
 
@@ -1366,4 +1607,7 @@ module.exports = {
   listTeacherAssignments,
   removeTeacherAssignment,
   getMyClasses,
+  getMyProfile,
+  getMyTimetable,
+  getMyClassStudents,
 };
