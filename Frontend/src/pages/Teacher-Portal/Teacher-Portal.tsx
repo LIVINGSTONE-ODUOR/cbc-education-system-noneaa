@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Calendar, User, ChevronDown, ChevronUp, Users, Loader2, UserRound, ClipboardCheck, MessageSquare, Megaphone, Settings as SettingsIcon, UsersRound, BarChart3, FileText } from 'lucide-react';
+import { BookOpen, Calendar, User, ChevronDown, ChevronUp, Users, Loader2, UserRound, ClipboardCheck, MessageSquare, Megaphone, Settings as SettingsIcon, UsersRound, BarChart3, FileText, LogOut, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import MarkAttendance from './components/MarkAttendance';
 import DashboardHome from './components/DashboardHome';
 import Gradebook from './components/Gradebook';
@@ -65,7 +66,17 @@ const getGreeting = (hour: number) => {
 const TeacherPortal = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const handleGoHome = () => {
+    navigate('/');
+  };
 
   // Drives the "Good morning/afternoon/evening" greeting below. Re-checked
   // every minute so it flips over live if the portal is left open, without
@@ -297,6 +308,26 @@ const TeacherPortal = () => {
                     );
                   })}
                 </nav>
+              </CardContent>
+            </Card>
+
+            {/* Home / Logout */}
+            <Card className="border-0 shadow-md">
+              <CardContent className="p-2 space-y-1">
+                <button
+                  onClick={handleGoHome}
+                  className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-left text-foreground/80 transition-all duration-200 ease-out hover:bg-muted hover:translate-x-0.5"
+                >
+                  <Home className="h-4 w-4 shrink-0 text-primary" />
+                  <span>Back to Website</span>
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-left text-destructive transition-all duration-200 ease-out hover:bg-destructive/10 hover:translate-x-0.5"
+                >
+                  <LogOut className="h-4 w-4 shrink-0" />
+                  <span>Log Out</span>
+                </button>
               </CardContent>
             </Card>
           </div>
