@@ -11,7 +11,6 @@ import ScrollToTop from "@/components/ScrollToTop";
 import CookieBanner from "@/components/CookieBanner";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import GlobalSkeletonLoader from "@/components/GlobalSkeletonLoader";
 import NavigationSpinner from "@/components/NavigationSpinner";
 import ContactPage from './pages/website-pages/Contact';
 
@@ -121,7 +120,7 @@ function ProtectedRoute({
   children: React.ReactNode;
   requiredRole?: string;
 }) {
-  const { isAuthenticated, isLoading, user, showLoginSkeleton, isSkeletonFading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -133,10 +132,6 @@ function ProtectedRoute({
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
-  }
-
-  if (showLoginSkeleton) {
-    return <GlobalSkeletonLoader fading={isSkeletonFading} />;
   }
 
   // Redirect if role doesn't match
@@ -157,7 +152,7 @@ function ProtectedRoute({
 
 // ─── Admin Route ──────────────────────────────────────────────────────────────
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, user, showLoginSkeleton, isSkeletonFading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -169,10 +164,6 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated || (user?.role !== "school_admin" && user?.role !== "super_admin")) {
     return <Navigate to="/login" replace />;
-  }
-
-  if (showLoginSkeleton) {
-    return <GlobalSkeletonLoader fading={isSkeletonFading} />;
   }
 
   return <>{children}</>;
@@ -196,12 +187,10 @@ function AppRoutes() {
       <Route path="/status" element={<SystemStatusPage />} />
       <Route path="/status/report-incident" element={<ReportIncidentPage />} />
       <Route path="/company/our-team" element={<TeamMembersPage />} />
-      <Route path="/cbe-standards" element={<CBEStandardsPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
-
       <Route path="/get-started" element={<GetStartedPage />} />
-      <Route path="/signup" element={<GetStartedPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/cbc-standards" element={<CBEStandardsPage />} />
       <Route path="/admin-register" element={<AdminRegistrationPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/features" element={<Feature />} />
