@@ -339,7 +339,11 @@ const registerLearner = asyncHandler(async (req, res) => {
 
           if (!parentUserId) {
             // ✅ CREATE USER FIRST
-            const tempPassword = crypto.randomBytes(12).toString('hex');
+            // Portal login = parent's email (username) + phone number (password) —
+            // same convention used for the student account above and in
+            // parent.controller.js's registerParent/sendInvite.
+            const parentPhoneForPassword = parent_info.phone_number?.trim();
+            const tempPassword = parentPhoneForPassword || crypto.randomBytes(12).toString('hex');
             const passwordHash = await bcrypt.hash(tempPassword, 10);
 
             const { data: newUser, error: userError } = await supabase
@@ -1183,8 +1187,9 @@ const updateLearner = asyncHandler(async (req, res) => {
         // ✅ CREATE NEW PARENT WITH USER ACCOUNT
         console.log('[updateLearner] Creating new parent account');
 
-        // Generate temporary password for user account
-        const tempPassword = crypto.randomBytes(12).toString('hex');
+        // Portal login = parent's email (username) + phone number (password),
+        // matching registerLearner and parent.controller.js.
+        const tempPassword = parent_info.phone_number?.trim() || crypto.randomBytes(12).toString('hex');
         const passwordHash = await bcrypt.hash(tempPassword, 10);
 
         // Create user first
