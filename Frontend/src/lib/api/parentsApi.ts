@@ -115,6 +115,22 @@ export const sendParentInvite = async (parentId: string, channel: 'email' | 'sms
   return handleResponse(response);
 };
 
+// ── Self-service parent portal (logged-in parent viewing their own children) ─
+
+export const getMyChildren = async (): Promise<ApiResponse<{
+  parent: Parent;
+  children: Array<Learner & {
+    relationship: string | null;
+    is_primary_guardian: boolean;
+    latest_exam_summary: any;
+  }>;
+  total_children: number;
+}>> => {
+  const url = `${API_URL}/api/v1/parents/me/children`;
+  const response = await fetch(url, getFetchOptions('GET'));
+  return handleResponse(response);
+};
+
 // ── Schools (for dropdown) ──────────────────────────────────────────────────
 
 export const getSchools = async (): Promise<ApiResponse<School[]>> => {
