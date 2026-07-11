@@ -10,9 +10,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, Bell, MapPin, CalendarDays, CalendarRange } from 'lucide-react';
+import { Bell, MapPin, CalendarDays, CalendarRange } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getMyTimetable, type MyTimetableSlot } from '@/lib/api/teacherApi';
+import { TableBodySkeleton } from './skeletons';
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof Error && error.message) return error.message;
@@ -165,9 +166,20 @@ const Timetable: React.FC = () => {
 
         <CardContent>
           {loading ? (
-            <div className="flex justify-center py-10 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Class</TableHead>
+                  <TableHead>Subject</TableHead>
+                  <TableHead>Classroom</TableHead>
+                  <TableHead className="text-right">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableBodySkeleton columns={5} />
+              </TableBody>
+            </Table>
           ) : view === 'today' ? (
             todayLessons.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">
