@@ -382,21 +382,38 @@ const getLearnerResults = asyncHandler(async (req, res) => {
     learner_id = ownLearner.id;
   }
 
-  const { data: learner } = await supabase
+  // NOTE: the school_id scope below intentionally does NOT apply to the
+  // 'parent' role. For parents, the real authorization boundary is the
+  // learner_parents link checked just below — not school_id equality.
+  // A parent's own users.school_id and their child's learners.school_id
+  // aren't guaranteed to be the exact same value for every registration
+  // path in this codebase (e.g. self-service parent signup vs. a school
+  // admin adding the learner directly), and getMyChildren (the endpoint
+  // that lists a parent's children in the first place) never filters by
+  // school_id at all. Gating this lookup on schoolId as well meant a
+  // parent could see their child's profile card just fine but always get
+  // "Learner not found" the moment they tried to view marks — the two
+  // endpoints disagreed about who this parent's child even was.
+  let learnerQuery = supabase
     .from('learners')
     .select(
       'id, first_name, last_name, admission_number, class_id, classes:class_id ( id, grade_level, stream_name )'
     )
-    .eq('id', learner_id)
-    .eq('school_id', schoolId)
-    .maybeSingle();
+    .eq('id', learner_id);
+
+  if (role !== 'parent') {
+    learnerQuery = learnerQuery.eq('school_id', schoolId);
+  }
+
+  const { data: learner } = await learnerQuery.maybeSingle();
 
   if (!learner) {
     return res.status(404).json({ success: false, message: 'Learner not found' });
   }
 
   // Parents may only view results for their OWN linked children — never
-  // other learners in the school, even if they guess the id.
+  // other learners in the school, even if they guess the id. This check
+  // (not schoolId equality above) is what actually authorizes a parent.
   if (role === 'parent') {
     const { data: parentRow } = await supabase
       .from('parents')
