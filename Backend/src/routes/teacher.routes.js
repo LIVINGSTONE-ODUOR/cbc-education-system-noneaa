@@ -23,6 +23,7 @@ const {
   getMyProfile,
   getMyTimetable,
   getMyClassStudents,
+  getMyDashboard,
 } = require('../controllers/teacher.controller');
 const { uploadTeacherPhoto } = require('../controllers/teacherPhoto.controller');
 
@@ -85,6 +86,11 @@ router.get('/me/timetable', getMyTimetable);
 //        of the logged-in teacher's classes, enriched with real attendance
 //        and exam performance. Powers the Teacher Portal Classes tab.
 router.get('/me/classes/:classId/students', getMyClassStudents);
+
+// GET    /api/v1/teachers/me/dashboard — aggregate for the Teacher Portal
+//        Home/Dashboard tab: greeting context, today's lessons, classes
+//        still needing attendance marked, upcoming exams, quick stats.
+router.get('/me/dashboard', getMyDashboard);
 
 // ---------------------------------------------------------------------------
 // Member routes (specific teacher by id)
