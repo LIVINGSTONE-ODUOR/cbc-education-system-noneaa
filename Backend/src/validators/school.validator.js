@@ -146,9 +146,18 @@ const schoolAdminRegistrationSchema = Joi.object({
     .allow('', null),
 
   // Role field (optional - defaults to school_admin)
-  // Accepts multiple formats including Administrator from frontend
+  // This is just an informational job title picked in the "Admin Details"
+  // step of the registration form (AdministratorRole enum on the
+  // frontend) — it is never persisted to the DB; every school admin gets
+  // users.role = 'school_admin' regardless (see registerSchoolAdmin).
+  // The list here must match AdministratorRole's actual values exactly
+  // (case included) or a valid pick gets rejected with a 422 before it
+  // ever reaches the controller.
   role: Joi.string()
-    .valid('school_admin', 'admin', 'principal', 'headteacher', 'Administrator')
+    .valid(
+      'school_admin', 'admin', 'principal', 'headteacher', // legacy/API values
+      'Headteacher', 'Principal', 'Director', 'Administrator', // AdministratorRole enum
+    )
     .optional()
     .allow('', null),
 
