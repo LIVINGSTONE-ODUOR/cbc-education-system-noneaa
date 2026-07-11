@@ -11,6 +11,7 @@ import { GRADE_LEVELS, GRADIENTS, DAYS } from "./constants";
 import { filterClasses, getBranches, getTotalLearners, getTotalCapacity, getActiveClassesCount, getFullClassesCount, getUtilizationRate } from "./utils";
 import { ClassItem, View } from "./types";
 import { createClass, deleteClass, getClasses } from "@/lib/api/classApi";
+import { getLearningAreas, LearningArea } from "@/lib/api/curriculumApi";
 
 const ClassManagement: React.FC = () => {
   // ─── STATE ──────────────────────────────────────────────────────────────
@@ -30,6 +31,11 @@ const ClassManagement: React.FC = () => {
   const [formGrade, setFormGrade] = useState("");
   const [formStream, setFormStream] = useState("");
   const [formCapacity, setFormCapacity] = useState("");
+
+  // Subjects available for the selected grade + which ones this class will take
+  const [availableSubjects, setAvailableSubjects] = useState<LearningArea[]>([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
+  const [selectedSubjectIds, setSelectedSubjectIds] = useState<string[]>([]);
 
   const normalizeClass = (item: any): ClassItem => ({
     id: String(item.id),
@@ -92,6 +98,40 @@ const ClassManagement: React.FC = () => {
     void fetchClasses();
   }, [fetchClasses]);
 
+  // When a grade is picked, load its subjects and default to selecting all of them
+  // (the common CBC case: every learner in the grade takes the same subjects).
+  const handleGradeChange = useCallback(async (grade: string) => {
+    setFormGrade(grade);
+    setSelectedSubjectIds([]);
+
+    if (!grade) {
+      setAvailableSubjects([]);
+      return;
+    }
+
+    setLoadingSubjects(true);
+    try {
+      const response = await getLearningAreas({ grade_level: grade, is_active: true });
+      const subjects = response.data?.learning_areas || [];
+      setAvailableSubjects(subjects);
+      setSelectedSubjectIds(subjects.map((s) => s.id));
+    } catch (error) {
+      console.error("Failed to load subjects for grade:", error);
+      toast.error("Could not load subjects for this grade");
+      setAvailableSubjects([]);
+    } finally {
+      setLoadingSubjects(false);
+    }
+  }, []);
+
+  const toggleSubject = useCallback((learningAreaId: string) => {
+    setSelectedSubjectIds((prev) =>
+      prev.includes(learningAreaId)
+        ? prev.filter((id) => id !== learningAreaId)
+        : [...prev, learningAreaId]
+    );
+  }, []);
+
   const handleCreateClass = useCallback(async () => {
     if (!formGrade) {
       toast.error("Please select a grade level");
@@ -103,6 +143,7 @@ const ClassManagement: React.FC = () => {
         grade_level: formGrade,
         stream_name: formStream || null,
         capacity: formCapacity ? parseInt(formCapacity, 10) : undefined,
+        learning_area_ids: selectedSubjectIds,
       });
 
       const created = response.data;
@@ -114,6 +155,8 @@ const ClassManagement: React.FC = () => {
       setFormGrade("");
       setFormStream("");
       setFormCapacity("");
+      setAvailableSubjects([]);
+      setSelectedSubjectIds([]);
       toast.success(
         `Class ${formGrade}${formStream ? ` ${formStream}` : ""} created successfully`
       );
@@ -121,7 +164,7 @@ const ClassManagement: React.FC = () => {
       console.error("Failed to create class:", error);
       toast.error("Could not create class. Check backend connection and permissions.");
     }
-  }, [formGrade, formStream, formCapacity]);
+  }, [formGrade, formStream, formCapacity, selectedSubjectIds]);
 
   const handleDeleteClass = useCallback(async () => {
     if (!selected) return;
@@ -238,10 +281,14 @@ const ClassManagement: React.FC = () => {
         formGrade={formGrade}
         formStream={formStream}
         formCapacity={formCapacity}
-        onGradeChange={setFormGrade}
+        onGradeChange={handleGradeChange}
         onStreamChange={setFormStream}
         onCapacityChange={setFormCapacity}
         onSubmit={handleCreateClass}
+        availableSubjects={availableSubjects}
+        loadingSubjects={loadingSubjects}
+        selectedSubjectIds={selectedSubjectIds}
+        onToggleSubject={toggleSubject}
       />
 
       <DeleteClassDialog
