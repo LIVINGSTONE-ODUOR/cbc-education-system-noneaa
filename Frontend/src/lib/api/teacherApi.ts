@@ -428,3 +428,49 @@ export const getMyClassStudents = async (
   const response = await fetch(url, getFetchOptions('GET'));
   return handleResponse(response);
 };
+
+/**
+ * GET /api/v1/teachers/me/dashboard
+ * One-call aggregate for the Teacher Portal Home/Dashboard tab: today's
+ * lessons, classes still needing attendance marked, upcoming exams, and
+ * quick stats. `assignments`, `announcements`, and `notifications` come
+ * back with `available: false` — there's no backend module for those yet,
+ * so the UI shows an honest "not set up" state instead of fake data.
+ */
+export interface MyDashboardLesson {
+  id: string;
+  day: string;
+  period_number: number;
+  start_time: string;
+  end_time: string;
+  room: string | null;
+  class: { id: string; grade_level: string; stream_name: string | null } | null;
+  learning_area: { id: string; name: string } | null;
+}
+
+export interface MyDashboardExam {
+  id: string;
+  exam_name: string;
+  exam_type: string;
+  start_date: string;
+  end_date: string;
+  class: { id: string; grade_level: string; stream_name: string | null } | null;
+}
+
+export interface MyDashboard {
+  date: string;
+  classes_count: number;
+  students_count: number;
+  todays_lessons: MyDashboardLesson[];
+  attendance: { classes_pending: number; students_pending: number };
+  upcoming_exams: MyDashboardExam[];
+  assignments: { available: false };
+  announcements: { available: false };
+  notifications: { available: false };
+}
+
+export const getMyDashboard = async (): Promise<ApiResponse<MyDashboard>> => {
+  const url = `${API_URL}/api/v1/teachers/me/dashboard`;
+  const response = await fetch(url, getFetchOptions('GET'));
+  return handleResponse(response);
+};
