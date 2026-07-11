@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -45,6 +46,7 @@ const formatClassName = (cls: MyClassAssignment['class']) => {
 
 const TeacherPortal = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("classes");
 
   // Real teacher profile (sidebar) — fetched from GET /api/v1/teachers/me
@@ -163,6 +165,23 @@ const TeacherPortal = () => {
     .sort((a, b) => a.period_number - b.period_number);
 
   const selectedClassInfo = classes.find((c) => c.id === selectedClass);
+
+  const handleAddAssessment = (student: MyClassStudent) => {
+    const [first_name, ...rest] = student.name.trim().split(' ');
+    navigate('/teacher/marks-entry', {
+      state: {
+        prefillLearner: {
+          id: student.learner_id,
+          first_name: first_name || student.name,
+          last_name: rest.join(' '),
+          admission_number: student.admission_number,
+          class_id: selectedClass,
+          classes: selectedClassInfo ? { grade_level: selectedClassInfo.name, stream_name: null } : null,
+        },
+      },
+    });
+  };
+
 
   return (
       <div className="container mx-auto px-4 py-8">
@@ -410,7 +429,7 @@ const TeacherPortal = () => {
                                   </div>
                                   <div className="mt-4 flex justify-end space-x-2">
                                     <Button variant="outline" size="sm">View Full Profile</Button>
-                                    <Button size="sm">Add Assessment</Button>
+                                    <Button size="sm" onClick={() => handleAddAssessment(student)}>Add Assessment</Button>
                                   </div>
                                 </div>
                               )}
