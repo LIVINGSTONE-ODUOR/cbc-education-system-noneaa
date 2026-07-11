@@ -120,6 +120,7 @@ export const createClass = async (payload: {
   branch_id?: string | null;
   academic_year_id?: string | null;
   capacity?: number;
+  learning_area_ids?: string[];
 }): Promise<ApiResponse<ClassApiItem>> => {
   const url = `${API_URL}/api/v1/classes`;
   const response = await fetch(url, getFetchOptions('POST', payload));
@@ -132,6 +133,50 @@ export const createClass = async (payload: {
 
 export const deleteClass = async (id: string): Promise<ApiResponse<{ message: string }>> => {
   const response = await fetch(`${API_URL}/api/v1/classes/${id}`, getFetchOptions('DELETE'));
+  return handleResponse<ApiResponse<{ message: string }>>(response);
+};
+
+// ── Class Subjects (Learning Areas) ─────────────────────────────────────────
+
+export interface ClassLearningArea {
+  id: string;
+  name: string;
+  code: string;
+  description?: string | null;
+  grade_levels?: string[] | null;
+  is_active?: boolean;
+}
+
+export interface ClassLearningAreasApiResponse {
+  learning_areas: ClassLearningArea[];
+  source: 'class_assignment' | 'grade_default';
+}
+
+// GET /api/v1/classes/:id/learning-areas
+// Resolved subject list for a class: the explicit assignment if one was
+// set (at creation or via setClassLearningAreas), otherwise the
+// grade-level default.
+export const getClassLearningAreas = async (
+  classId: string
+): Promise<ApiResponse<ClassLearningAreasApiResponse>> => {
+  const response = await fetch(
+    `${API_URL}/api/v1/classes/${classId}/learning-areas`,
+    getFetchOptions('GET')
+  );
+  return handleResponse<ApiResponse<ClassLearningAreasApiResponse>>(response);
+};
+
+// PUT /api/v1/classes/:id/learning-areas
+// Replace the explicit subject assignment for a class. Pass [] to clear
+// the explicit assignment and fall back to the grade-level default again.
+export const setClassLearningAreas = async (
+  classId: string,
+  learning_area_ids: string[]
+): Promise<ApiResponse<{ message: string }>> => {
+  const response = await fetch(
+    `${API_URL}/api/v1/classes/${classId}/learning-areas`,
+    getFetchOptions('PUT', { learning_area_ids })
+  );
   return handleResponse<ApiResponse<{ message: string }>>(response);
 };
 
