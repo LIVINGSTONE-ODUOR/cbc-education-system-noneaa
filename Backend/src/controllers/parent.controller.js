@@ -127,8 +127,11 @@ const registerParent = asyncHandler(async (req, res) => {
   }
 
   // ── ALWAYS create user account ─────────────────────────────────────
-  const tempPassword = crypto.randomBytes(10).toString('hex');
-  const passwordHash = await bcrypt.hash(tempPassword, 10);
+  // Portal login = parent's email (username) + phone number (password).
+  // Falls back to a random temp password only if no phone was supplied,
+  // in which case the parent must use the invite link to set one.
+  const initialPassword = normalizedPhone || crypto.randomBytes(10).toString('hex');
+  const passwordHash = await bcrypt.hash(initialPassword, 10);
 
   const { data: newUser, error: userErr } = await supabase
     .from('users')
@@ -219,6 +222,11 @@ const registerParent = asyncHandler(async (req, res) => {
       ...parent,
       user_id: userId,
       account_created: true,
+      login: {
+        email: parent.email,
+        // Only surfaced here (dev convenience); never logged/emailed in plaintext elsewhere.
+        password_source: normalizedPhone ? 'phone_number' : 'temporary_generated',
+      },
       linked_learner: linkResult,
     },
   });
@@ -826,7 +834,8 @@ const sendInvite = asyncHandler(async (req, res) => {
       });
     }
 
-    const tempPassword = crypto.randomBytes(12).toString('hex');
+    // Portal login = email (username) + phone number (password), matching registerParent.
+    const tempPassword = parent.phone_number || crypto.randomBytes(12).toString('hex');
     const passwordHash = await bcrypt.hash(tempPassword, 10);
 
     const { data: newUser, error: userErr } = await supabase
@@ -921,7 +930,82 @@ const sendInvite = asyncHandler(async (req, res) => {
 });
 
 // =============================================================================
-// 8. POST /api/v1/parents/fix-school-id (ADMIN ONLY - Fix missing school_id)
+// 8. GET /api/v1/parents/me/children
+//    Self-service portal endpoint — a logged-in parent's own linked learners,
+//    each with a lightweight performance snapshot.
+//    Supports parents with MULTIPLE children (returns all of them at once).
+// =============================================================================
+const getMyChildren = asyncHandler(async (req, res) => {
+  const { id: userId, role } = req.user;
+
+  if (role !== 'parent') {
+    return res.status(403).json({ success: false, message: 'Parent access only' });
+  }
+
+  // Resolve the parents row for this logged-in user
+  const { data: parent, error: parentErr } = await supabase
+    .from('parents')
+    .select('id, first_name, last_name, email, phone_number, school_id')
+    .eq('user_id', userId)
+    .single();
+
+  if (parentErr || !parent) {
+    return res.status(404).json({ success: false, message: 'Parent profile not found for this account' });
+  }
+
+  // All learners linked to this parent (one row per child, however many there are)
+  const { data: links } = await supabase
+    .from('learner_parents')
+    .select('learner_id, is_primary, relationship')
+    .eq('parent_id', parent.id);
+
+  const learnerIds = (links || []).map((l) => l.learner_id).filter(Boolean);
+
+  if (!learnerIds.length) {
+    return res.json({
+      success: true,
+      data: { parent, children: [], total_children: 0 },
+    });
+  }
+
+  const { data: learners } = await supabase
+    .from('learners')
+    .select(`
+      id, first_name, last_name, middle_name, admission_number,
+      gender, date_of_birth, grade_level, stream_name, class_id, is_active
+    `)
+    .in('id', learnerIds);
+
+  // Latest exam summary per child (best-effort — a missing summary shouldn't break the list)
+  const { buildLearnerSummaries } = require('./results.controller');
+  const children = await Promise.all(
+    (learners || []).map(async (learner) => {
+      const link = (links || []).find((l) => l.learner_id === learner.id);
+      let latestExam = null;
+      try {
+        const summaries = await buildLearnerSummaries(parent.school_id, learner.id);
+        latestExam = summaries?.[0] || null; // most recent exam first
+      } catch (e) {
+        latestExam = null;
+      }
+
+      return {
+        ...learner,
+        relationship: link?.relationship || null,
+        is_primary_guardian: !!link?.is_primary,
+        latest_exam_summary: latestExam,
+      };
+    })
+  );
+
+  res.json({
+    success: true,
+    data: { parent, children, total_children: children.length },
+  });
+});
+
+// =============================================================================
+// 9. POST /api/v1/parents/fix-school-id (ADMIN ONLY - Fix missing school_id)
 // =============================================================================
 const fixMissingSchoolId = asyncHandler(async (req, res) => {
   const { role } = req.user;
@@ -965,5 +1049,6 @@ module.exports = {
   linkLearner,
   unlinkLearner,
   sendInvite,
+  getMyChildren,
   fixMissingSchoolId,
 };
