@@ -1496,14 +1496,29 @@ const getMyClassStudents = asyncHandler(async (req, res) => {
   }
 
   // Only allow viewing classes this teacher is actually assigned to.
-  const { data: assignment } = await supabase
+  // A teacher can hold multiple subjects in the same class, which means
+  // multiple teacher_assignments rows can share this exact (teacher_id,
+  // class_id) pair — one per subject. maybeSingle() errors out on 2+ rows,
+  // and that error was going unchecked here, silently producing a false
+  // "not assigned" 403 for any teacher assigned to more than one subject
+  // in a class. limit(1) + maybeSingle() makes this an existence check
+  // instead of an implicit uniqueness assumption.
+  const { data: assignment, error: assignmentErr } = await supabase
     .from('teacher_assignments')
     .select('id')
     .eq('teacher_id', teacher.id)
     .eq('class_id', classId)
     .eq('is_active', true)
     .is('deleted_at', null)
+    .limit(1)
     .maybeSingle();
+
+  if (assignmentErr) {
+    console.error('[getMyClassStudents] Failed to verify assignment:', {
+      message: assignmentErr.message, code: assignmentErr.code, teacherId: teacher.id, classId,
+    });
+    return res.status(500).json({ success: false, message: 'Failed to verify class assignment', error: assignmentErr.message });
+  }
 
   if (!assignment) {
     return res.status(403).json({ success: false, message: 'You are not assigned to this class' });
