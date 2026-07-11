@@ -12,6 +12,7 @@ import DashboardHome from './components/DashboardHome';
 import Gradebook from './components/Gradebook';
 import Assignments from './components/Assignments';
 import Timetable from './components/Timetable';
+import LessonPlanner from './components/LessonPlanner';
 import StudentProfileDialog from './components/StudentProfileDialog';
 import {
   getMyProfile,
@@ -276,6 +277,9 @@ const TeacherPortal = () => {
                 <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('schedule')}>
                   <Calendar className="mr-2 h-4 w-4" /> View Timetable
                 </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('planner')}>
+                  <BookOpen className="mr-2 h-4 w-4" /> Lesson Planner
+                </Button>
                 <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('resources')}>
                   <BookOpen className="mr-2 h-4 w-4" /> Teaching Resources
                 </Button>
@@ -289,12 +293,13 @@ const TeacherPortal = () => {
           {/* Main content */}
           <div className="col-span-1 md:col-span-3 space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-7 mb-8">
+              <TabsList className="grid grid-cols-8 mb-8">
                 <TabsTrigger value="dashboard">Home</TabsTrigger>
                 <TabsTrigger value="classes">Classes</TabsTrigger>
                 <TabsTrigger value="gradebook">Gradebook</TabsTrigger>
                 <TabsTrigger value="assignments">Assignments</TabsTrigger>
                 <TabsTrigger value="schedule">Schedule</TabsTrigger>
+                <TabsTrigger value="planner">Planner</TabsTrigger>
                 <TabsTrigger value="resources">Resources</TabsTrigger>
                 <TabsTrigger value="reports">Reports</TabsTrigger>
               </TabsList>
@@ -538,6 +543,11 @@ const TeacherPortal = () => {
               {/* Schedule Tab */}
               <TabsContent value="schedule" className="space-y-6">
                 <Timetable />
+              </TabsContent>
+
+              {/* Lesson Planner Tab */}
+              <TabsContent value="planner" className="space-y-6">
+                <LessonPlanner />
               </TabsContent>
 
               {/* Resources Tab */}
