@@ -12,6 +12,7 @@ const {
   getExam,
   updateExam,
   deleteExam,
+  getLearnerUpcomingExams,
 } = require('../controllers/exam.controller');
 
 // All exam routes require authentication
@@ -30,6 +31,13 @@ router.post('/', createExam);
 //   Query: search | exam_type | term_id | class_id | grade_level | is_active
 //          page | limit | sort_by (start_date|end_date|exam_name|exam_type|created_at) | sort_order
 router.get('/', listExams);
+
+// GET   /api/v1/exams/learner/:learnerId/upcoming
+//   Query: limit (default 5)
+//   Returns not-yet-finished exams scoped to the learner's class (plus
+//   whole-school exams). Roles: parent (own child), student (self),
+//   teacher/school_admin/super_admin (any learner in their school).
+router.get('/learner/:learnerId/upcoming', getLearnerUpcomingExams);
 
 // ---------------------------------------------------------------------------
 // Member routes (specific exam by id)
