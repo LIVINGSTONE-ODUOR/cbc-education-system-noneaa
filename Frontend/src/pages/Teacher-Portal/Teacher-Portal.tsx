@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import MarkAttendance from './components/MarkAttendance';
 import DashboardHome from './components/DashboardHome';
 import Gradebook from './components/Gradebook';
+import Assignments from './components/Assignments';
 import {
   getMyProfile,
   getMyClasses,
@@ -300,6 +301,9 @@ const TeacherPortal = () => {
                 <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('gradebook')}>
                   <ClipboardCheck className="mr-2 h-4 w-4" /> Gradebook
                 </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('assignments')}>
+                  <BookOpen className="mr-2 h-4 w-4" /> Assignments
+                </Button>
                 <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('schedule')}>
                   <Calendar className="mr-2 h-4 w-4" /> View Timetable
                 </Button>
@@ -316,10 +320,11 @@ const TeacherPortal = () => {
           {/* Main content */}
           <div className="col-span-1 md:col-span-3 space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-6 mb-8">
+              <TabsList className="grid grid-cols-7 mb-8">
                 <TabsTrigger value="dashboard">Home</TabsTrigger>
                 <TabsTrigger value="classes">Classes</TabsTrigger>
                 <TabsTrigger value="gradebook">Gradebook</TabsTrigger>
+                <TabsTrigger value="assignments">Assignments</TabsTrigger>
                 <TabsTrigger value="schedule">Schedule</TabsTrigger>
                 <TabsTrigger value="resources">Resources</TabsTrigger>
                 <TabsTrigger value="reports">Reports</TabsTrigger>
@@ -544,6 +549,11 @@ const TeacherPortal = () => {
               {/* Gradebook Tab */}
               <TabsContent value="gradebook" className="space-y-6">
                 <Gradebook />
+              </TabsContent>
+
+              {/* Assignments Tab */}
+              <TabsContent value="assignments" className="space-y-6">
+                <Assignments />
               </TabsContent>
 
               {/* Schedule Tab */}
