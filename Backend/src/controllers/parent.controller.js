@@ -77,10 +77,6 @@ const registerParent = asyncHandler(async (req, res) => {
   const school_id = getSchoolId(req);
   const { role } = req.user;
 
-  if (!['school_admin', 'super_admin'].includes(role)) {
-    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
-  }
-
   const {
     first_name, last_name, email,
     phone_number, national_id, passport_number,
@@ -485,10 +481,6 @@ const updateParent = asyncHandler(async (req, res) => {
   const { role } = req.user;
   const { id } = req.params;
 
-  if (!['school_admin', 'super_admin'].includes(role)) {
-    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
-  }
-
   // Build query to check existing parent
   let checkQuery = supabase
     .from('parents')
@@ -577,10 +569,6 @@ const linkLearner = asyncHandler(async (req, res) => {
   const school_id = getSchoolId(req);
   const { role } = req.user;
   const { id } = req.params;
-
-  if (!['school_admin', 'super_admin'].includes(role)) {
-    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
-  }
 
   const { learner_id, relationship, is_primary } = req.body;
 
@@ -690,10 +678,6 @@ const unlinkLearner = asyncHandler(async (req, res) => {
   const { role } = req.user;
   const { id, learnerId } = req.params;
 
-  if (!['school_admin', 'super_admin'].includes(role)) {
-    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
-  }
-
   // Verify parent belongs to school
   let parentQuery = supabase
     .from('parents')
@@ -781,10 +765,6 @@ const sendInvite = asyncHandler(async (req, res) => {
   const school_id = getSchoolId(req);
   const { role } = req.user;
   const { id } = req.params;
-
-  if (!['school_admin', 'super_admin'].includes(role)) {
-    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
-  }
 
   const { channel = 'email', resend = false } = req.body;
 
