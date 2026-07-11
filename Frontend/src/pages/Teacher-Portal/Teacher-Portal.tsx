@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Calendar, User, ChevronDown, ChevronUp, Users, Loader2, UserRound, ClipboardCheck } from 'lucide-react';
+import { BookOpen, Calendar, User, ChevronDown, ChevronUp, Users, Loader2, UserRound, ClipboardCheck, MessageSquare, Megaphone, Settings as SettingsIcon, UsersRound, BarChart3, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import MarkAttendance from './components/MarkAttendance';
 import DashboardHome from './components/DashboardHome';
@@ -14,6 +14,13 @@ import Assignments from './components/Assignments';
 import Timetable from './components/Timetable';
 import LessonPlanner from './components/LessonPlanner';
 import StudentProfileDialog from './components/StudentProfileDialog';
+import Attendance from './components/Attendance';
+import StudentProfiles from './components/StudentProfiles';
+import StudentPerformance from './components/StudentPerformance';
+import Messages from './components/Messages';
+import Announcements from './components/Announcements';
+import ReportsTab from './components/Reports';
+import SettingsTab from './components/Settings';
 import {
   getMyProfile,
   getMyClasses,
@@ -268,23 +275,44 @@ const TeacherPortal = () => {
                 <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('dashboard')}>
                   <Calendar className="mr-2 h-4 w-4" /> Dashboard
                 </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('classes')}>
+                  <Users className="mr-2 h-4 w-4" /> My Classes
+                </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('attendance')}>
+                  <ClipboardCheck className="mr-2 h-4 w-4" /> Attendance
+                </Button>
                 <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('gradebook')}>
                   <ClipboardCheck className="mr-2 h-4 w-4" /> Gradebook
                 </Button>
                 <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('assignments')}>
                   <BookOpen className="mr-2 h-4 w-4" /> Assignments
                 </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('schedule')}>
-                  <Calendar className="mr-2 h-4 w-4" /> View Timetable
-                </Button>
                 <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('planner')}>
                   <BookOpen className="mr-2 h-4 w-4" /> Lesson Planner
                 </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('schedule')}>
+                  <Calendar className="mr-2 h-4 w-4" /> Timetable
+                </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('student-profiles')}>
+                  <UsersRound className="mr-2 h-4 w-4" /> Student Profiles
+                </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('student-performance')}>
+                  <BarChart3 className="mr-2 h-4 w-4" /> Student Performance
+                </Button>
                 <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('resources')}>
-                  <BookOpen className="mr-2 h-4 w-4" /> Teaching Resources
+                  <BookOpen className="mr-2 h-4 w-4" /> Resources
+                </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('messages')}>
+                  <MessageSquare className="mr-2 h-4 w-4" /> Messages
                 </Button>
                 <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('reports')}>
-                  <User className="mr-2 h-4 w-4" /> Performance Reports
+                  <FileText className="mr-2 h-4 w-4" /> Reports
+                </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('announcements')}>
+                  <Megaphone className="mr-2 h-4 w-4" /> Announcements
+                </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('settings')}>
+                  <SettingsIcon className="mr-2 h-4 w-4" /> Settings
                 </Button>
               </CardContent>
             </Card>
@@ -293,15 +321,21 @@ const TeacherPortal = () => {
           {/* Main content */}
           <div className="col-span-1 md:col-span-3 space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-8 mb-8">
-                <TabsTrigger value="dashboard">Home</TabsTrigger>
-                <TabsTrigger value="classes">Classes</TabsTrigger>
+              <TabsList className="flex flex-wrap h-auto gap-1 mb-8 justify-start">
+                <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                <TabsTrigger value="classes">My Classes</TabsTrigger>
+                <TabsTrigger value="attendance">Attendance</TabsTrigger>
                 <TabsTrigger value="gradebook">Gradebook</TabsTrigger>
                 <TabsTrigger value="assignments">Assignments</TabsTrigger>
-                <TabsTrigger value="schedule">Schedule</TabsTrigger>
-                <TabsTrigger value="planner">Planner</TabsTrigger>
+                <TabsTrigger value="planner">Lesson Planner</TabsTrigger>
+                <TabsTrigger value="schedule">Timetable</TabsTrigger>
+                <TabsTrigger value="student-profiles">Student Profiles</TabsTrigger>
+                <TabsTrigger value="student-performance">Student Performance</TabsTrigger>
                 <TabsTrigger value="resources">Resources</TabsTrigger>
+                <TabsTrigger value="messages">Messages</TabsTrigger>
                 <TabsTrigger value="reports">Reports</TabsTrigger>
+                <TabsTrigger value="announcements">Announcements</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
               </TabsList>
 
               {/* Dashboard / Home Tab */}
@@ -530,6 +564,46 @@ const TeacherPortal = () => {
                 )}
               </TabsContent>
 
+              {/* Attendance Tab */}
+              <TabsContent value="attendance" className="space-y-6">
+                <Attendance
+                  classes={classes}
+                  classesLoading={classesLoading}
+                  selectedClass={selectedClass}
+                  onSelectClass={setSelectedClass}
+                  studentCount={students.length}
+                  onMarkAttendance={() => setAttendanceDialogOpen(true)}
+                />
+              </TabsContent>
+
+              {/* Student Profiles Tab */}
+              <TabsContent value="student-profiles" className="space-y-6">
+                <StudentProfiles
+                  classes={classes}
+                  classesLoading={classesLoading}
+                  selectedClass={selectedClass}
+                  onSelectClass={setSelectedClass}
+                  students={students}
+                  studentsLoading={studentsLoading}
+                  onViewProfile={(learnerId) => {
+                    setProfileLearnerId(learnerId);
+                    setProfileDialogOpen(true);
+                  }}
+                />
+              </TabsContent>
+
+              {/* Student Performance Tab */}
+              <TabsContent value="student-performance" className="space-y-6">
+                <StudentPerformance
+                  classes={classes}
+                  classesLoading={classesLoading}
+                  selectedClass={selectedClass}
+                  onSelectClass={setSelectedClass}
+                  students={students}
+                  studentsLoading={studentsLoading}
+                />
+              </TabsContent>
+
               {/* Gradebook Tab */}
               <TabsContent value="gradebook" className="space-y-6">
                 <Gradebook />
@@ -572,51 +646,30 @@ const TeacherPortal = () => {
                 </Card>
               </TabsContent>
 
+              {/* Messages Tab */}
+              <TabsContent value="messages" className="space-y-6">
+                <Messages />
+              </TabsContent>
+
               {/* Reports Tab */}
               <TabsContent value="reports" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Performance Reports</CardTitle>
-                    <CardDescription>Generate and view student assessment reports</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Card>
-                        <CardContent className="pt-6">
-                          <div className="flex items-center space-x-4">
-                            <div className="bg-primary/10 p-3 rounded-full">
-                              <Users className="h-6 w-6 text-primary" />
-                            </div>
-                            <div>
-                              <h3 className="font-semibold">Class Reports</h3>
-                              <p className="text-sm text-muted-foreground">Overall class performance analytics</p>
-                            </div>
-                          </div>
-                          <Button className="mt-4 w-full" variant="outline" onClick={() => setActiveTab('classes')}>
-                            View Classes
-                          </Button>
-                        </CardContent>
-                      </Card>
+                <ReportsTab
+                  classes={classes}
+                  selectedClass={selectedClass}
+                  selectedClassName={selectedClassInfo?.name || ''}
+                  students={students}
+                  onGoToClasses={() => setActiveTab('classes')}
+                />
+              </TabsContent>
 
-                      <Card>
-                        <CardContent className="pt-6">
-                          <div className="flex items-center space-x-4">
-                            <div className="bg-secondary/10 p-3 rounded-full">
-                              <User className="h-6 w-6 text-secondary" />
-                            </div>
-                            <div>
-                              <h3 className="font-semibold">Individual Reports</h3>
-                              <p className="text-sm text-muted-foreground">Student-specific performance data</p>
-                            </div>
-                          </div>
-                          <Button className="mt-4 w-full" variant="outline" onClick={() => setActiveTab('classes')}>
-                            Select Student
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </CardContent>
-                </Card>
+              {/* Announcements Tab */}
+              <TabsContent value="announcements" className="space-y-6">
+                <Announcements />
+              </TabsContent>
+
+              {/* Settings Tab */}
+              <TabsContent value="settings" className="space-y-6">
+                <SettingsTab />
               </TabsContent>
             </Tabs>
           </div>
