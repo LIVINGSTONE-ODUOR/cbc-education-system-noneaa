@@ -9,6 +9,7 @@ const {
   linkLearner,
   unlinkLearner,
   sendInvite,
+  getMyChildren,
   fixMissingSchoolId,  // ← Add this to the import
 } = require('../controllers/parent.controller');
 
@@ -25,6 +26,12 @@ router.post('/', registerParent);
 router.get('/', listParents);
 
 // ---------------------------------------------------------------------------
+// GET    /api/v1/parents/me/children
+//   Self-service portal: the logged-in parent's own children (supports
+//   multiple linked learners) with a performance snapshot for each.
+//   Must be registered BEFORE '/:id' or Express will treat "me" as an id.
+router.get('/me/children', getMyChildren);
+
 // GET    /api/v1/parents/:id
 router.get('/:id', getParent);
 
