@@ -2,9 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, BookOpen, Loader2, AlertCircle } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import {
+  User, BookOpen, Loader2, AlertCircle, CalendarCheck, Wallet, ClipboardList,
+  FileText, MessageSquare, Megaphone, MessageCircle, Clock, PartyPopper,
+} from 'lucide-react';
 import { getMyChildren } from '@/lib/api/parentsApi';
 import { getLearnerResults, ExamSummary } from '@/lib/api/resultsApi';
+import { getLearnerAttendanceSummary, LearnerAttendanceSummaryResponse, AttendanceStatus } from '@/lib/api/attendanceApi';
 import MarksPanel from '@/components/marks/MarksPanel';
 
 // Shapes matching the backend response (snake_case, as returned by the API)
@@ -27,6 +33,10 @@ const ParentPortal = () => {
   const [exams, setExams] = useState<ExamSummary[]>([]);
   const [loadingResults, setLoadingResults] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [attendance, setAttendance] = useState<LearnerAttendanceSummaryResponse | null>(null);
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
+  const [attendanceError, setAttendanceError] = useState<string | null>(null);
 
   // Load every child linked to the logged-in parent (handles 1 or many children)
   useEffect(() => {
@@ -71,8 +81,45 @@ const ParentPortal = () => {
     return () => { cancelled = true; };
   }, [selectedChildId]);
 
+  // Whenever the selected child changes, pull their attendance summary for
+  // the school's current term.
+  useEffect(() => {
+    if (!selectedChildId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingAttendance(true);
+        setAttendanceError(null);
+        const res = await getLearnerAttendanceSummary(selectedChildId);
+        if (cancelled) return;
+        setAttendance(res.data);
+      } catch (err: any) {
+        if (!cancelled) {
+          setAttendanceError(err.message || 'Failed to load attendance');
+          setAttendance(null);
+        }
+      } finally {
+        if (!cancelled) setLoadingAttendance(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedChildId]);
+
   const selectedChild = children.find((c) => c.id === selectedChildId);
   const latestExam = exams[0] || null;
+
+  const attendanceStatusColor = (status: AttendanceStatus) => {
+    if (status === 'present') return 'bg-green-100 text-green-700 border-green-200';
+    if (status === 'late') return 'bg-amber-100 text-amber-700 border-amber-200';
+    if (status === 'excused') return 'bg-blue-100 text-blue-700 border-blue-200';
+    return 'bg-red-100 text-red-700 border-red-200';
+  };
+
+  const attendanceRateColor = (rate: number) => {
+    if (rate >= 90) return 'text-green-600';
+    if (rate >= 75) return 'text-amber-600';
+    return 'text-red-600';
+  };
 
   const gradeColor = (grade: string) => {
     if (grade === 'EE') return 'text-green-600';
@@ -176,6 +223,124 @@ const ParentPortal = () => {
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* Dashboard modules */}
+          {selectedChild && (
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Dashboard</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+
+                {/* 1. Attendance summary — fully wired to /api/v1/attendance/learner/:id/summary */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <CalendarCheck className="h-4 w-4 text-primary" /> Attendance summary
+                    </CardTitle>
+                    {attendance?.term && (
+                      <CardDescription>{attendance.term.name}</CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    {loadingAttendance ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+                      </div>
+                    ) : attendanceError ? (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-4 w-4" /> {attendanceError}
+                      </p>
+                    ) : !attendance || attendance.summary.total_days === 0 ? (
+                      <p className="text-sm text-muted-foreground">No attendance records yet this term.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-baseline justify-between">
+                          <span className={`text-2xl font-bold ${attendanceRateColor(attendance.summary.attendance_rate)}`}>
+                            {attendance.summary.attendance_rate}%
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {attendance.summary.present + attendance.summary.late} / {attendance.summary.total_days} days
+                          </span>
+                        </div>
+                        <Progress value={attendance.summary.attendance_rate} />
+                        <div className="flex flex-wrap gap-1.5 text-xs">
+                          <Badge variant="outline" className={attendanceStatusColor('present')}>Present {attendance.summary.present}</Badge>
+                          <Badge variant="outline" className={attendanceStatusColor('absent')}>Absent {attendance.summary.absent}</Badge>
+                          <Badge variant="outline" className={attendanceStatusColor('late')}>Late {attendance.summary.late}</Badge>
+                          <Badge variant="outline" className={attendanceStatusColor('excused')}>Excused {attendance.summary.excused}</Badge>
+                        </div>
+                        {attendance.recent_records.length > 0 && (
+                          <div className="pt-2 border-t space-y-1.5">
+                            <span className="text-xs text-muted-foreground">Recent</span>
+                            {attendance.recent_records.slice(0, 4).map((r) => (
+                              <div key={r.attendance_date} className="flex items-center justify-between text-xs">
+                                <span>{new Date(r.attendance_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                                <Badge variant="outline" className={`capitalize ${attendanceStatusColor(r.status)}`}>{r.status}</Badge>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* 2. Latest average — reuses the exam summary already fetched above for the overview card */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <BookOpen className="h-4 w-4 text-primary" /> Latest average
+                    </CardTitle>
+                    {latestExam && <CardDescription>{latestExam.exam_name}</CardDescription>}
+                  </CardHeader>
+                  <CardContent>
+                    {loadingResults ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+                      </div>
+                    ) : !latestExam ? (
+                      <p className="text-sm text-muted-foreground">No exam results recorded yet.</p>
+                    ) : (
+                      <div className="space-y-1">
+                        <span className="text-2xl font-bold">{latestExam.average_percentage}%</span>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span>Grade:</span>
+                          <span className={`font-semibold ${gradeColor(latestExam.overall_grade)}`}>{latestExam.overall_grade}</span>
+                        </div>
+                        {latestExam.position && (
+                          <p className="text-xs text-muted-foreground">
+                            Position {latestExam.position} of {latestExam.class_size}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* 3–10. Remaining modules — placeholders until their backends are built in later steps */}
+                {[
+                  { icon: Wallet, title: 'Fees balance' },
+                  { icon: ClipboardList, title: 'Assignments due' },
+                  { icon: FileText, title: 'Upcoming exams' },
+                  { icon: MessageSquare, title: 'Unread messages' },
+                  { icon: Megaphone, title: 'Latest announcements' },
+                  { icon: MessageCircle, title: 'Teacher comments' },
+                  { icon: Clock, title: "Today's timetable" },
+                  { icon: PartyPopper, title: 'School events' },
+                ].map(({ icon: Icon, title }) => (
+                  <Card key={title} className="opacity-70">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium flex items-center gap-2">
+                        <Icon className="h-4 w-4 text-muted-foreground" /> {title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">Coming soon</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
           )}
 
           {/* Marks — filterable by year, term, and exam name */}
