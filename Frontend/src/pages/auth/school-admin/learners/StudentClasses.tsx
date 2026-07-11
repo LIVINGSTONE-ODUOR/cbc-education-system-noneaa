@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Grid3x3,
   List,
+  Pencil,
 } from 'lucide-react';
 
 import ProtectedPageSkeleton from '@/components/skeletons/ProtectedPageSkeleton';
@@ -29,6 +30,7 @@ import ClassCardsSkeleton from '@/components/skeletons/ClassCardsSkeleton';
 import { getClasses, getClassLearners, type ClassLearnerItem } from '@/lib/api/classApi';
 import { cn } from '@/lib/utils';
 import AddClassModal from '@/pages/auth/school-admin/learners/AddClassModal';
+import AssignClassTeacherModal from '@/pages/auth/school-admin/learners/AssignClassTeacherModal';
 
 
 interface TermPerformance {
@@ -45,6 +47,7 @@ interface ClassData {
   stream_name: string | null;
   totalStudents: number;
   classTeacher: string | null;
+  classTeacherId: string | null;
   branch: string | null;
   is_active: boolean;
   capacity: number | null;
@@ -162,6 +165,18 @@ const StudentClasses: React.FC = () => {
   const [classLearners, setClassLearners] = useState<ClassLearnerItem[]>([]);
   const [isLoadingLearners, setIsLoadingLearners] = useState(false);
 
+  // Assign class teacher modal
+  const [isAssignTeacherOpen, setIsAssignTeacherOpen] = useState(false);
+
+  const handleTeacherAssigned = useCallback((teacherId: string | null, teacherName: string) => {
+    setSelectedClass((prev) => (prev ? { ...prev, classTeacherId: teacherId, classTeacher: teacherName } : prev));
+    setClasses((prev) =>
+      prev.map((c) =>
+        c.id === (selectedClass?.id ?? '') ? { ...c, classTeacherId: teacherId, classTeacher: teacherName } : c
+      )
+    );
+  }, [selectedClass]);
+
 
   const fetchClasses = useCallback(async () => {
     setIsLoading(true);
@@ -179,6 +194,7 @@ const StudentClasses: React.FC = () => {
           ? `${item.teachers.users?.first_name || ''} ${item.teachers.users?.last_name || ''}`.trim() ||
             'Unassigned'
           : 'Unassigned',
+        classTeacherId: item.teachers?.id || null,
         branch: item.branches?.name || item.branch?.name || null,
         is_active: item.is_active,
         capacity: item.capacity,
@@ -280,10 +296,19 @@ const StudentClasses: React.FC = () => {
               <div className={`w-14 h-14 rounded-lg flex items-center justify-center flex-shrink-0 ${colors.icon}`}>
                 <User className="h-7 w-7" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-slate-600 mb-1">Class Teacher</p>
                 <p className="font-semibold text-slate-900 truncate">{selectedClass.classTeacher}</p>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 flex-shrink-0"
+                onClick={() => setIsAssignTeacherOpen(true)}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                {selectedClass.classTeacherId ? 'Change' : 'Assign'}
+              </Button>
             </CardContent>
           </Card>
 
@@ -455,6 +480,15 @@ const StudentClasses: React.FC = () => {
             )}
           </CardContent>
         </Card>
+
+        <AssignClassTeacherModal
+          open={isAssignTeacherOpen}
+          onOpenChange={setIsAssignTeacherOpen}
+          classId={selectedClass.id}
+          className={selectedClass.stream_name ? `${selectedClass.grade_level} ${selectedClass.stream_name}` : selectedClass.grade_level}
+          currentTeacherId={selectedClass.classTeacherId}
+          onAssigned={handleTeacherAssigned}
+        />
       </div>
     );
   }
