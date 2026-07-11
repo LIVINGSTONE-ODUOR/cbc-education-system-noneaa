@@ -22,6 +22,56 @@ const VALID_STATUSES = ['present', 'absent', 'late', 'excused'];
 
 const todayISO = () => new Date().toISOString().split('T')[0];
 
+// -----------------------------------------------------------------------
+// Guards against a teacher marking/viewing attendance for a class they
+// are not assigned to. school_admin / super_admin are not restricted —
+// they may act on any class within their own school (already enforced
+// separately via school_id checks on the class itself).
+// Returns true if access is allowed, otherwise sends a 403 and returns false.
+// -----------------------------------------------------------------------
+const ensureTeacherAssignedToClass = async (req, res, classId) => {
+  const { schoolId, role, id: userId } = req.user;
+
+  if (role !== 'teacher') return true; // admins are handled by class/school checks
+
+  const { data: teacher, error: teacherError } = await supabase
+    .from('teachers')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('school_id', schoolId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (teacherError) {
+    res.status(500).json({ success: false, message: 'Failed to verify teacher account', error: teacherError.message });
+    return false;
+  }
+  if (!teacher) {
+    res.status(404).json({ success: false, message: 'No teacher record found for this account' });
+    return false;
+  }
+
+  const { data: assignment, error: assignmentError } = await supabase
+    .from('teacher_assignments')
+    .select('id')
+    .eq('teacher_id', teacher.id)
+    .eq('class_id', classId)
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (assignmentError) {
+    res.status(500).json({ success: false, message: 'Failed to verify class assignment', error: assignmentError.message });
+    return false;
+  }
+  if (!assignment) {
+    res.status(403).json({ success: false, message: 'You are not assigned to this class' });
+    return false;
+  }
+
+  return true;
+};
+
 // =============================================================================
 // 1. GET /api/v1/attendance/class/:classId/roster
 //    Query: date (defaults to today)
@@ -48,6 +98,8 @@ const getClassRoster = asyncHandler(async (req, res) => {
   if (!classData) {
     return res.status(404).json({ success: false, message: 'Class not found' });
   }
+
+  if (!(await ensureTeacherAssignedToClass(req, res, classId))) return;
 
   // Fetch enrolled learners for this class (no hardcoded data - live DB roster)
   const { data: enrollments, error: enrollError } = await supabase
@@ -175,6 +227,8 @@ const saveClassAttendance = asyncHandler(async (req, res) => {
   if (!classData) {
     return res.status(404).json({ success: false, message: 'Class not found' });
   }
+
+  if (!(await ensureTeacherAssignedToClass(req, res, classId))) return;
 
   // Validate each record
   for (const r of records) {
