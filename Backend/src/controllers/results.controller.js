@@ -58,7 +58,7 @@ const RESULT_SELECT = `
   created_at, updated_at,
   learners:learner_id ( id, first_name, last_name, admission_number ),
   learning_areas:learning_area_id ( id, name, code ),
-  exams:exam_id ( id, exam_name, exam_type, term_id, start_date ),
+  exams:exam_id ( id, exam_name, exam_type, term_id, start_date, academic_years:term_id ( id, name, year, is_current ) ),
   classes:class_id ( id, grade_level, stream_name )
 `;
 
@@ -360,7 +360,27 @@ const listResults = asyncHandler(async (req, res) => {
 // =============================================================================
 const getLearnerResults = asyncHandler(async (req, res) => {
   const { schoolId, id: userId, role } = req.user;
-  const { learner_id } = req.params;
+  let { learner_id } = req.params;
+  const { year, term_id, exam_id } = req.query;
+
+  // Student users may only ever see their OWN results. Whatever id was in
+  // the URL is ignored and replaced with the id resolved from their own
+  // login — mirrors the same guard in learner.controller.js — so a student
+  // can't view a classmate's marks just by changing the URL.
+  if (role === 'student') {
+    const admissionNumber = (req.user.email || '').split('@')[0];
+    const { data: ownLearner } = await supabase
+      .from('learners')
+      .select('id')
+      .eq('admission_number', admissionNumber)
+      .eq('school_id', schoolId)
+      .maybeSingle();
+
+    if (!ownLearner) {
+      return res.status(404).json({ success: false, message: 'Learner not found' });
+    }
+    learner_id = ownLearner.id;
+  }
 
   const { data: learner } = await supabase
     .from('learners')
@@ -398,9 +418,39 @@ const getLearnerResults = asyncHandler(async (req, res) => {
     }
   }
 
-  const summaries = await buildLearnerSummaries(schoolId, learner_id);
+  // Full, unfiltered history — used both to answer the request and to
+  // build the year/term/exam options for the frontend's selectors, so the
+  // dropdowns never lose options just because a filter is currently applied.
+  const allSummaries = await buildLearnerSummaries(schoolId, learner_id);
 
-  return res.json({ success: true, data: { learner, exams: summaries } });
+  const available_filters = {
+    years: [...new Set(allSummaries.map((s) => s.exam?.academic_years?.year).filter(Boolean))].sort(
+      (a, b) => b - a
+    ),
+    terms: Object.values(
+      allSummaries.reduce((acc, s) => {
+        const t = s.exam?.academic_years;
+        if (t && !acc[t.id]) acc[t.id] = { id: t.id, name: t.name, year: t.year };
+        return acc;
+      }, {})
+    ),
+    exams: allSummaries.map((s) => ({
+      id: s.exam_id,
+      exam_name: s.exam?.exam_name,
+      exam_type: s.exam?.exam_type,
+      term_id: s.exam?.term_id,
+      year: s.exam?.academic_years?.year,
+    })),
+  };
+
+  // Apply optional filters: ?year=2025 & ?term_id=... & ?exam_id=...
+  // (all optional, all combinable — an unset filter is just not applied)
+  let filtered = allSummaries;
+  if (year) filtered = filtered.filter((s) => String(s.exam?.academic_years?.year) === String(year));
+  if (term_id) filtered = filtered.filter((s) => s.exam?.term_id === term_id);
+  if (exam_id) filtered = filtered.filter((s) => s.exam_id === exam_id);
+
+  return res.json({ success: true, data: { learner, exams: filtered, available_filters } });
 });
 
 // =============================================================================
