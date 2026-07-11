@@ -214,12 +214,24 @@ exports.refreshToken = async (req, res) => {
     });
 
     // Find valid session
+    // NOTE: COALESCE school_id from school_admins here too — school_admin
+    // accounts often only have their school_id set on school_admins.school_id,
+    // not on users.school_id. login()/authenticate() already do this
+    // COALESCE; this endpoint didn't, so a refreshed token could silently
+    // lose schoolId. Also alias us.user_id AS id, since generateTokens()
+    // below reads `user.id` — with the old SELECT that field was
+    // `user_id`, so `user.id` was undefined and every refreshed JWT was
+    // signed with `userId: undefined`.
     let sessionResult;
     try {
       sessionResult = await query(`
-        SELECT us.user_id, us.expires_at, u.email, u.role, u.status, u.school_id
+        SELECT us.user_id AS id, us.expires_at, u.email, u.role, u.status,
+               COALESCE(u.school_id, sa.school_id) AS school_id,
+               u.first_name, u.last_name, s.name AS school_name
         FROM user_sessions us
         JOIN users u ON us.user_id = u.id
+        LEFT JOIN school_admins sa ON sa.user_id = u.id
+        LEFT JOIN schools s ON s.id = COALESCE(u.school_id, sa.school_id)
         WHERE us.session_token = $1 
           AND us.expires_at > NOW() 
           AND u.status != 'deleted'`,
@@ -251,10 +263,29 @@ exports.refreshToken = async (req, res) => {
       [tokens.refreshToken, user.id]
     );
 
+    // Return the live user/role alongside the new tokens so the frontend
+    // can re-sync its cached session (see AuthContext.tsx / lib/auth.ts).
+    // Previously only { tokens } came back, so if a user's role changed
+    // after their original login (e.g. an admin's account got demoted,
+    // or they were re-invited under a different role), the UI kept
+    // showing the stale cached role from localStorage indefinitely —
+    // even though every API call correctly used the *current* DB role
+    // and got 403'd for actions the stale UI still displayed.
     return res.json({
       success: true,
       message: 'Token refreshed successfully.',
-      data: { tokens }
+      data: {
+        tokens,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          schoolId: user.school_id,
+          schoolName: user.school_name
+        }
+      }
     });
 
   } catch (error) {
