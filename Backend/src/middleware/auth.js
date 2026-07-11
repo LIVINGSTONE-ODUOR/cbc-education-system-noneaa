@@ -117,7 +117,11 @@ const authenticate = async (req, res, next) => {
 };
 
 // Role-based authorization middleware
+// Normalizes casing/whitespace so a stray "School_Admin" or trailing space
+// in the DB/JWT doesn't silently produce a false 403.
 const authorize = (...roles) => {
+  const allowed = roles.map(r => r.toString().trim().toLowerCase());
+
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({
@@ -126,7 +130,12 @@ const authorize = (...roles) => {
       });
     }
 
-    if (!roles.includes(req.user.role)) {
+    const userRole = (req.user.role || '').toString().trim().toLowerCase();
+
+    if (!allowed.includes(userRole)) {
+      console.warn(
+        `🚫 authorize() blocked user ${req.user.id} — role="${req.user.role}" not in [${roles.join(', ')}] on ${req.method} ${req.originalUrl}`
+      );
       return res.status(403).json({
         success: false,
         message: 'Insufficient permissions for this action.'
@@ -332,4 +341,3 @@ module.exports = {
   auditLog,
   securityHeaders
 };
-
