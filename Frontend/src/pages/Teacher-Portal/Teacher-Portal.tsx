@@ -44,10 +44,27 @@ const formatClassName = (cls: MyClassAssignment['class']) => {
   return `Grade ${cls.grade_level}${cls.stream_name ? cls.stream_name : ''}`;
 };
 
+// Based on the teacher's own device clock, so it always matches their
+// local time regardless of which timezone the school or server is in.
+const getGreeting = (hour: number) => {
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+};
+
 const TeacherPortal = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("classes");
+
+  // Drives the "Good morning/afternoon/evening" greeting below. Re-checked
+  // every minute so it flips over live if the portal is left open, without
+  // re-rendering the whole page every second.
+  const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
+  useEffect(() => {
+    const id = setInterval(() => setCurrentHour(new Date().getHours()), 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
 
   // Real teacher profile (sidebar) — fetched from GET /api/v1/teachers/me
   const [profile, setProfile] = useState<MyTeacherProfile | null>(null);
@@ -185,6 +202,16 @@ const TeacherPortal = () => {
 
   return (
       <div className="container mx-auto px-4 py-8">
+        {!profileLoading && profile && (
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold">
+              {getGreeting(currentHour)}, {profile.full_name.split(' ')[0]}
+            </h1>
+            {profile.school_name && (
+              <p className="text-muted-foreground">{profile.school_name}</p>
+            )}
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="col-span-1">
