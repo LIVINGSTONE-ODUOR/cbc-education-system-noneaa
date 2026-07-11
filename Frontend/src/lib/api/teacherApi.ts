@@ -482,3 +482,89 @@ export const getMyDashboard = async (): Promise<ApiResponse<MyDashboard>> => {
   const response = await fetch(url, getFetchOptions('GET'));
   return handleResponse(response);
 };
+
+/**
+ * GET /api/v1/teachers/me/students/:learnerId
+ * Full Student Profile — photo, admission no., parents, medical info,
+ * attendance history, discipline records, academic history, notes.
+ * Powers the Student Profile dialog opened from the Classes tab.
+ */
+export interface StudentProfileParent {
+  name: string | null;
+  phone: string | null;
+  email: string | null;
+  relationship: string | null;
+  is_primary: boolean;
+}
+
+export interface StudentProfileAttendanceRecord {
+  attendance_date: string;
+  status: 'present' | 'absent' | 'late' | 'excused';
+  remarks: string | null;
+}
+
+export interface StudentProfileAcademicRecord {
+  exam_name: string;
+  exam_type: string | null;
+  date: string | null;
+  subject: string;
+  score_percent: number;
+}
+
+export interface StudentProfileDisciplineRecord {
+  id: string;
+  date: string;
+  category: 'minor' | 'major' | 'commendation';
+  description: string;
+  action_taken: string | null;
+  recorded_by: string | null;
+}
+
+export interface StudentProfileNote {
+  id: string;
+  note_type: 'comment' | 'teacher_note';
+  content: string;
+  created_at: string;
+  author: string;
+}
+
+export interface StudentProfile {
+  learner_id: string;
+  admission_number: string;
+  name: string;
+  photo: string | null;
+  date_of_birth: string | null;
+  gender: string | null;
+  medical: {
+    conditions: string | null;
+    allergies: string | null;
+    special_needs: string | null;
+  };
+  parents: StudentProfileParent[];
+  attendance: { rate: number | null; history: StudentProfileAttendanceRecord[] };
+  academic_history: StudentProfileAcademicRecord[];
+  discipline: StudentProfileDisciplineRecord[];
+  notes: StudentProfileNote[];
+}
+
+export const getStudentProfile = async (
+  learnerId: string
+): Promise<ApiResponse<StudentProfile>> => {
+  const url = `${API_URL}/api/v1/teachers/me/students/${learnerId}`;
+  const response = await fetch(url, getFetchOptions('GET'));
+  return handleResponse(response);
+};
+
+/**
+ * POST /api/v1/teachers/me/students/:learnerId/notes
+ * Add a comment (e.g. for report cards) or a private teacher note.
+ */
+export const addStudentNote = async (
+  learnerId: string,
+  note_type: 'comment' | 'teacher_note',
+  content: string
+): Promise<ApiResponse<StudentProfileNote>> => {
+  const url = `${API_URL}/api/v1/teachers/me/students/${learnerId}/notes`;
+  const response = await fetch(url, getFetchOptions('POST', { note_type, content }));
+  return handleResponse(response);
+};
