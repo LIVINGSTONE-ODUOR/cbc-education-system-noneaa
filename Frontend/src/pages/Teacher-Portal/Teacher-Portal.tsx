@@ -194,126 +194,109 @@ const TeacherPortal = () => {
   };
 
 
+  const navItems: { value: string; label: string; icon: React.ElementType }[] = [
+    { value: 'dashboard', label: 'Dashboard', icon: Calendar },
+    { value: 'classes', label: 'My Classes', icon: Users },
+    { value: 'attendance', label: 'Attendance', icon: ClipboardCheck },
+    { value: 'gradebook', label: 'Gradebook', icon: BarChart3 },
+    { value: 'assignments', label: 'Assignments', icon: BookOpen },
+    { value: 'planner', label: 'Lesson Planner', icon: BookOpen },
+    { value: 'schedule', label: 'Timetable', icon: Calendar },
+    { value: 'student-profiles', label: 'Student Profiles', icon: UsersRound },
+    { value: 'student-performance', label: 'Student Performance', icon: BarChart3 },
+    { value: 'resources', label: 'Resources', icon: BookOpen },
+    { value: 'messages', label: 'Messages', icon: MessageSquare },
+    { value: 'reports', label: 'Reports', icon: FileText },
+    { value: 'announcements', label: 'Announcements', icon: Megaphone },
+    { value: 'settings', label: 'Settings', icon: SettingsIcon },
+  ];
+
   return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background container mx-auto px-4 py-6">
         {!profileLoading && profile && (
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold">
-              {getGreeting(currentHour)}, {profile.full_name.split(' ')[0]}
+          <div className="mb-5 animate-fade-in-down">
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
+              {getGreeting(currentHour)}, <span className="text-primary">{profile.full_name.split(' ')[0]}</span>
             </h1>
             {profile.school_name && (
-              <p className="text-muted-foreground">{profile.school_name}</p>
+              <p className="text-muted-foreground text-sm">{profile.school_name}</p>
             )}
           </div>
         )}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-5 items-start">
           {/* Sidebar */}
-          <div className="col-span-1">
-            <Card className="mb-6">
-              <CardContent className="pt-6">
-                {profileLoading ? (
+          <div className="col-span-1 md:sticky md:top-4 space-y-4 animate-slide-in-left">
+            <Card className="overflow-hidden border-0 shadow-md">
+              {profileLoading ? (
+                <CardContent className="pt-6">
                   <div className="flex flex-col items-center py-8 text-muted-foreground gap-2">
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                    <span className="text-sm">Loading profile...</span>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="text-xs">Loading profile...</span>
                   </div>
-                ) : profile ? (
-                  <>
-                    <div className="flex flex-col items-center mb-6">
-                      <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-secondary/20 bg-muted flex items-center justify-center">
-                        {profile.photo ? (
-                          <img
-                            src={profile.photo}
-                            alt={profile.full_name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <UserRound className="w-16 h-16 text-muted-foreground" />
-                        )}
-                      </div>
-                      <h2 className="text-xl font-bold mt-4">{profile.full_name}</h2>
-                      <p className="text-muted-foreground">{profile.designation || 'Teacher'}</p>
-                      {profile.employee_number && (
-                        <div className="bg-secondary/10 text-secondary text-sm px-3 py-1 rounded-full mt-2">
-                          ID: {profile.employee_number}
-                        </div>
+                </CardContent>
+              ) : profile ? (
+                <>
+                  <div className="bg-gradient-to-br from-primary to-primary/70 px-4 pt-5 pb-6 text-center relative">
+                    <div className="w-16 h-16 mx-auto rounded-full overflow-hidden border-2 border-white/70 bg-white/10 flex items-center justify-center shadow-lg">
+                      {profile.photo ? (
+                        <img src={profile.photo} alt={profile.full_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <UserRound className="w-8 h-8 text-white/90" />
                       )}
                     </div>
-
-                    <div className="space-y-1 border-t pt-4">
-                      <div className="flex justify-between py-1">
-                        <span className="text-muted-foreground">School:</span>
-                        <span className="font-medium">{profile.school_name || '—'}</span>
+                    <h2 className="text-sm font-semibold mt-2.5 text-white">{profile.full_name}</h2>
+                    <p className="text-white/80 text-xs">{profile.designation || 'Teacher'}</p>
+                    {profile.employee_number && (
+                      <div className="inline-block bg-white/15 text-white text-[11px] px-2.5 py-0.5 rounded-full mt-1.5 backdrop-blur-sm">
+                        ID: {profile.employee_number}
                       </div>
-                      <div className="flex justify-between py-1">
-                        <span className="text-muted-foreground">Experience:</span>
-                        <span className="font-medium">{profile.experience || '—'}</span>
-                      </div>
-                      <div className="flex justify-between py-1">
-                        <span className="text-muted-foreground">Email:</span>
-                        <span className="font-medium text-sm">{profile.email}</span>
-                      </div>
-                      <div className="flex justify-between py-1">
-                        <span className="text-muted-foreground">Phone:</span>
-                        <span className="font-medium">{profile.phone || '—'}</span>
-                      </div>
+                    )}
+                  </div>
+                  <CardContent className="p-3 text-xs space-y-1.5">
+                    <div className="flex justify-between py-1 border-b border-border/60">
+                      <span className="text-muted-foreground">School</span>
+                      <span className="font-medium text-right truncate max-w-[60%]">{profile.school_name || '—'}</span>
                     </div>
-                  </>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    Profile unavailable.
-                  </p>
-                )}
-              </CardContent>
+                    <div className="flex justify-between py-1 border-b border-border/60">
+                      <span className="text-muted-foreground">Experience</span>
+                      <span className="font-medium">{profile.experience || '—'}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-border/60">
+                      <span className="text-muted-foreground">Email</span>
+                      <span className="font-medium truncate max-w-[60%]">{profile.email}</span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span className="text-muted-foreground">Phone</span>
+                      <span className="font-medium">{profile.phone || '—'}</span>
+                    </div>
+                  </CardContent>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">Profile unavailable.</p>
+              )}
             </Card>
 
-            {/* Quick actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('dashboard')}>
-                  <Calendar className="mr-2 h-4 w-4" /> Dashboard
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('classes')}>
-                  <Users className="mr-2 h-4 w-4" /> My Classes
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('attendance')}>
-                  <ClipboardCheck className="mr-2 h-4 w-4" /> Attendance
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('gradebook')}>
-                  <ClipboardCheck className="mr-2 h-4 w-4" /> Gradebook
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('assignments')}>
-                  <BookOpen className="mr-2 h-4 w-4" /> Assignments
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('planner')}>
-                  <BookOpen className="mr-2 h-4 w-4" /> Lesson Planner
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('schedule')}>
-                  <Calendar className="mr-2 h-4 w-4" /> Timetable
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('student-profiles')}>
-                  <UsersRound className="mr-2 h-4 w-4" /> Student Profiles
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('student-performance')}>
-                  <BarChart3 className="mr-2 h-4 w-4" /> Student Performance
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('resources')}>
-                  <BookOpen className="mr-2 h-4 w-4" /> Resources
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('messages')}>
-                  <MessageSquare className="mr-2 h-4 w-4" /> Messages
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('reports')}>
-                  <FileText className="mr-2 h-4 w-4" /> Reports
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('announcements')}>
-                  <Megaphone className="mr-2 h-4 w-4" /> Announcements
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('settings')}>
-                  <SettingsIcon className="mr-2 h-4 w-4" /> Settings
-                </Button>
+            {/* Navigation */}
+            <Card className="border-0 shadow-md">
+              <CardContent className="p-2">
+                <nav className="flex flex-col gap-0.5">
+                  {navItems.map(({ value, label, icon: Icon }) => {
+                    const isActive = activeTab === value;
+                    return (
+                      <button
+                        key={value}
+                        onClick={() => setActiveTab(value)}
+                        className={`group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-left transition-all duration-200 ease-out
+                          ${isActive
+                            ? 'bg-primary text-primary-foreground shadow-sm font-semibold translate-x-0.5'
+                            : 'text-foreground/80 hover:bg-muted hover:translate-x-0.5'}`}
+                      >
+                        <Icon className={`h-4 w-4 shrink-0 transition-transform duration-200 ${isActive ? '' : 'group-hover:scale-110 text-primary'}`} />
+                        <span className="truncate">{label}</span>
+                      </button>
+                    );
+                  })}
+                </nav>
               </CardContent>
             </Card>
           </div>
@@ -321,22 +304,7 @@ const TeacherPortal = () => {
           {/* Main content */}
           <div className="col-span-1 md:col-span-3 space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="flex flex-wrap h-auto gap-1 mb-8 justify-start">
-                <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-                <TabsTrigger value="classes">My Classes</TabsTrigger>
-                <TabsTrigger value="attendance">Attendance</TabsTrigger>
-                <TabsTrigger value="gradebook">Gradebook</TabsTrigger>
-                <TabsTrigger value="assignments">Assignments</TabsTrigger>
-                <TabsTrigger value="planner">Lesson Planner</TabsTrigger>
-                <TabsTrigger value="schedule">Timetable</TabsTrigger>
-                <TabsTrigger value="student-profiles">Student Profiles</TabsTrigger>
-                <TabsTrigger value="student-performance">Student Performance</TabsTrigger>
-                <TabsTrigger value="resources">Resources</TabsTrigger>
-                <TabsTrigger value="messages">Messages</TabsTrigger>
-                <TabsTrigger value="reports">Reports</TabsTrigger>
-                <TabsTrigger value="announcements">Announcements</TabsTrigger>
-                <TabsTrigger value="settings">Settings</TabsTrigger>
-              </TabsList>
+              <div key={activeTab} className="animate-fade-in-up">
 
               {/* Dashboard / Home Tab */}
               <TabsContent value="dashboard" className="space-y-6">
@@ -671,6 +639,7 @@ const TeacherPortal = () => {
               <TabsContent value="settings" className="space-y-6">
                 <SettingsTab />
               </TabsContent>
+              </div>
             </Tabs>
           </div>
         </div>
