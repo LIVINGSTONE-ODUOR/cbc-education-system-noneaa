@@ -934,10 +934,15 @@ const getMyChildren = asyncHandler(async (req, res) => {
   }
 
   // All learners linked to this parent (one row per child, however many there are)
-  const { data: links } = await supabase
+  const { data: links, error: linksErr } = await supabase
     .from('learner_parents')
     .select('learner_id, is_primary, relationship')
     .eq('parent_id', parent.id);
+
+  if (linksErr) {
+    console.error('[getMyChildren] learner_parents query failed:', linksErr);
+    return res.status(500).json({ success: false, message: 'Failed to load linked learners', error: linksErr.message });
+  }
 
   const learnerIds = (links || []).map((l) => l.learner_id).filter(Boolean);
 
@@ -948,19 +953,46 @@ const getMyChildren = asyncHandler(async (req, res) => {
     });
   }
 
-  const { data: learners } = await supabase
+  // NOTE: grade_level / stream_name / class_id live on `classes`, reached via
+  // `learner_enrollments`, NOT as columns on `learners` directly — selecting
+  // them straight off `learners` throws a Postgres 42703 (column does not
+  // exist) and, since the error wasn't being checked, silently produced an
+  // empty children list even when the link was correct.
+  const { data: learners, error: learnersErr } = await supabase
     .from('learners')
     .select(`
       id, first_name, last_name, middle_name, admission_number,
-      gender, date_of_birth, grade_level, stream_name, class_id, is_active
+      gender, date_of_birth, is_active
     `)
     .in('id', learnerIds);
+
+  if (learnersErr) {
+    console.error('[getMyChildren] learners query failed:', learnersErr);
+    return res.status(500).json({ success: false, message: 'Failed to load learner details', error: learnersErr.message });
+  }
+
+  // Current class (grade_level/stream_name) per child via learner_enrollments → classes
+  const { data: enrollments } = await supabase
+    .from('learner_enrollments')
+    .select(`
+      learner_id,
+      class_id,
+      status,
+      classes!inner ( id, grade_level, stream_name )
+    `)
+    .in('learner_id', learnerIds)
+    .eq('status', 'enrolled');
+
+  const enrollmentByLearner = new Map(
+    (enrollments || []).map((e) => [e.learner_id, e])
+  );
 
   // Latest exam summary per child (best-effort — a missing summary shouldn't break the list)
   const { buildLearnerSummaries } = require('./results.controller');
   const children = await Promise.all(
     (learners || []).map(async (learner) => {
       const link = (links || []).find((l) => l.learner_id === learner.id);
+      const enrollment = enrollmentByLearner.get(learner.id);
       let latestExam = null;
       try {
         const summaries = await buildLearnerSummaries(parent.school_id, learner.id);
@@ -971,6 +1003,9 @@ const getMyChildren = asyncHandler(async (req, res) => {
 
       return {
         ...learner,
+        grade_level: enrollment?.classes?.grade_level || null,
+        stream_name: enrollment?.classes?.stream_name || null,
+        class_id: enrollment?.class_id || null,
         relationship: link?.relationship || null,
         is_primary_guardian: !!link?.is_primary,
         latest_exam_summary: latestExam,
