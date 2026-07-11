@@ -69,48 +69,52 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onGoToClasses, onGoToSche
 
   const { classes_count, students_count, todays_lessons, attendance, upcoming_exams } = dashboard;
 
+  const attendanceOk = attendance.classes_pending === 0;
+
+  const stats = [
+    { label: 'My Classes', value: classes_count, icon: BookOpen, ring: 'from-blue-500/15 to-blue-500/5', iconColor: 'text-blue-600' },
+    { label: 'Students', value: students_count, icon: Users, ring: 'from-violet-500/15 to-violet-500/5', iconColor: 'text-violet-600' },
+    { label: 'Lessons Today', value: todays_lessons.length, icon: Clock, ring: 'from-cyan-500/15 to-cyan-500/5', iconColor: 'text-cyan-600' },
+    {
+      label: 'Pending Attendance',
+      value: attendance.classes_pending,
+      icon: ClipboardCheck,
+      ring: attendanceOk ? 'from-emerald-500/15 to-emerald-500/5' : 'from-amber-500/15 to-amber-500/5',
+      iconColor: attendanceOk ? 'text-emerald-600' : 'text-amber-600',
+    },
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Quick statistics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <BookOpen className="h-5 w-5 mx-auto text-primary mb-2" />
-            <div className="text-2xl font-bold">{classes_count}</div>
-            <div className="text-xs text-muted-foreground">My Classes</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <Users className="h-5 w-5 mx-auto text-primary mb-2" />
-            <div className="text-2xl font-bold">{students_count}</div>
-            <div className="text-xs text-muted-foreground">Students</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <Clock className="h-5 w-5 mx-auto text-primary mb-2" />
-            <div className="text-2xl font-bold">{todays_lessons.length}</div>
-            <div className="text-xs text-muted-foreground">Lessons Today</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <ClipboardCheck className={`h-5 w-5 mx-auto mb-2 ${attendance.classes_pending > 0 ? 'text-amber-500' : 'text-green-600'}`} />
-            <div className="text-2xl font-bold">{attendance.classes_pending}</div>
-            <div className="text-xs text-muted-foreground">Classes Pending Attendance</div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {stats.map(({ label, value, icon: Icon, ring, iconColor }) => (
+          <Card
+            key={label}
+            className="border-0 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
+          >
+            <CardContent className="p-4 text-center">
+              <div className={`w-9 h-9 mx-auto rounded-xl bg-gradient-to-br ${ring} flex items-center justify-center mb-2`}>
+                <Icon className={`h-4 w-4 ${iconColor}`} />
+              </div>
+              <div className="text-xl font-bold tracking-tight">{value}</div>
+              <div className="text-[11px] text-muted-foreground font-medium">{label}</div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Today's lessons */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Calendar className="h-5 w-5" /> Today's Lessons
+        <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="w-7 h-7 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                <Calendar className="h-3.5 w-3.5 text-cyan-600" />
+              </span>
+              Today's Lessons
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs">
               {todays_lessons.length === 0 ? 'Nothing scheduled today' : `${todays_lessons.length} lesson(s) today`}
             </CardDescription>
           </CardHeader>
@@ -118,9 +122,12 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onGoToClasses, onGoToSche
             {todays_lessons.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">No lessons scheduled for today.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {todays_lessons.map((lesson) => (
-                  <div key={lesson.id} className="flex items-center justify-between text-sm border rounded-md p-2">
+                  <div
+                    key={lesson.id}
+                    className="flex items-center justify-between text-sm border-l-2 border-cyan-500/60 bg-muted/40 rounded-md p-2 transition-colors duration-200 hover:bg-muted"
+                  >
                     <div>
                       <div className="font-medium">
                         {lesson.class ? `Grade ${lesson.class.grade_level}${lesson.class.stream_name || ''}` : '—'}
@@ -137,23 +144,26 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onGoToClasses, onGoToSche
             )}
           </CardContent>
           <CardFooter>
-            <Button variant="outline" size="sm" className="ml-auto" onClick={onGoToSchedule}>
+            <Button variant="outline" size="sm" className="ml-auto transition-transform duration-200 hover:scale-105" onClick={onGoToSchedule}>
               View Full Schedule
             </Button>
           </CardFooter>
         </Card>
 
         {/* Attendance to mark */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <ClipboardCheck className="h-5 w-5" /> Attendance
+        <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className={`w-7 h-7 rounded-lg flex items-center justify-center ${attendanceOk ? 'bg-emerald-500/10' : 'bg-amber-500/10'}`}>
+                <ClipboardCheck className={`h-3.5 w-3.5 ${attendanceOk ? 'text-emerald-600' : 'text-amber-600'}`} />
+              </span>
+              Attendance
             </CardTitle>
-            <CardDescription>Teachers do this every morning.</CardDescription>
+            <CardDescription className="text-xs">Teachers do this every morning.</CardDescription>
           </CardHeader>
           <CardContent>
-            {attendance.classes_pending === 0 ? (
-              <p className="text-sm text-green-600 py-4 text-center">
+            {attendanceOk ? (
+              <p className="text-sm text-emerald-600 font-medium py-4 text-center">
                 All your classes are marked for today. Nice work!
               </p>
             ) : (
@@ -165,27 +175,33 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onGoToClasses, onGoToSche
             )}
           </CardContent>
           <CardFooter>
-            <Button size="sm" className="ml-auto" onClick={onGoToClasses}>
+            <Button size="sm" className="ml-auto transition-transform duration-200 hover:scale-105" onClick={onGoToClasses}>
               Go Mark Attendance
             </Button>
           </CardFooter>
         </Card>
 
         {/* Upcoming exams */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <GraduationCap className="h-5 w-5" /> Upcoming Exams
+        <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="w-7 h-7 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                <GraduationCap className="h-3.5 w-3.5 text-violet-600" />
+              </span>
+              Upcoming Exams
             </CardTitle>
-            <CardDescription>For your classes and school-wide exams</CardDescription>
+            <CardDescription className="text-xs">For your classes and school-wide exams</CardDescription>
           </CardHeader>
           <CardContent>
             {upcoming_exams.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">No upcoming exams scheduled.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {upcoming_exams.map((exam) => (
-                  <div key={exam.id} className="flex items-center justify-between text-sm border rounded-md p-2">
+                  <div
+                    key={exam.id}
+                    className="flex items-center justify-between text-sm border-l-2 border-violet-500/60 bg-muted/40 rounded-md p-2 transition-colors duration-200 hover:bg-muted"
+                  >
                     <div>
                       <div className="font-medium">{exam.exam_name}</div>
                       <div className="text-muted-foreground text-xs">
@@ -202,22 +218,25 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onGoToClasses, onGoToSche
         </Card>
 
         {/* Not-yet-available modules, shown honestly rather than faked */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <FileText className="h-5 w-5" /> Assignments &amp; Announcements
+        <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <FileText className="h-3.5 w-3.5 text-blue-600" />
+              </span>
+              Assignments &amp; Announcements
             </CardTitle>
-            <CardDescription>Coming soon</CardDescription>
+            <CardDescription className="text-xs">Coming soon</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <FileText className="h-4 w-4" /> Assignments waiting for grading — not set up for your school yet.
+          <CardContent className="space-y-2.5">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/40 rounded-md p-2">
+              <FileText className="h-4 w-4 shrink-0" /> Assignments waiting for grading — not set up for your school yet.
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Megaphone className="h-4 w-4" /> Recent announcements — not set up for your school yet.
+            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/40 rounded-md p-2">
+              <Megaphone className="h-4 w-4 shrink-0" /> Recent announcements — not set up for your school yet.
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Bell className="h-4 w-4" /> Notifications from the principal — not set up for your school yet.
+            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/40 rounded-md p-2">
+              <Bell className="h-4 w-4 shrink-0" /> Notifications from the principal — not set up for your school yet.
             </div>
           </CardContent>
         </Card>
