@@ -759,6 +759,7 @@ const registerParent = async (req, res) => {
       .from('parents')
       .insert({
         user_id:       authUserId,
+        school_id:     school.id,
         national_id:   national_id || null,
         occupation:    occupation?.trim() || null,
         relationship,
