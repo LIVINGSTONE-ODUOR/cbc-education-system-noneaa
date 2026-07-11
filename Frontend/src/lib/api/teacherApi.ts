@@ -354,3 +354,77 @@ export const getMyClasses = async (
   const response = await fetch(url, getFetchOptions('GET'));
   return handleResponse(response);
 };
+
+/**
+ * GET /api/v1/teachers/me
+ * The logged-in teacher's own profile — powers the Teacher Portal sidebar.
+ */
+export interface MyTeacherProfile {
+  teacher_id: string;
+  employee_number: string | null;
+  designation: string | null;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  photo: string | null;
+  school_name: string | null;
+  date_joined: string | null;
+  experience: string | null;
+}
+
+export const getMyProfile = async (): Promise<ApiResponse<MyTeacherProfile>> => {
+  const url = `${API_URL}/api/v1/teachers/me`;
+  const response = await fetch(url, getFetchOptions('GET'));
+  return handleResponse(response);
+};
+
+/**
+ * GET /api/v1/teachers/me/timetable
+ * The logged-in teacher's own weekly timetable — powers the Schedule tab.
+ */
+export interface MyTimetableSlot {
+  id: string;
+  day: string;
+  period_number: number;
+  start_time: string;
+  end_time: string;
+  room: string | null;
+  class: { id: string; grade_level: string; stream_name: string | null } | null;
+  learning_area: { id: string; name: string; code: string } | null;
+}
+
+export const getMyTimetable = async (): Promise<
+  ApiResponse<{ teacher_id: string; academic_year_id: string; timetable: Record<string, MyTimetableSlot[]> }>
+> => {
+  const url = `${API_URL}/api/v1/teachers/me/timetable`;
+  const response = await fetch(url, getFetchOptions('GET'));
+  return handleResponse(response);
+};
+
+/**
+ * GET /api/v1/teachers/me/classes/:classId/students
+ * Real class roster (enrollment + attendance + exam performance) for one of
+ * the logged-in teacher's classes — powers the Classes tab student list.
+ */
+export interface MyClassStudent {
+  learner_id: string;
+  admission_number: string;
+  name: string;
+  photo: string | null;
+  performance: number | null;
+  attendance: number | null;
+  exams_recorded: number;
+  strengths: string;
+  areas_for_improvement: string;
+  recent_scores: number[];
+}
+
+export const getMyClassStudents = async (
+  classId: string
+): Promise<ApiResponse<{ class_id: string; students: MyClassStudent[] }>> => {
+  const url = `${API_URL}/api/v1/teachers/me/classes/${classId}/students`;
+  const response = await fetch(url, getFetchOptions('GET'));
+  return handleResponse(response);
+};
