@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, BookOpen, Save, Send, Trash2, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ListBlockSkeleton } from './skeletons';
 import {
   getMyClasses,
   getMyLessonPlans,
@@ -181,8 +183,15 @@ const LessonPlanner: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           {assignmentsLoading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading your classes...
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-10 w-full rounded-md" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-14" />
+                <Skeleton className="h-10 w-full rounded-md" />
+              </div>
             </div>
           ) : assignments.length === 0 ? (
             <p className="text-sm text-muted-foreground">
@@ -278,9 +287,7 @@ const LessonPlanner: React.FC = () => {
         </CardHeader>
         <CardContent>
           {plansLoading ? (
-            <div className="flex justify-center py-10 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-            </div>
+            <ListBlockSkeleton count={4} />
           ) : sortedPlans.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">
               No lesson plans yet — create one above.
