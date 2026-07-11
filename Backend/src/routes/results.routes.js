@@ -45,7 +45,18 @@ router.get('/compare', compareResults);
 
 // GET    /api/v1/results/learner/:learner_id
 //   Full final-result history for one learner (every exam sat, totals, grade, position)
+//   Query: year | term_id | exam_id (all optional, combinable)
+//   Note: for role=student the :learner_id in the URL is ignored server-side
+//   and always resolved to the caller's own record — see getLearnerResults.
 router.get('/learner/:learner_id', getLearnerResults);
+
+// GET    /api/v1/results/me
+//   Convenience alias for a logged-in student — same handler, same query
+//   params, just skips having to look up your own learner_id first.
+router.get('/me', (req, res, next) => {
+  req.params.learner_id = 'me';
+  return getLearnerResults(req, res, next);
+});
 
 // DELETE /api/v1/results/:id
 //   Roles: school_admin, super_admin, teacher
