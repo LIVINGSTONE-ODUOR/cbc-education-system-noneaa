@@ -476,12 +476,27 @@ export function AuthProvider({
         data.refreshToken ||
         '';
 
+      // Previously this defaulted to the literal string 'admin' whenever
+      // the backend response didn't include userData.role. 'admin' isn't
+      // even one of the real roles the app checks against
+      // (school_admin / super_admin / teacher / parent / student) — so a
+      // missing role silently produced a user object that could slip
+      // past the AdminRoute/ProtectedRoute guards on the client while
+      // every backend permission check (which reads the *real* role from
+      // the DB on each request) correctly rejected it as "Insufficient
+      // permissions". Fail loudly instead of guessing.
+      if (!userData.role) {
+        throw new Error(
+          'Login response is missing the account role. Please contact support.'
+        );
+      }
+
       const user: User = {
         id: userData.id || '1',
 
         email: userData.email || email,
 
-        role: (userData.role || 'admin') as UserRole,
+        role: userData.role as UserRole,
 
         firstName:
           userData.firstName ||
