@@ -143,7 +143,14 @@ export default function AdminRegistrationPage() {
         toast({ title: 'Registration Successful!', description: 'Check your email to verify your account.' });
         navigate('/login');
       } else {
-        toast({ title: 'Registration Failed', description: result.message || 'Something went wrong.', variant: 'destructive' });
+        const fieldErrors = Array.isArray(result.errors)
+          ? result.errors.map((e: { field?: string; message: string }) => e.message).join(' ')
+          : null;
+        toast({
+          title: 'Registration Failed',
+          description: fieldErrors || result.message || 'Something went wrong.',
+          variant: 'destructive',
+        });
       }
     } catch {
       toast({ title: 'Connection Error', description: 'Unable to reach the server. Try again later.', variant: 'destructive' });
