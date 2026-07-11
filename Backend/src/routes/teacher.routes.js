@@ -26,6 +26,7 @@ const {
   getMyDashboard,
 } = require('../controllers/teacher.controller');
 const { uploadTeacherPhoto } = require('../controllers/teacherPhoto.controller');
+const { getStudentProfile, addStudentNote } = require('../controllers/studentProfile.controller');
 
 // Photo upload multer (images, 5MB) — same limits as the learner photo upload
 const photoUpload = multer({
@@ -91,6 +92,18 @@ router.get('/me/classes/:classId/students', getMyClassStudents);
 //        Home/Dashboard tab: greeting context, today's lessons, classes
 //        still needing attendance marked, upcoming exams, quick stats.
 router.get('/me/dashboard', getMyDashboard);
+
+// GET    /api/v1/teachers/me/students/:learnerId — full Student Profile:
+//        photo, admission no., parents, medical info, attendance history,
+//        discipline records, academic history, comments & teacher notes.
+//        Only accessible for a learner enrolled in a class this teacher
+//        is assigned to.
+router.get('/me/students/:learnerId', getStudentProfile);
+
+// POST   /api/v1/teachers/me/students/:learnerId/notes — add a comment or a
+//        private teacher note to a student's profile.
+//        Body: { note_type: 'comment' | 'teacher_note', content }
+router.post('/me/students/:learnerId/notes', addStudentNote);
 
 // ---------------------------------------------------------------------------
 // Member routes (specific teacher by id)
