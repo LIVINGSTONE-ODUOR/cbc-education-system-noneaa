@@ -70,12 +70,26 @@ export interface ResultSubject {
   code: string;
 }
 
+export interface ResultTerm {
+  id: string;
+  name: string;
+  year: number;
+  is_current?: boolean;
+}
+
 export interface ResultExam {
   id: string;
   exam_name: string;
   exam_type: string;
   term_id: string;
   start_date?: string;
+  academic_years?: ResultTerm | null;
+}
+
+export interface AvailableFilters {
+  years: number[];
+  terms: ResultTerm[];
+  exams: { id: string; exam_name: string; exam_type: string; term_id: string; year: number | null }[];
 }
 
 export interface ResultClass {
@@ -195,10 +209,37 @@ export interface ExamSummary {
   }[];
 }
 
+export interface LearnerResultsFilters {
+  year?: number | string;
+  term_id?: string;
+  exam_id?: string;
+}
+
+const buildFilterQuery = (filters?: LearnerResultsFilters): string => {
+  if (!filters) return '';
+  const params = new URLSearchParams();
+  if (filters.year) params.append('year', String(filters.year));
+  if (filters.term_id) params.append('term_id', filters.term_id);
+  if (filters.exam_id) params.append('exam_id', filters.exam_id);
+  const qs = params.toString();
+  return qs ? `?${qs}` : '';
+};
+
 export const getLearnerResults = async (
-  learnerId: string
-): Promise<ApiResponse<{ learner: ResultLearner; exams: ExamSummary[] }>> => {
-  const url = `${API_URL}/api/v1/results/learner/${learnerId}`;
+  learnerId: string,
+  filters?: LearnerResultsFilters
+): Promise<ApiResponse<{ learner: ResultLearner; exams: ExamSummary[]; available_filters: AvailableFilters }>> => {
+  const url = `${API_URL}/api/v1/results/learner/${learnerId}${buildFilterQuery(filters)}`;
+  const response = await fetch(url, getFetchOptions('GET'));
+  return handleResponse(response);
+};
+
+// Convenience for a logged-in student viewing their own marks — same data
+// shape as getLearnerResults, no need to know your own learner_id first.
+export const getMyResults = async (
+  filters?: LearnerResultsFilters
+): Promise<ApiResponse<{ learner: ResultLearner; exams: ExamSummary[]; available_filters: AvailableFilters }>> => {
+  const url = `${API_URL}/api/v1/results/me${buildFilterQuery(filters)}`;
   const response = await fetch(url, getFetchOptions('GET'));
   return handleResponse(response);
 };
