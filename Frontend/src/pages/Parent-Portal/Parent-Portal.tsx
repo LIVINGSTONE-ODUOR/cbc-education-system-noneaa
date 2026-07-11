@@ -11,6 +11,7 @@ import {
 import { getMyChildren } from '@/lib/api/parentsApi';
 import { getLearnerResults, ExamSummary } from '@/lib/api/resultsApi';
 import { getLearnerAttendanceSummary, LearnerAttendanceSummaryResponse, AttendanceStatus } from '@/lib/api/attendanceApi';
+import { getLearnerAssignmentsDue, LearnerAssignmentsDueResponse } from '@/lib/api/assignmentApi';
 import MarksPanel from '@/components/marks/MarksPanel';
 
 // Shapes matching the backend response (snake_case, as returned by the API)
@@ -37,6 +38,10 @@ const ParentPortal = () => {
   const [attendance, setAttendance] = useState<LearnerAttendanceSummaryResponse | null>(null);
   const [loadingAttendance, setLoadingAttendance] = useState(false);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
+
+  const [assignmentsDue, setAssignmentsDue] = useState<LearnerAssignmentsDueResponse | null>(null);
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
+  const [assignmentsError, setAssignmentsError] = useState<string | null>(null);
 
   // Load every child linked to the logged-in parent (handles 1 or many children)
   useEffect(() => {
@@ -105,8 +110,36 @@ const ParentPortal = () => {
     return () => { cancelled = true; };
   }, [selectedChildId]);
 
+  // Whenever the selected child changes, pull their outstanding assignments.
+  useEffect(() => {
+    if (!selectedChildId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingAssignments(true);
+        setAssignmentsError(null);
+        const res = await getLearnerAssignmentsDue(selectedChildId);
+        if (cancelled) return;
+        setAssignmentsDue(res.data);
+      } catch (err: any) {
+        if (!cancelled) {
+          setAssignmentsError(err.message || 'Failed to load assignments');
+          setAssignmentsDue(null);
+        }
+      } finally {
+        if (!cancelled) setLoadingAssignments(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedChildId]);
+
   const selectedChild = children.find((c) => c.id === selectedChildId);
   const latestExam = exams[0] || null;
+
+  const isAssignmentDueSoon = (dueDate: string) => {
+    const days = (new Date(dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    return days <= 3 && days >= 0;
+  };
 
   const attendanceStatusColor = (status: AttendanceStatus) => {
     if (status === 'present') return 'bg-green-100 text-green-700 border-green-200';
@@ -317,10 +350,67 @@ const ParentPortal = () => {
                   </CardContent>
                 </Card>
 
-                {/* 3–10. Remaining modules — placeholders until their backends are built in later steps */}
+                {/* 3. Assignments due — wired to /api/v1/assignments/learner/:id/due */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <ClipboardList className="h-4 w-4 text-primary" /> Assignments due
+                    </CardTitle>
+                    {assignmentsDue?.class && (
+                      <CardDescription>
+                        {assignmentsDue.class.grade_level}{assignmentsDue.class.stream_name ? ` • ${assignmentsDue.class.stream_name}` : ''}
+                      </CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    {loadingAssignments ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+                      </div>
+                    ) : assignmentsError ? (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-4 w-4" /> {assignmentsError}
+                      </p>
+                    ) : !assignmentsDue || assignmentsDue.assignments.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No outstanding assignments. All caught up!</p>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-baseline justify-between">
+                          <span className="text-2xl font-bold">{assignmentsDue.total_due}</span>
+                          <span className="text-xs text-muted-foreground">outstanding</span>
+                        </div>
+                        <div className="space-y-2">
+                          {assignmentsDue.assignments.slice(0, 4).map((a) => (
+                            <div key={a.id} className="flex items-start justify-between gap-2 text-xs border-t pt-2 first:border-t-0 first:pt-0">
+                              <div className="min-w-0">
+                                <p className="font-medium truncate">{a.title}</p>
+                                <p className="text-muted-foreground truncate">{a.learning_area?.name || 'General'}</p>
+                              </div>
+                              <Badge
+                                variant="outline"
+                                className={
+                                  a.is_overdue
+                                    ? 'bg-red-100 text-red-700 border-red-200 shrink-0'
+                                    : isAssignmentDueSoon(a.due_date)
+                                    ? 'bg-amber-100 text-amber-700 border-amber-200 shrink-0'
+                                    : 'shrink-0'
+                                }
+                              >
+                                {a.is_overdue
+                                  ? 'Overdue'
+                                  : new Date(a.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* 4–10. Remaining modules — placeholders until their backends are built in later steps */}
                 {[
                   { icon: Wallet, title: 'Fees balance' },
-                  { icon: ClipboardList, title: 'Assignments due' },
                   { icon: FileText, title: 'Upcoming exams' },
                   { icon: MessageSquare, title: 'Unread messages' },
                   { icon: Megaphone, title: 'Latest announcements' },
