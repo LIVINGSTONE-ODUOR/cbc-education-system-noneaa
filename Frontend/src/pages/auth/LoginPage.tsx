@@ -95,9 +95,7 @@ export default function LoginPage() {
       newFieldErrors.email = 'Email address is required.';
     }
     if (!formData.password) {
-      newFieldErrors.password = userType === 'teacher'
-        ? 'Employee number is required.'
-        : 'Password is required.';
+      newFieldErrors.password = 'Password is required.';
     }
     if (Object.keys(newFieldErrors).length > 0) {
       setFieldErrors(newFieldErrors);
@@ -351,15 +349,15 @@ export default function LoginPage() {
                   )}
                 </div>
 
-                {/* Password / Employee Number */}
+                {/* Password */}
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1.5">
-                    {userType === 'teacher' ? 'Employee Number' : 'Password'}
+                    Password
                   </label>
                   <div className="relative">
                     <input
                       id="password"
-                      type={showPassword ? 'text' : (userType === 'teacher' ? 'text' : 'password')}
+                      type={showPassword ? 'text' : 'password'}
                       value={formData.password}
                       onChange={(e) => {
                         setFormData({ ...formData, password: e.target.value });
@@ -369,17 +367,15 @@ export default function LoginPage() {
                         'w-full px-4 py-3 pr-12 border-2 rounded-xl text-sm bg-slate-50 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500',
                         fieldErrors.password ? 'border-red-300 bg-red-50' : 'border-slate-200'
                       )}
-                      placeholder={userType === 'teacher' ? 'e.g. TCH001' : 'Enter your password'}
+                      placeholder="Enter your password"
                     />
-                    {userType !== 'teacher' && (
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                      >
-                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
                   </div>
                   {fieldErrors.password && (
                     <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
