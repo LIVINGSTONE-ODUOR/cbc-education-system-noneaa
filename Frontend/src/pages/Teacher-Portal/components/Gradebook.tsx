@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/table';
 import { Loader2, Save, RefreshCcw, ClipboardEdit, Trophy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ClassSelectSkeleton, PillRowSkeleton, TableBodySkeleton } from './skeletons';
 import {
   getMyClasses,
   getMyClassStudents,
@@ -437,9 +438,7 @@ const Gradebook: React.FC = () => {
         {/* Step 1: class + subject */}
         <div className="flex flex-wrap gap-3">
           {classesLoading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading your classes...
-            </div>
+            <ClassSelectSkeleton />
           ) : classes.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               You aren't assigned to teach any class yet. Contact your school admin.
@@ -482,9 +481,7 @@ const Gradebook: React.FC = () => {
               Choose up to {MAX_COLUMNS} assessments to show as columns (e.g. CAT 1, CAT 2, End-Term):
             </p>
             {examsLoading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" /> Loading assessments...
-              </div>
+              <PillRowSkeleton />
             ) : exams.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No CATs, assignments, or exams have been set up for this class yet. Ask your admin to create one.
@@ -513,9 +510,28 @@ const Gradebook: React.FC = () => {
         {selectedExamIds.length > 0 && (
           <div className="rounded-md border overflow-x-auto">
             {studentsLoading || resultsLoading ? (
-              <div className="flex items-center justify-center py-10 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading gradebook...
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[180px]">Student</TableHead>
+                    {selectedExamIds.map((examId) => {
+                      const exam = exams.find((e) => e.id === examId);
+                      return (
+                        <TableHead key={examId} className="w-28 text-center">
+                          {exam?.exam_name || 'Exam'}
+                        </TableHead>
+                      );
+                    })}
+                    <TableHead className="w-20 text-center">Total</TableHead>
+                    <TableHead className="w-24 text-center">Average</TableHead>
+                    <TableHead className="w-20 text-center">Grade</TableHead>
+                    <TableHead className="w-20 text-center">Rank</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableBodySkeleton columns={selectedExamIds.length + 5} />
+                </TableBody>
+              </Table>
             ) : students.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">
                 No students are enrolled in this class yet.
