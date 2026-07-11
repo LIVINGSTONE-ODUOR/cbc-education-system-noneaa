@@ -12,6 +12,7 @@ import DashboardHome from './components/DashboardHome';
 import Gradebook from './components/Gradebook';
 import Assignments from './components/Assignments';
 import Timetable from './components/Timetable';
+import StudentProfileDialog from './components/StudentProfileDialog';
 import {
   getMyProfile,
   getMyClasses,
@@ -80,6 +81,11 @@ const TeacherPortal = () => {
   const [students, setStudents] = useState<MyClassStudent[]>([]);
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
+
+  // Full Student Profile dialog — medical info, discipline, academic
+  // history, and comments/teacher notes for one learner at a time.
+  const [profileLearnerId, setProfileLearnerId] = useState<string | null>(null);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
 
   // Attendance marking dialog — only ever opened for a class from the
   // `classes` list above, which is already scoped server-side to classes
@@ -431,6 +437,16 @@ const TeacherPortal = () => {
                                 <Button variant="outline" size="sm" onClick={() => toggleStudentDetails(student.learner_id)}>
                                   View Student
                                 </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setProfileLearnerId(student.learner_id);
+                                    setProfileDialogOpen(true);
+                                  }}
+                                >
+                                  Full Profile
+                                </Button>
                                 <Button variant="outline" size="sm" onClick={() => handleAddAssessment(student)}>
                                   Enter Marks
                                 </Button>
@@ -604,6 +620,12 @@ const TeacherPortal = () => {
             onOpenChange={setAttendanceDialogOpen}
           />
         )}
+
+        <StudentProfileDialog
+          learnerId={profileLearnerId}
+          open={profileDialogOpen}
+          onOpenChange={setProfileDialogOpen}
+        />
       </div>
 
   );
