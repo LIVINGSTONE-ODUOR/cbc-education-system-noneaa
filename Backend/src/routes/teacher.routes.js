@@ -20,6 +20,9 @@ const {
   listTeacherAssignments,
   removeTeacherAssignment,
   getMyClasses,
+  getMyProfile,
+  getMyTimetable,
+  getMyClassStudents,
 } = require('../controllers/teacher.controller');
 const { uploadTeacherPhoto } = require('../controllers/teacherPhoto.controller');
 
@@ -68,6 +71,20 @@ router.get('/', listTeachers);
 //        CURRENTLY LOGGED-IN teacher (resolved from the JWT, no id needed).
 //        Used by the Marks Entry screen to scope what a teacher can see.
 router.get('/me/classes', getMyClasses);
+
+// GET    /api/v1/teachers/me                — the logged-in teacher's own
+//        profile (name, email, phone, school, employee number, experience).
+//        Powers the Teacher Portal sidebar.
+router.get('/me', getMyProfile);
+
+// GET    /api/v1/teachers/me/timetable      — the logged-in teacher's own
+//        weekly timetable. Powers the Teacher Portal Schedule tab.
+router.get('/me/timetable', getMyTimetable);
+
+// GET    /api/v1/teachers/me/classes/:classId/students — real roster for one
+//        of the logged-in teacher's classes, enriched with real attendance
+//        and exam performance. Powers the Teacher Portal Classes tab.
+router.get('/me/classes/:classId/students', getMyClassStudents);
 
 // ---------------------------------------------------------------------------
 // Member routes (specific teacher by id)
