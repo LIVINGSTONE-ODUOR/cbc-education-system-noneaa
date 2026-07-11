@@ -137,3 +137,63 @@ export const saveClassAttendance = async (
 
   return handleResponse<ApiResponse<{ saved_count: number }>>(response);
 };
+
+// ── Learner attendance summary (Parent Portal, teacher/admin single-learner view) ──
+
+export interface AttendanceApiTerm {
+  id: string;
+  name: string;
+  year: number;
+  start_date: string;
+  end_date: string;
+}
+
+export interface AttendanceApiRecord {
+  attendance_date: string;
+  status: AttendanceStatus;
+  arrival_time: string | null;
+  remarks: string | null;
+}
+
+export interface AttendanceApiLearnerSummary {
+  total_days: number;
+  present: number;
+  absent: number;
+  late: number;
+  excused: number;
+  attendance_rate: number;
+}
+
+export interface LearnerAttendanceSummaryResponse {
+  learner: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    admission_number: string;
+  };
+  term: AttendanceApiTerm | null;
+  summary: AttendanceApiLearnerSummary;
+  recent_records: AttendanceApiRecord[];
+}
+
+/**
+ * GET /api/v1/attendance/learner/:learnerId/summary?term_id=...
+ * Attendance stats + recent history for one learner. Defaults to the
+ * school's current term when term_id is omitted. Used by the Parent Portal
+ * dashboard's "Attendance summary" card.
+ */
+export const getLearnerAttendanceSummary = async (
+  learnerId: string,
+  termId?: string
+): Promise<ApiResponse<LearnerAttendanceSummaryResponse>> => {
+  const query = termId ? `?term_id=${encodeURIComponent(termId)}` : '';
+  const url = `${API_URL}/api/v1/attendance/learner/${learnerId}/summary${query}`;
+  const response = await fetch(url, getFetchOptions('GET'));
+
+  if (!response.ok) {
+    const txt = await response.clone().text().catch(() => '');
+    console.error('[attendanceApi:getLearnerAttendanceSummary] request failed', { url, status: response.status, body: txt });
+  }
+
+  return handleResponse<ApiResponse<LearnerAttendanceSummaryResponse>>(response);
+};
