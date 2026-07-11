@@ -145,7 +145,8 @@ export const inviteTeacher = async (payload: {
   last_name: string;
   email: string;
   phone_number?: string;
-  tsc_number?: string;
+  /** Employee number. Required — this doubles as the teacher's login password. */
+  tsc_number: string;
   qualifications?: string[];
   date_joined?: string;
   id_number?: string;
