@@ -237,3 +237,119 @@ export const deleteTeacher = async (id: string): Promise<ApiResponse<void>> => {
 export const mapBackendToStaffMember = (backend: TeacherBackend): StaffMember => {
   return backendToStaffMember(backend); // Delegate to utils.ts
 };
+
+// ==================== Class/Subject Assignments ====================
+// "A teacher can be assigned specific subjects to teach in a certain class
+// (multiple subjects, multiple classes) — those are the ones they can enter
+// marks for."
+
+export interface TeacherAssignmentClass {
+  id: string;
+  grade_level: string;
+  stream_name: string | null;
+}
+
+export interface TeacherAssignmentSubject {
+  id: string;
+  name: string;
+  code: string;
+}
+
+export interface TeacherAssignment {
+  id: string;
+  is_active: boolean;
+  academic_year_id: string;
+  term_id: string | null;
+  class: TeacherAssignmentClass | null;
+  learning_area: TeacherAssignmentSubject | null;
+  academic_year?: { id: string; name: string; is_current: boolean } | null;
+  term?: { id: string; name: string; term_number: number } | null;
+}
+
+export interface AssignmentPair {
+  class_id: string;
+  learning_area_id: string;
+  term_id?: string;
+}
+
+/**
+ * GET /api/v1/teachers/:id/assignments
+ * List a teacher's class/subject assignments.
+ */
+export const getTeacherAssignments = async (
+  teacherId: string,
+  params: { academic_year_id?: string; include_inactive?: boolean } = {}
+): Promise<ApiResponse<{ teacher_id: string; assignments: TeacherAssignment[] }>> => {
+  const searchParams = new URLSearchParams();
+  if (params.academic_year_id) searchParams.append('academic_year_id', params.academic_year_id);
+  if (params.include_inactive) searchParams.append('include_inactive', 'true');
+  const query = searchParams.toString();
+  const url = `${API_URL}/api/v1/teachers/${teacherId}/assignments${query ? `?${query}` : ''}`;
+  const response = await fetch(url, getFetchOptions('GET'));
+  return handleResponse(response);
+};
+
+/**
+ * POST /api/v1/teachers/:id/assignments
+ * Assign a teacher to teach specific subject(s) in specific class(es).
+ * Pass one row per (class, subject) pair — build the cross-product
+ * client-side if the admin picked several classes and several subjects
+ * at once.
+ */
+export const assignTeacherToClasses = async (
+  teacherId: string,
+  assignments: AssignmentPair[],
+  options: { academic_year_id?: string; term_id?: string } = {}
+): Promise<ApiResponse<{ saved: TeacherAssignment[]; failed: any[] }>> => {
+  const url = `${API_URL}/api/v1/teachers/${teacherId}/assignments`;
+  const response = await fetch(
+    url,
+    getFetchOptions('POST', { assignments, ...options })
+  );
+  return handleResponse(response);
+};
+
+/**
+ * DELETE /api/v1/teachers/:id/assignments/:assignmentId
+ * Remove (deactivate) a single class/subject assignment.
+ */
+export const removeTeacherAssignment = async (
+  teacherId: string,
+  assignmentId: string
+): Promise<ApiResponse<{ message: string }>> => {
+  const url = `${API_URL}/api/v1/teachers/${teacherId}/assignments/${assignmentId}`;
+  const response = await fetch(url, getFetchOptions('DELETE'));
+  return handleResponse(response);
+};
+
+/**
+ * GET /api/v1/teachers/me/classes
+ * Convenience endpoint for the CURRENTLY LOGGED-IN teacher: returns exactly
+ * what GET /api/v1/teachers/:id/classes returns, without needing to know
+ * your own teacher_id. Used to scope the Marks Entry screen to "my classes
+ * and subjects only".
+ */
+export interface MyClassAssignment {
+  id: string;
+  is_active: boolean;
+  is_class_teacher: boolean;
+  class: {
+    id: string;
+    grade_level: string;
+    stream_name: string | null;
+    capacity: number;
+    is_active: boolean;
+    class_teacher_id: string | null;
+    learner_count: number;
+  } | null;
+  learning_area: TeacherAssignmentSubject | null;
+  term: { id: string; name: string; term_number: number } | null;
+}
+
+export const getMyClasses = async (
+  academic_year_id?: string
+): Promise<ApiResponse<{ teacher_id: string; academic_year_id: string; assignments: MyClassAssignment[] }>> => {
+  const url = `${API_URL}/api/v1/teachers/me/classes${academic_year_id ? `?academic_year_id=${academic_year_id}` : ''}`;
+  const response = await fetch(url, getFetchOptions('GET'));
+  return handleResponse(response);
+};
