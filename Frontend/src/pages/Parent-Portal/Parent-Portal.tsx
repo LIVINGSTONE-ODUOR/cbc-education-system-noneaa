@@ -13,7 +13,21 @@ import { getLearnerResults, ExamSummary } from '@/lib/api/resultsApi';
 import { getLearnerAttendanceSummary, LearnerAttendanceSummaryResponse, AttendanceStatus } from '@/lib/api/attendanceApi';
 import { getLearnerAssignmentsDue, LearnerAssignmentsDueResponse } from '@/lib/api/assignmentApi';
 import { getLearnerUpcomingExams, LearnerUpcomingExamsResponse } from '@/lib/api/examApi';
+import {
+  getMessages, markMessageRead, DashboardMessage,
+  getAnnouncements, DashboardAnnouncement,
+  getLearnerTeacherComments, TeacherComment,
+  getLearnerTimetable, TimetablePeriod,
+  getSchoolEvents, SchoolEvent,
+} from '@/lib/api/parentDashboardApi';
 import MarksPanel from '@/components/marks/MarksPanel';
+
+const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const todayDayOfWeek = () => {
+  const jsDay = new Date().getDay(); // 0 = Sunday ... 6 = Saturday
+  return jsDay === 0 ? 7 : jsDay; // convert to 1 = Monday ... 7 = Sunday
+};
+const formatTime = (t: string) => t?.slice(0, 5) || '';
 
 // Shapes matching the backend response (snake_case, as returned by the API)
 interface Child {
@@ -47,6 +61,27 @@ const ParentPortal = () => {
   const [upcomingExams, setUpcomingExams] = useState<LearnerUpcomingExamsResponse | null>(null);
   const [loadingExams, setLoadingExams] = useState(false);
   const [examsError, setExamsError] = useState<string | null>(null);
+
+  const [messages, setMessages] = useState<DashboardMessage[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [messagesError, setMessagesError] = useState<string | null>(null);
+
+  const [announcements, setAnnouncements] = useState<DashboardAnnouncement[]>([]);
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState(false);
+  const [announcementsError, setAnnouncementsError] = useState<string | null>(null);
+
+  const [teacherComments, setTeacherComments] = useState<TeacherComment[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [commentsError, setCommentsError] = useState<string | null>(null);
+
+  const [timetable, setTimetable] = useState<TimetablePeriod[]>([]);
+  const [loadingTimetable, setLoadingTimetable] = useState(false);
+  const [timetableError, setTimetableError] = useState<string | null>(null);
+
+  const [schoolEvents, setSchoolEvents] = useState<SchoolEvent[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [eventsError, setEventsError] = useState<string | null>(null);
 
   // Load every child linked to the logged-in parent (handles 1 or many children)
   useEffect(() => {
@@ -161,8 +196,124 @@ const ParentPortal = () => {
     return () => { cancelled = true; };
   }, [selectedChildId]);
 
+  // Inbox messages don't depend on which child is selected — load once.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingMessages(true);
+        setMessagesError(null);
+        const res = await getMessages(10);
+        if (cancelled) return;
+        setMessages(res.data.messages);
+        setUnreadCount(res.data.unread_count);
+      } catch (err: any) {
+        if (!cancelled) setMessagesError(err.message || 'Failed to load messages');
+      } finally {
+        if (!cancelled) setLoadingMessages(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Announcements are scoped server-side to school-wide + the parent's own
+  // children's classes — also load once.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingAnnouncements(true);
+        setAnnouncementsError(null);
+        const res = await getAnnouncements(10);
+        if (cancelled) return;
+        setAnnouncements(res.data.announcements);
+      } catch (err: any) {
+        if (!cancelled) setAnnouncementsError(err.message || 'Failed to load announcements');
+      } finally {
+        if (!cancelled) setLoadingAnnouncements(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Whenever the selected child changes, pull their recent teacher comments.
+  useEffect(() => {
+    if (!selectedChildId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingComments(true);
+        setCommentsError(null);
+        const res = await getLearnerTeacherComments(selectedChildId, 10);
+        if (cancelled) return;
+        setTeacherComments(res.data.comments);
+      } catch (err: any) {
+        if (!cancelled) {
+          setCommentsError(err.message || 'Failed to load teacher comments');
+          setTeacherComments([]);
+        }
+      } finally {
+        if (!cancelled) setLoadingComments(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedChildId]);
+
+  // Whenever the selected child changes, pull their class timetable.
+  useEffect(() => {
+    if (!selectedChildId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingTimetable(true);
+        setTimetableError(null);
+        const res = await getLearnerTimetable(selectedChildId);
+        if (cancelled) return;
+        setTimetable(res.data.periods);
+      } catch (err: any) {
+        if (!cancelled) {
+          setTimetableError(err.message || 'Failed to load timetable');
+          setTimetable([]);
+        }
+      } finally {
+        if (!cancelled) setLoadingTimetable(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedChildId]);
+
+  // School events don't depend on which child is selected — load once.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingEvents(true);
+        setEventsError(null);
+        const res = await getSchoolEvents(10);
+        if (cancelled) return;
+        setSchoolEvents(res.data.events);
+      } catch (err: any) {
+        if (!cancelled) setEventsError(err.message || 'Failed to load school events');
+      } finally {
+        if (!cancelled) setLoadingEvents(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleMarkMessageRead = async (id: string) => {
+    try {
+      await markMessageRead(id);
+      setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, is_read: true } : m)));
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch {
+      // Non-critical — leave the message as-is if the update fails.
+    }
+  };
+
   const selectedChild = children.find((c) => c.id === selectedChildId);
   const latestExam = exams[0] || null;
+  const todaysPeriods = timetable.filter((p) => p.day_of_week === todayDayOfWeek());
 
   const isAssignmentDueSoon = (dueDate: string) => {
     const days = (new Date(dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
@@ -472,26 +623,210 @@ const ParentPortal = () => {
                   </CardContent>
                 </Card>
 
-                {/* 5–10. Remaining modules — placeholders until their backends are built in later steps */}
-                {[
-                  { icon: Wallet, title: 'Fees balance' },
-                  { icon: MessageSquare, title: 'Unread messages' },
-                  { icon: Megaphone, title: 'Latest announcements' },
-                  { icon: MessageCircle, title: 'Teacher comments' },
-                  { icon: Clock, title: "Today's timetable" },
-                  { icon: PartyPopper, title: 'School events' },
-                ].map(({ icon: Icon, title }) => (
-                  <Card key={title} className="opacity-70">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium flex items-center gap-2">
-                        <Icon className="h-4 w-4 text-muted-foreground" /> {title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">Coming soon</p>
-                    </CardContent>
-                  </Card>
-                ))}
+                {/* 5. Fees balance — placeholder until the billing backend is built */}
+                <Card className="opacity-70">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Wallet className="h-4 w-4 text-muted-foreground" /> Fees balance
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">Coming soon</p>
+                  </CardContent>
+                </Card>
+
+                {/* 6. Unread messages — wired to /api/v1/parent-dashboard/messages */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4 text-primary" /> Unread messages
+                      {unreadCount > 0 && (
+                        <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200 ml-auto">
+                          {unreadCount}
+                        </Badge>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingMessages ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+                      </div>
+                    ) : messagesError ? (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-4 w-4" /> {messagesError}
+                      </p>
+                    ) : messages.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No messages yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {messages.slice(0, 4).map((m) => (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => !m.is_read && handleMarkMessageRead(m.id)}
+                            className="w-full text-left text-xs border-t pt-2 first:border-t-0 first:pt-0"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <p className={`truncate ${!m.is_read ? 'font-semibold' : 'text-muted-foreground'}`}>
+                                {m.subject || 'No subject'}
+                              </p>
+                              {!m.is_read && <span className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1" />}
+                            </div>
+                            <p className="text-muted-foreground truncate">
+                              {m.sender ? `${m.sender.first_name} ${m.sender.last_name}` : 'Unknown sender'}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* 7. Latest announcements — wired to /api/v1/parent-dashboard/announcements */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Megaphone className="h-4 w-4 text-primary" /> Latest announcements
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingAnnouncements ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+                      </div>
+                    ) : announcementsError ? (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-4 w-4" /> {announcementsError}
+                      </p>
+                    ) : announcements.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No announcements yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {announcements.slice(0, 4).map((a) => (
+                          <div key={a.id} className="text-xs border-t pt-2 first:border-t-0 first:pt-0">
+                            <p className="font-medium truncate">{a.title}</p>
+                            <p className="text-muted-foreground truncate">{a.body}</p>
+                            <p className="text-muted-foreground">
+                              {new Date(a.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                              {a.classes ? ` • ${a.classes.grade_level}${a.classes.stream_name ? ` ${a.classes.stream_name}` : ''}` : ' • Whole school'}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* 8. Teacher comments — wired to /api/v1/parent-dashboard/learner/:id/comments */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <MessageCircle className="h-4 w-4 text-primary" /> Teacher comments
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingComments ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+                      </div>
+                    ) : commentsError ? (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-4 w-4" /> {commentsError}
+                      </p>
+                    ) : teacherComments.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No comments yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {teacherComments.slice(0, 4).map((c) => (
+                          <div key={c.id} className="text-xs border-t pt-2 first:border-t-0 first:pt-0">
+                            <p className="truncate">{c.comment}</p>
+                            <p className="text-muted-foreground truncate">
+                              {c.teachers?.users ? `${c.teachers.users.first_name} ${c.teachers.users.last_name}` : 'Teacher'}
+                              {c.learning_areas ? ` • ${c.learning_areas.name}` : ''}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* 9. Today's timetable — wired to /api/v1/parent-dashboard/learner/:id/timetable */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-primary" /> Today's timetable
+                    </CardTitle>
+                    <CardDescription>{DAY_NAMES[todayDayOfWeek()]}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingTimetable ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+                      </div>
+                    ) : timetableError ? (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-4 w-4" /> {timetableError}
+                      </p>
+                    ) : todaysPeriods.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No lessons scheduled for today.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {todaysPeriods.slice(0, 5).map((p) => (
+                          <div key={p.id} className="flex items-start justify-between gap-2 text-xs border-t pt-2 first:border-t-0 first:pt-0">
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">{p.learning_areas?.name || 'Lesson'}</p>
+                              <p className="text-muted-foreground truncate">
+                                {p.teachers?.users ? `${p.teachers.users.first_name} ${p.teachers.users.last_name}` : ''}
+                                {p.room ? ` • ${p.room}` : ''}
+                              </p>
+                            </div>
+                            <Badge variant="outline" className="shrink-0">
+                              {formatTime(p.start_time)}–{formatTime(p.end_time)}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* 10. School events — wired to /api/v1/parent-dashboard/events */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <PartyPopper className="h-4 w-4 text-primary" /> School events
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingEvents ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+                      </div>
+                    ) : eventsError ? (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-4 w-4" /> {eventsError}
+                      </p>
+                    ) : schoolEvents.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No upcoming events scheduled.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {schoolEvents.slice(0, 4).map((e) => (
+                          <div key={e.id} className="flex items-start justify-between gap-2 text-xs border-t pt-2 first:border-t-0 first:pt-0">
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">{e.title}</p>
+                              {e.location && <p className="text-muted-foreground truncate">{e.location}</p>}
+                            </div>
+                            <Badge variant="outline" className="shrink-0">
+                              {new Date(e.event_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             </div>
           )}
