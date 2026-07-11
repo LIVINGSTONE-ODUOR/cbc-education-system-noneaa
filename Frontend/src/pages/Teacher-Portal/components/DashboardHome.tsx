@@ -6,7 +6,6 @@ import {
   ClipboardCheck,
   FileText,
   GraduationCap,
-  Loader2,
   Megaphone,
   Bell,
   Users,
@@ -15,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getMyDashboard, type MyDashboard } from '@/lib/api/teacherApi';
+import { DashboardSkeleton } from './skeletons';
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof Error && error.message) return error.message;
@@ -52,11 +52,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onGoToClasses, onGoToSche
   }, [toast]);
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-16 text-muted-foreground">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (!dashboard) {
