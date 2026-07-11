@@ -1612,6 +1612,29 @@ const getMyClassStudents = asyncHandler(async (req, res) => {
     if (r.status === 'present' || r.status === 'late') attendanceByLearner[r.learner_id].present += 1;
   });
 
+  // Parent/guardian contact — primary link preferred, otherwise first linked parent.
+  const { data: parentLinks } = await supabase
+    .from('learner_parents')
+    .select(`
+      learner_id, is_primary, relationship,
+      parent:parent_id ( id, first_name, last_name, phone_number, email )
+    `)
+    .in('learner_id', learnerIds);
+
+  const parentByLearner = {};
+  (parentLinks || []).forEach((link) => {
+    if (!link.parent) return;
+    const existing = parentByLearner[link.learner_id];
+    if (!existing || link.is_primary) {
+      parentByLearner[link.learner_id] = {
+        name: `${link.parent.first_name || ''} ${link.parent.last_name || ''}`.trim() || null,
+        phone: link.parent.phone_number || null,
+        email: link.parent.email || null,
+        relationship: link.relationship || null,
+      };
+    }
+  });
+
   // Real exam results for this class
   const { data: resultRows } = await supabase
     .from('exam_results')
@@ -1676,6 +1699,7 @@ const getMyClassStudents = asyncHandler(async (req, res) => {
       strengths: strengths.length ? strengths.join(', ') : 'Not enough exam data yet',
       areas_for_improvement: areasForImprovement.length ? areasForImprovement.join(', ') : 'None significant',
       recent_scores: recentScores,
+      parent_contact: parentByLearner[e.learner_id] || null,
     };
   });
 
