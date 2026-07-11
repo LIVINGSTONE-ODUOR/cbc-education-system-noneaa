@@ -378,6 +378,9 @@ export default function AddLearnerPage() {
     if (!parentData.relationship) {
       errors.parentRelationship = 'Relationship is required';
     }
+    if (!parentData.nationalId.trim()) {
+      errors.parentNationalId = 'National ID is required to create the parent portal account';
+    }
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -489,6 +492,8 @@ export default function AddLearnerPage() {
       // here was redundant, guaranteed to conflict with that just-created row,
       // and was slowing down/derailing every successful submission.
       const enrollmentSuccess = !isEditMode && Boolean(result.data?.enrollment);
+      const parentCreated = Boolean(result.data?.parent);
+      const backendWarnings: string[] = (result.warnings || []).map((w: any) => w.message || w).filter(Boolean);
 
       if (!isEditMode && selectedClassId && !enrollmentSuccess) {
         console.warn('Learner created but no enrollment came back from the server:', result);
@@ -496,6 +501,18 @@ export default function AddLearnerPage() {
           title: 'Partial Success',
           description: `Student ${learnerData.firstName} ${learnerData.lastName} was created successfully, but enrollment in the class failed. You can enroll them manually later.`,
           variant: 'default',
+        });
+      }
+
+      // Surface anything the backend flagged (e.g. the parent portal account
+      // could not be created) — previously these were silently discarded and
+      // the UI would still claim "Parent account created" below regardless.
+      if (backendWarnings.length > 0) {
+        console.warn('Learner registration warnings:', backendWarnings);
+        toast({
+          title: 'Please review',
+          description: backendWarnings.join(' '),
+          variant: 'destructive',
         });
       }
 
@@ -507,7 +524,9 @@ export default function AddLearnerPage() {
       } else if (enrollmentSuccess) {
         toast({
           title: 'Success',
-          description: `${learnerData.firstName} ${learnerData.lastName} has been created and enrolled in ${learnerData.gradeLevel}${learnerData.streamName ? ` ${learnerData.streamName}` : ''}. Parent account created for ${parentData.firstName} ${parentData.lastName}.`,
+          description: parentCreated
+            ? `${learnerData.firstName} ${learnerData.lastName} has been created and enrolled in ${learnerData.gradeLevel}${learnerData.streamName ? ` ${learnerData.streamName}` : ''}. Parent account created for ${parentData.firstName} ${parentData.lastName}.`
+            : `${learnerData.firstName} ${learnerData.lastName} has been created and enrolled in ${learnerData.gradeLevel}${learnerData.streamName ? ` ${learnerData.streamName}` : ''}.`,
         });
       } else {
         toast({
@@ -1289,7 +1308,7 @@ export default function AddLearnerPage() {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="nationalId" className="font-semibold text-slate-900 dark:text-slate-100">
-                            National ID
+                            National ID <span className="text-red-500">*</span>
                           </Label>
                           <Input
                             id="nationalId"
@@ -1297,8 +1316,21 @@ export default function AddLearnerPage() {
                             placeholder="12345678"
                             value={parentData.nationalId}
                             onChange={handleParentChange}
-                            className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
+                            required
+                            className={cn(
+                              'h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10',
+                              validationErrors.parentNationalId && 'border-red-500'
+                            )}
                           />
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Required to create the parent's portal login account
+                          </p>
+                          {validationErrors.parentNationalId && (
+                            <p className="text-xs text-red-500 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" />
+                              {validationErrors.parentNationalId}
+                            </p>
+                          )}
                         </div>
                       </div>
 
