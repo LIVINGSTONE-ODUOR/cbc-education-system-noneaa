@@ -987,18 +987,55 @@ const getMyChildren = asyncHandler(async (req, res) => {
     (enrollments || []).map((e) => [e.learner_id, e])
   );
 
-  // Latest exam summary per child (best-effort — a missing summary shouldn't break the list)
+  // Attendance history for all children, most recent first. Fetched once in
+  // bulk (not per-child) to keep this endpoint fast when a parent has
+  // several kids. Capped at the last 200 records per fetch as a sane
+  // ceiling — summary stats below are computed off whatever comes back.
+  const { data: attendanceRows, error: attendanceErr } = await supabase
+    .from('attendance_records')
+    .select('learner_id, attendance_date, status, arrival_time, remarks')
+    .eq('school_id', parent.school_id)
+    .in('learner_id', learnerIds)
+    .order('attendance_date', { ascending: false })
+    .limit(200);
+
+  if (attendanceErr) {
+    console.error('[getMyChildren] attendance_records query failed:', attendanceErr);
+    // Non-fatal — a parent should still see grades/profile even if
+    // attendance is temporarily unavailable.
+  }
+
+  const attendanceByLearner = new Map();
+  (attendanceRows || []).forEach((r) => {
+    if (!attendanceByLearner.has(r.learner_id)) attendanceByLearner.set(r.learner_id, []);
+    attendanceByLearner.get(r.learner_id).push(r);
+  });
+
+  const summarizeAttendance = (records) => {
+    const total = records.length;
+    const present = records.filter((r) => r.status === 'present').length;
+    const absent = records.filter((r) => r.status === 'absent').length;
+    const late = records.filter((r) => r.status === 'late').length;
+    const excused = records.filter((r) => r.status === 'excused').length;
+    const attendance_rate = total > 0 ? Math.round(((present + late) / total) * 100) : null;
+    return { total, present, absent, late, excused, attendance_rate };
+  };
+
+  // Full exam/results history per child (best-effort — a missing summary shouldn't break the list)
   const { buildLearnerSummaries } = require('./results.controller');
   const children = await Promise.all(
     (learners || []).map(async (learner) => {
       const link = (links || []).find((l) => l.learner_id === learner.id);
       const enrollment = enrollmentByLearner.get(learner.id);
-      let latestExam = null;
+      const learnerAttendance = attendanceByLearner.get(learner.id) || [];
+
+      let examHistory = [];
       try {
-        const summaries = await buildLearnerSummaries(parent.school_id, learner.id);
-        latestExam = summaries?.[0] || null; // most recent exam first
+        // Every exam this learner has results for, most recent first.
+        examHistory = (await buildLearnerSummaries(parent.school_id, learner.id)) || [];
       } catch (e) {
-        latestExam = null;
+        console.error(`[getMyChildren] exam summary failed for learner ${learner.id}:`, e.message);
+        examHistory = [];
       }
 
       return {
@@ -1008,7 +1045,13 @@ const getMyChildren = asyncHandler(async (req, res) => {
         class_id: enrollment?.class_id || null,
         relationship: link?.relationship || null,
         is_primary_guardian: !!link?.is_primary,
-        latest_exam_summary: latestExam,
+        // Exams: full history plus the most recent one called out separately
+        // so the UI doesn't have to know the sort order.
+        exam_history: examHistory,
+        latest_exam_summary: examHistory[0] || null,
+        // Attendance: recent records plus rolled-up counts/rate.
+        attendance_records: learnerAttendance,
+        attendance_summary: summarizeAttendance(learnerAttendance),
       };
     })
   );
