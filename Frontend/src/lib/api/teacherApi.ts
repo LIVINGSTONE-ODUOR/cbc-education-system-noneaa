@@ -568,3 +568,90 @@ export const addStudentNote = async (
   const response = await fetch(url, getFetchOptions('POST', { note_type, content }));
   return handleResponse(response);
 };
+
+// ==================== Lesson Planner ====================
+
+export type LessonPlanStatus = 'draft' | 'submitted' | 'approved' | 'changes_requested';
+
+export interface LessonPlan {
+  id: string;
+  week_number: number;
+  objectives: string;
+  activities: string;
+  resources: string | null;
+  homework: string | null;
+  status: LessonPlanStatus;
+  review_comment: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  class: { id: string; grade_level: string; stream_name: string | null } | null;
+  learning_area: { id: string; name: string; code: string } | null;
+  term: { id: string; name: string; term_number: number } | null;
+  reviewed_by: { first_name: string; last_name: string } | null;
+}
+
+export interface LessonPlanInput {
+  class_id: string;
+  learning_area_id: string;
+  term_id?: string | null;
+  week_number: number;
+  objectives: string;
+  activities: string;
+  resources?: string;
+  homework?: string;
+}
+
+/**
+ * GET /api/v1/teachers/me/lesson-plans
+ * List the logged-in teacher's own lesson plans.
+ */
+export const getMyLessonPlans = async (params?: {
+  class_id?: string;
+  learning_area_id?: string;
+  week_number?: number;
+  status?: LessonPlanStatus;
+}): Promise<ApiResponse<{ plans: LessonPlan[] }>> => {
+  const query = new URLSearchParams();
+  if (params?.class_id) query.set('class_id', params.class_id);
+  if (params?.learning_area_id) query.set('learning_area_id', params.learning_area_id);
+  if (params?.week_number) query.set('week_number', String(params.week_number));
+  if (params?.status) query.set('status', params.status);
+  const qs = query.toString();
+  const url = `${API_URL}/api/v1/teachers/me/lesson-plans${qs ? `?${qs}` : ''}`;
+  const response = await fetch(url, getFetchOptions('GET'));
+  return handleResponse(response);
+};
+
+/**
+ * POST /api/v1/teachers/me/lesson-plans
+ * Create (or update, if one already exists for the same class/subject/week)
+ * a draft lesson plan.
+ */
+export const saveLessonPlan = async (
+  input: LessonPlanInput
+): Promise<ApiResponse<LessonPlan>> => {
+  const url = `${API_URL}/api/v1/teachers/me/lesson-plans`;
+  const response = await fetch(url, getFetchOptions('POST', input));
+  return handleResponse(response);
+};
+
+/**
+ * PATCH /api/v1/teachers/me/lesson-plans/:id/submit
+ * Locks a draft for principal review.
+ */
+export const submitLessonPlan = async (planId: string): Promise<ApiResponse<LessonPlan>> => {
+  const url = `${API_URL}/api/v1/teachers/me/lesson-plans/${planId}/submit`;
+  const response = await fetch(url, getFetchOptions('PATCH'));
+  return handleResponse(response);
+};
+
+/**
+ * DELETE /api/v1/teachers/me/lesson-plans/:id
+ * Only drafts can be deleted.
+ */
+export const deleteLessonPlan = async (planId: string): Promise<ApiResponse<{ message: string }>> => {
+  const url = `${API_URL}/api/v1/teachers/me/lesson-plans/${planId}`;
+  const response = await fetch(url, getFetchOptions('DELETE'));
+  return handleResponse(response);
+};
