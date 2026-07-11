@@ -12,6 +12,7 @@ import { getMyChildren } from '@/lib/api/parentsApi';
 import { getLearnerResults, ExamSummary } from '@/lib/api/resultsApi';
 import { getLearnerAttendanceSummary, LearnerAttendanceSummaryResponse, AttendanceStatus } from '@/lib/api/attendanceApi';
 import { getLearnerAssignmentsDue, LearnerAssignmentsDueResponse } from '@/lib/api/assignmentApi';
+import { getLearnerUpcomingExams, LearnerUpcomingExamsResponse } from '@/lib/api/examApi';
 import MarksPanel from '@/components/marks/MarksPanel';
 
 // Shapes matching the backend response (snake_case, as returned by the API)
@@ -42,6 +43,10 @@ const ParentPortal = () => {
   const [assignmentsDue, setAssignmentsDue] = useState<LearnerAssignmentsDueResponse | null>(null);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
   const [assignmentsError, setAssignmentsError] = useState<string | null>(null);
+
+  const [upcomingExams, setUpcomingExams] = useState<LearnerUpcomingExamsResponse | null>(null);
+  const [loadingExams, setLoadingExams] = useState(false);
+  const [examsError, setExamsError] = useState<string | null>(null);
 
   // Load every child linked to the logged-in parent (handles 1 or many children)
   useEffect(() => {
@@ -128,6 +133,29 @@ const ParentPortal = () => {
         }
       } finally {
         if (!cancelled) setLoadingAssignments(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedChildId]);
+
+  // Whenever the selected child changes, pull their upcoming exams.
+  useEffect(() => {
+    if (!selectedChildId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingExams(true);
+        setExamsError(null);
+        const res = await getLearnerUpcomingExams(selectedChildId);
+        if (cancelled) return;
+        setUpcomingExams(res.data);
+      } catch (err: any) {
+        if (!cancelled) {
+          setExamsError(err.message || 'Failed to load upcoming exams');
+          setUpcomingExams(null);
+        }
+      } finally {
+        if (!cancelled) setLoadingExams(false);
       }
     })();
     return () => { cancelled = true; };
@@ -408,10 +436,45 @@ const ParentPortal = () => {
                   </CardContent>
                 </Card>
 
-                {/* 4–10. Remaining modules — placeholders until their backends are built in later steps */}
+                {/* 4. Upcoming exams — wired to /api/v1/exams/learner/:id/upcoming */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-primary" /> Upcoming exams
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingExams ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+                      </div>
+                    ) : examsError ? (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-4 w-4" /> {examsError}
+                      </p>
+                    ) : !upcomingExams || upcomingExams.upcoming_exams.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No upcoming exams scheduled.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {upcomingExams.upcoming_exams.map((e) => (
+                          <div key={e.id} className="flex items-start justify-between gap-2 text-xs border-t pt-2 first:border-t-0 first:pt-0">
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">{e.exam_name}</p>
+                              <p className="text-muted-foreground truncate">{e.exam_type}{e.term ? ` • ${e.term.name}` : ''}</p>
+                            </div>
+                            <Badge variant="outline" className="shrink-0">
+                              {new Date(e.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* 5–10. Remaining modules — placeholders until their backends are built in later steps */}
                 {[
                   { icon: Wallet, title: 'Fees balance' },
-                  { icon: FileText, title: 'Upcoming exams' },
                   { icon: MessageSquare, title: 'Unread messages' },
                   { icon: Megaphone, title: 'Latest announcements' },
                   { icon: MessageCircle, title: 'Teacher comments' },
