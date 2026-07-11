@@ -13,9 +13,12 @@ router.get('/plans', schoolController.getPlans);
 // Protected routes - require authentication
 router.use(authenticate);
 
-// School management (Super Admin only)
+// School management (Super Admin only for create/delete)
 router.post('/', authorize('super_admin'), schoolController.createSchool);
-router.get('/', authorize('super_admin'), schoolController.getSchools);
+// GET / is used by the school-admin dashboard too (e.g. Parents page loads
+// it to populate a school selector). super_admin gets every school;
+// school_admin gets only their own — scoping happens in getSchools().
+router.get('/', authorize('super_admin', 'school_admin'), schoolController.getSchools);
 router.get('/:id', authorize('super_admin', 'school_admin'), schoolController.getSchoolById);
 router.put('/:id', authorize('super_admin'), schoolController.updateSchool);
 router.delete('/:id', authorize('super_admin'), schoolController.deleteSchool);
