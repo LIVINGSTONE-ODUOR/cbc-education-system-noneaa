@@ -167,15 +167,35 @@ const getPlans = async (req, res) => {
 // =============================================================================
 const getSchools = async (req, res) => {
   try {
-    const result = await query(
-      `SELECT id, name, code, email, phone_number, physical_address, postal_address, 
-              county, sub_county, ward, level, school_type, is_active, 
-              subscription_plan, subscription_status, subscription_expires_at,
-              created_at, updated_at
-       FROM schools
-       WHERE deleted_at IS NULL
-       ORDER BY name ASC`
-    );
+    const { role, schoolId } = req.user;
+    const isSuperAdmin = role === 'super_admin';
+
+    // school_admin only ever gets their own school back, never the full
+    // directory of every school on the platform.
+    if (!isSuperAdmin && !schoolId) {
+      return respond(res, 403, false, 'Access denied. No school assigned to your account.');
+    }
+
+    const result = isSuperAdmin
+      ? await query(
+          `SELECT id, name, code, email, phone_number, physical_address, postal_address, 
+                  county, sub_county, ward, level, school_type, is_active, 
+                  subscription_plan, subscription_status, subscription_expires_at,
+                  created_at, updated_at
+           FROM schools
+           WHERE deleted_at IS NULL
+           ORDER BY name ASC`
+        )
+      : await query(
+          `SELECT id, name, code, email, phone_number, physical_address, postal_address, 
+                  county, sub_county, ward, level, school_type, is_active, 
+                  subscription_plan, subscription_status, subscription_expires_at,
+                  created_at, updated_at
+           FROM schools
+           WHERE deleted_at IS NULL AND id = $1
+           ORDER BY name ASC`,
+          [schoolId]
+        );
 
     // Add summary statistics
     const summary = {
