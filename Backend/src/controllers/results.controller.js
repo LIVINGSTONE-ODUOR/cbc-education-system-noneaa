@@ -396,9 +396,17 @@ const getLearnerResults = asyncHandler(async (req, res) => {
   // endpoints disagreed about who this parent's child even was.
   let learnerQuery = supabase
     .from('learners')
-    .select(
-      'id, first_name, last_name, admission_number, class_id, classes:class_id ( id, grade_level, stream_name )'
-    )
+    // NOTE: do NOT select class_id / classes:class_id(...) directly off
+    // `learners` — that column/relationship doesn't exist on this table
+    // (see the identical landmine already documented in
+    // parent.controller.js's getMyChildren: grade_level/stream_name/
+    // class_id live on `classes`, reached via `learner_enrollments`, not
+    // as columns on `learners`). Selecting it here is exactly what was
+    // producing Supabase's 400 "Learner not found" failures — PostgREST
+    // can't resolve the embed, the query errors, and the code below
+    // treated `!learner` as "doesn't exist" when it actually meant "the
+    // select itself was invalid".
+    .select('id, first_name, last_name, admission_number')
     .eq('id', learner_id);
 
   if (role !== 'parent') {
@@ -410,6 +418,18 @@ const getLearnerResults = asyncHandler(async (req, res) => {
   if (!learner) {
     return res.status(404).json({ success: false, message: 'Learner not found' });
   }
+
+  // Resolve the learner's current class the same way getMyChildren does —
+  // via learner_enrollments, not a direct learners.class_id column.
+  const { data: enrollment } = await supabase
+    .from('learner_enrollments')
+    .select('class_id, classes:class_id ( id, grade_level, stream_name )')
+    .eq('learner_id', learner_id)
+    .eq('status', 'enrolled')
+    .maybeSingle();
+
+  learner.class_id = enrollment?.class_id || null;
+  learner.classes = enrollment?.classes || null;
 
   // Parents may only view results for their OWN linked children — never
   // other learners in the school, even if they guess the id. This check
@@ -484,7 +504,7 @@ const searchLearners = asyncHandler(async (req, res) => {
 
   // Teachers only search among learners in classes they're actively
   // assigned to teach at least one subject in.
-  let restrictClassIds = null;
+  let restrictLearnerIds = null;
   if (role === 'teacher') {
     const teacherId = await resolveTeacherId(schoolId, userId);
     const { data: assignments } = await supabase
@@ -493,33 +513,68 @@ const searchLearners = asyncHandler(async (req, res) => {
       .eq('teacher_id', teacherId)
       .eq('is_active', true)
       .is('deleted_at', null);
-    restrictClassIds = [...new Set((assignments || []).map((a) => a.class_id).filter(Boolean))];
-    if (restrictClassIds.length === 0) {
+    const classIds = [...new Set((assignments || []).map((a) => a.class_id).filter(Boolean))];
+    if (classIds.length === 0) {
+      return res.json({ success: true, data: { learners: [] } });
+    }
+
+    // `learners` has no class_id column to filter on directly — resolve
+    // which learners are currently enrolled in those classes via
+    // learner_enrollments instead (same pattern as getLearnerResults).
+    const { data: enrolled } = await supabase
+      .from('learner_enrollments')
+      .select('learner_id')
+      .in('class_id', classIds)
+      .eq('status', 'enrolled');
+    restrictLearnerIds = [...new Set((enrolled || []).map((e) => e.learner_id))];
+    if (restrictLearnerIds.length === 0) {
       return res.json({ success: true, data: { learners: [] } });
     }
   }
 
   const q = `%${query.trim()}%`;
+  // NOTE: no class_id / classes:class_id(...) here — that column/
+  // relationship doesn't exist on `learners` (see getLearnerResults
+  // above); it's attached separately below via learner_enrollments.
   let dbQuery = supabase
     .from('learners')
-    .select(
-      'id, first_name, last_name, admission_number, class_id, classes:class_id ( grade_level, stream_name )'
-    )
+    .select('id, first_name, last_name, admission_number')
     .eq('school_id', schoolId)
     .or(`first_name.ilike.${q},last_name.ilike.${q},admission_number.ilike.${q}`)
     .limit(10);
 
-  if (restrictClassIds) {
-    dbQuery = dbQuery.in('class_id', restrictClassIds);
+  if (restrictLearnerIds) {
+    dbQuery = dbQuery.in('id', restrictLearnerIds);
   }
 
-  const { data: learners, error } = await dbQuery;
+  const { data: learnersRaw, error } = await dbQuery;
 
   if (error) {
     return res.status(500).json({ success: false, message: 'Failed to search learners', error: error.message });
   }
 
-  return res.json({ success: true, data: { learners: learners || [] } });
+  // Attach each result's current class via learner_enrollments.
+  const ids = (learnersRaw || []).map((l) => l.id);
+  let classByLearner = new Map();
+  if (ids.length) {
+    const { data: enrollments } = await supabase
+      .from('learner_enrollments')
+      .select('learner_id, class_id, classes:class_id ( grade_level, stream_name )')
+      .in('learner_id', ids)
+      .eq('status', 'enrolled');
+    classByLearner = new Map((enrollments || []).map((e) => [e.learner_id, e]));
+  }
+
+  const learners = (learnersRaw || []).map((l) => {
+    const e = classByLearner.get(l.id);
+    return {
+      ...l,
+      class_id: e?.class_id || null,
+      classes: e?.classes || null,
+    };
+  });
+
+  return res.json({ success: true, data: { learners } });
 });
 
 // =============================================================================
