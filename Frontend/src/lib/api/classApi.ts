@@ -131,6 +131,27 @@ export const createClass = async (payload: {
   return handleResponse<ApiResponse<ClassApiItem>>(response);
 };
 
+// PUT /api/v1/classes/:id
+// Update class fields. Pass class_teacher_id: null to unassign the teacher.
+export const updateClass = async (
+  id: string,
+  payload: {
+    class_teacher_id?: string | null;
+    capacity?: number;
+    stream_name?: string | null;
+    branch_id?: string | null;
+    is_active?: boolean;
+  }
+): Promise<ApiResponse<ClassApiItem>> => {
+  const url = `${API_URL}/api/v1/classes/${id}`;
+  const response = await fetch(url, getFetchOptions('PUT', payload));
+  if (!response.ok) {
+    const txt = await response.clone().text().catch(() => '');
+    console.error('[classApi:updateClass] request failed', { url, status: response.status, body: txt });
+  }
+  return handleResponse<ApiResponse<ClassApiItem>>(response);
+};
+
 export const deleteClass = async (id: string): Promise<ApiResponse<{ message: string }>> => {
   const response = await fetch(`${API_URL}/api/v1/classes/${id}`, getFetchOptions('DELETE'));
   return handleResponse<ApiResponse<{ message: string }>>(response);
