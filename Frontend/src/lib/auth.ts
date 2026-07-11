@@ -159,11 +159,22 @@ class ApiClient {
 
       if (!response.ok) return false;
 
-      const data = await response.json() as ApiResponse<{ tokens: AuthTokens }>;
+      const data = await response.json() as ApiResponse<{ tokens: AuthTokens; user?: User }>;
       const tokenData = unwrapResponse(data, 'Failed to refresh authentication token');
 
       this.setToken(tokenData.tokens.accessToken);
       this.setRefreshToken(tokenData.tokens.refreshToken);
+
+      // The backend now returns the *current* user/role alongside the
+      // rotated tokens. Persist it so cbe_user_data can't drift out of
+      // sync with what the access token actually authorizes — without
+      // this, a role change server-side would silently leave the UI
+      // showing permissions the backend no longer grants (visible as
+      // "Insufficient permissions" errors on actions the UI still shows).
+      if (tokenData.user) {
+        localStorage.setItem(USER_KEY, JSON.stringify(tokenData.user));
+      }
+
       return true;
     } catch (error) {
       console.error('Token refresh failed:', error);
