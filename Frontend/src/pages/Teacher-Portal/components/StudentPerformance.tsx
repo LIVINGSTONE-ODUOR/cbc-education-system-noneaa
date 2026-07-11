@@ -2,8 +2,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2 } from 'lucide-react';
 import type { MyClassStudent } from '@/lib/api/teacherApi';
+import { ClassSelectSkeleton, TableBodySkeleton } from './skeletons';
 
 interface ClassOption {
   id: string;
@@ -54,9 +54,7 @@ const StudentPerformance: React.FC<StudentPerformanceProps> = ({
       </CardHeader>
       <CardContent className="space-y-4">
         {classesLoading ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading your classes...
-          </div>
+          <ClassSelectSkeleton />
         ) : classes.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             You haven't been assigned to any classes yet. Contact your school admin.
@@ -75,9 +73,21 @@ const StudentPerformance: React.FC<StudentPerformanceProps> = ({
             </Select>
 
             {studentsLoading ? (
-              <div className="flex justify-center py-10 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" />
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Student</TableHead>
+                    <TableHead>Overall %</TableHead>
+                    <TableHead>Attendance %</TableHead>
+                    <TableHead>Exams Recorded</TableHead>
+                    <TableHead>Strengths</TableHead>
+                    <TableHead>Areas for Improvement</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableBodySkeleton columns={6} />
+                </TableBody>
+              </Table>
             ) : students.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">
                 No students are enrolled in this class yet.
