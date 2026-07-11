@@ -68,7 +68,12 @@ const createClass = asyncHandler(async (req, res) => {
     branch_id,
     academic_year_id,
     capacity,
+    learning_area_ids, // optional: subjects this class takes, assigned at creation time
   } = req.body;
+
+  if (learning_area_ids !== undefined && !Array.isArray(learning_area_ids)) {
+    return res.status(400).json({ success: false, message: 'learning_area_ids must be an array' });
+  }
 
   // ── Validation ────────────────────────────────────────────────────────────
   if (!grade_level) {
@@ -118,6 +123,34 @@ const createClass = asyncHandler(async (req, res) => {
     }
   }
 
+  // Validate learning_area_ids up front (before creating the class) so we
+  // never end up with a class that has no valid subjects because of a typo.
+  let validatedLearningAreaIds = [];
+  if (Array.isArray(learning_area_ids) && learning_area_ids.length > 0) {
+    const { data: foundAreas, error: findErr } = await supabase
+      .from('learning_areas')
+      .select('id, school_id')
+      .in('id', learning_area_ids)
+      .is('deleted_at', null);
+
+    if (findErr) {
+      return res.status(500).json({ success: false, message: 'Failed to validate learning_area_ids', error: findErr.message });
+    }
+
+    const visibleIds = (foundAreas || [])
+      .filter((la) => la.school_id === null || la.school_id === schoolId)
+      .map((la) => la.id);
+
+    const missing = learning_area_ids.filter((laId) => !visibleIds.includes(laId));
+    if (missing.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Unknown or inaccessible learning_area id(s): ${missing.join(', ')}`,
+      });
+    }
+    validatedLearningAreaIds = learning_area_ids;
+  }
+
   // Create class
   const { data: newClass, error } = await supabase
     .from('classes')
@@ -137,6 +170,27 @@ const createClass = asyncHandler(async (req, res) => {
 
   if (error) {
     return res.status(500).json({ success: false, message: 'Failed to create class', error: error.message });
+  }
+
+  // Assign subjects to the new class, if any were provided. Best-effort:
+  // the class itself is already created at this point, so a failure here
+  // is surfaced as a warning rather than rolling back the class.
+  if (validatedLearningAreaIds.length > 0) {
+    const rows = validatedLearningAreaIds.map((learning_area_id) => ({
+      class_id: newClass.id,
+      learning_area_id,
+      school_id: schoolId,
+      created_by: req.user.id || null,
+    }));
+
+    const { error: assignErr } = await supabase.from('class_learning_areas').insert(rows);
+    if (assignErr) {
+      return res.status(201).json({
+        success: true,
+        data: newClass,
+        warning: `Class created, but subject assignment failed: ${assignErr.message}`,
+      });
+    }
   }
 
   return res.status(201).json({ success: true, data: newClass });
@@ -656,6 +710,153 @@ const getClassTimetable = asyncHandler(async (req, res) => {
 });
 
 // =============================================================================
+// 8. GET /api/v1/classes/:id/learning-areas
+//    Resolve the subject list a class takes:
+//      1. If the class has explicit rows in class_learning_areas, those ARE
+//         the subject list (this is what setClassLearningAreas writes).
+//      2. Otherwise, fall back to the original grade_levels/class_ids
+//         resolution on learning_areas, so classes that never used this
+//         feature keep behaving exactly as before.
+// =============================================================================
+const getClassLearningAreas = asyncHandler(async (req, res) => {
+  const { schoolId } = req.user;
+  const { id } = req.params;
+
+  const { data: classData } = await supabase
+    .from('classes')
+    .select('id, grade_level')
+    .eq('id', id)
+    .eq('school_id', schoolId)
+    .maybeSingle();
+
+  if (!classData) {
+    return res.status(404).json({ success: false, message: 'Class not found' });
+  }
+
+  // 1. Explicit assignment
+  const { data: explicit, error: explicitErr } = await supabase
+    .from('class_learning_areas')
+    .select('learning_areas:learning_area_id (id, name, code, description, grade_levels, is_active)')
+    .eq('class_id', id);
+
+  if (explicitErr) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch class subjects', error: explicitErr.message });
+  }
+
+  if (explicit && explicit.length > 0) {
+    const learning_areas = explicit
+      .map((row) => row.learning_areas)
+      .filter((la) => la && la.is_active !== false);
+    return res.json({ success: true, data: { learning_areas, source: 'class_assignment' } });
+  }
+
+  // 2. Fallback: same rule curriculum.controller.js uses for grade_level/class_id filters
+  const { data: fallback, error: fallbackErr } = await supabase
+    .from('learning_areas')
+    .select('id, name, code, description, grade_levels, class_ids, is_active, school_id')
+    .is('deleted_at', null)
+    .eq('is_active', true)
+    .or(`school_id.is.null,school_id.eq.${schoolId}`);
+
+  if (fallbackErr) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch class subjects', error: fallbackErr.message });
+  }
+
+  const learning_areas = (fallback || []).filter((la) => {
+    const gradeOk = !la.grade_levels || la.grade_levels.length === 0 || la.grade_levels.includes(classData.grade_level);
+    const classOk = !la.class_ids || la.class_ids.length === 0 || la.class_ids.includes(id);
+    return gradeOk && classOk;
+  });
+
+  return res.json({ success: true, data: { learning_areas, source: 'grade_default' } });
+});
+
+// =============================================================================
+// 9. PUT /api/v1/classes/:id/learning-areas
+//    Replace the explicit subject assignment for a class.
+//    Body: { learning_area_ids: string[] }
+//    Passing [] clears the explicit assignment (class falls back to the
+//    grade-level default again).
+// =============================================================================
+const setClassLearningAreas = asyncHandler(async (req, res) => {
+  const { schoolId, role, id: userId } = req.user;
+  const { id } = req.params;
+  const { learning_area_ids } = req.body;
+
+  if (!['school_admin', 'super_admin'].includes(role)) {
+    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+  }
+
+  if (!Array.isArray(learning_area_ids)) {
+    return res.status(400).json({ success: false, message: 'learning_area_ids must be an array' });
+  }
+
+  const { data: classData } = await supabase
+    .from('classes')
+    .select('id')
+    .eq('id', id)
+    .eq('school_id', schoolId)
+    .maybeSingle();
+
+  if (!classData) {
+    return res.status(404).json({ success: false, message: 'Class not found' });
+  }
+
+  if (learning_area_ids.length > 0) {
+    const { data: found, error: findErr } = await supabase
+      .from('learning_areas')
+      .select('id, school_id')
+      .in('id', learning_area_ids)
+      .is('deleted_at', null);
+
+    if (findErr) {
+      return res.status(500).json({ success: false, message: 'Failed to validate learning_area_ids', error: findErr.message });
+    }
+
+    const visibleIds = (found || [])
+      .filter((la) => la.school_id === null || la.school_id === schoolId)
+      .map((la) => la.id);
+
+    const missing = learning_area_ids.filter((laId) => !visibleIds.includes(laId));
+    if (missing.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Unknown or inaccessible learning_area id(s): ${missing.join(', ')}`,
+      });
+    }
+  }
+
+  // Replace: clear existing assignment rows for this class, then insert the new set
+  const { error: deleteErr } = await supabase
+    .from('class_learning_areas')
+    .delete()
+    .eq('class_id', id);
+
+  if (deleteErr) {
+    return res.status(500).json({ success: false, message: 'Failed to update class subjects', error: deleteErr.message });
+  }
+
+  if (learning_area_ids.length > 0) {
+    const rows = learning_area_ids.map((learning_area_id) => ({
+      class_id: id,
+      learning_area_id,
+      school_id: schoolId,
+      created_by: userId || null,
+    }));
+
+    const { error: insertErr } = await supabase.from('class_learning_areas').insert(rows);
+    if (insertErr) {
+      return res.status(500).json({ success: false, message: 'Failed to assign subjects to class', error: insertErr.message });
+    }
+  }
+
+  return res.json({
+    success: true,
+    message: `Class subjects updated (${learning_area_ids.length} subject${learning_area_ids.length === 1 ? '' : 's'})`,
+  });
+});
+
+// =============================================================================
 // Exports
 // =============================================================================
 module.exports = {
@@ -666,4 +867,6 @@ module.exports = {
   deleteClass,
   getClassLearners,
   getClassTimetable,
+  getClassLearningAreas,
+  setClassLearningAreas,
 };
