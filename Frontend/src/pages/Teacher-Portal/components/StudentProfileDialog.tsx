@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, UserRound, Phone, Mail, HeartPulse, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ListBlockSkeleton } from './skeletons';
 import {
   getStudentProfile,
   addStudentNote,
@@ -98,9 +100,20 @@ const StudentProfileDialog: React.FC<StudentProfileDialogProps> = ({ learnerId, 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
         {loading || !profile ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-2 text-muted-foreground">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="text-sm">Loading profile...</span>
+          <div className="flex flex-col flex-1 min-h-0">
+            <div className="flex items-center gap-4 pb-2">
+              <Skeleton className="w-16 h-16 rounded-full shrink-0" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            </div>
+            <div className="grid grid-cols-5 gap-1 mb-4 mt-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-8 w-full rounded-md" />
+              ))}
+            </div>
+            <ListBlockSkeleton count={3} />
           </div>
         ) : (
           <>
