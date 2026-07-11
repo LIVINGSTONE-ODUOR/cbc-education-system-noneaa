@@ -2,17 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table";
 import { User, BookOpen, Loader2, AlertCircle } from 'lucide-react';
 import { getMyChildren } from '@/lib/api/parentsApi';
 import { getLearnerResults, ExamSummary } from '@/lib/api/resultsApi';
+import MarksPanel from '@/components/marks/MarksPanel';
 
 // Shapes matching the backend response (snake_case, as returned by the API)
 interface Child {
@@ -185,90 +178,13 @@ const ParentPortal = () => {
             </Card>
           )}
 
-          {/* Academic Performance */}
+          {/* Marks — filterable by year, term, and exam name */}
           {selectedChild && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Academic Performance</CardTitle>
-                <CardDescription>
-                  {latestExam?.exam
-                    ? `${latestExam.exam.exam_name} — ${latestExam.exam.exam_type}`
-                    : `Results for ${selectedChild.first_name}`}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loadingResults ? (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-6">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Loading results...
-                  </div>
-                ) : !latestExam || latestExam.subjects.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-6">
-                    No results have been recorded for {selectedChild.first_name} yet.
-                  </p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Subject</TableHead>
-                        <TableHead>Score</TableHead>
-                        <TableHead>Grade</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {latestExam.subjects.map((subject, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{subject.learning_area?.name || '—'}</TableCell>
-                          <TableCell>
-                            {subject.is_absent ? 'Absent' : `${subject.marks_obtained}/${subject.max_marks} (${subject.percentage}%)`}
-                          </TableCell>
-                          <TableCell>
-                            <span className={`font-semibold ${gradeColor(subject.performance_level)}`}>
-                              {subject.performance_level}
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Past exams for this child */}
-          {exams.length > 1 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Exam History</CardTitle>
-                <CardDescription>Every exam {selectedChild?.first_name} has sat</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Exam</TableHead>
-                      <TableHead>Average</TableHead>
-                      <TableHead>Grade</TableHead>
-                      <TableHead>Position</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {exams.map((exam) => (
-                      <TableRow key={exam.exam_id}>
-                        <TableCell>{exam.exam?.exam_name || '—'}</TableCell>
-                        <TableCell>{exam.average_percentage}%</TableCell>
-                        <TableCell>
-                          <span className={`font-semibold ${gradeColor(exam.overall_grade)}`}>
-                            {exam.overall_grade}
-                          </span>
-                        </TableCell>
-                        <TableCell>{exam.position ? `${exam.position} / ${exam.class_size}` : '—'}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <MarksPanel
+              fetchResults={(filters) => getLearnerResults(selectedChildId, filters)}
+              reloadKey={selectedChildId}
+              emptyMessage={`No marks have been recorded for ${selectedChild.first_name} yet.`}
+            />
           )}
         </div>
       </div>
