@@ -444,9 +444,142 @@ const saveTeacherAttendance = asyncHandler(async (req, res) => {
   });
 });
 
+// =============================================================================
+// 5. GET /api/v1/attendance/learner/:learnerId/summary
+//    Query: term_id (optional, defaults to the school's current term)
+//    Returns attendance stats + recent history for ONE learner. Used by the
+//    Parent Portal dashboard ("Attendance summary" card) and can equally be
+//    called by a teacher/admin looking at a single learner's record, or by
+//    a student viewing their own.
+//
+//    Authorization mirrors getLearnerResults in results.controller.js:
+//      - parent  -> must have a learner_parents link to this exact learner
+//      - student -> may only ever view their OWN record (id resolved from
+//                   their own login, URL param is ignored)
+//      - teacher/school_admin/super_admin -> any learner in their own school
+// =============================================================================
+const getLearnerAttendanceSummary = asyncHandler(async (req, res) => {
+  const { schoolId, id: userId, role } = req.user;
+  let { learnerId } = req.params;
+  const { term_id } = req.query;
+
+  if (role === 'student') {
+    const admissionNumber = (req.user.email || '').split('@')[0];
+    const { data: ownLearner } = await supabase
+      .from('learners')
+      .select('id')
+      .eq('admission_number', admissionNumber)
+      .eq('school_id', schoolId)
+      .maybeSingle();
+
+    if (!ownLearner) {
+      return res.status(404).json({ success: false, message: 'Learner not found' });
+    }
+    learnerId = ownLearner.id;
+  }
+
+  // Look up the learner. Parents are authorized via learner_parents below
+  // rather than school_id equality — same reasoning documented in
+  // results.controller.js's getLearnerResults.
+  let learnerQuery = supabase
+    .from('learners')
+    .select('id, first_name, last_name, admission_number')
+    .eq('id', learnerId);
+
+  if (role !== 'parent') {
+    learnerQuery = learnerQuery.eq('school_id', schoolId);
+  }
+
+  const { data: learner } = await learnerQuery.maybeSingle();
+
+  if (!learner) {
+    return res.status(404).json({ success: false, message: 'Learner not found' });
+  }
+
+  if (role === 'parent') {
+    const { data: parentRow } = await supabase
+      .from('parents')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const { data: link } = parentRow
+      ? await supabase
+          .from('learner_parents')
+          .select('id')
+          .eq('parent_id', parentRow.id)
+          .eq('learner_id', learnerId)
+          .maybeSingle()
+      : { data: null };
+
+    if (!link) {
+      return res.status(403).json({ success: false, message: "Not authorized to view this learner's attendance" });
+    }
+  }
+
+  // Resolve which term to scope the summary to: the one requested, or
+  // whichever the school has flagged as current. Falls back to "all time"
+  // (no date filter) if the school has no terms set up yet.
+  let term = null;
+  if (term_id) {
+    const { data } = await supabase
+      .from('academic_terms')
+      .select('id, name, year, start_date, end_date')
+      .eq('id', term_id)
+      .eq('school_id', schoolId)
+      .maybeSingle();
+    term = data || null;
+  } else {
+    const { data } = await supabase
+      .from('academic_terms')
+      .select('id, name, year, start_date, end_date')
+      .eq('school_id', schoolId)
+      .eq('is_current', true)
+      .maybeSingle();
+    term = data || null;
+  }
+
+  let recordsQuery = supabase
+    .from('attendance_records')
+    .select('attendance_date, status, arrival_time, remarks')
+    .eq('learner_id', learnerId)
+    .order('attendance_date', { ascending: false });
+
+  if (term) {
+    recordsQuery = recordsQuery
+      .gte('attendance_date', term.start_date)
+      .lte('attendance_date', term.end_date);
+  }
+
+  const { data: records, error: recordsError } = await recordsQuery;
+
+  if (recordsError) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch attendance records', error: recordsError.message });
+  }
+
+  const all = records || [];
+  const total = all.length;
+  const present = all.filter((r) => r.status === 'present').length;
+  const absent = all.filter((r) => r.status === 'absent').length;
+  const late = all.filter((r) => r.status === 'late').length;
+  const excused = all.filter((r) => r.status === 'excused').length;
+  const attendance_rate = total > 0 ? Math.round(((present + late) / total) * 100) : 0;
+
+  return res.json({
+    success: true,
+    data: {
+      learner: { id: learner.id, first_name: learner.first_name, last_name: learner.last_name, admission_number: learner.admission_number },
+      term,
+      summary: { total_days: total, present, absent, late, excused, attendance_rate },
+      recent_records: all.slice(0, 10),
+    },
+  });
+});
+
 module.exports = {
   getClassRoster,
   saveClassAttendance,
   getTeacherRoster,
   saveTeacherAttendance,
+  getLearnerAttendanceSummary,
 };
