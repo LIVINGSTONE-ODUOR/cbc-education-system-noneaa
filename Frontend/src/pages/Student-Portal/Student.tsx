@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -13,6 +12,8 @@ import {
   TableRow
 } from "@/components/ui/table";
 import { BookOpen, Calendar, ChevronRight, User, Users, ArrowRight } from 'lucide-react';
+import MarksPanel from '@/components/marks/MarksPanel';
+import { getMyResults } from '@/lib/api/resultsApi';
 
 const StudentPortal = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -129,9 +130,10 @@ const StudentPortal = () => {
           {/* Main content */}
           <div className="col-span-1 md:col-span-3 space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-3 mb-8">
+              <TabsList className="grid grid-cols-4 mb-8">
                 <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                 <TabsTrigger value="academics">Academics</TabsTrigger>
+                <TabsTrigger value="marks">Marks</TabsTrigger>
                 <TabsTrigger value="attendance">Attendance</TabsTrigger>
               </TabsList>
               
@@ -299,7 +301,15 @@ const StudentPortal = () => {
                   </CardContent>
                 </Card>
               </TabsContent>
-              
+
+              {/* Marks Tab — real data from the backend, filterable by year/term/exam */}
+              <TabsContent value="marks" className="space-y-6">
+                <MarksPanel
+                  fetchResults={(filters) => getMyResults(filters)}
+                  emptyMessage="No marks have been recorded for you yet."
+                />
+              </TabsContent>
+
               {/* Attendance Tab */}
               <TabsContent value="attendance" className="space-y-6">
                 <Card>
