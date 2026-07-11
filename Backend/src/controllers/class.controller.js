@@ -198,7 +198,21 @@ const createClass = asyncHandler(async (req, res) => {
   }
 
   if (error) {
-    return res.status(500).json({ success: false, message: 'Failed to create class', error: error.message });
+    console.error('[classes:createClass] insert failed', {
+      attemptedTeacherId: class_teacher_id || null,
+      retriedWithUserId: resolvedTeacher?.user_id,
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to create class',
+      error: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
   }
 
   // Assign subjects to the new class, if any were provided. Best-effort:
@@ -504,7 +518,22 @@ const updateClass = asyncHandler(async (req, res) => {
   }
 
   if (error) {
-    return res.status(500).json({ success: false, message: 'Failed to update class', error: error.message });
+    console.error('[classes:updateClass] update failed', {
+      classId: id,
+      attemptedTeacherId: updatePayload.class_teacher_id,
+      retriedWithUserId: resolvedTeacher?.user_id,
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update class',
+      error: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
   }
 
   return res.json({ success: true, data: updatedRow });
