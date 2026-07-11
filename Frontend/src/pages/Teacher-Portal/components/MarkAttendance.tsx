@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, UserRound, CheckCircle2, XCircle, Clock3, FileWarning } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { AttendanceRowsSkeleton } from './skeletons';
 import {
   getClassAttendanceRoster,
   saveClassAttendance,
@@ -124,9 +125,7 @@ const MarkAttendance: React.FC<MarkAttendanceProps> = ({ classId, className, ope
         </DialogHeader>
 
         {loading ? (
-          <div className="flex justify-center py-10 text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" />
-          </div>
+          <AttendanceRowsSkeleton />
         ) : learners.length === 0 ? (
           <p className="text-sm text-muted-foreground py-6 text-center">
             No students are enrolled in this class yet.
