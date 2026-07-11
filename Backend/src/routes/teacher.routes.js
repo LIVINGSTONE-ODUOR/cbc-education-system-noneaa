@@ -27,6 +27,14 @@ const {
 } = require('../controllers/teacher.controller');
 const { uploadTeacherPhoto } = require('../controllers/teacherPhoto.controller');
 const { getStudentProfile, addStudentNote } = require('../controllers/studentProfile.controller');
+const {
+  listMyLessonPlans,
+  getMyLessonPlan,
+  createLessonPlan,
+  updateLessonPlan,
+  submitLessonPlan,
+  deleteLessonPlan,
+} = require('../controllers/lessonPlan.controller');
 
 // Photo upload multer (images, 5MB) — same limits as the learner photo upload
 const photoUpload = multer({
@@ -104,6 +112,33 @@ router.get('/me/students/:learnerId', getStudentProfile);
 //        private teacher note to a student's profile.
 //        Body: { note_type: 'comment' | 'teacher_note', content }
 router.post('/me/students/:learnerId/notes', addStudentNote);
+
+// ---------------------------------------------------------------------------
+// Lesson Planner — teachers prepare weekly plans (objectives, activities,
+// resources, homework) for each class/subject they teach; principals review
+// them via the separate /api/v1/lesson-plans routes.
+// ---------------------------------------------------------------------------
+
+// GET    /api/v1/teachers/me/lesson-plans — list own plans
+//   query params: class_id, learning_area_id, week_number, status
+router.get('/me/lesson-plans', listMyLessonPlans);
+
+// GET    /api/v1/teachers/me/lesson-plans/:id — one plan
+router.get('/me/lesson-plans/:id', getMyLessonPlan);
+
+// POST   /api/v1/teachers/me/lesson-plans — create/upsert a draft
+//   Body: { class_id, learning_area_id, term_id?, week_number,
+//           objectives, activities, resources?, homework? }
+router.post('/me/lesson-plans', createLessonPlan);
+
+// PUT    /api/v1/teachers/me/lesson-plans/:id — edit a draft
+router.put('/me/lesson-plans/:id', updateLessonPlan);
+
+// PATCH  /api/v1/teachers/me/lesson-plans/:id/submit — draft -> submitted
+router.patch('/me/lesson-plans/:id/submit', submitLessonPlan);
+
+// DELETE /api/v1/teachers/me/lesson-plans/:id — delete a draft
+router.delete('/me/lesson-plans/:id', deleteLessonPlan);
 
 // ---------------------------------------------------------------------------
 // Member routes (specific teacher by id)
