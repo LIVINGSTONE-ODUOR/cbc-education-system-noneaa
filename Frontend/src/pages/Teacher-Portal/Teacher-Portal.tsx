@@ -4,14 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BookOpen, Calendar, User, ChevronDown, ChevronUp, Users, Loader2, UserRound, ClipboardCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -19,15 +11,14 @@ import MarkAttendance from './components/MarkAttendance';
 import DashboardHome from './components/DashboardHome';
 import Gradebook from './components/Gradebook';
 import Assignments from './components/Assignments';
+import Timetable from './components/Timetable';
 import {
   getMyProfile,
   getMyClasses,
   getMyClassStudents,
-  getMyTimetable,
   type MyTeacherProfile,
   type MyClassAssignment,
   type MyClassStudent,
-  type MyTimetableSlot,
 } from '@/lib/api/teacherApi';
 
 const getErrorMessage = (error: unknown, fallback: string) => {
@@ -40,8 +31,6 @@ interface ClassOption {
   name: string;
   students: number;
 }
-
-const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 const formatClassName = (cls: MyClassAssignment['class']) => {
   if (!cls) return 'Unknown Class';
@@ -96,10 +85,6 @@ const TeacherPortal = () => {
   // `classes` list above, which is already scoped server-side to classes
   // this teacher is assigned to (GET /api/v1/teachers/me/classes).
   const [attendanceDialogOpen, setAttendanceDialogOpen] = useState(false);
-
-  // Real weekly timetable — GET /api/v1/teachers/me/timetable
-  const [timetable, setTimetable] = useState<Record<string, MyTimetableSlot[]>>({});
-  const [timetableLoading, setTimetableLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -172,31 +157,9 @@ const TeacherPortal = () => {
     })();
   }, [selectedClass, toast]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await getMyTimetable();
-        setTimetable(res.data.timetable || {});
-      } catch (error) {
-        toast({
-          title: 'Could not load your timetable',
-          description: getErrorMessage(error, 'Please refresh and try again.'),
-          variant: 'destructive',
-        });
-      } finally {
-        setTimetableLoading(false);
-      }
-    })();
-  }, [toast]);
-
   const toggleStudentDetails = (studentId: string) => {
     setExpandedStudent((prev) => (prev === studentId ? null : studentId));
   };
-
-  const todayName = DAY_NAMES[new Date().getDay()];
-  const todayLessons = (timetable[todayName] || [])
-    .slice()
-    .sort((a, b) => a.period_number - b.period_number);
 
   const selectedClassInfo = classes.find((c) => c.id === selectedClass);
 
@@ -558,51 +521,7 @@ const TeacherPortal = () => {
 
               {/* Schedule Tab */}
               <TabsContent value="schedule" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Today's Schedule</CardTitle>
-                    <CardDescription>
-                      {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {timetableLoading ? (
-                      <div className="flex justify-center py-10 text-muted-foreground">
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                      </div>
-                    ) : todayLessons.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-6 text-center">
-                        No lessons scheduled for today.
-                      </p>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Time</TableHead>
-                            <TableHead>Class</TableHead>
-                            <TableHead>Subject</TableHead>
-                            <TableHead>Room</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {todayLessons.map((lesson) => (
-                            <TableRow key={lesson.id}>
-                              <TableCell className="font-medium">{lesson.start_time} - {lesson.end_time}</TableCell>
-                              <TableCell>
-                                {lesson.class ? `Grade ${lesson.class.grade_level}${lesson.class.stream_name || ''}` : '—'}
-                              </TableCell>
-                              <TableCell>{lesson.learning_area?.name || '—'}</TableCell>
-                              <TableCell>{lesson.room || '—'}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </CardContent>
-                  <CardFooter>
-                    <Button variant="outline" className="ml-auto">View Full Schedule</Button>
-                  </CardFooter>
-                </Card>
+                <Timetable />
               </TabsContent>
 
               {/* Resources Tab */}
