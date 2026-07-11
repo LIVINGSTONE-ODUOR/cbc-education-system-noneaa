@@ -386,6 +386,125 @@ const deleteExam = asyncHandler(async (req, res) => {
   return res.json({ success: true, data: { message: 'Exam deleted successfully' } });
 });
 
+// =============================================================================
+// 6. GET /api/v1/exams/learner/:learnerId/upcoming
+//    Returns exams that apply to this learner's current class (plus
+//    whole-school exams with no class_id) that haven't finished yet.
+//    Used by the Parent Portal dashboard ("Upcoming exams" card).
+//
+//    Authorization mirrors attendance/assignment learner endpoints:
+//      - parent  -> must have a learner_parents link to this exact learner
+//      - student -> may only ever view their OWN record (id resolved from
+//                   their own login, URL param is ignored)
+//      - teacher/school_admin/super_admin -> any learner in their own school
+// =============================================================================
+const getLearnerUpcomingExams = asyncHandler(async (req, res) => {
+  const { schoolId, id: userId, role } = req.user;
+  let { learnerId } = req.params;
+  const { limit = 5 } = req.query;
+
+  if (role === 'student') {
+    const admissionNumber = (req.user.email || '').split('@')[0];
+    const { data: ownLearner } = await supabase
+      .from('learners')
+      .select('id')
+      .eq('admission_number', admissionNumber)
+      .eq('school_id', schoolId)
+      .maybeSingle();
+
+    if (!ownLearner) {
+      return res.status(404).json({ success: false, message: 'Learner not found' });
+    }
+    learnerId = ownLearner.id;
+  }
+
+  let learnerQuery = supabase
+    .from('learners')
+    .select('id, first_name, last_name')
+    .eq('id', learnerId);
+
+  if (role !== 'parent') {
+    learnerQuery = learnerQuery.eq('school_id', schoolId);
+  }
+
+  const { data: learner } = await learnerQuery.maybeSingle();
+
+  if (!learner) {
+    return res.status(404).json({ success: false, message: 'Learner not found' });
+  }
+
+  if (role === 'parent') {
+    const { data: parentRow } = await supabase
+      .from('parents')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const { data: link } = parentRow
+      ? await supabase
+          .from('learner_parents')
+          .select('id')
+          .eq('parent_id', parentRow.id)
+          .eq('learner_id', learnerId)
+          .maybeSingle()
+      : { data: null };
+
+    if (!link) {
+      return res.status(403).json({ success: false, message: "Not authorized to view this learner's exams" });
+    }
+  }
+
+  // Resolve the learner's current class the same way results/attendance/
+  // assignments do — via learner_enrollments, not a direct column.
+  const { data: enrollment } = await supabase
+    .from('learner_enrollments')
+    .select('class_id, classes:class_id ( id, grade_level, stream_name )')
+    .eq('learner_id', learnerId)
+    .eq('status', 'enrolled')
+    .maybeSingle();
+
+  const classId = enrollment?.class_id || null;
+  const todayISO = new Date().toISOString().split('T')[0];
+
+  // Exams that apply to this learner: scoped to their exact class, OR
+  // whole-school exams (class_id IS NULL), that haven't ended yet.
+  let query = supabase
+    .from('exams')
+    .select(`
+      id, exam_name, exam_type, start_date, end_date, description,
+      academic_years:term_id (id, name, year)
+    `)
+    .eq('school_id', schoolId)
+    .eq('is_active', true)
+    .gte('end_date', todayISO)
+    .order('start_date', { ascending: true })
+    .limit(parseInt(limit));
+
+  query = classId ? query.or(`class_id.eq.${classId},class_id.is.null`) : query.is('class_id', null);
+
+  const { data: exams, error } = await query;
+
+  if (error) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch upcoming exams', error: error.message });
+  }
+
+  return res.json({
+    success: true,
+    data: {
+      learner: { id: learner.id, first_name: learner.first_name, last_name: learner.last_name },
+      class: enrollment?.classes || null,
+      upcoming_exams: (exams || []).map((e) => ({
+        id: e.id,
+        exam_name: e.exam_name,
+        exam_type: e.exam_type,
+        start_date: e.start_date,
+        end_date: e.end_date,
+        term: e.academic_years,
+      })),
+    },
+  });
+});
+
 module.exports = {
   EXAM_TYPES,
   createExam,
@@ -393,4 +512,5 @@ module.exports = {
   getExam,
   updateExam,
   deleteExam,
+  getLearnerUpcomingExams,
 };
