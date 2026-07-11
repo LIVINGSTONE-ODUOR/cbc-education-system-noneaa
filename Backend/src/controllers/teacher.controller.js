@@ -1146,24 +1146,26 @@ const assignTeacherToClasses = asyncHandler(async (req, res) => {
   const classIds = [...new Set(assignments.map((a) => a.class_id))];
   const { data: foundClasses } = await supabase
     .from('classes')
-    .select('id')
+    .select('id, grade_level')
     .in('id', classIds)
     .eq('school_id', schoolId)
     .is('deleted_at', null);
-  const validClassIds = new Set((foundClasses || []).map((c) => c.id));
+  const classById = new Map((foundClasses || []).map((c) => [c.id, c]));
+  const validClassIds = new Set(classById.keys());
   const missingClasses = classIds.filter((cid) => !validClassIds.has(cid));
 
   const learningAreaIds = [...new Set(assignments.map((a) => a.learning_area_id))];
   const { data: foundAreas } = await supabase
     .from('learning_areas')
-    .select('id, school_id')
+    .select('id, name, school_id, grade_levels, class_ids, is_active')
     .in('id', learningAreaIds)
     .is('deleted_at', null);
-  const validAreaIds = new Set(
+  const areaById = new Map(
     (foundAreas || [])
       .filter((la) => la.school_id === null || la.school_id === schoolId)
-      .map((la) => la.id)
+      .map((la) => [la.id, la])
   );
+  const validAreaIds = new Set(areaById.keys());
   const missingAreas = learningAreaIds.filter((laId) => !validAreaIds.has(laId));
 
   if (missingClasses.length || missingAreas.length) {
@@ -1171,6 +1173,57 @@ const assignTeacherToClasses = asyncHandler(async (req, res) => {
       success: false,
       message: 'One or more classes/subjects are invalid or do not belong to this school',
       errors: { invalid_class_ids: missingClasses, invalid_learning_area_ids: missingAreas },
+    });
+  }
+
+  // -----------------------------------------------------------------------
+  // Guard: a teacher can only be assigned a (class, subject) pair if that
+  // class actually takes that subject. Without this, an admin could save
+  // an assignment that later shows up as a confusing "not assigned" error
+  // in Marks Entry once the mismatch surfaces. Same resolution order as
+  // GET /api/v1/classes/:id/learning-areas:
+  //   1. Explicit class_learning_areas rows for the class, if any exist.
+  //   2. Otherwise, the learning_area's own grade_levels/class_ids filters.
+  // -----------------------------------------------------------------------
+  const { data: explicitRows } = await supabase
+    .from('class_learning_areas')
+    .select('class_id, learning_area_id')
+    .in('class_id', classIds);
+
+  const explicitByClass = new Map();
+  (explicitRows || []).forEach((row) => {
+    if (!explicitByClass.has(row.class_id)) explicitByClass.set(row.class_id, new Set());
+    explicitByClass.get(row.class_id).add(row.learning_area_id);
+  });
+
+  const subjectMismatches = [];
+  assignments.forEach((a, idx) => {
+    const cls = classById.get(a.class_id);
+    const area = areaById.get(a.learning_area_id);
+    if (!cls || !area) return; // already reported above
+
+    const explicitSet = explicitByClass.get(a.class_id);
+    let allowed;
+    if (explicitSet && explicitSet.size > 0) {
+      allowed = explicitSet.has(a.learning_area_id);
+    } else {
+      const gradeOk = !area.grade_levels || area.grade_levels.length === 0 || area.grade_levels.includes(cls.grade_level);
+      const classOk = !area.class_ids || area.class_ids.length === 0 || area.class_ids.includes(a.class_id);
+      allowed = gradeOk && classOk;
+    }
+
+    if (!allowed) {
+      subjectMismatches.push(
+        `Row ${idx + 1}: "${area.name}" is not a subject taken by this class (${cls.grade_level})`
+      );
+    }
+  });
+
+  if (subjectMismatches.length) {
+    return res.status(400).json({
+      success: false,
+      message: 'One or more subjects do not belong to the assigned class',
+      errors: subjectMismatches,
     });
   }
 
