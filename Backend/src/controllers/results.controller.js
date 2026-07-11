@@ -18,6 +18,40 @@ const supabase = createClient(
 
 const CAN_WRITE = ['school_admin', 'super_admin', 'teacher'];
 
+// ---------------------------------------------------------------------------
+// Helper: resolve the calling user's own teacher_id from their JWT user id.
+// Returns null if they have no teacher record in this school.
+// ---------------------------------------------------------------------------
+const resolveTeacherId = async (schoolId, userId) => {
+  const { data } = await supabase
+    .from('teachers')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('school_id', schoolId)
+    .is('deleted_at', null)
+    .maybeSingle();
+  return data?.id || null;
+};
+
+// ---------------------------------------------------------------------------
+// Helper: is this teacher actively assigned to teach `learningAreaId` in
+// `classId`? Used to gate marks entry/viewing so a teacher can only touch
+// results for their own subject(s) and class(es).
+// ---------------------------------------------------------------------------
+const isTeacherAssigned = async (teacherId, classId, learningAreaId) => {
+  if (!teacherId || !classId || !learningAreaId) return false;
+  const { data } = await supabase
+    .from('teacher_assignments')
+    .select('id')
+    .eq('teacher_id', teacherId)
+    .eq('class_id', classId)
+    .eq('learning_area_id', learningAreaId)
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .maybeSingle();
+  return Boolean(data);
+};
+
 const RESULT_SELECT = `
   id, school_id, exam_id, learner_id, learning_area_id, class_id, term_id,
   marks_obtained, max_marks, percentage, performance_level, remarks, is_absent,
@@ -183,6 +217,25 @@ const bulkUpsertResults = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'Subject (learning area) not found for this school' });
   }
 
+  // Teachers may only enter marks for a subject/class they're actively
+  // assigned to. Admins bypass this check entirely.
+  if (role === 'teacher') {
+    if (!class_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'class_id is required when submitting marks as a teacher',
+      });
+    }
+    const teacherId = await resolveTeacherId(schoolId, userId);
+    const assigned = await isTeacherAssigned(teacherId, class_id, learning_area_id);
+    if (!assigned) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not assigned to teach this subject for this class',
+      });
+    }
+  }
+
   const rowErrors = [];
   const rows = results.map((r, idx) => {
     if (!r.learner_id) {
@@ -233,11 +286,49 @@ const bulkUpsertResults = asyncHandler(async (req, res) => {
 //    View results for an exam (optionally filtered by class / subject)
 // =============================================================================
 const listResults = asyncHandler(async (req, res) => {
-  const { schoolId } = req.user;
+  const { schoolId, role, id: userId } = req.user;
   const { exam_id, class_id, learning_area_id, page = 1, limit = 50 } = req.query;
 
   if (!exam_id) {
     return res.status(400).json({ success: false, message: 'exam_id is required' });
+  }
+
+  // Teachers may only view results for classes they're actively assigned to
+  // teach at least one subject in. If they ask for one specific subject, it
+  // must be one of theirs; otherwise we transparently scope the query to
+  // just the subjects they're assigned (so the "all subjects for this
+  // learner's class" marks sheet still works, just narrowed to their own).
+  let restrictLearningAreaIds = null;
+  if (role === 'teacher') {
+    if (!class_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'class_id is required to view results as a teacher',
+      });
+    }
+    const teacherId = await resolveTeacherId(schoolId, userId);
+    const { data: myAssignments } = await supabase
+      .from('teacher_assignments')
+      .select('learning_area_id')
+      .eq('teacher_id', teacherId)
+      .eq('class_id', class_id)
+      .eq('is_active', true)
+      .is('deleted_at', null);
+
+    const assignedAreaIds = [...new Set((myAssignments || []).map((a) => a.learning_area_id))];
+
+    if (learning_area_id) {
+      if (!assignedAreaIds.includes(learning_area_id)) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not assigned to teach this subject for this class',
+        });
+      }
+    } else if (assignedAreaIds.length === 0) {
+      return res.json({ success: true, data: { results: [] } });
+    } else {
+      restrictLearningAreaIds = assignedAreaIds;
+    }
   }
 
   let query = supabase
@@ -248,6 +339,7 @@ const listResults = asyncHandler(async (req, res) => {
 
   if (class_id) query = query.eq('class_id', class_id);
   if (learning_area_id) query = query.eq('learning_area_id', learning_area_id);
+  if (restrictLearningAreaIds) query = query.in('learning_area_id', restrictLearningAreaIds);
 
   const from = (parseInt(page) - 1) * parseInt(limit);
   const to = from + parseInt(limit) - 1;
@@ -316,15 +408,32 @@ const getLearnerResults = asyncHandler(async (req, res) => {
 //    Search learners by name / admission number (powers the results search box)
 // =============================================================================
 const searchLearners = asyncHandler(async (req, res) => {
-  const { schoolId } = req.user;
+  const { schoolId, role, id: userId } = req.user;
   const { query = '' } = req.query;
 
   if (!query.trim()) {
     return res.json({ success: true, data: { learners: [] } });
   }
 
+  // Teachers only search among learners in classes they're actively
+  // assigned to teach at least one subject in.
+  let restrictClassIds = null;
+  if (role === 'teacher') {
+    const teacherId = await resolveTeacherId(schoolId, userId);
+    const { data: assignments } = await supabase
+      .from('teacher_assignments')
+      .select('class_id')
+      .eq('teacher_id', teacherId)
+      .eq('is_active', true)
+      .is('deleted_at', null);
+    restrictClassIds = [...new Set((assignments || []).map((a) => a.class_id).filter(Boolean))];
+    if (restrictClassIds.length === 0) {
+      return res.json({ success: true, data: { learners: [] } });
+    }
+  }
+
   const q = `%${query.trim()}%`;
-  const { data: learners, error } = await supabase
+  let dbQuery = supabase
     .from('learners')
     .select(
       'id, first_name, last_name, admission_number, class_id, classes:class_id ( grade_level, stream_name )'
@@ -332,6 +441,12 @@ const searchLearners = asyncHandler(async (req, res) => {
     .eq('school_id', schoolId)
     .or(`first_name.ilike.${q},last_name.ilike.${q},admission_number.ilike.${q}`)
     .limit(10);
+
+  if (restrictClassIds) {
+    dbQuery = dbQuery.in('class_id', restrictClassIds);
+  }
+
+  const { data: learners, error } = await dbQuery;
 
   if (error) {
     return res.status(500).json({ success: false, message: 'Failed to search learners', error: error.message });
