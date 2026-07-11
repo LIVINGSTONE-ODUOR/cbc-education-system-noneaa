@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BookOpen, Calendar, User, ChevronDown, ChevronUp, Users, Loader2, UserRound, ClipboardCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import MarkAttendance from './components/MarkAttendance';
+import DashboardHome from './components/DashboardHome';
 import {
   getMyProfile,
   getMyClasses,
@@ -56,7 +57,7 @@ const getGreeting = (hour: number) => {
 const TeacherPortal = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("classes");
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   // Drives the "Good morning/afternoon/evening" greeting below. Re-checked
   // every minute so it flips over live if the portal is left open, without
@@ -284,6 +285,9 @@ const TeacherPortal = () => {
                 <CardTitle className="text-lg">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
+                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('dashboard')}>
+                  <Calendar className="mr-2 h-4 w-4" /> Dashboard
+                </Button>
                 <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('schedule')}>
                   <Calendar className="mr-2 h-4 w-4" /> View Timetable
                 </Button>
@@ -300,12 +304,22 @@ const TeacherPortal = () => {
           {/* Main content */}
           <div className="col-span-1 md:col-span-3 space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-4 mb-8">
+              <TabsList className="grid grid-cols-5 mb-8">
+                <TabsTrigger value="dashboard">Home</TabsTrigger>
                 <TabsTrigger value="classes">Classes</TabsTrigger>
                 <TabsTrigger value="schedule">Schedule</TabsTrigger>
                 <TabsTrigger value="resources">Resources</TabsTrigger>
                 <TabsTrigger value="reports">Reports</TabsTrigger>
               </TabsList>
+
+              {/* Dashboard / Home Tab */}
+              <TabsContent value="dashboard" className="space-y-6">
+                <DashboardHome
+                  onGoToClasses={() => setActiveTab('classes')}
+                  onGoToSchedule={() => setActiveTab('schedule')}
+                />
+              </TabsContent>
+
 
               {/* Classes Tab */}
               <TabsContent value="classes" className="space-y-6">
