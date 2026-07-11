@@ -1,128 +1,168 @@
-
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
+import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Calendar, User, ChevronRight, ChevronDown, ChevronUp, Users } from 'lucide-react';
+import { BookOpen, Calendar, User, ChevronDown, ChevronUp, Users, Loader2, UserRound } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import {
+  getMyProfile,
+  getMyClasses,
+  getMyClassStudents,
+  getMyTimetable,
+  type MyTeacherProfile,
+  type MyClassAssignment,
+  type MyClassStudent,
+  type MyTimetableSlot,
+} from '@/lib/api/teacherApi';
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+};
+
+interface ClassOption {
+  id: string;
+  name: string;
+  students: number;
+}
+
+const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+const formatClassName = (cls: MyClassAssignment['class']) => {
+  if (!cls) return 'Unknown Class';
+  return `Grade ${cls.grade_level}${cls.stream_name ? cls.stream_name : ''}`;
+};
 
 const TeacherPortal = () => {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("classes");
-  const [selectedClass, setSelectedClass] = useState("6B");
+
+  // Real teacher profile (sidebar) — fetched from GET /api/v1/teachers/me
+  const [profile, setProfile] = useState<MyTeacherProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  // Real classes the teacher is assigned to — GET /api/v1/teachers/me/classes
+  const [classes, setClasses] = useState<ClassOption[]>([]);
+  const [classesLoading, setClassesLoading] = useState(true);
+  const [selectedClass, setSelectedClass] = useState<string>("");
+
+  // Real roster + performance + attendance for the selected class
+  const [students, setStudents] = useState<MyClassStudent[]>([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
   const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
 
-  // Teacher details
-  const teacher = {
-    name: "Mrs. Jane Njoroge",
-    id: "TC-4527",
-    role: "Senior Teacher - Mathematics",
-    school: "Nairobi Academy",
-    experience: "8 years",
-    email: "j.njoroge@nairobiacademy.edu",
-    phone: "+254 712 345 678",
-    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80"
-  };
+  // Real weekly timetable — GET /api/v1/teachers/me/timetable
+  const [timetable, setTimetable] = useState<Record<string, MyTimetableSlot[]>>({});
+  const [timetableLoading, setTimetableLoading] = useState(true);
 
-  // Classes taught
-  const classes = [
-    { id: "6A", name: "Grade 6A", students: 32, subjects: ["Mathematics"] },
-    { id: "6B", name: "Grade 6B", students: 34, subjects: ["Mathematics"] },
-    { id: "7A", name: "Grade 7A", students: 30, subjects: ["Mathematics"] },
-    { id: "5C", name: "Grade 5C", students: 33, subjects: ["Mathematics"] }
-  ];
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getMyProfile();
+        setProfile(res.data);
+      } catch (error) {
+        toast({
+          title: 'Could not load your profile',
+          description: getErrorMessage(error, 'Please refresh and try again.'),
+          variant: 'destructive',
+        });
+      } finally {
+        setProfileLoading(false);
+      }
+    })();
+  }, [toast]);
 
-  // Students data for the selected class
-  const students = [
-    { 
-      id: "ST1001",
-      name: "David Ochieng",
-      performance: 85,
-      attendance: 92,
-      assignments: 8,
-      image: "https://images.unsplash.com/photo-1600267204091-5c1ab8b10c02?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80",
-      details: {
-        strengths: "Problem-solving, arithmetic",
-        weaknesses: "Geometry, word problems",
-        recentScores: [78, 85, 92, 80],
-        notes: "Shows consistent improvement in arithmetic"
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getMyClasses();
+        const seen = new Map<string, ClassOption>();
+        (res.data.assignments || []).forEach((a) => {
+          if (!a.class) return;
+          if (!seen.has(a.class.id)) {
+            seen.set(a.class.id, {
+              id: a.class.id,
+              name: formatClassName(a.class),
+              students: a.class.learner_count,
+            });
+          }
+        });
+        const list = Array.from(seen.values());
+        setClasses(list);
+        if (list.length > 0) setSelectedClass(list[0].id);
+      } catch (error) {
+        toast({
+          title: 'Could not load your classes',
+          description: getErrorMessage(error, 'Please refresh and try again.'),
+          variant: 'destructive',
+        });
+      } finally {
+        setClassesLoading(false);
       }
-    },
-    { 
-      id: "ST1002",
-      name: "Sarah Wambui",
-      performance: 92,
-      attendance: 96,
-      assignments: 10,
-      image: "https://images.unsplash.com/photo-1669240158612-28a42d2956a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80",
-      details: {
-        strengths: "Algebra, critical thinking",
-        weaknesses: "None significant",
-        recentScores: [90, 95, 88, 94],
-        notes: "Exceptional student, could benefit from advanced material"
-      }
-    },
-    { 
-      id: "ST1003",
-      name: "John Kamau",
-      performance: 72,
-      attendance: 85,
-      assignments: 6,
-      image: "https://images.unsplash.com/photo-1567784177951-6fa58317e16b?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80",
-      details: {
-        strengths: "Fractions, measurement",
-        weaknesses: "Algebra concepts, attention to detail",
-        recentScores: [65, 70, 75, 78],
-        notes: "Showing improvement but needs more practice with algebra"
-      }
-    },
-    { 
-      id: "ST1004",
-      name: "Lucy Muthoni",
-      performance: 88,
-      attendance: 90,
-      assignments: 9,
-      image: "https://images.unsplash.com/photo-1509839862600-309617c3201e?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80",
-      details: {
-        strengths: "Geometry, statistics",
-        weaknesses: "Mental arithmetic",
-        recentScores: [85, 90, 86, 92],
-        notes: "Very consistent performer, strong analytical skills"
-      }
+    })();
+  }, [toast]);
+
+  useEffect(() => {
+    if (!selectedClass) {
+      setStudents([]);
+      return;
     }
-  ];
+    setStudentsLoading(true);
+    setExpandedStudent(null);
+    (async () => {
+      try {
+        const res = await getMyClassStudents(selectedClass);
+        setStudents(res.data.students || []);
+      } catch (error) {
+        toast({
+          title: 'Could not load students',
+          description: getErrorMessage(error, 'Please refresh and try again.'),
+          variant: 'destructive',
+        });
+        setStudents([]);
+      } finally {
+        setStudentsLoading(false);
+      }
+    })();
+  }, [selectedClass, toast]);
 
-  // Upcoming lessons for today
-  const todayLessons = [
-    { time: "8:00 AM - 9:30 AM", class: "Grade 6B", subject: "Mathematics", topic: "Introduction to Algebra" },
-    { time: "10:00 AM - 11:30 AM", class: "Grade 7A", subject: "Mathematics", topic: "Geometry: Circles and Arcs" },
-    { time: "1:00 PM - 2:30 PM", class: "Grade 5C", subject: "Mathematics", topic: "Fractions and Decimals" }
-  ];
-
-  // Teaching resources
-  const resources = [
-    { name: "Algebra Worksheets", type: "PDF", lastUsed: "Yesterday", downloads: 45 },
-    { name: "Geometry Visual Aids", type: "PowerPoint", lastUsed: "2 days ago", downloads: 32 },
-    { name: "Fractions Practice Tests", type: "Word", lastUsed: "Last week", downloads: 67 },
-    { name: "CBE Mathematics Guide", type: "PDF", lastUsed: "Yesterday", downloads: 58 }
-  ];
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getMyTimetable();
+        setTimetable(res.data.timetable || {});
+      } catch (error) {
+        toast({
+          title: 'Could not load your timetable',
+          description: getErrorMessage(error, 'Please refresh and try again.'),
+          variant: 'destructive',
+        });
+      } finally {
+        setTimetableLoading(false);
+      }
+    })();
+  }, [toast]);
 
   const toggleStudentDetails = (studentId: string) => {
-    if (expandedStudent === studentId) {
-      setExpandedStudent(null);
-    } else {
-      setExpandedStudent(studentId);
-    }
+    setExpandedStudent((prev) => (prev === studentId ? null : studentId));
   };
+
+  const todayName = DAY_NAMES[new Date().getDay()];
+  const todayLessons = (timetable[todayName] || [])
+    .slice()
+    .sort((a, b) => a.period_number - b.period_number);
+
+  const selectedClassInfo = classes.find((c) => c.id === selectedClass);
 
   return (
       <div className="container mx-auto px-4 py-8">
@@ -131,61 +171,80 @@ const TeacherPortal = () => {
           <div className="col-span-1">
             <Card className="mb-6">
               <CardContent className="pt-6">
-                <div className="flex flex-col items-center mb-6">
-                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-secondary/20">
-                    <img 
-                      src={teacher.image} 
-                      alt={teacher.name} 
-                      className="w-full h-full object-cover"
-                    />
+                {profileLoading ? (
+                  <div className="flex flex-col items-center py-8 text-muted-foreground gap-2">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    <span className="text-sm">Loading profile...</span>
                   </div>
-                  <h2 className="text-xl font-bold mt-4">{teacher.name}</h2>
-                  <p className="text-muted-foreground">{teacher.role}</p>
-                  <div className="bg-secondary/10 text-secondary text-sm px-3 py-1 rounded-full mt-2">
-                    ID: {teacher.id}
-                  </div>
-                </div>
-                
-                <div className="space-y-1 border-t pt-4">
-                  <div className="flex justify-between py-1">
-                    <span className="text-muted-foreground">School:</span>
-                    <span className="font-medium">{teacher.school}</span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span className="text-muted-foreground">Experience:</span>
-                    <span className="font-medium">{teacher.experience}</span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span className="text-muted-foreground">Email:</span>
-                    <span className="font-medium text-sm">{teacher.email}</span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span className="text-muted-foreground">Phone:</span>
-                    <span className="font-medium">{teacher.phone}</span>
-                  </div>
-                </div>
+                ) : profile ? (
+                  <>
+                    <div className="flex flex-col items-center mb-6">
+                      <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-secondary/20 bg-muted flex items-center justify-center">
+                        {profile.photo ? (
+                          <img
+                            src={profile.photo}
+                            alt={profile.full_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <UserRound className="w-16 h-16 text-muted-foreground" />
+                        )}
+                      </div>
+                      <h2 className="text-xl font-bold mt-4">{profile.full_name}</h2>
+                      <p className="text-muted-foreground">{profile.designation || 'Teacher'}</p>
+                      {profile.employee_number && (
+                        <div className="bg-secondary/10 text-secondary text-sm px-3 py-1 rounded-full mt-2">
+                          ID: {profile.employee_number}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-1 border-t pt-4">
+                      <div className="flex justify-between py-1">
+                        <span className="text-muted-foreground">School:</span>
+                        <span className="font-medium">{profile.school_name || '—'}</span>
+                      </div>
+                      <div className="flex justify-between py-1">
+                        <span className="text-muted-foreground">Experience:</span>
+                        <span className="font-medium">{profile.experience || '—'}</span>
+                      </div>
+                      <div className="flex justify-between py-1">
+                        <span className="text-muted-foreground">Email:</span>
+                        <span className="font-medium text-sm">{profile.email}</span>
+                      </div>
+                      <div className="flex justify-between py-1">
+                        <span className="text-muted-foreground">Phone:</span>
+                        <span className="font-medium">{profile.phone || '—'}</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    Profile unavailable.
+                  </p>
+                )}
               </CardContent>
             </Card>
-            
+
             {/* Quick actions */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('schedule')}>
                   <Calendar className="mr-2 h-4 w-4" /> View Timetable
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('resources')}>
                   <BookOpen className="mr-2 h-4 w-4" /> Teaching Resources
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('reports')}>
                   <User className="mr-2 h-4 w-4" /> Performance Reports
                 </Button>
               </CardContent>
             </Card>
           </div>
-          
+
           {/* Main content */}
           <div className="col-span-1 md:col-span-3 space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -195,7 +254,7 @@ const TeacherPortal = () => {
                 <TabsTrigger value="resources">Resources</TabsTrigger>
                 <TabsTrigger value="reports">Reports</TabsTrigger>
               </TabsList>
-              
+
               {/* Classes Tab */}
               <TabsContent value="classes" className="space-y-6">
                 {/* Class Selection */}
@@ -205,177 +264,218 @@ const TeacherPortal = () => {
                     <CardDescription>Select a class to view student details</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Select value={selectedClass} onValueChange={setSelectedClass}>
-                      <SelectTrigger className="w-full md:w-[300px]">
-                        <SelectValue placeholder="Select a class" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {classes.map(classItem => (
-                          <SelectItem key={classItem.id} value={classItem.id}>
-                            {classItem.name} ({classItem.students} students)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {classesLoading ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Loading your classes...
+                      </div>
+                    ) : classes.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        You haven't been assigned to any classes yet. Contact your school admin.
+                      </p>
+                    ) : (
+                      <Select value={selectedClass} onValueChange={setSelectedClass}>
+                        <SelectTrigger className="w-full md:w-[300px]">
+                          <SelectValue placeholder="Select a class" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {classes.map(classItem => (
+                            <SelectItem key={classItem.id} value={classItem.id}>
+                              {classItem.name} ({classItem.students} students)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </CardContent>
                 </Card>
-                
+
                 {/* Student List */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>
-                      {classes.find(c => c.id === selectedClass)?.name} Students
-                    </CardTitle>
-                    <CardDescription>
-                      {students.length} students enrolled in this class
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {students.map((student) => (
-                        <div key={student.id} className="border rounded-md overflow-hidden">
-                          {/* Student summary row */}
-                          <div 
-                            className="p-4 flex justify-between items-center hover:bg-muted/50 cursor-pointer"
-                            onClick={() => toggleStudentDetails(student.id)}
-                          >
-                            <div className="flex items-center space-x-4">
-                              <div className="w-12 h-12 rounded-full overflow-hidden">
-                                <img 
-                                  src={student.image} 
-                                  alt={student.name} 
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                              <div>
-                                <h4 className="font-semibold">{student.name}</h4>
-                                <p className="text-sm text-muted-foreground">ID: {student.id}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-6">
-                              <div className="text-center">
-                                <div className="text-sm text-muted-foreground">Performance</div>
-                                <div className={`font-bold ${
-                                  student.performance >= 90 ? 'text-green-600' : 
-                                  student.performance >= 80 ? 'text-blue-600' : 
-                                  student.performance >= 70 ? 'text-amber-600' : 'text-red-600'
-                                }`}>
-                                  {student.performance}%
-                                </div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-sm text-muted-foreground">Attendance</div>
-                                <div className="font-bold text-primary">{student.attendance}%</div>
-                              </div>
-                              <div className="text-center hidden md:block">
-                                <div className="text-sm text-muted-foreground">Assignments</div>
-                                <div className="font-bold">{student.assignments}/10</div>
-                              </div>
-                              <Button variant="ghost" size="sm">
-                                {expandedStudent === student.id ? 
-                                  <ChevronUp className="h-4 w-4" /> : 
-                                  <ChevronDown className="h-4 w-4" />}
-                              </Button>
-                            </div>
-                          </div>
-                          
-                          {/* Expanded student details */}
-                          {expandedStudent === student.id && (
-                            <div className="p-4 bg-muted/20 border-t">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                  <h5 className="font-semibold mb-2">Performance Analysis</h5>
-                                  <div className="space-y-2">
-                                    <div>
-                                      <div className="flex justify-between text-sm">
-                                        <span>Strengths:</span>
-                                        <span className="text-green-600">{student.details.strengths}</span>
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <div className="flex justify-between text-sm">
-                                        <span>Areas for Improvement:</span>
-                                        <span className="text-amber-600">{student.details.weaknesses}</span>
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <div className="flex justify-between text-sm">
-                                        <span>Teacher's Notes:</span>
-                                        <span className="text-gray-600">{student.details.notes}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div>
-                                  <h5 className="font-semibold mb-2">Recent Assessment Scores</h5>
-                                  <div className="flex justify-between space-x-2">
-                                    {student.details.recentScores.map((score, index) => (
-                                      <div key={index} className="flex-1 text-center">
-                                        <div className={`text-sm font-bold ${
-                                          score >= 90 ? 'text-green-600' : 
-                                          score >= 80 ? 'text-blue-600' : 
-                                          score >= 70 ? 'text-amber-600' : 'text-red-600'
-                                        }`}>
-                                          {score}%
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">Test {index + 1}</div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="mt-4 flex justify-end space-x-2">
-                                <Button variant="outline" size="sm">View Full Profile</Button>
-                                <Button size="sm">Add Assessment</Button>
-                              </div>
-                            </div>
-                          )}
+                {selectedClass && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{selectedClassInfo?.name || 'Class'} Students</CardTitle>
+                      <CardDescription>
+                        {studentsLoading ? 'Loading...' : `${students.length} students enrolled in this class`}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {studentsLoading ? (
+                        <div className="flex justify-center py-10 text-muted-foreground">
+                          <Loader2 className="h-5 w-5 animate-spin" />
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="justify-between">
-                    <Button variant="outline">Download Class List</Button>
-                    <Button>Generate Class Report</Button>
-                  </CardFooter>
-                </Card>
+                      ) : students.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-6 text-center">
+                          No students are enrolled in this class yet.
+                        </p>
+                      ) : (
+                        <div className="space-y-4">
+                          {students.map((student) => (
+                            <div key={student.learner_id} className="border rounded-md overflow-hidden">
+                              {/* Student summary row */}
+                              <div
+                                className="p-4 flex justify-between items-center hover:bg-muted/50 cursor-pointer"
+                                onClick={() => toggleStudentDetails(student.learner_id)}
+                              >
+                                <div className="flex items-center space-x-4">
+                                  <div className="w-12 h-12 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                                    {student.photo ? (
+                                      <img
+                                        src={student.photo}
+                                        alt={student.name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <UserRound className="w-6 h-6 text-muted-foreground" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <h4 className="font-semibold">{student.name}</h4>
+                                    <p className="text-sm text-muted-foreground">ID: {student.admission_number}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-6">
+                                  <div className="text-center">
+                                    <div className="text-sm text-muted-foreground">Performance</div>
+                                    <div className={`font-bold ${
+                                      student.performance === null ? 'text-muted-foreground' :
+                                      student.performance >= 90 ? 'text-green-600' :
+                                      student.performance >= 80 ? 'text-blue-600' :
+                                      student.performance >= 70 ? 'text-amber-600' : 'text-red-600'
+                                    }`}>
+                                      {student.performance !== null ? `${student.performance}%` : 'No data'}
+                                    </div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div className="text-sm text-muted-foreground">Attendance</div>
+                                    <div className="font-bold text-primary">
+                                      {student.attendance !== null ? `${student.attendance}%` : 'No data'}
+                                    </div>
+                                  </div>
+                                  <div className="text-center hidden md:block">
+                                    <div className="text-sm text-muted-foreground">Exams Recorded</div>
+                                    <div className="font-bold">{student.exams_recorded}</div>
+                                  </div>
+                                  <Button variant="ghost" size="sm">
+                                    {expandedStudent === student.learner_id ?
+                                      <ChevronUp className="h-4 w-4" /> :
+                                      <ChevronDown className="h-4 w-4" />}
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Expanded student details */}
+                              {expandedStudent === student.learner_id && (
+                                <div className="p-4 bg-muted/20 border-t">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                      <h5 className="font-semibold mb-2">Performance Analysis</h5>
+                                      <div className="space-y-2">
+                                        <div>
+                                          <div className="flex justify-between text-sm">
+                                            <span>Strengths:</span>
+                                            <span className="text-green-600">{student.strengths}</span>
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <div className="flex justify-between text-sm">
+                                            <span>Areas for Improvement:</span>
+                                            <span className="text-amber-600">{student.areas_for_improvement}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <h5 className="font-semibold mb-2">Recent Assessment Scores</h5>
+                                      {student.recent_scores.length === 0 ? (
+                                        <p className="text-sm text-muted-foreground">No exam results recorded yet.</p>
+                                      ) : (
+                                        <div className="flex justify-between space-x-2">
+                                          {student.recent_scores.map((score, index) => (
+                                            <div key={index} className="flex-1 text-center">
+                                              <div className={`text-sm font-bold ${
+                                                score >= 90 ? 'text-green-600' :
+                                                score >= 80 ? 'text-blue-600' :
+                                                score >= 70 ? 'text-amber-600' : 'text-red-600'
+                                              }`}>
+                                                {score}%
+                                              </div>
+                                              <div className="text-xs text-muted-foreground">
+                                                {index === student.recent_scores.length - 1 ? 'Latest' : `Test ${index + 1}`}
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="mt-4 flex justify-end space-x-2">
+                                    <Button variant="outline" size="sm">View Full Profile</Button>
+                                    <Button size="sm">Add Assessment</Button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                    <CardFooter className="justify-between">
+                      <Button variant="outline">Download Class List</Button>
+                      <Button>Generate Class Report</Button>
+                    </CardFooter>
+                  </Card>
+                )}
               </TabsContent>
-              
+
               {/* Schedule Tab */}
               <TabsContent value="schedule" className="space-y-6">
                 <Card>
                   <CardHeader>
                     <CardTitle>Today's Schedule</CardTitle>
-                    <CardDescription>May 2, 2025</CardDescription>
+                    <CardDescription>
+                      {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Time</TableHead>
-                          <TableHead>Class</TableHead>
-                          <TableHead>Subject</TableHead>
-                          <TableHead>Topic</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {todayLessons.map((lesson, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="font-medium">{lesson.time}</TableCell>
-                            <TableCell>{lesson.class}</TableCell>
-                            <TableCell>{lesson.subject}</TableCell>
-                            <TableCell>{lesson.topic}</TableCell>
+                    {timetableLoading ? (
+                      <div className="flex justify-center py-10 text-muted-foreground">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      </div>
+                    ) : todayLessons.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-6 text-center">
+                        No lessons scheduled for today.
+                      </p>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Time</TableHead>
+                            <TableHead>Class</TableHead>
+                            <TableHead>Subject</TableHead>
+                            <TableHead>Room</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {todayLessons.map((lesson) => (
+                            <TableRow key={lesson.id}>
+                              <TableCell className="font-medium">{lesson.start_time} - {lesson.end_time}</TableCell>
+                              <TableCell>
+                                {lesson.class ? `Grade ${lesson.class.grade_level}${lesson.class.stream_name || ''}` : '—'}
+                              </TableCell>
+                              <TableCell>{lesson.learning_area?.name || '—'}</TableCell>
+                              <TableCell>{lesson.room || '—'}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
                   </CardContent>
                   <CardFooter>
                     <Button variant="outline" className="ml-auto">View Full Schedule</Button>
                   </CardFooter>
                 </Card>
               </TabsContent>
-              
+
               {/* Resources Tab */}
               <TabsContent value="resources" className="space-y-6">
                 <Card>
@@ -384,42 +484,20 @@ const TeacherPortal = () => {
                       <CardTitle>Teaching Resources</CardTitle>
                       <CardDescription>Access and manage your teaching materials</CardDescription>
                     </div>
-                    <Button className="mt-4 sm:mt-0">Upload New Resource</Button>
+                    <Button className="mt-4 sm:mt-0" disabled title="Not available yet">Upload New Resource</Button>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <Input placeholder="Search resources..." />
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Last Used</TableHead>
-                            <TableHead>Downloads</TableHead>
-                            <TableHead></TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {resources.map((resource, index) => (
-                            <TableRow key={index}>
-                              <TableCell className="font-medium">{resource.name}</TableCell>
-                              <TableCell>{resource.type}</TableCell>
-                              <TableCell>{resource.lastUsed}</TableCell>
-                              <TableCell>{resource.downloads}</TableCell>
-                              <TableCell>
-                                <Button variant="ghost" size="sm">
-                                  <ChevronRight className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                      <Input placeholder="Search resources..." disabled />
+                      <p className="text-sm text-muted-foreground text-center py-10">
+                        A shared resource library isn't set up for your school yet. Once your admin enables it,
+                        materials you upload will appear here.
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
               </TabsContent>
-              
+
               {/* Reports Tab */}
               <TabsContent value="reports" className="space-y-6">
                 <Card>
@@ -440,10 +518,12 @@ const TeacherPortal = () => {
                               <p className="text-sm text-muted-foreground">Overall class performance analytics</p>
                             </div>
                           </div>
-                          <Button className="mt-4 w-full" variant="outline">Generate Report</Button>
+                          <Button className="mt-4 w-full" variant="outline" onClick={() => setActiveTab('classes')}>
+                            View Classes
+                          </Button>
                         </CardContent>
                       </Card>
-                      
+
                       <Card>
                         <CardContent className="pt-6">
                           <div className="flex items-center space-x-4">
@@ -455,37 +535,9 @@ const TeacherPortal = () => {
                               <p className="text-sm text-muted-foreground">Student-specific performance data</p>
                             </div>
                           </div>
-                          <Button className="mt-4 w-full" variant="outline">Select Student</Button>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card>
-                        <CardContent className="pt-6">
-                          <div className="flex items-center space-x-4">
-                            <div className="bg-kenya-gold/10 p-3 rounded-full">
-                              <BookOpen className="h-6 w-6 text-kenya-gold" />
-                            </div>
-                            <div>
-                              <h3 className="font-semibold">Subject Analysis</h3>
-                              <p className="text-sm text-muted-foreground">Subject-wise performance breakdown</p>
-                            </div>
-                          </div>
-                          <Button className="mt-4 w-full" variant="outline">View Analysis</Button>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card>
-                        <CardContent className="pt-6">
-                          <div className="flex items-center space-x-4">
-                            <div className="bg-kenya-green/10 p-3 rounded-full">
-                              <Calendar className="h-6 w-6 text-kenya-green" />
-                            </div>
-                            <div>
-                              <h3 className="font-semibold">Term Reports</h3>
-                              <p className="text-sm text-muted-foreground">End of term comprehensive reports</p>
-                            </div>
-                          </div>
-                          <Button className="mt-4 w-full" variant="outline">Generate Term Report</Button>
+                          <Button className="mt-4 w-full" variant="outline" onClick={() => setActiveTab('classes')}>
+                            Select Student
+                          </Button>
                         </CardContent>
                       </Card>
                     </div>
