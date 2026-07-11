@@ -205,6 +205,7 @@ app.use('/api/v1/ai-assistant', require('./routes/aiAssistant.routes'));
 
 // Parents API routes
 app.use('/api/v1/parents', require('./routes/parent.routes'));
+app.use('/api/v1/parent-dashboard', require('./routes/parentDashboard.routes'));
 
 // Profile (non-versioned fallback)
 app.use('/api/users', require('./routes/users.routes'));
