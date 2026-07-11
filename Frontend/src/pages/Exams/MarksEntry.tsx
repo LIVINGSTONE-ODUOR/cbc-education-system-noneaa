@@ -40,6 +40,8 @@ import {
 import { getExams, ExamApiItem } from '@/lib/api/examApi';
 import { LearningArea } from '@/lib/api/curriculumApi';
 import { getClassLearningAreas } from '@/lib/api/classApi';
+import { useAuth } from '@/contexts/AuthContext';
+import { getMyClasses } from '@/lib/api/teacherApi';
 import {
   searchLearners as apiSearchLearners,
   getResults,
@@ -87,6 +89,9 @@ interface MarkRow {
 // ─────────────────────────────────────────────────────────────────────────
 
 const MarksEntry: React.FC = () => {
+  const { user } = useAuth();
+  const isTeacherRole = user?.role === 'teacher';
+
   // Reference data
   const [exams, setExams] = useState<ExamApiItem[]>([]);
   const [loadingExams, setLoadingExams] = useState(true);
@@ -103,6 +108,38 @@ const MarksEntry: React.FC = () => {
   const [rows, setRows] = useState<MarkRow[]>([]);
   const [loadingSheet, setLoadingSheet] = useState(false);
   const [sheetError, setSheetError] = useState<string | null>(null);
+
+  // Teacher scoping: class_id -> Set of learning_area_ids this teacher is
+  // assigned to teach. Only populated for role === 'teacher'. Admins have
+  // no restriction, so this stays null for them (meaning "show everything").
+  const [myAssignedByClass, setMyAssignedByClass] = useState<Record<string, Set<string>> | null>(
+    null
+  );
+
+  useEffect(() => {
+    if (!isTeacherRole) {
+      setMyAssignedByClass(null);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await getMyClasses();
+        const map: Record<string, Set<string>> = {};
+        (res.data?.assignments || []).forEach((a) => {
+          const classId = a.class?.id;
+          const subjectId = a.learning_area?.id;
+          if (!classId || !subjectId) return;
+          if (!map[classId]) map[classId] = new Set();
+          map[classId].add(subjectId);
+        });
+        setMyAssignedByClass(map);
+      } catch {
+        // If this fails, fall back to an empty map (no subjects shown)
+        // rather than silently showing everything.
+        setMyAssignedByClass({});
+      }
+    })();
+  }, [isTeacherRole]);
 
   // ── Load exams (active ones first) ─────────────────────────────────────
   const loadExams = useCallback(async () => {
@@ -163,7 +200,16 @@ const MarksEntry: React.FC = () => {
         // Subjects assigned to this learner's class specifically (falls back
         // to the grade-level default on the backend if the class has no
         // explicit subject assignment yet).
-        const subjects: LearningArea[] = (subjectsRes.data?.learning_areas || []) as LearningArea[];
+        let subjects: LearningArea[] = (subjectsRes.data?.learning_areas || []) as LearningArea[];
+
+        // Teachers only see/enter marks for subjects they're assigned to
+        // teach in THIS class — everything else is hidden from the sheet
+        // entirely (the backend enforces the same rule on save).
+        if (isTeacherRole && myAssignedByClass) {
+          const allowed = myAssignedByClass[learner.class_id] || new Set<string>();
+          subjects = subjects.filter((s) => allowed.has(s.id));
+        }
+
         const existing: ExamResultRow[] = (resultsRes.data?.results || []).filter(
           (r: ExamResultRow) => r.learner_id === learner.id
         );
@@ -190,7 +236,11 @@ const MarksEntry: React.FC = () => {
 
         setRows(built);
         if (subjects.length === 0) {
-          setSheetError(`No subjects are configured for ${classLabel(learner.classes)} yet.`);
+          setSheetError(
+            isTeacherRole
+              ? `You aren't assigned to teach any subject in ${classLabel(learner.classes)}.`
+              : `No subjects are configured for ${classLabel(learner.classes)} yet.`
+          );
         }
       } catch (e: any) {
         setSheetError(e.message || 'Failed to load the marks sheet');
@@ -199,7 +249,7 @@ const MarksEntry: React.FC = () => {
         setLoadingSheet(false);
       }
     },
-    []
+    [isTeacherRole, myAssignedByClass]
   );
 
   const selectLearner = (learner: ResultLearner) => {
