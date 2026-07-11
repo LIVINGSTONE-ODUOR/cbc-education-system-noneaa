@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, UserRound, KeyRound, Phone as PhoneIcon, Mail } from 'lucide-react';
+import { UserRound, KeyRound, Phone as PhoneIcon, Mail } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   getProfile,
   updateContactInfo,
@@ -93,12 +94,54 @@ const Settings: React.FC = () => {
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="flex flex-col items-center py-16 text-muted-foreground gap-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span className="text-sm">Loading your settings...</span>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-40" />
+          </CardHeader>
+          <CardContent className="flex items-center gap-6">
+            <Skeleton className="w-24 h-24 rounded-full shrink-0" />
+            <div className="space-y-2">
+              <Skeleton className="h-9 w-32 rounded-md" />
+              <Skeleton className="h-3 w-40" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-44" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-10 w-full rounded-md" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-28" />
+              <Skeleton className="h-10 w-full rounded-md" />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Skeleton className="h-9 w-28 rounded-md ml-auto" />
+          </CardFooter>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-36" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-3 w-32" />
+                <Skeleton className="h-10 w-full rounded-md" />
+              </div>
+            ))}
+          </CardContent>
+          <CardFooter>
+            <Skeleton className="h-9 w-36 rounded-md ml-auto" />
+          </CardFooter>
+        </Card>
+      </div>
     );
   }
 
