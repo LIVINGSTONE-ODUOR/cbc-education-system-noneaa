@@ -2,7 +2,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ClipboardCheck, Loader2 } from 'lucide-react';
+import { ClipboardCheck } from 'lucide-react';
+import { ClassSelectSkeleton } from './skeletons';
 
 interface ClassOption {
   id: string;
@@ -37,9 +38,7 @@ const Attendance: React.FC<AttendanceProps> = ({
       </CardHeader>
       <CardContent className="space-y-4">
         {classesLoading ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading your classes...
-          </div>
+          <ClassSelectSkeleton />
         ) : classes.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             You haven't been assigned to any classes yet. Contact your school admin.
