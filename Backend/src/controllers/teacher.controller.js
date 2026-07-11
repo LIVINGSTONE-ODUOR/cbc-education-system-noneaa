@@ -1705,6 +1705,175 @@ const getMyClasses = asyncHandler(async (req, res) => {
   return getTeacherClasses(req, res);
 });
 
+// =============================================================================
+// 12. GET /api/v1/teachers/me/dashboard
+//     One-call aggregate for the Teacher Portal Home/Dashboard tab:
+//     greeting context, today's lessons, classes still needing attendance
+//     marked today, upcoming exams for the teacher's own classes, and
+//     quick stats. Assignments/announcements/notifications have no backend
+//     module yet, so those come back with available:false rather than
+//     fabricated data — the frontend shows an honest "not set up" state.
+// =============================================================================
+const getMyDashboard = asyncHandler(async (req, res) => {
+  const { schoolId, id: userId, role } = req.user;
+
+  if (role !== 'teacher') {
+    return res.status(403).json({ success: false, message: 'This endpoint is for teacher accounts only' });
+  }
+
+  const { data: teacher, error: teacherError } = await supabase
+    .from('teachers')
+    .select('id, designation')
+    .eq('user_id', userId)
+    .eq('school_id', schoolId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (teacherError) {
+    return res.status(500).json({ success: false, message: 'Failed to verify teacher account', error: teacherError.message });
+  }
+  if (!teacher) {
+    return res.status(404).json({ success: false, message: 'No teacher record found for this account' });
+  }
+
+  const { data: currentYear } = await supabase
+    .from('academic_years')
+    .select('id')
+    .eq('school_id', schoolId)
+    .eq('is_current', true)
+    .maybeSingle();
+  const yearId = currentYear?.id || null;
+
+  // ---- Assigned classes (active, current year) --------------------------
+  let classIds = [];
+  let classCount = 0;
+  let studentCount = 0;
+
+  if (yearId) {
+    const { data: assignments, error: assignError } = await supabase
+      .from('teacher_assignments')
+      .select('class:class_id ( id, grade_level, stream_name )')
+      .eq('teacher_id', teacher.id)
+      .eq('academic_year_id', yearId)
+      .eq('is_active', true)
+      .is('deleted_at', null);
+
+    if (assignError) {
+      return res.status(500).json({ success: false, message: 'Failed to fetch assignments', error: assignError.message });
+    }
+
+    classIds = [...new Set((assignments || []).map((a) => a.class?.id).filter(Boolean))];
+    classCount = classIds.length;
+
+    if (classIds.length > 0) {
+      const { data: enrollments } = await supabase
+        .from('learner_enrollments')
+        .select('learner_id')
+        .in('class_id', classIds)
+        .eq('academic_year_id', yearId)
+        .eq('status', 'enrolled');
+      studentCount = new Set((enrollments || []).map((e) => e.learner_id)).size;
+    }
+  }
+
+  // ---- Today's lessons ----------------------------------------------------
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const today = new Date();
+  const todayName = dayNames[today.getDay()];
+  const todayISOStr = today.toISOString().split('T')[0];
+
+  let todaysLessons = [];
+  if (yearId && ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].includes(todayName)) {
+    const { data: slots, error: slotError } = await supabase
+      .from('timetable_slots')
+      .select(`
+        id, day, period_number, start_time, end_time, room,
+        class:class_id ( id, grade_level, stream_name ),
+        learning_area:learning_area_id ( id, name )
+      `)
+      .eq('teacher_id', teacher.id)
+      .eq('school_id', schoolId)
+      .eq('academic_year_id', yearId)
+      .eq('day', todayName)
+      .eq('is_active', true)
+      .is('deleted_at', null)
+      .order('period_number');
+
+    if (slotError) {
+      return res.status(500).json({ success: false, message: "Failed to fetch today's timetable", error: slotError.message });
+    }
+    todaysLessons = slots || [];
+  }
+
+  // ---- Classes still needing attendance marked today -----------------------
+  let classesPendingAttendance = 0;
+  let studentsPendingAttendance = 0;
+  if (classIds.length > 0) {
+    const { data: markedToday, error: attError } = await supabase
+      .from('attendance_records')
+      .select('class_id')
+      .in('class_id', classIds)
+      .eq('attendance_date', todayISOStr);
+
+    if (attError) {
+      return res.status(500).json({ success: false, message: "Failed to check today's attendance", error: attError.message });
+    }
+    const markedClassIds = new Set((markedToday || []).map((r) => r.class_id));
+    const pendingClassIds = classIds.filter((id) => !markedClassIds.has(id));
+    classesPendingAttendance = pendingClassIds.length;
+
+    if (pendingClassIds.length > 0) {
+      const { data: pendingEnrollments } = await supabase
+        .from('learner_enrollments')
+        .select('learner_id')
+        .in('class_id', pendingClassIds)
+        .eq('status', 'enrolled');
+      studentsPendingAttendance = new Set((pendingEnrollments || []).map((e) => e.learner_id)).size;
+    }
+  }
+
+  // ---- Upcoming exams (own classes + whole-school exams) --------------------
+  let upcomingExams = [];
+  {
+    let examQuery = supabase
+      .from('exams')
+      .select('id, exam_name, exam_type, start_date, end_date, class:class_id ( id, grade_level, stream_name )')
+      .eq('school_id', schoolId)
+      .eq('is_active', true)
+      .gte('start_date', todayISOStr)
+      .order('start_date', { ascending: true })
+      .limit(5);
+
+    const { data: exams, error: examError } = await examQuery;
+    if (examError) {
+      return res.status(500).json({ success: false, message: 'Failed to fetch upcoming exams', error: examError.message });
+    }
+    // Keep exams that are whole-school (no class) or scoped to one of this
+    // teacher's own classes — a teacher shouldn't see another class's exam.
+    upcomingExams = (exams || []).filter((e) => !e.class || classIds.includes(e.class.id));
+  }
+
+  return res.json({
+    success: true,
+    data: {
+      date: todayISOStr,
+      classes_count: classCount,
+      students_count: studentCount,
+      todays_lessons: todaysLessons,
+      attendance: {
+        classes_pending: classesPendingAttendance,
+        students_pending: studentsPendingAttendance,
+      },
+      upcoming_exams: upcomingExams,
+      // No backend module yet for these — frontend shows an honest
+      // "not set up" state instead of fabricated numbers.
+      assignments: { available: false },
+      announcements: { available: false },
+      notifications: { available: false },
+    },
+  });
+});
+
 module.exports = {
   inviteTeacher,
   listTeachers,
@@ -1721,4 +1890,5 @@ module.exports = {
   getMyProfile,
   getMyTimetable,
   getMyClassStudents,
+  getMyDashboard,
 };
