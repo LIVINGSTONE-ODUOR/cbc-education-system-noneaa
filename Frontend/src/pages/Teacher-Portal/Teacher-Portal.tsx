@@ -5,9 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Calendar, User, ChevronDown, ChevronUp, Users, Loader2, UserRound, ClipboardCheck, MessageSquare, Megaphone, Settings as SettingsIcon, UsersRound, BarChart3, FileText, LogOut, Home } from 'lucide-react';
+import { BookOpen, Calendar, User, ChevronDown, ChevronUp, Users, UserRound, ClipboardCheck, MessageSquare, Megaphone, Settings as SettingsIcon, UsersRound, BarChart3, FileText, LogOut, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ClassSelectSkeleton, StudentRowsSkeleton, DetailRowsSkeleton } from './components/skeletons';
 import MarkAttendance from './components/MarkAttendance';
 import DashboardHome from './components/DashboardHome';
 import Gradebook from './components/Gradebook';
@@ -239,12 +241,17 @@ const TeacherPortal = () => {
           <div className="col-span-1 md:sticky md:top-4 space-y-4 animate-slide-in-left">
             <Card className="overflow-hidden border-0 shadow-md">
               {profileLoading ? (
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center py-8 text-muted-foreground gap-2">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span className="text-xs">Loading profile...</span>
+                <>
+                  <div className="bg-muted/60 px-4 pt-5 pb-6 flex flex-col items-center gap-2">
+                    <Skeleton className="w-16 h-16 rounded-full" />
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-5 w-20 rounded-full" />
                   </div>
-                </CardContent>
+                  <CardContent className="p-3">
+                    <DetailRowsSkeleton />
+                  </CardContent>
+                </>
               ) : profile ? (
                 <>
                   <div className="bg-gradient-to-br from-primary to-primary/70 px-4 pt-5 pb-6 text-center relative">
@@ -356,9 +363,7 @@ const TeacherPortal = () => {
                   </CardHeader>
                   <CardContent>
                     {classesLoading ? (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Loading your classes...
-                      </div>
+                      <ClassSelectSkeleton />
                     ) : classes.length === 0 ? (
                       <p className="text-sm text-muted-foreground">
                         You haven't been assigned to any classes yet. Contact your school admin.
@@ -396,9 +401,7 @@ const TeacherPortal = () => {
                     </CardHeader>
                     <CardContent>
                       {studentsLoading ? (
-                        <div className="flex justify-center py-10 text-muted-foreground">
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        </div>
+                        <StudentRowsSkeleton count={5} />
                       ) : students.length === 0 ? (
                         <p className="text-sm text-muted-foreground py-6 text-center">
                           No students are enrolled in this class yet.
