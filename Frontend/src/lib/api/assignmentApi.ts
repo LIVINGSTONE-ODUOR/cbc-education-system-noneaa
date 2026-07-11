@@ -284,3 +284,40 @@ export const submitAssignment = async (
   );
   return handleResponse(response);
 };
+
+// ─────────────────────────────────────────────────────────────────────────
+// 9. Learner assignments due — GET /api/v1/assignments/learner/:learnerId/due
+//    Used by the Parent Portal dashboard's "Assignments due" card.
+// ─────────────────────────────────────────────────────────────────────────
+
+export type LearnerAssignmentStatus = 'not_submitted' | SubmissionStatus;
+
+export interface LearnerDueAssignment {
+  id: string;
+  title: string;
+  learning_area: AssignmentSubject | null;
+  due_date: string;
+  max_grade: number;
+  submission_status: LearnerAssignmentStatus;
+  grade: number | null;
+  is_overdue: boolean;
+}
+
+export interface LearnerAssignmentsDueResponse {
+  learner: { id: string; first_name: string; last_name: string };
+  class: AssignmentClass | null;
+  total_due: number;
+  assignments: LearnerDueAssignment[];
+}
+
+export const getLearnerAssignmentsDue = async (
+  learnerId: string,
+  includeSubmitted = false
+): Promise<ApiResponse<LearnerAssignmentsDueResponse>> => {
+  const query = includeSubmitted ? '?include_submitted=true' : '';
+  const response = await fetch(
+    `${API_URL}/api/v1/assignments/learner/${learnerId}/due${query}`,
+    { headers: authHeaders() }
+  );
+  return handleResponse(response);
+};
