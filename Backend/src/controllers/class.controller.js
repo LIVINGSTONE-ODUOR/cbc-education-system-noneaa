@@ -108,11 +108,15 @@ const createClass = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'Academic year not found or does not belong to this school' });
   }
 
-  // Verify class teacher exists (if provided)
+  // Verify class teacher exists (if provided). We fetch both `id` and
+  // `user_id` here because the classes_class_teacher_fkey constraint on
+  // class_teacher_id may reference teachers.user_id rather than teachers.id
+  // — see the retry logic below the insert.
+  let resolvedTeacher = null;
   if (class_teacher_id) {
     const { data: teacher } = await supabase
       .from('teachers')
-      .select('id')
+      .select('id, user_id')
       .eq('id', class_teacher_id)
       .eq('school_id', schoolId)
       .eq('is_active', true)
@@ -121,6 +125,7 @@ const createClass = asyncHandler(async (req, res) => {
     if (!teacher) {
       return res.status(400).json({ success: false, message: 'Class teacher not found or not active' });
     }
+    resolvedTeacher = teacher;
   }
 
   // Validate learning_area_ids up front (before creating the class) so we
@@ -152,7 +157,7 @@ const createClass = asyncHandler(async (req, res) => {
   }
 
   // Create class
-  const { data: newClass, error } = await supabase
+  let { data: newClass, error } = await supabase
     .from('classes')
     .insert({
       school_id: schoolId,
@@ -167,6 +172,30 @@ const createClass = asyncHandler(async (req, res) => {
     })
     .select('*')
     .single();
+
+  // The classes_class_teacher_fkey constraint may actually reference
+  // teachers.user_id rather than teachers.id, even though the rest of the
+  // app treats class_teacher_id as a teachers.id. If we hit that specific
+  // FK violation, retry once using the teacher's user_id instead.
+  if (error && error.code === '23503' && /class_teacher/i.test(error.message || '') && resolvedTeacher?.user_id) {
+    const retry = await supabase
+      .from('classes')
+      .insert({
+        school_id: schoolId,
+        academic_year_id: yearId,
+        grade_level: grade_level.trim(),
+        stream_name: stream_name?.trim() || null,
+        class_teacher_id: resolvedTeacher.user_id,
+        branch_id: branch_id || null,
+        capacity: capacity ? Math.max(1, parseInt(capacity)) : 50,
+        is_active: true,
+        created_at: new Date().toISOString(),
+      })
+      .select('*')
+      .single();
+    newClass = retry.data;
+    error = retry.error;
+  }
 
   if (error) {
     return res.status(500).json({ success: false, message: 'Failed to create class', error: error.message });
@@ -417,11 +446,14 @@ const updateClass = asyncHandler(async (req, res) => {
     }
   }
 
-  // Verify class teacher if provided
+  // Verify class teacher if provided. Fetch both id and user_id — the
+  // classes_class_teacher_fkey constraint may reference teachers.user_id
+  // rather than teachers.id (see retry logic below the update call).
+  let resolvedTeacher = null;
   if (class_teacher_id) {
     const { data: teacher } = await supabase
       .from('teachers')
-      .select('id')
+      .select('id, user_id')
       .eq('id', class_teacher_id)
       .eq('school_id', schoolId)
       .eq('is_active', true)
@@ -430,6 +462,7 @@ const updateClass = asyncHandler(async (req, res) => {
     if (!teacher) {
       return res.status(400).json({ success: false, message: 'Class teacher not found or not active' });
     }
+    resolvedTeacher = teacher;
   }
 
   // Update class
@@ -441,18 +474,40 @@ const updateClass = asyncHandler(async (req, res) => {
   if (is_active !== undefined) updatePayload.is_active = is_active;
   updatePayload.updated_at = new Date().toISOString();
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error: updateErr } = await supabase
     .from('classes')
     .update(updatePayload)
     .eq('id', id)
     .select('*')
     .single();
 
+  let updatedRow = updated;
+  let error = updateErr;
+
+  // Same FK ambiguity as createClass: retry once against teacher.user_id if
+  // the constraint rejected teacher.id specifically for class_teacher_id.
+  if (
+    error &&
+    error.code === '23503' &&
+    /class_teacher/i.test(error.message || '') &&
+    resolvedTeacher?.user_id &&
+    updatePayload.class_teacher_id !== undefined
+  ) {
+    const retry = await supabase
+      .from('classes')
+      .update({ ...updatePayload, class_teacher_id: resolvedTeacher.user_id })
+      .eq('id', id)
+      .select('*')
+      .single();
+    updatedRow = retry.data;
+    error = retry.error;
+  }
+
   if (error) {
     return res.status(500).json({ success: false, message: 'Failed to update class', error: error.message });
   }
 
-  return res.json({ success: true, data: updated });
+  return res.json({ success: true, data: updatedRow });
 });
 
 // =============================================================================
