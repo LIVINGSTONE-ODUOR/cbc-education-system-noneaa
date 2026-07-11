@@ -14,6 +14,8 @@ const {
   deleteClass,
   getClassLearners,
   getClassTimetable,
+  getClassLearningAreas,
+  setClassLearningAreas,
 } = require('../controllers/class.controller');
 
 // All class routes require authentication
@@ -25,8 +27,9 @@ router.use(authenticate);
 
 // POST  /api/v1/classes
 //   Body: { grade_level*, stream_name, class_teacher_id, branch_id,
-//            academic_year_id, capacity }
-//   * required
+//            academic_year_id, capacity, learning_area_ids }
+//   * required. learning_area_ids (optional) assigns the class's subjects
+//   in the same request — see PUT /:id/learning-areas to change them later.
 router.post('/', createClass);
 
 // GET   /api/v1/classes
@@ -64,5 +67,15 @@ router.get('/:id/learners', getClassLearners);
 //   Query: academic_year_id (defaults to current) | term_id
 router.get('/:id/timetable', getClassTimetable);
 
-module.exports = router;
+// GET    /api/v1/classes/:id/learning-areas
+//   Resolved subject list for this class: explicit assignment if the class
+//   has one, otherwise the grade_levels/class_ids default.
+router.get('/:id/learning-areas', getClassLearningAreas);
 
+// PUT    /api/v1/classes/:id/learning-areas
+//   Body: { learning_area_ids: string[] }
+//   Replaces the explicit subject assignment for this class.
+//   Roles: school_admin, super_admin
+router.put('/:id/learning-areas', setClassLearningAreas);
+
+module.exports = router;
