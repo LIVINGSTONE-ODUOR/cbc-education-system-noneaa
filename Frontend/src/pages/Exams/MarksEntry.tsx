@@ -38,7 +38,8 @@ import {
 } from 'lucide-react';
 
 import { getExams, ExamApiItem } from '@/lib/api/examApi';
-import { getLearningAreas, LearningArea } from '@/lib/api/curriculumApi';
+import { LearningArea } from '@/lib/api/curriculumApi';
+import { getClassLearningAreas } from '@/lib/api/classApi';
 import {
   searchLearners as apiSearchLearners,
   getResults,
@@ -141,12 +142,11 @@ const MarksEntry: React.FC = () => {
     return () => clearTimeout(handle);
   }, [query]);
 
-  // ── Build the marks sheet: subjects for the learner's grade + any existing marks ──
+  // ── Build the marks sheet: subjects the learner's CLASS takes + any existing marks ──
   const loadSheet = useCallback(
     async (learner: ResultLearner, exam_id: string) => {
       if (!learner || !exam_id) return;
-      const gradeLevel = learner.classes?.grade_level;
-      if (!gradeLevel) {
+      if (!learner.class_id) {
         setSheetError('This learner is not assigned to a class, so their subjects cannot be determined.');
         setRows([]);
         return;
@@ -156,13 +156,14 @@ const MarksEntry: React.FC = () => {
       setSheetError(null);
       try {
         const [subjectsRes, resultsRes] = await Promise.all([
-          getLearningAreas({ grade_level: gradeLevel, is_active: true }),
-          learner.class_id
-            ? getResults({ exam_id, class_id: learner.class_id, limit: 500 })
-            : Promise.resolve({ success: true, data: { results: [] } } as any),
+          getClassLearningAreas(learner.class_id),
+          getResults({ exam_id, class_id: learner.class_id, limit: 500 }),
         ]);
 
-        const subjects: LearningArea[] = subjectsRes.data?.learning_areas || [];
+        // Subjects assigned to this learner's class specifically (falls back
+        // to the grade-level default on the backend if the class has no
+        // explicit subject assignment yet).
+        const subjects: LearningArea[] = (subjectsRes.data?.learning_areas || []) as LearningArea[];
         const existing: ExamResultRow[] = (resultsRes.data?.results || []).filter(
           (r: ExamResultRow) => r.learner_id === learner.id
         );
@@ -189,7 +190,7 @@ const MarksEntry: React.FC = () => {
 
         setRows(built);
         if (subjects.length === 0) {
-          setSheetError(`No subjects are configured for ${gradeLevel} yet.`);
+          setSheetError(`No subjects are configured for ${classLabel(learner.classes)} yet.`);
         }
       } catch (e: any) {
         setSheetError(e.message || 'Failed to load the marks sheet');
