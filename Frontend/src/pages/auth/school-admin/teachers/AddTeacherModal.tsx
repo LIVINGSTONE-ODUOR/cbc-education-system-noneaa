@@ -113,9 +113,10 @@ export default function AddTeacherModal({ open, onOpenChange, onSuccess }: AddTe
         !formData.lastName ||
         !formData.email ||
         !formData.phoneNumber ||
+        !formData.employeeNumber ||
         !formData.subjects
       ) {
-        throw new Error('Please fill in all required fields.');
+        throw new Error('Please fill in all required fields, including the employee number — it doubles as the teacher\'s login credential.');
       }
 
       const { inviteTeacher, uploadTeacherPhoto } = await import('@/lib/api/teacherApi');
@@ -152,7 +153,7 @@ export default function AddTeacherModal({ open, onOpenChange, onSuccess }: AddTe
         last_name: formData.lastName,
         email: formData.email,
         phone_number: formData.phoneNumber,
-        tsc_number: formData.employeeNumber || undefined,
+        tsc_number: formData.employeeNumber,
         subjects_taught,
         qualifications: qualifications.length ? qualifications : undefined,
         staff_type: 'teaching',
@@ -161,8 +162,8 @@ export default function AddTeacherModal({ open, onOpenChange, onSuccess }: AddTe
       });
 
       toast({
-        title: 'Teacher Invited Successfully',
-        description: `${formData.firstName} ${formData.lastName} has been invited.`,
+        title: 'Teacher Account Created',
+        description: `${formData.firstName} ${formData.lastName} can now log in with email "${formData.email}" and employee number "${formData.employeeNumber}".`,
       });
 
       resetForm();
@@ -317,14 +318,18 @@ export default function AddTeacherModal({ open, onOpenChange, onSuccess }: AddTe
                 </p>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="employeeNumber">Employee Number</Label>
+                  <Label htmlFor="employeeNumber">Employee Number *</Label>
                   <Input
                     id="employeeNumber"
                     name="employeeNumber"
                     placeholder="TCH001"
                     value={formData.employeeNumber}
                     onChange={handleChange}
+                    required
                   />
+                  <p className="text-xs text-muted-foreground">
+                    The teacher will log in using their email and this employee number as their password.
+                  </p>
                 </div>
 
                 <div className="space-y-1.5">
