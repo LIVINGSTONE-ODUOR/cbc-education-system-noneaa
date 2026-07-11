@@ -267,7 +267,7 @@ const listResults = asyncHandler(async (req, res) => {
 //    Search + view the full final-result history for one learner
 // =============================================================================
 const getLearnerResults = asyncHandler(async (req, res) => {
-  const { schoolId } = req.user;
+  const { schoolId, id: userId, role } = req.user;
   const { learner_id } = req.params;
 
   const { data: learner } = await supabase
@@ -281,6 +281,29 @@ const getLearnerResults = asyncHandler(async (req, res) => {
 
   if (!learner) {
     return res.status(404).json({ success: false, message: 'Learner not found' });
+  }
+
+  // Parents may only view results for their OWN linked children — never
+  // other learners in the school, even if they guess the id.
+  if (role === 'parent') {
+    const { data: parentRow } = await supabase
+      .from('parents')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const { data: link } = parentRow
+      ? await supabase
+          .from('learner_parents')
+          .select('id')
+          .eq('parent_id', parentRow.id)
+          .eq('learner_id', learner_id)
+          .maybeSingle()
+      : { data: null };
+
+    if (!link) {
+      return res.status(403).json({ success: false, message: 'Not authorized to view this learner\'s results' });
+    }
   }
 
   const summaries = await buildLearnerSummaries(schoolId, learner_id);
@@ -390,4 +413,5 @@ module.exports = {
   searchLearners,
   compareResults,
   deleteResult,
+  buildLearnerSummaries,
 };
