@@ -11,10 +11,18 @@ const {
   saveClassAttendance,
   getTeacherRoster,
   saveTeacherAttendance,
+  getLearnerAttendanceSummary,
 } = require('../controllers/attendance.controller');
 
 // All attendance routes require authentication
 router.use(authenticate);
+
+// GET  /api/v1/attendance/learner/:learnerId/summary
+//   Query: term_id (optional, defaults to the school's current term)
+//   Response: attendance stats + recent history for one learner.
+//   Roles: parent (own linked child only), student (self only),
+//          teacher/school_admin/super_admin (any learner in their school)
+router.get('/learner/:learnerId/summary', getLearnerAttendanceSummary);
 
 // GET  /api/v1/attendance/class/:classId/roster
 //   Query: date (YYYY-MM-DD, defaults to today)
