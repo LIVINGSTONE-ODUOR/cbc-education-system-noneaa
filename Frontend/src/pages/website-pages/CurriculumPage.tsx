@@ -121,7 +121,7 @@ export default function CurriculumPage() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div initial="hidden" animate="visible">
-              <motion.p variants={fadeUp} custom={0} className="text-blue-300 font-semibold uppercase tracking-wider text-sm mb-4">
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-blue-300 mb-4" style={{ fontFamily: "'Italianno', cursive" }}>
                 Curriculum Management
               </motion.p>
               <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
@@ -191,7 +191,7 @@ export default function CurriculumPage() {
       <AnimatedSection className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">2-6-3-3-3 Structure</p>
+            <p className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>2-6-3-3-3 Structure</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">CBC Grade Level Structure</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Kenya&apos;s CBC organizes learners from Pre-Primary through Senior Secondary, each with defined learning areas and pathways.
@@ -251,7 +251,7 @@ export default function CurriculumPage() {
       <AnimatedSection className="py-20 bg-[#dfe5f0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">KICD Aligned</p>
+            <p className="text-3xl text-purple-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>KICD Aligned</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Learning Areas & Strands</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Every learning area is organized into strands and sub-strands. NONEAA tracks competency at every level of the curriculum hierarchy.
@@ -290,7 +290,7 @@ export default function CurriculumPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-indigo-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Competency Integration
               </motion.p>
               <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
@@ -348,7 +348,7 @@ export default function CurriculumPage() {
               </ResponsiveContainer>
             </motion.div>
             <div className="order-1 lg:order-2">
-              <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Granular Organization
               </motion.p>
               <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
@@ -379,7 +379,7 @@ export default function CurriculumPage() {
       <AnimatedSection className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Platform Capabilities</p>
+            <p className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Platform Capabilities</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">What You Can Do with NONEAA</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Practical tools for teachers and administrators to manage the CBC curriculum day-to-day.
@@ -415,7 +415,7 @@ export default function CurriculumPage() {
       <AnimatedSection className="py-20 bg-[#dfe5f0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wide mb-3">The Difference</p>
+            <p className="text-3xl text-emerald-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>The Difference</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Why Schools Choose NONEAA for Curriculum</h2>
           </motion.div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
