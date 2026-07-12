@@ -438,8 +438,12 @@ const App = () => (
                 <ReservedSubdomainGate>
                   <AppRoutes />
                 </ReservedSubdomainGate>
-                <AIAssistant />
-                <CookieBanner />
+                {getHostContext().type !== "reserved" && (
+                  <>
+                    <AIAssistant />
+                    <CookieBanner />
+                  </>
+                )}
               </BrowserRouter>
             </TooltipProvider>
           </SchoolSettingsProvider>
