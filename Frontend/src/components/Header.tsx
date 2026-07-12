@@ -2,40 +2,37 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
-  Menu, X, ArrowRight, ChevronDown,
-  Monitor, CreditCard, Rocket, Users, UserCircle, Star,
-  LayoutGrid, ClipboardCheck, Users2, Sparkles, BookOpen, FileText,
-  Briefcase, Mail
+  Menu, X, ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 const platformLinks = [
-  { to: '/demo', label: 'Product Tour', description: 'See Noneaa in action', icon: Monitor },
-  { to: '/getting-started', label: 'Getting Started', description: 'Set up in under an hour', icon: Rocket },
+  { to: '/demo', label: 'Product Tour', description: 'See Noneaa in action' },
+  { to: '/getting-started', label: 'Getting Started', description: 'Set up in under an hour' },
 ];
 
 const solutionsLinks = [
-  { to: '/curriculum', label: 'Curriculum Management', description: 'Learning areas, strands & sub-strands', icon: LayoutGrid },
-  { to: '/assessments', label: 'Competency Assessments', description: 'Track the 4-level competency scale', icon: ClipboardCheck },
-  { to: '/parent/portal', label: 'Parent Portal', description: 'Keep parents informed in real time', icon: Users2 },
+  { to: '/curriculum', label: 'Curriculum Management', description: 'Learning areas, strands & sub-strands' },
+  { to: '/assessments', label: 'Competency Assessments', description: 'Track the 4-level competency scale' },
+  { to: '/parent/portal', label: 'Parent Portal', description: 'Keep parents informed in real time' },
 ];
 
 const featuresLinks = [
-  { to: '/features', label: 'All Features', description: 'Everything Noneaa includes', icon: Sparkles },
+  { to: '/features', label: 'All Features', description: 'Everything Noneaa includes' },
 ];
 
 const companyLinks = [
-  { to: '/about', label: 'About Noneaa', description: 'Our mission for CBC schools', icon: UserCircle },
-  { to: '/company/client', label: 'Clients', description: 'Schools using Noneaa', icon: Users },
-  { to: '/testimonials', label: 'Testimonials', description: 'What schools say about us', icon: Star },
-  { to: '/careers', label: 'Careers', description: 'Join the Noneaa team', icon: Briefcase },
+  { to: '/about', label: 'About Noneaa', description: 'Our mission for CBC schools' },
+  { to: '/company/client', label: 'Clients', description: 'Schools using Noneaa' },
+  { to: '/testimonials', label: 'Testimonials', description: 'What schools say about us' },
+  { to: '/careers', label: 'Careers', description: 'Join the Noneaa team' },
 ];
 
 const resourcesLinks = [
-  { to: '/resources', label: 'Resource Center', description: 'Guides for teachers & admins', icon: BookOpen },
-  { to: '/blog', label: 'Blog', description: 'News from the Noneaa team', icon: FileText },
-  { to: '/contact', label: 'Contact', description: 'Get in touch with our team', icon: Mail },
+  { to: '/resources', label: 'Resource Center', description: 'Guides for teachers & admins' },
+  { to: '/blog', label: 'Blog', description: 'News from the Noneaa team' },
+  { to: '/contact', label: 'Contact', description: 'Get in touch with our team' },
 ];
 
 export default function Header() {
@@ -127,25 +124,19 @@ export default function Header() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 8 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full left-0 w-64 bg-white border border-border rounded-xl shadow-xl py-2"
+                    className="absolute top-full left-0 w-64 bg-[#F6F1E7] border border-[#1E3A28]/15 shadow-lg"
                   >
-                    {platformLinks.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <Link
-                          key={item.to}
-                          to={item.to}
-                          className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition"
-                          onClick={closeMenus}
-                        >
-                          <Icon className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <div className="text-sm font-medium text-slate-900">{item.label}</div>
-                            <div className="text-xs text-slate-500">{item.description}</div>
-                          </div>
-                        </Link>
-                      );
-                    })}
+                    {platformLinks.map((item) => (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        className="block px-5 py-4 border-b border-[#1E3A28]/10 last:border-b-0 hover:bg-[#1E3A28]/5 transition"
+                        onClick={closeMenus}
+                      >
+                        <div className="text-sm font-semibold text-[#1C1C1C]">{item.label}</div>
+                        <div className="text-xs text-[#4A4A44]/70 mt-0.5">{item.description}</div>
+                      </Link>
+                    ))}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -168,25 +159,19 @@ export default function Header() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 8 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full left-0 w-72 bg-white border border-border rounded-xl shadow-xl py-2"
+                    className="absolute top-full left-0 w-72 bg-[#F6F1E7] border border-[#1E3A28]/15 shadow-lg"
                   >
-                    {solutionsLinks.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <Link
-                          key={item.to}
-                          to={item.to}
-                          className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition"
-                          onClick={closeMenus}
-                        >
-                          <Icon className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <div className="text-sm font-medium text-slate-900">{item.label}</div>
-                            <div className="text-xs text-slate-500">{item.description}</div>
-                          </div>
-                        </Link>
-                      );
-                    })}
+                    {solutionsLinks.map((item) => (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        className="block px-5 py-4 border-b border-[#1E3A28]/10 last:border-b-0 hover:bg-[#1E3A28]/5 transition"
+                        onClick={closeMenus}
+                      >
+                        <div className="text-sm font-semibold text-[#1C1C1C]">{item.label}</div>
+                        <div className="text-xs text-[#4A4A44]/70 mt-0.5">{item.description}</div>
+                      </Link>
+                    ))}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -212,25 +197,19 @@ export default function Header() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 8 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full left-0 w-64 bg-white border border-border rounded-xl shadow-xl py-2"
+                    className="absolute top-full left-0 w-64 bg-[#F6F1E7] border border-[#1E3A28]/15 shadow-lg"
                   >
-                    {featuresLinks.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <Link
-                          key={item.to}
-                          to={item.to}
-                          className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition"
-                          onClick={closeMenus}
-                        >
-                          <Icon className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <div className="text-sm font-medium text-slate-900">{item.label}</div>
-                            <div className="text-xs text-slate-500">{item.description}</div>
-                          </div>
-                        </Link>
-                      );
-                    })}
+                    {featuresLinks.map((item) => (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        className="block px-5 py-4 border-b border-[#1E3A28]/10 last:border-b-0 hover:bg-[#1E3A28]/5 transition"
+                        onClick={closeMenus}
+                      >
+                        <div className="text-sm font-semibold text-[#1C1C1C]">{item.label}</div>
+                        <div className="text-xs text-[#4A4A44]/70 mt-0.5">{item.description}</div>
+                      </Link>
+                    ))}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -254,25 +233,19 @@ export default function Header() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 8 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full left-0 w-64 bg-white border border-border rounded-xl shadow-xl py-2"
+                    className="absolute top-full left-0 w-64 bg-[#F6F1E7] border border-[#1E3A28]/15 shadow-lg"
                   >
-                    {companyLinks.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <Link
-                          key={item.to}
-                          to={item.to}
-                          className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition"
-                          onClick={closeMenus}
-                        >
-                          <Icon className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <div className="text-sm font-medium text-slate-900">{item.label}</div>
-                            <div className="text-xs text-slate-500">{item.description}</div>
-                          </div>
-                        </Link>
-                      );
-                    })}
+                    {companyLinks.map((item) => (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        className="block px-5 py-4 border-b border-[#1E3A28]/10 last:border-b-0 hover:bg-[#1E3A28]/5 transition"
+                        onClick={closeMenus}
+                      >
+                        <div className="text-sm font-semibold text-[#1C1C1C]">{item.label}</div>
+                        <div className="text-xs text-[#4A4A44]/70 mt-0.5">{item.description}</div>
+                      </Link>
+                    ))}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -295,25 +268,19 @@ export default function Header() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 8 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full left-0 w-64 bg-white border border-border rounded-xl shadow-xl py-2"
+                    className="absolute top-full left-0 w-64 bg-[#F6F1E7] border border-[#1E3A28]/15 shadow-lg"
                   >
-                    {resourcesLinks.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <Link
-                          key={item.to}
-                          to={item.to}
-                          className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition"
-                          onClick={closeMenus}
-                        >
-                          <Icon className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <div className="text-sm font-medium text-slate-900">{item.label}</div>
-                            <div className="text-xs text-slate-500">{item.description}</div>
-                          </div>
-                        </Link>
-                      );
-                    })}
+                    {resourcesLinks.map((item) => (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        className="block px-5 py-4 border-b border-[#1E3A28]/10 last:border-b-0 hover:bg-[#1E3A28]/5 transition"
+                        onClick={closeMenus}
+                      >
+                        <div className="text-sm font-semibold text-[#1C1C1C]">{item.label}</div>
+                        <div className="text-xs text-[#4A4A44]/70 mt-0.5">{item.description}</div>
+                      </Link>
+                    ))}
                   </motion.div>
                 )}
               </AnimatePresence>
