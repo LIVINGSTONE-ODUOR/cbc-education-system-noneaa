@@ -24,6 +24,7 @@ import {
 } from '@/lib/api/parentDashboardApi';
 import MarksPanel from '@/components/marks/MarksPanel';
 import PerformanceTrends from '@/components/marks/PerformanceTrends';
+import ReportCards from './components/ReportCards';
 
 const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const todayDayOfWeek = () => {
@@ -998,6 +999,17 @@ const ParentPortal = () => {
               fetchResults={(filters) => getLearnerResults(selectedChildId, filters)}
               reloadKey={selectedChildId}
               emptyMessage={`No marks have been recorded for ${selectedChild.first_name} yet.`}
+            />
+          )}
+
+          {/* Report Cards — view, print, and download PDFs of past exams,
+              with year/term filters for historical reports. */}
+          {selectedChild && (
+            <ReportCards
+              fetchResults={(filters) => getLearnerResults(selectedChildId, filters)}
+              reloadKey={selectedChildId}
+              child={selectedChild}
+              emptyMessage={`No report cards are available for ${selectedChild.first_name} yet.`}
             />
           )}
 
