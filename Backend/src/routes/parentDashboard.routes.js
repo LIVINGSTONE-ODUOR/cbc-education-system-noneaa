@@ -13,6 +13,7 @@ const {
   getTeacherComments,
   getTimetable,
   getSchoolEvents,
+  getChildProfile,
 } = require('../controllers/parentDashboard.controller');
 
 // All routes require authentication
@@ -35,6 +36,11 @@ router.get('/learner/:learnerId/comments', getTeacherComments);
 
 // GET  /api/v1/parent-dashboard/learner/:learnerId/timetable
 router.get('/learner/:learnerId/timetable', getTimetable);
+
+// GET  /api/v1/parent-dashboard/learner/:learnerId/profile
+//   Photo, admission number, grade & class, stream, DOB, class teacher,
+//   medical info, and emergency contacts (linked guardians).
+router.get('/learner/:learnerId/profile', getChildProfile);
 
 // GET  /api/v1/parent-dashboard/events?limit=10
 router.get('/events', getSchoolEvents);
