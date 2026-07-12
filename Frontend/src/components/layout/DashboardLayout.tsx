@@ -25,7 +25,7 @@ import { DashboardLayoutProps, Notification } from '@/types/dashboard';
 
 // Config
 import { lightTheme, darkTheme } from '@/config/theme';
-import { menuSections, getTotalBadges } from '@/config/menuData';
+import { getTotalBadges, getMenuForRole } from '@/config/menuData';
 
 // Components
 import Breadcrumb from './Breadcrumb';
@@ -65,6 +65,8 @@ const Sidebar = ({
   const isMenuItemActive = useCallback((href: string) => {
     return location.pathname === href || location.pathname.startsWith(`${href}/`);
   }, [location.pathname]);
+
+  const visibleMenuSections = useMemo(() => getMenuForRole(user?.role), [user?.role]);
 
   return (
     <>
@@ -153,7 +155,7 @@ const Sidebar = ({
 
         {/* Navigation Menu */}
         <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-6 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
-          {menuSections.map((section) => (
+          {visibleMenuSections.map((section) => (
             <div key={section.title} className="space-y-2">
               {!collapsed && (
                 <div className="px-3 text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
