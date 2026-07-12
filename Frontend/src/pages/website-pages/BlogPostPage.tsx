@@ -31,7 +31,7 @@ export default function BlogPostPage() {
   const relatedPosts = posts.filter((p) => p.id !== post.id && p.category === post.category).slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
 
       {/* Hero */}
@@ -39,7 +39,7 @@ export default function BlogPostPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <Link
             to="/blog"
-            className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 mb-8 transition"
+            className="inline-flex items-center gap-2 text-sm text-[#1E3A28] hover:text-[#173420] mb-8 transition"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Blog
@@ -47,7 +47,7 @@ export default function BlogPostPage() {
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-center gap-3 mb-4">
-              <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+              <span className="px-3 py-1 bg-[#1E3A28]/10 text-[#1E3A28] text-xs font-medium rounded-full">
                 {post.category}
               </span>
               <span className="text-sm text-gray-500 flex items-center gap-1">
@@ -62,7 +62,7 @@ export default function BlogPostPage() {
 
             <div className="flex items-center gap-4 mb-8">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#1E3A28] to-[#2F5233] rounded-full flex items-center justify-center">
                   <User className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -97,7 +97,7 @@ export default function BlogPostPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-600 prose-strong:text-gray-900 prose-a:text-blue-600"
+          className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-600 prose-strong:text-gray-900 prose-a:text-[#1E3A28]"
         >
           {post.content.split('\n\n').map((paragraph, i) => {
             if (paragraph.startsWith('**') && paragraph.endsWith('**')) {
@@ -153,7 +153,7 @@ export default function BlogPostPage() {
 
       {/* Related Posts */}
       {relatedPosts.length > 0 && (
-        <section className="py-16 bg-[#e8edf5]">
+        <section className="py-16 bg-white border-t border-[#1E3A28]/10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-8">Related Articles</h2>
             <div className="grid md:grid-cols-3 gap-6">
@@ -168,8 +168,8 @@ export default function BlogPostPage() {
                       />
                     </div>
                     <div className="p-5">
-                      <span className="text-xs text-blue-600 font-medium">{related.category}</span>
-                      <h3 className="text-lg font-bold text-gray-900 mt-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+                      <span className="text-xs text-[#1E3A28] font-medium">{related.category}</span>
+                      <h3 className="text-lg font-bold text-gray-900 mt-2 group-hover:text-[#1E3A28] transition-colors line-clamp-2">
                         {related.title}
                       </h3>
                     </div>
