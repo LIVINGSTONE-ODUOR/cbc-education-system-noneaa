@@ -104,6 +104,7 @@ import NotFound from "./pages/website-pages/NotFound";
 import BlogPage from "./pages/website-pages/BlogPage";
 import BlogPostPage from "./pages/website-pages/BlogPostPage";
 import OwnerLoginPage from "./pages/website-pages/OwnerLoginPage";
+import OwnerSupportInboxPage from "./pages/website-pages/OwnerSupportInboxPage";
 import BlogAdminPage from "./pages/website-pages/BlogAdminPage";
 import { BlogProvider } from "@/contexts/BlogContext";
 
@@ -199,6 +200,7 @@ function AppRoutes() {
       <Route path="/blog/:id" element={<BlogPostPage />} />
       <Route path="/owner/login" element={<OwnerLoginPage />} />
       <Route path="/owner/blog-admin" element={<BlogAdminPage />} />
+      <Route path="/owner/support-inbox" element={<OwnerSupportInboxPage />} />
       <Route path="/careers" element={<CareersPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/testimonials" element={<TestimonialsPage />} />
