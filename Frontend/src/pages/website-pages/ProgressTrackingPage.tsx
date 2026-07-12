@@ -73,36 +73,36 @@ export default function ProgressTrackingPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-[#e8edf5]">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
 
       {/* Hero */}
       <section className="relative min-h-[70vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1E3A28] via-[#2F5233] to-[#1E3A28]" />
         <motion.div
-          className="absolute top-20 right-20 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl"
+          className="absolute top-20 right-20 w-80 h-80 bg-[#2F5233]/30 rounded-full blur-3xl"
           animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
           transition={{ duration: 5, repeat: Infinity }}
         />
         <motion.div
-          className="absolute bottom-10 left-10 w-60 h-60 bg-purple-500/20 rounded-full blur-3xl"
+          className="absolute bottom-10 left-10 w-60 h-60 bg-emerald-500/20 rounded-full blur-3xl"
           animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.35, 0.15] }}
           transition={{ duration: 6, repeat: Infinity, delay: 1 }}
         />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div initial="hidden" animate="visible">
-              <motion.p variants={fadeUp} custom={0} className="text-3xl text-blue-300 mb-4" style={{ fontFamily: "'Italianno', cursive" }}>
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-emerald-300 mb-4" style={{ fontFamily: "'Italianno', cursive" }}>
                 Real-Time Progress Tracking
               </motion.p>
               <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-                Watch Every Learner <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Grow</span>
+                Watch Every Learner <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">Grow</span>
               </motion.h1>
-              <motion.p variants={fadeUp} custom={2} className="text-lg text-blue-100 mb-8 max-w-xl">
+              <motion.p variants={fadeUp} custom={2} className="text-lg text-emerald-100/80 mb-8 max-w-xl">
                 Track academic performance across all subjects, terms, and competencies with beautiful visualizations that make data actionable.
               </motion.p>
               <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-white text-blue-900 hover:bg-blue-50" asChild>
+                <Button size="lg" className="bg-white text-[#1E3A28] hover:bg-[#F6F1E7]" asChild>
                   <Link to="/get-started">Start Tracking <ArrowRight className="w-4 h-4 ml-2" /></Link>
                 </Button>
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
@@ -117,14 +117,14 @@ export default function ProgressTrackingPage() {
                   <AreaChart data={termProgressData}>
                     <defs>
                       <linearGradient id="heroGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#818cf8" stopOpacity={0.6} />
-                        <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#6ee7b7" stopOpacity={0.6} />
+                        <stop offset="95%" stopColor="#6ee7b7" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="week" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} domain={[40, 90]} />
                     <Tooltip contentStyle={{ background: '#1e1b4b', border: 'none', borderRadius: '8px', color: '#fff' }} />
-                    <Area type="monotone" dataKey="score" stroke="#818cf8" strokeWidth={2} fill="url(#heroGrad)" />
+                    <Area type="monotone" dataKey="score" stroke="#6ee7b7" strokeWidth={2} fill="url(#heroGrad)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -134,7 +134,7 @@ export default function ProgressTrackingPage() {
       </section>
 
       {/* Stats Bar */}
-      <section className="bg-[#dfe5f0] py-12">
+      <section className="bg-[#EFE7D6] py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
@@ -151,7 +151,7 @@ export default function ProgressTrackingPage() {
                 transition={{ delay: i * 0.1, duration: 0.5 }}
                 className="text-center p-6 rounded-xl bg-white shadow-sm"
               >
-                <stat.icon className="w-8 h-8 text-blue-600 mx-auto mb-3" />
+                <stat.icon className="w-8 h-8 text-[#1E3A28] mx-auto mb-3" />
                 <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
                 <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
               </motion.div>
@@ -165,7 +165,7 @@ export default function ProgressTrackingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <motion.p variants={fadeUp} custom={0} className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Subject Analytics
               </motion.p>
               <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
@@ -181,8 +181,8 @@ export default function ProgressTrackingPage() {
                   { text: 'Generate individual learner progress reports', icon: GraduationCap },
                 ].map((item, i) => (
                   <motion.div key={i} variants={fadeUp} custom={3 + i} className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 flex-shrink-0 mt-0.5">
-                      <item.icon className="w-4 h-4 text-blue-600" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1E3A28]/10 flex-shrink-0 mt-0.5">
+                      <item.icon className="w-4 h-4 text-[#1E3A28]" />
                     </div>
                     <p className="text-gray-700">{item.text}</p>
                   </motion.div>
@@ -208,7 +208,7 @@ export default function ProgressTrackingPage() {
       </AnimatedSection>
 
       {/* Feature: Competency Growth */}
-      <AnimatedSection className="py-20 bg-[#dfe5f0]">
+      <AnimatedSection className="py-20 bg-[#EFE7D6]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div variants={scaleIn} className="order-2 lg:order-1 bg-white rounded-2xl shadow-lg border p-6">
@@ -227,7 +227,7 @@ export default function ProgressTrackingPage() {
               </ResponsiveContainer>
             </motion.div>
             <div className="order-1 lg:order-2">
-              <motion.p variants={fadeUp} custom={0} className="text-3xl text-purple-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Competency Mapping
               </motion.p>
               <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
@@ -259,7 +259,7 @@ export default function ProgressTrackingPage() {
       <AnimatedSection className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Why Schools Choose Us</p>
+            <p className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Why Schools Choose Us</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Progress Tracking That Makes a Difference</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Every feature is designed to help teachers, parents, and administrators understand and support each learner&apos;s journey.
@@ -292,17 +292,17 @@ export default function ProgressTrackingPage() {
       </AnimatedSection>
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-br from-blue-600 to-indigo-700">
+      <section className="py-20 bg-gradient-to-br from-[#1E3A28] to-[#2F5233]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
               Ready to See Every Learner&apos;s Progress?
             </h2>
-            <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
+            <p className="text-lg text-emerald-100 mb-8 max-w-2xl mx-auto">
               Join hundreds of Kenyan schools using NONEAA to monitor, analyze, and improve student outcomes.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="bg-white text-blue-700 hover:bg-blue-50" asChild>
+              <Button size="lg" className="bg-white text-[#1E3A28] hover:bg-[#F6F1E7]" asChild>
                 <Link to="/get-started">Get Started Free <ArrowRight className="w-4 h-4 ml-2" /></Link>
               </Button>
               <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
