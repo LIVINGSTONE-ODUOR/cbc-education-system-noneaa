@@ -93,7 +93,7 @@ const isValidUUID = (uuid: string): boolean => {
 // Fetch academic years from backend
 const fetchAcademicYears = async (schoolId: string): Promise<AcademicYear[]> => {
   try {
-    const token = localStorage.getItem('cbc_access_token');
+    const token = localStorage.getItem('cbe_access_token');
     const API_URL = import.meta.env.PROD 
       ? 'https://cbc-education-system-1.onrender.com' 
       : '';
