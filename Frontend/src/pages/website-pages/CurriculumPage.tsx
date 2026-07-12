@@ -102,36 +102,36 @@ export default function CurriculumPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-[#e8edf5]">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
 
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="relative min-h-[70vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1E3A28] via-[#2F5233] to-[#1E3A28]" />
         <motion.div
-          className="absolute top-16 right-16 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl"
+          className="absolute top-16 right-16 w-80 h-80 bg-[#2F5233]/25 rounded-full blur-3xl"
           animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.35, 0.2] }}
           transition={{ duration: 6, repeat: Infinity }}
         />
         <motion.div
-          className="absolute bottom-10 left-10 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl"
+          className="absolute bottom-10 left-10 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl"
           animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.3, 0.15] }}
           transition={{ duration: 5, repeat: Infinity, delay: 1.5 }}
         />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div initial="hidden" animate="visible">
-              <motion.p variants={fadeUp} custom={0} className="text-3xl text-blue-300 mb-4" style={{ fontFamily: "'Italianno', cursive" }}>
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-emerald-300 mb-4" style={{ fontFamily: "'Italianno', cursive" }}>
                 Curriculum Management
               </motion.p>
               <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-                Manage Kenya&apos;s CBC Curriculum <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">with Confidence</span>
+                Manage Kenya&apos;s CBC Curriculum <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">with Confidence</span>
               </motion.h1>
-              <motion.p variants={fadeUp} custom={2} className="text-lg text-blue-100 mb-8 max-w-xl">
+              <motion.p variants={fadeUp} custom={2} className="text-lg text-emerald-100 mb-8 max-w-xl">
                 Organize, track, and assess every learning area, strand, and sub-strand — from Pre-Primary to Senior Secondary. Built for the 2-6-3-3-3 structure.
               </motion.p>
               <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-white text-blue-900 hover:bg-blue-50" asChild>
+                <Button size="lg" className="bg-white text-[#1E3A28] hover:bg-[#F6F1E7]" asChild>
                   <Link to="/get-started">Get Started Free <ArrowRight className="w-4 h-4 ml-2" /></Link>
                 </Button>
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
@@ -150,8 +150,8 @@ export default function CurriculumPage() {
                     <XAxis dataKey="area" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={{ background: '#1e1b4b', border: 'none', borderRadius: '8px', color: '#fff' }} />
-                    <Bar dataKey="strands" fill="#818cf8" name="Strands" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="subStrands" fill="#c084fc" name="Sub-Strands" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="strands" fill="#6ee7b7" name="Strands" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="subStrands" fill="#34d399" name="Sub-Strands" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -161,7 +161,7 @@ export default function CurriculumPage() {
       </section>
 
       {/* ── Stats Bar ────────────────────────────────────────── */}
-      <section className="bg-[#dfe5f0] py-12">
+      <section className="bg-[#EFE7D6] py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
@@ -178,7 +178,7 @@ export default function CurriculumPage() {
                 transition={{ delay: i * 0.1, duration: 0.5 }}
                 className="text-center p-6 rounded-xl bg-white shadow-sm"
               >
-                <stat.icon className="w-8 h-8 text-blue-600 mx-auto mb-3" />
+                <stat.icon className="w-8 h-8 text-[#1E3A28] mx-auto mb-3" />
                 <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
                 <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
               </motion.div>
@@ -191,7 +191,7 @@ export default function CurriculumPage() {
       <AnimatedSection className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>2-6-3-3-3 Structure</p>
+            <p className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>2-6-3-3-3 Structure</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">CBC Grade Level Structure</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Kenya&apos;s CBC organizes learners from Pre-Primary through Senior Secondary, each with defined learning areas and pathways.
@@ -213,7 +213,7 @@ export default function CurriculumPage() {
                   </div>
                   <h3 className="font-semibold text-gray-900 text-sm mb-1">{item.level}</h3>
                   <p className="text-xs text-muted-foreground mb-1">{item.grades} • {item.age}</p>
-                  <p className="text-xs font-medium text-blue-600">
+                  <p className="text-xs font-medium text-[#1E3A28]">
                     {typeof item.areas === 'number' ? `${item.areas} Learning Areas` : item.areas}
                   </p>
                 </motion.div>
@@ -248,10 +248,10 @@ export default function CurriculumPage() {
       </AnimatedSection>
 
       {/* ── Learning Areas & Strands ─────────────────────────── */}
-      <AnimatedSection className="py-20 bg-[#dfe5f0]">
+      <AnimatedSection className="py-20 bg-[#EFE7D6]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-3xl text-purple-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>KICD Aligned</p>
+            <p className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>KICD Aligned</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Learning Areas & Strands</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Every learning area is organized into strands and sub-strands. NONEAA tracks competency at every level of the curriculum hierarchy.
@@ -290,7 +290,7 @@ export default function CurriculumPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <motion.p variants={fadeUp} custom={0} className="text-3xl text-indigo-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Competency Integration
               </motion.p>
               <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
@@ -307,8 +307,8 @@ export default function CurriculumPage() {
                   { text: 'Visual reports for curriculum audits and KICD reviews', icon: BarChart3 },
                 ].map((item, i) => (
                   <motion.div key={i} variants={fadeUp} custom={3 + i} className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 flex-shrink-0 mt-0.5">
-                      <item.icon className="w-4 h-4 text-indigo-600" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1E3A28]/10 flex-shrink-0 mt-0.5">
+                      <item.icon className="w-4 h-4 text-[#1E3A28]" />
                     </div>
                     <p className="text-gray-700">{item.text}</p>
                   </motion.div>
@@ -322,7 +322,7 @@ export default function CurriculumPage() {
                   <PolarGrid stroke="#e5e7eb" />
                   <PolarAngleAxis dataKey="area" tick={{ fontSize: 10, fill: '#6b7280' }} />
                   <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10 }} />
-                  <Radar name="Coverage" dataKey="coverage" stroke="#6366f1" fill="#6366f1" fillOpacity={0.3} strokeWidth={2} />
+                  <Radar name="Coverage" dataKey="coverage" stroke="#1E3A28" fill="#1E3A28" fillOpacity={0.3} strokeWidth={2} />
                 </RadarChart>
               </ResponsiveContainer>
             </motion.div>
@@ -331,7 +331,7 @@ export default function CurriculumPage() {
       </AnimatedSection>
 
       {/* ── Strand & Sub-Strand Detail Chart ─────────────────── */}
-      <AnimatedSection className="py-20 bg-[#dfe5f0]">
+      <AnimatedSection className="py-20 bg-[#EFE7D6]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div variants={scaleIn} className="order-2 lg:order-1 bg-white rounded-2xl shadow-lg border p-6">
@@ -348,7 +348,7 @@ export default function CurriculumPage() {
               </ResponsiveContainer>
             </motion.div>
             <div className="order-1 lg:order-2">
-              <motion.p variants={fadeUp} custom={0} className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Granular Organization
               </motion.p>
               <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
@@ -365,7 +365,7 @@ export default function CurriculumPage() {
                   'Customizable for school-specific enrichment programs',
                 ].map((text, i) => (
                   <motion.div key={i} variants={fadeUp} custom={3 + i} className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-[#1E3A28] flex-shrink-0 mt-0.5" />
                     <p className="text-gray-700">{text}</p>
                   </motion.div>
                 ))}
@@ -379,7 +379,7 @@ export default function CurriculumPage() {
       <AnimatedSection className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Platform Capabilities</p>
+            <p className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Platform Capabilities</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">What You Can Do with NONEAA</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Practical tools for teachers and administrators to manage the CBC curriculum day-to-day.
@@ -412,10 +412,10 @@ export default function CurriculumPage() {
       </AnimatedSection>
 
       {/* ── Why Schools Choose NONEAA ──────────────────────── */}
-      <AnimatedSection className="py-20 bg-[#dfe5f0]">
+      <AnimatedSection className="py-20 bg-[#EFE7D6]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-3xl text-emerald-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>The Difference</p>
+            <p className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>The Difference</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Why Schools Choose NONEAA for Curriculum</h2>
           </motion.div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -438,18 +438,18 @@ export default function CurriculumPage() {
       </AnimatedSection>
 
       {/* ── CTA ──────────────────────────────────────────────── */}
-      <section className="py-20 bg-gradient-to-br from-blue-600 to-indigo-700">
+      <section className="py-20 bg-gradient-to-br from-[#1E3A28] to-[#2F5233]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
-            <BookOpen className="w-12 h-12 text-blue-200 mx-auto mb-6" />
+            <BookOpen className="w-12 h-12 text-emerald-100/70 mx-auto mb-6" />
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
               Start Managing Your Curriculum Today
             </h2>
-            <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
+            <p className="text-lg text-emerald-100 mb-8 max-w-2xl mx-auto">
               Whether you&apos;re a single school or a school group, NONEAA scales to your needs. Set up learning areas, assign teachers, and begin tracking competencies in under an hour.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="bg-white text-blue-700 hover:bg-blue-50" asChild>
+              <Button size="lg" className="bg-white text-[#1E3A28] hover:bg-[#F6F1E7]" asChild>
                 <Link to="/get-started">Get Started Free <ArrowRight className="w-4 h-4 ml-2" /></Link>
               </Button>
               <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
