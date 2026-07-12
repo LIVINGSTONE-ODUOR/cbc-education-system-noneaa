@@ -143,28 +143,28 @@ export default function TermsPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-[#e8edf5]">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
 
       {/* Hero */}
       <section className="relative min-h-[60vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-950 to-indigo-950" />
-        <motion.div className="absolute top-20 left-16 w-72 h-72 bg-purple-500/15 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.3, 0.15] }} transition={{ duration: 6, repeat: Infinity }} />
-        <motion.div className="absolute bottom-10 right-10 w-60 h-60 bg-indigo-500/15 rounded-full blur-3xl" animate={{ scale: [1, 1.15, 1], opacity: [0.1, 0.25, 0.1] }} transition={{ duration: 5, repeat: Infinity, delay: 1.5 }} />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1E3A28] via-[#2F5233] to-[#1E3A28]" />
+        <motion.div className="absolute top-20 left-16 w-72 h-72 bg-[#2F5233]/25 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.3, 0.15] }} transition={{ duration: 6, repeat: Infinity }} />
+        <motion.div className="absolute bottom-10 right-10 w-60 h-60 bg-emerald-500/15 rounded-full blur-3xl" animate={{ scale: [1, 1.15, 1], opacity: [0.1, 0.25, 0.1] }} transition={{ duration: 5, repeat: Infinity, delay: 1.5 }} />
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
           <motion.div initial="hidden" animate="visible">
             <motion.div variants={fadeUp} custom={0} className="flex justify-center mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-purple-500/20 flex items-center justify-center border border-purple-400/30">
-                <FileText className="w-8 h-8 text-purple-400" />
+              <div className="w-16 h-16 rounded-2xl bg-emerald-400/20 flex items-center justify-center border border-emerald-300/30">
+                <FileText className="w-8 h-8 text-emerald-300" />
               </div>
             </motion.div>
             <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
               Terms of Service
             </motion.h1>
-            <motion.p variants={fadeUp} custom={2} className="text-lg text-purple-200 mb-6 max-w-2xl mx-auto">
+            <motion.p variants={fadeUp} custom={2} className="text-lg text-emerald-100/80 mb-6 max-w-2xl mx-auto">
               Please read these terms carefully before using our Competency-Based Education platform. We&apos;ve written them in plain language so you know exactly what to expect.
             </motion.p>
-            <motion.p variants={fadeUp} custom={3} className="text-sm text-purple-300/70">
+            <motion.p variants={fadeUp} custom={3} className="text-sm text-emerald-200/60">
               Last updated: June 2026
             </motion.p>
           </motion.div>
@@ -172,7 +172,7 @@ export default function TermsPage() {
       </section>
 
       {/* Highlights */}
-      <section className="bg-[#dfe5f0] py-12">
+      <section className="bg-[#EFE7D6] py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {highlights.map((h, i) => (
@@ -211,7 +211,7 @@ export default function TermsPage() {
                   <ul className="space-y-2 mb-4">
                     {section.items.map((item, idx) => (
                       <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
-                        <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                        <CheckCircle className="w-4 h-4 text-[#1E3A28] flex-shrink-0 mt-0.5" />
                         {item}
                       </li>
                     ))}
@@ -235,9 +235,9 @@ export default function TermsPage() {
       </div>
 
       {/* Contact */}
-      <AnimatedSection className="py-16 bg-[#dfe5f0]">
+      <AnimatedSection className="py-16 bg-[#EFE7D6]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div variants={fadeUp} custom={0} className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-200 p-8">
+          <motion.div variants={fadeUp} custom={0} className="bg-gradient-to-br from-[#F6F1E7] to-[#EFE7D6] rounded-2xl border border-[#1E3A28]/20 p-8">
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Have Questions About Our Terms?</h3>
@@ -246,15 +246,15 @@ export default function TermsPage() {
                 </p>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 text-sm text-gray-700">
-                    <Mail className="w-4 h-4 text-purple-600" /> legal@noneaa.com
+                    <Mail className="w-4 h-4 text-[#1E3A28]" /> legal@noneaa.com
                   </div>
                   <div className="flex items-center gap-3 text-sm text-gray-700">
-                    <Globe className="w-4 h-4 text-purple-600" /> www.noneaa.com/terms
+                    <Globe className="w-4 h-4 text-[#1E3A28]" /> www.noneaa.com/terms
                   </div>
                 </div>
               </div>
               <div className="text-center md:text-right">
-                <Button size="lg" className="bg-purple-600 hover:bg-purple-700 text-white" asChild>
+                <Button size="lg" className="bg-[#1E3A28] hover:bg-[#173420] text-white" asChild>
                   <Link to="/contact">Contact Us <ArrowRight className="w-4 h-4 ml-2" /></Link>
                 </Button>
               </div>
