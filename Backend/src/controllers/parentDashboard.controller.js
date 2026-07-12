@@ -199,7 +199,7 @@ const getTeacherComments = asyncHandler(async (req, res) => {
     .from('teacher_comments')
     .select(`
       id, comment, created_at,
-      teachers:teacher_id (id, users:user_id (first_name, last_name)),
+      teachers:teacher_id (id, first_name, last_name),
       learning_areas:learning_area_id (id, name)
     `)
     .eq('learner_id', learnerId)
@@ -237,7 +237,7 @@ const getTimetable = asyncHandler(async (req, res) => {
     .select(`
       id, day_of_week, start_time, end_time, room,
       learning_areas:learning_area_id (id, name),
-      teachers:teacher_id (id, users:user_id (first_name, last_name))
+      teachers:teacher_id (id, first_name, last_name)
     `)
     .eq('class_id', classId)
     .order('day_of_week', { ascending: true })
@@ -277,6 +277,104 @@ const getSchoolEvents = asyncHandler(async (req, res) => {
   return res.json({ success: true, message: 'School events fetched successfully', data: { events: events || [] } });
 });
 
+// -----------------------------------------------------------------------
+// 6. Child profile
+// -----------------------------------------------------------------------
+
+// GET /api/v1/parent-dashboard/learner/:learnerId/profile
+// Everything for the "Child Profile" card: photo, admission number,
+// grade & class, stream, date of birth, class teacher, medical info, and
+// emergency contacts (every guardian linked to the learner).
+const getChildProfile = asyncHandler(async (req, res) => {
+  const schoolId = getSchoolId(req);
+  const { id: userId, role } = req.user;
+  const { learnerId } = req.params;
+
+  if (role === 'parent' && !(await verifyParentLink(userId, learnerId))) {
+    return res.status(403).json({ success: false, message: "Not authorized to view this learner's profile" });
+  }
+
+  const { data: learner, error: learnerError } = await supabase
+    .from('learners')
+    .select(`
+      id, first_name, last_name, admission_number, profile_photo,
+      date_of_birth, gender, medical_conditions, allergies, special_needs
+    `)
+    .eq('id', learnerId)
+    .eq('school_id', schoolId)
+    .maybeSingle();
+
+  if (learnerError) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch child profile', error: learnerError.message });
+  }
+  if (!learner) {
+    return res.status(404).json({ success: false, message: 'Learner not found' });
+  }
+
+  // Grade, stream, and class teacher — via the learner's current enrollment.
+  const { data: enrollment } = await supabase
+    .from('learner_enrollments')
+    .select(`
+      classes:class_id (
+        id, grade_level, stream_name,
+        teachers:class_teacher_id ( id, first_name, last_name, user:user_id ( email, phone_number ) )
+      )
+    `)
+    .eq('learner_id', learnerId)
+    .eq('status', 'enrolled')
+    .maybeSingle();
+
+  const classInfo = enrollment?.classes || null;
+  const classTeacher = classInfo?.teachers
+    ? {
+        name: `${classInfo.teachers.first_name || ''} ${classInfo.teachers.last_name || ''}`.trim(),
+        email: classInfo.teachers.user?.email || null,
+        phone: classInfo.teachers.user?.phone_number || null,
+      }
+    : null;
+
+  // Emergency contacts — every guardian linked to this learner.
+  const { data: parentLinks } = await supabase
+    .from('learner_parents')
+    .select(`
+      is_primary, relationship,
+      parent:parent_id ( id, first_name, last_name, phone_number, email )
+    `)
+    .eq('learner_id', learnerId);
+
+  const emergencyContacts = (parentLinks || [])
+    .filter((link) => link.parent)
+    .map((link) => ({
+      name: `${link.parent.first_name || ''} ${link.parent.last_name || ''}`.trim(),
+      relationship: link.relationship || null,
+      phone: link.parent.phone_number || null,
+      email: link.parent.email || null,
+      is_primary: !!link.is_primary,
+    }));
+
+  return res.json({
+    success: true,
+    message: 'Child profile fetched successfully',
+    data: {
+      id: learner.id,
+      first_name: learner.first_name,
+      last_name: learner.last_name,
+      admission_number: learner.admission_number,
+      photo_url: learner.profile_photo || null,
+      date_of_birth: learner.date_of_birth,
+      grade_level: classInfo?.grade_level || null,
+      stream_name: classInfo?.stream_name || null,
+      class_teacher: classTeacher,
+      medical: {
+        conditions: learner.medical_conditions || null,
+        allergies: learner.allergies || null,
+        special_needs: learner.special_needs || null,
+      },
+      emergency_contacts: emergencyContacts,
+    },
+  });
+});
+
 module.exports = {
   getMessages,
   markMessageRead,
@@ -284,4 +382,5 @@ module.exports = {
   getTeacherComments,
   getTimetable,
   getSchoolEvents,
+  getChildProfile,
 };
