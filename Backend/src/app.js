@@ -156,10 +156,14 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // ==================== RATE LIMIT ====================
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
-  message: 'Too many requests from this IP, please try again later.',
+  max: 300, // raised — polling features (live chat) use a lot more requests than a typical page
+  message: {
+    success: false,
+    message: 'Too many requests from this IP, please try again later.',
+  }, // object, not a string — Express sends this as real JSON so the frontend won't choke parsing it
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.path.startsWith('/v1/live-chat'), // this endpoint is meant to be polled frequently
 });
 app.use('/api/', limiter);
 
