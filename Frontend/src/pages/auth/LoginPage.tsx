@@ -284,7 +284,7 @@ export default function LoginPage() {
                     {selectedRole.label} Login
                   </span>
                 </div>
-                <h1 className="text-3xl font-bold text-slate-900">Welcome back</h1>
+                <h1 className="text-4xl font-bold text-slate-900" style={{ fontFamily: "'Allura', cursive" }}>Welcome back</h1>
                 <p className="text-slate-500 mt-1 text-sm">Sign in to access your dashboard</p>
               </div>
 
