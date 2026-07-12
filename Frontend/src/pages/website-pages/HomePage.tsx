@@ -145,7 +145,7 @@ const subjectPerformance = [
 
 const assessmentDistribution = [
   { name: 'Exceeding', value: 28, color: '#22c55e' },
-  { name: 'Meeting', value: 45, color: '#3b82f6' },
+  { name: 'Meeting', value: 45, color: '#14b8a6' },
   { name: 'Approaching', value: 20, color: '#f59e0b' },
   { name: 'Below', value: 7, color: '#ef4444' },
 ];
@@ -843,54 +843,54 @@ export default function HomePage() {
       </section>
 
       {/* ── Competency Progress Over Time ──────────────────── */}
-      <section className="py-24 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 relative overflow-hidden">
-        <motion.div className="absolute top-10 right-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }} transition={{ duration: 6, repeat: Infinity }} />
-        <motion.div className="absolute bottom-10 left-10 w-56 h-56 bg-purple-500/10 rounded-full blur-3xl" animate={{ scale: [1, 1.15, 1], opacity: [0.1, 0.2, 0.1] }} transition={{ duration: 5, repeat: Infinity, delay: 1.5 }} />
+      <section className="py-16 bg-gradient-to-br from-slate-900 via-[#122e1e] to-[#1E3A28] relative overflow-hidden">
+        <motion.div className="absolute top-10 right-10 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }} transition={{ duration: 6, repeat: Infinity }} />
+        <motion.div className="absolute bottom-10 left-10 w-56 h-56 bg-teal-500/10 rounded-full blur-3xl" animate={{ scale: [1, 1.15, 1], opacity: [0.1, 0.2, 0.1] }} transition={{ duration: 5, repeat: Infinity, delay: 1.5 }} />
         <div className="container mx-auto px-4 lg:px-8 relative z-10">
-          <motion.div initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} className="text-center mb-16">
+          <motion.div initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} className="text-center mb-10">
             <p
-              className="text-3xl text-blue-300 mb-3"
+              className="text-2xl text-emerald-300 mb-2"
               style={{ fontFamily: "'Italianno', cursive" }}
             >
               Progress Over Time
             </p>
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Students Are <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Improving Every Term</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+              Students Are <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">Improving Every Term</span>
             </h2>
-            <p className="text-lg text-blue-200 max-w-2xl mx-auto">
+            <p className="text-base text-emerald-100/80 max-w-2xl mx-auto">
               Watch competency levels shift upward as schools use NONEAA to identify gaps and target interventions.
             </p>
           </motion.div>
 
-          <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {/* Stacked Area Chart */}
             <motion.div initial={{ y: 40, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
-              className="lg:col-span-2 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6">
-              <h3 className="text-lg font-semibold text-white mb-1">Competency Level Distribution</h3>
-              <p className="text-sm text-blue-300/70 mb-6">Percentage of students at each level over 6 months</p>
-              <ResponsiveContainer width="100%" height={320}>
+              className="lg:col-span-2 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-5">
+              <h3 className="text-base font-semibold text-white mb-1">Competency Level Distribution</h3>
+              <p className="text-xs text-emerald-200/70 mb-4">Percentage of students at each level over 6 months</p>
+              <ResponsiveContainer width="100%" height={260}>
                 <AreaChart data={progressData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                  <XAxis dataKey="month" tick={{ fill: '#93c5fd', fontSize: 12 }} />
-                  <YAxis tick={{ fill: '#93c5fd', fontSize: 12 }} />
+                  <XAxis dataKey="month" tick={{ fill: '#a7f3d0', fontSize: 11 }} />
+                  <YAxis tick={{ fill: '#a7f3d0', fontSize: 11 }} />
                   <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', color: '#fff' }} />
                   <Area type="monotone" dataKey="exceeding" stackId="1" stroke="#22c55e" fill="#22c55e" fillOpacity={0.7} name="Exceeding" />
-                  <Area type="monotone" dataKey="meeting" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} name="Meeting" />
+                  <Area type="monotone" dataKey="meeting" stackId="1" stroke="#14b8a6" fill="#14b8a6" fillOpacity={0.6} name="Meeting" />
                   <Area type="monotone" dataKey="approaching" stackId="1" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.5} name="Approaching" />
                   <Area type="monotone" dataKey="below" stackId="1" stroke="#ef4444" fill="#ef4444" fillOpacity={0.4} name="Below" />
-                  <Legend wrapperStyle={{ color: '#93c5fd', fontSize: 12 }} />
+                  <Legend wrapperStyle={{ color: '#a7f3d0', fontSize: 11 }} />
                 </AreaChart>
               </ResponsiveContainer>
             </motion.div>
 
             {/* Assessment Donut */}
             <motion.div initial={{ y: 40, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.15 }}
-              className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6">
-              <h3 className="text-lg font-semibold text-white mb-1">Current Assessment Split</h3>
-              <p className="text-sm text-blue-300/70 mb-4">Overall competency distribution</p>
-              <ResponsiveContainer width="100%" height={220}>
+              className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-5">
+              <h3 className="text-base font-semibold text-white mb-1">Current Assessment Split</h3>
+              <p className="text-xs text-emerald-200/70 mb-3">Overall competency distribution</p>
+              <ResponsiveContainer width="100%" height={190}>
                 <PieChart>
-                  <Pie data={assessmentDistribution} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={4} dataKey="value">
+                  <Pie data={assessmentDistribution} cx="50%" cy="50%" innerRadius={48} outerRadius={72} paddingAngle={4} dataKey="value">
                     {assessmentDistribution.map((entry, idx) => (
                       <Cell key={idx} fill={entry.color} />
                     ))}
@@ -901,8 +901,8 @@ export default function HomePage() {
               <div className="grid grid-cols-2 gap-2 mt-2">
                 {assessmentDistribution.map((item) => (
                   <div key={item.name} className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-xs text-blue-200">{item.name}: {item.value}%</span>
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-[11px] text-emerald-100/80">{item.name}: {item.value}%</span>
                   </div>
                 ))}
               </div>
