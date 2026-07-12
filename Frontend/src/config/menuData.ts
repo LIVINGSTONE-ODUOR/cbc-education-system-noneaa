@@ -54,6 +54,8 @@ export interface MenuItem {
   badge?: number;
   submenu?: SubmenuItem[];
   description?: string;
+  /** If set, only users with this role see the item (e.g. website-owner-only tools). */
+  requiredRole?: string;
 }
 
 /**
@@ -379,6 +381,7 @@ export const menuSections: NavigationMenu = [
         icon: Headset,
         href: '/school-admin/live-chat',
         description: 'Respond to visitors escalated from the AI assistant',
+        requiredRole: 'super_admin',
       },
       {
         id: 'settings',
@@ -394,6 +397,22 @@ export const menuSections: NavigationMenu = [
 // ─────────────────────────────────────────────────────────────────
 // UTILITY FUNCTIONS
 // ─────────────────────────────────────────────────────────────────
+
+/**
+ * Filter menu sections/items down to what a given role is allowed to see.
+ * Items without a `requiredRole` are visible to everyone; items with one
+ * only show up for users whose role matches exactly.
+ * @param role - The current user's role (e.g. 'school_admin', 'super_admin')
+ * @returns Navigation menu containing only the sections/items visible to that role
+ */
+export const getMenuForRole = (role?: string | null): NavigationMenu => {
+  return menuSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.requiredRole || item.requiredRole === role),
+    }))
+    .filter((section) => section.items.length > 0);
+};
 
 /**
  * Get total badge count across all menu items
