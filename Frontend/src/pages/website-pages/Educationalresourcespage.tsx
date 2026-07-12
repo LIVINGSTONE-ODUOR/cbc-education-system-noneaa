@@ -68,11 +68,11 @@ export default function EducationalResourcesPage() {
     : articlesData.filter(article => article.category === activeFilter);
 
   return (
-    <section className="py-16 md:py-24 bg-[#e8edf5]">
+    <section className="py-16 md:py-24 bg-[#F6F1E7]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         {/* Section Header */}
         <div className="text-center mb-12">
-          <span className="text-3xl text-blue-600 mb-2" style={{ fontFamily: "'Italianno', cursive" }}>
+          <span className="text-3xl text-[#1E3A28] mb-2" style={{ fontFamily: "'Italianno', cursive" }}>
             Resources
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-3">
@@ -93,7 +93,7 @@ export default function EducationalResourcesPage() {
                 onClick={() => setActiveFilter(filter.id)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   activeFilter === filter.id
-                    ? 'bg-blue-600 text-white shadow-md'
+                    ? 'bg-[#1E3A28] text-white shadow-md'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
@@ -118,12 +118,12 @@ export default function EducationalResourcesPage() {
 
               <div className="p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-[#1E3A28] uppercase tracking-wider">
                     {filters.find(f => f.id === article.category)?.label || article.category}
                   </span>
                   <span className="text-xs text-slate-400">{article.date}</span>
                 </div>
-                <h3 className="font-semibold text-slate-900 text-sm leading-snug mb-2 group-hover:text-blue-600 transition-colors">
+                <h3 className="font-semibold text-slate-900 text-sm leading-snug mb-2 group-hover:text-[#1E3A28] transition-colors">
                   {article.title}
                 </h3>
                 <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
