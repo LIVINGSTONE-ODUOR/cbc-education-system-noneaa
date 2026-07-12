@@ -1,8 +1,9 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SchoolSettingsProvider } from "@/contexts/SchoolSettingsContext";
 import { getHostContext } from "@/utils/hostRouting";
@@ -200,6 +201,38 @@ function RootRoute() {
   }
 
   return <HomePage />;
+}
+
+// ─── Reserved Subdomain Gate ────────────────────────────────────────────────
+// A reserved subdomain (status.noneaa.com, terms.noneaa.com, etc.) should
+// ONLY ever be able to show its one page at "/". Without this, React Router
+// still matches every other route (e.g. /login, /school-admin/*) regardless
+// of hostname — so clicking "Log in" inside the status page's own Header
+// would render the login page right there on status.noneaa.com. This catches
+// that and bounces the visitor to the real path on the main domain instead.
+function ReservedSubdomainGate({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const host = getHostContext();
+  const isRoot = location.pathname === "/" || location.pathname === "";
+  const shouldRedirect = host.type === "reserved" && !isRoot;
+
+  useEffect(() => {
+    if (shouldRedirect) {
+      window.location.replace(
+        `https://noneaa.com${location.pathname}${location.search}`
+      );
+    }
+  }, [shouldRedirect, location.pathname, location.search]);
+
+  if (shouldRedirect) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Redirecting..." />
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 }
 
 // ─── App Routes ───────────────────────────────────────────────────────────────
@@ -402,7 +435,9 @@ const App = () => (
               <BrowserRouter>
                 <ScrollToTop />
                 <NavigationSpinner />
-                <AppRoutes />
+                <ReservedSubdomainGate>
+                  <AppRoutes />
+                </ReservedSubdomainGate>
                 <AIAssistant />
                 <CookieBanner />
               </BrowserRouter>
