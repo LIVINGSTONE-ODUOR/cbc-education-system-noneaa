@@ -482,7 +482,7 @@ export default function HomePage() {
       <Header/>
       
       {/* Hero Section — Cream / Editorial Style, matching reference layout */}
-      <section ref={heroRef} className="relative pt-32 pb-16 overflow-hidden bg-[#F6F1E7]">
+      <section ref={heroRef} className="relative pt-24 pb-8 overflow-hidden bg-[#F6F1E7]">
         {/* Decorative shapes, echoing the reference corners */}
         <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-[#1E3A28]/10 blur-2xl pointer-events-none" />
         <div className="absolute top-1/4 -right-10 w-64 h-64 rounded-full bg-[#1E3A28]/[0.08] blur-2xl pointer-events-none" />
@@ -503,22 +503,25 @@ export default function HomePage() {
               animate={isHeroInView ? { y: 0, opacity: 1 } : {}}
               transition={{ duration: 0.7 }}
             >
-              <p className="text-sm font-semibold tracking-wide text-[#9C7A3C] mb-4">
+              <p
+                className="text-xl md:text-2xl text-[#9C7A3C] mb-2"
+                style={{ fontFamily: "'Italianno', cursive" }}
+              >
                 Leading School Management Platform
               </p>
 
-              <h1 className="text-3xl md:text-4xl lg:text-[2.75rem] font-bold text-[#1C1C1C] leading-[1.2] mb-6">
+              <h1 className="text-2xl md:text-3xl lg:text-[2.25rem] font-bold text-[#1C1C1C] leading-[1.2] mb-3">
                 The School Management Platform for{' '}
                 <span className="text-[#1E3A28]">Kenya's CBC Curriculum</span>
               </h1>
 
-              <p className="text-base md:text-lg text-[#4A4A44]/90 mb-8 max-w-xl leading-relaxed">
+              <p className="text-sm md:text-base text-[#4A4A44]/90 mb-5 max-w-xl leading-relaxed">
                 Noneaa helps schools manage curriculum, assess students using competency levels, track progress across all learning areas, and keep parents informed — from Pre-Primary to Senior Secondary.
               </p>
 
               {/* Role Selector — same roles/handler you already had, restyled as pills */}
               <div className="mb-3">
-                <p className="text-xs font-semibold text-[#4A4A44]/60 mb-3 tracking-[0.2em] uppercase">
+                <p className="text-[11px] font-semibold text-[#4A4A44]/60 mb-2 tracking-[0.2em] uppercase">
                   Select your role
                 </p>
                 <div className="inline-flex flex-wrap rounded-full bg-white/70 border border-[#1E3A28]/10 p-1">
@@ -527,7 +530,7 @@ export default function HomePage() {
                       key={role}
                       onClick={() => handleRoleClick(role)}
                       className={cn(
-                        "relative px-5 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                        "relative px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200",
                         selectedRole === role
                           ? "bg-[#1E3A28] text-white shadow-md"
                           : "text-[#1C1C1C]/70 hover:bg-white"
@@ -540,10 +543,10 @@ export default function HomePage() {
               </div>
 
               {/* CTA Buttons — same destinations you already had */}
-              <div className="flex flex-wrap gap-3 mb-10">
+              <div className="flex flex-wrap gap-3 mb-6">
                 <Link
                   to="/login"
-                  className="group inline-flex items-center gap-2.5 bg-[#1E3A28] text-white font-semibold py-3 px-7 rounded-full hover:bg-[#173420] transition-colors shadow-md"
+                  className="group inline-flex items-center gap-2.5 bg-[#1E3A28] text-white font-semibold py-2.5 px-6 rounded-full hover:bg-[#173420] transition-colors shadow-md"
                 >
                   <Rocket className="w-4 h-4" />
                   Explore Dashboard
@@ -551,7 +554,7 @@ export default function HomePage() {
                 </Link>
                 <Link
                   to="#demo"
-                  className="group inline-flex items-center gap-2.5 border border-[#1E3A28]/25 text-[#1E3A28] font-medium py-3 px-7 rounded-full hover:bg-white transition-colors"
+                  className="group inline-flex items-center gap-2.5 border border-[#1E3A28]/25 text-[#1E3A28] font-medium py-2.5 px-6 rounded-full hover:bg-white transition-colors"
                 >
                   <Play className="w-4 h-4" />
                   Watch Demo
@@ -560,10 +563,10 @@ export default function HomePage() {
 
               {/* Testimonials — reusing your existing `testimonials` array verbatim */}
               <div>
-                <p className="text-sm font-semibold text-[#1C1C1C] mb-4">Client Testimonials</p>
-                <div className="grid sm:grid-cols-2 gap-4 max-w-xl">
+                <p className="text-sm font-semibold text-[#1C1C1C] mb-2">Client Testimonials</p>
+                <div className="grid sm:grid-cols-2 gap-3 max-w-xl">
                   {testimonials.map((t) => (
-                    <div key={t.author} className="bg-white/70 border border-[#1E3A28]/10 rounded-xl p-4">
+                    <div key={t.author} className="bg-white/70 border border-[#1E3A28]/10 rounded-xl p-3">
                       {/*
                         TESTIMONIAL PHOTO SLOT
                         Save the photo you download for this person to:
@@ -571,12 +574,12 @@ export default function HomePage() {
                         e.g. Frontend/public/testimonials/oakwood-principal.jpg
                         then set the src below to "/testimonials/oakwood-principal.jpg"
                       */}
-                      <div className="w-9 h-9 rounded-full bg-[#1E3A28]/10 text-[#1E3A28] text-xs font-bold flex items-center justify-center mb-3 overflow-hidden">
+                      <div className="w-8 h-8 rounded-full bg-[#1E3A28]/10 text-[#1E3A28] text-[10px] font-bold flex items-center justify-center mb-2 overflow-hidden">
                         {t.avatar}
                       </div>
-                      <p className="text-xs text-[#4A4A44]/90 leading-relaxed mb-2">"{t.quote}"</p>
+                      <p className="text-[11px] text-[#4A4A44]/90 leading-snug mb-1.5 line-clamp-3">"{t.quote}"</p>
                       <p className="text-xs font-semibold text-[#1C1C1C]">{t.author}</p>
-                      <p className="text-[11px] text-[#4A4A44]/70">{t.role}</p>
+                      <p className="text-[10px] text-[#4A4A44]/70">{t.role}</p>
                     </div>
                   ))}
                 </div>
@@ -587,13 +590,13 @@ export default function HomePage() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={isHeroInView ? { y: 0, opacity: 1 } : {}}
                 transition={{ delay: 0.6 }}
-                className="mt-8 pt-6 border-t border-[#1E3A28]/10"
+                className="mt-4 pt-4 border-t border-[#1E3A28]/10"
               >
-                <div className="flex flex-wrap items-center gap-5">
+                <div className="flex flex-wrap items-center gap-4">
                   {['KICD-Aligned', 'Pre-Primary to Grade 12', '4-Level Competency Scale', 'Parent & Teacher Portals'].map((name) => (
                     <div key={name} className="flex items-center gap-1.5">
                       <CheckCircle className="w-3.5 h-3.5 text-[#1E3A28]/70" />
-                      <span className="text-[#4A4A44]/70 text-xs font-medium">{name}</span>
+                      <span className="text-[#4A4A44]/70 text-[11px] font-medium">{name}</span>
                     </div>
                   ))}
                 </div>
@@ -605,14 +608,14 @@ export default function HomePage() {
               initial={{ y: 30, opacity: 0 }}
               animate={isHeroInView ? { y: 0, opacity: 1 } : {}}
               transition={{ duration: 0.7, delay: 0.15 }}
-              className="relative lg:sticky lg:top-28"
+              className="relative lg:sticky lg:top-24"
             >
               {/* Decorative icon cluster, echoing the reference top-left corner */}
-              <div className="flex items-end gap-3 mb-3 text-[#1E3A28]/45 z-0 relative">
-                <Settings className="w-10 h-10" strokeWidth={1.3} />
-                <BookOpen className="w-8 h-8 mb-1" strokeWidth={1.3} />
-                <BarChart3 className="w-9 h-9" strokeWidth={1.3} />
-                <TrendingUp className="w-10 h-10" strokeWidth={1.3} />
+              <div className="flex items-end gap-2.5 mb-2 text-[#1E3A28]/45 z-0 relative">
+                <Settings className="w-8 h-8" strokeWidth={1.3} />
+                <BookOpen className="w-7 h-7 mb-0.5" strokeWidth={1.3} />
+                <BarChart3 className="w-7 h-7" strokeWidth={1.3} />
+                <TrendingUp className="w-8 h-8" strokeWidth={1.3} />
               </div>
 
               {/* Large gear shape, half-hidden behind the laptop photo top-right corner */}
