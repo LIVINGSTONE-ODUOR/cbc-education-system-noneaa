@@ -108,6 +108,7 @@ import BlogAdminPage from "./pages/website-pages/BlogAdminPage";
 import { BlogProvider } from "@/contexts/BlogContext";
 
 import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
+import LiveChatInbox from "@/pages/auth/school-admin/LiveChatInbox";
 
 const queryClient = new QueryClient();
 
@@ -324,6 +325,7 @@ function AppRoutes() {
                 <Route path="promotions" element={<PromotionsPage />} />
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
+                <Route path="live-chat" element={<LiveChatInbox />} />
                 <Route path="settings/profile" element={<ProfileSettings />} />
                 <Route path="users" element={<UserManagement />} />
                 <Route path="demo" element={<ModernDashboard />} />
