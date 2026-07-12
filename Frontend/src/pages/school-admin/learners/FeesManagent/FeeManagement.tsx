@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +26,14 @@ export interface FeeManagementProps {
   onBack?: () => void;
 }
 
+// Tabs this page supports, keyed by the value the ?tab= query param may use.
+const VALID_TABS = ['payments', 'structures', 'defaulters', 'analytics'];
+
 const FeeManagement: React.FC<FeeManagementProps> = ({ onBack }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab');
+  const initialTab = VALID_TABS.includes(requestedTab || '') ? requestedTab! : 'payments';
+
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [paymentForm, setPaymentForm] = useState({
     studentAdmNo: '', amount: '', method: 'M-Pesa', remarks: '',
@@ -35,6 +43,16 @@ const FeeManagement: React.FC<FeeManagementProps> = ({ onBack }) => {
     toast.success(`Payment of KES ${Number(paymentForm.amount).toLocaleString()} recorded successfully`);
     setPaymentDialogOpen(false);
     setPaymentForm({ studentAdmNo: '', amount: '', method: 'M-Pesa', remarks: '' });
+  };
+
+  // Keep the URL's ?tab= in sync when the user switches tabs manually,
+  // so refreshing or sharing the link lands back on the same tab.
+  const handleTabChange = (value: string) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', value);
+      return next;
+    }, { replace: true });
   };
 
   return (
@@ -99,7 +117,7 @@ const FeeManagement: React.FC<FeeManagementProps> = ({ onBack }) => {
           </Card>
         </div>
 
-        <Tabs defaultValue="payments" className="space-y-4">
+        <Tabs value={initialTab} onValueChange={handleTabChange} className="space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <TabsList>
               <TabsTrigger value="payments">Payments</TabsTrigger>
@@ -207,4 +225,3 @@ const FeeManagement: React.FC<FeeManagementProps> = ({ onBack }) => {
 };
 
 export default FeeManagement;
-

@@ -294,14 +294,14 @@ export const menuSections: NavigationMenu = [
           {
             id: 'fee-structure',
             label: 'Fee Structure',
-            href: '/school-admin/fees/collection',
+            href: '/school-admin/fee-management?tab=structures',
             icon: Banknote,
             description: 'Configure fee categories and amounts',
           },
           {
             id: 'fee-reports',
             label: 'Fee Reports',
-            href: '/school-admin/fees/reports',
+            href: '/school-admin/fee-management?tab=analytics',
             icon: FileText,
             description: 'Generate financial reports',
           },
