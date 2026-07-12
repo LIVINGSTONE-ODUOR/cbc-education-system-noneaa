@@ -146,6 +146,110 @@ const authorize = (...roles) => {
   };
 };
 
+// Website-owner authentication middleware
+// Verifies tokens issued by websiteOwner.controller.login (payload has
+// `type: 'website_owner'`) against the separate `website_owners` table.
+// Kept independent of `authenticate` above so an owner token can never be
+// mistaken for — or gain the permissions of — a school-platform user.
+const authenticateOwner = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      success: false,
+      message: 'Access denied. No token provided.'
+    });
+  }
+
+  const token = authHeader.substring(7);
+  let decoded;
+
+  try {
+    decoded = verifyToken(token);
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: 'Token expired. Please login again.'
+    });
+  }
+
+  if (decoded.type !== 'website_owner') {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid token for this resource.'
+    });
+  }
+
+  try {
+    const result = await query(
+      `SELECT id, name, email, status FROM website_owners WHERE id = $1 LIMIT 1`,
+      [decoded.ownerId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token. Owner account not found.'
+      });
+    }
+
+    const owner = result.rows[0];
+    if (owner.status === 'suspended') {
+      return res.status(403).json({
+        success: false,
+        message: 'Account suspended. Please contact support.'
+      });
+    }
+
+    req.owner = { id: owner.id, name: owner.name, email: owner.email };
+    // Also populate req.user so shared controllers (e.g. liveChat) can be
+    // used by both school-platform staff and website owners without
+    // branching on which table authenticated the request.
+    req.user = { id: owner.id, email: owner.email, role: 'website_owner', isOwner: true };
+
+    next();
+  } catch (dbError) {
+    console.error('❌ Owner authentication DB lookup failed:', dbError.message);
+    return res.status(503).json({
+      success: false,
+      message: 'Authentication temporarily unavailable. Please try again.'
+    });
+  }
+};
+
+// Combined middleware for the support inbox: accepts EITHER a
+// website-owner token OR a school-platform super_admin token, since both
+// are allowed to staff the live-chat inbox. Everything else in the
+// platform stays reachable only by the role checks it already had.
+const authenticateSupportStaff = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      success: false,
+      message: 'Access denied. No token provided.'
+    });
+  }
+
+  let decoded;
+  try {
+    decoded = verifyToken(authHeader.substring(7));
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: 'Token expired. Please login again.'
+    });
+  }
+
+  if (decoded.type === 'website_owner') {
+    return authenticateOwner(req, res, next);
+  }
+
+  return authenticate(req, res, (err) => {
+    if (err) return next(err);
+    return authorize('super_admin')(req, res, next);
+  });
+};
+
 // School isolation middleware
 const requireSameSchool = (req, res, next) => {
   if (!req.user) {
@@ -334,6 +438,8 @@ const securityHeaders = (req, res, next) => {
 module.exports = {
   authenticate,
   authorize,
+  authenticateOwner,
+  authenticateSupportStaff,
   requireSameSchool,
   rateLimit,
   validateInput,
