@@ -318,17 +318,22 @@ const getAnnouncements = asyncHandler(async (req, res) => {
   const schoolId = getSchoolId(req);
   const { id: userId } = req.user;
   const limit = parseInt(req.query.limit) || 10;
+  const { category } = req.query; // optional: 'general' | 'fee_reminder'
 
   const parentRow = await getParentForUser(userId);
   const classIds = parentRow ? await getParentChildrenClassIds(parentRow.id) : [];
 
   let query = supabase
     .from('announcements')
-    .select('id, title, body, class_id, created_at, classes:class_id (id, grade_level, stream_name)')
+    .select('id, title, body, class_id, category, created_at, classes:class_id (id, grade_level, stream_name)')
     .eq('school_id', schoolId)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(limit);
+
+  if (category) {
+    query = query.eq('category', category);
+  }
 
   // School-wide (class_id is null) OR targeted at one of this parent's
   // children's classes.
@@ -424,16 +429,23 @@ const getTimetable = asyncHandler(async (req, res) => {
 const getSchoolEvents = asyncHandler(async (req, res) => {
   const schoolId = getSchoolId(req);
   const limit = parseInt(req.query.limit) || 10;
+  const { type } = req.query; // optional: 'event' | 'holiday' | 'pta_meeting'
   const today = new Date().toISOString().slice(0, 10);
 
-  const { data: events, error } = await supabase
+  let query = supabase
     .from('school_events')
-    .select('id, title, description, event_date, start_time, location, audience')
+    .select('id, title, description, event_date, start_time, location, audience, event_type')
     .eq('school_id', schoolId)
     .in('audience', ['all', 'parents'])
     .gte('event_date', today)
     .order('event_date', { ascending: true })
     .limit(limit);
+
+  if (type) {
+    query = query.eq('event_type', type);
+  }
+
+  const { data: events, error } = await query;
 
   if (error) {
     return res.status(500).json({ success: false, message: 'Failed to fetch school events', error: error.message });
