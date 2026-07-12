@@ -72,7 +72,7 @@ export default function EducationalResourcesPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         {/* Section Header */}
         <div className="text-center mb-12">
-          <span className="inline-block text-sm font-semibold text-blue-600 uppercase tracking-wider mb-2">
+          <span className="text-3xl text-blue-600 mb-2" style={{ fontFamily: "'Italianno', cursive" }}>
             Resources
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-3">
