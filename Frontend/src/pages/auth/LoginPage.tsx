@@ -210,7 +210,7 @@ export default function LoginPage() {
 
               {/* Role selector */}
               <div className="flex-1">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Select Your Role</p>
+                <p className="text-base font-semibold text-slate-400 mb-3" style={{ fontFamily: "'Allura', cursive" }}>Select Your Role</p>
                 <div className="space-y-2.5">
                   {roles.map((role, index) => {
                     const Icon = role.icon;
