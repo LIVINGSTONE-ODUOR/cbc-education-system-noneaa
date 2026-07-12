@@ -106,9 +106,12 @@ export default function GettingStartedPage() {
             transition={{ duration: 0.6 }}
             className="max-w-3xl"
           >
-            <span className="inline-block text-sm font-semibold text-blue-600 uppercase tracking-wider mb-3">
+            <p
+              className="text-3xl text-blue-600 mb-3"
+              style={{ fontFamily: "'Italianno', cursive" }}
+            >
               Getting Started
-            </span>
+            </p>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-4">
               Set Up Your School in Under an Hour
             </h1>
