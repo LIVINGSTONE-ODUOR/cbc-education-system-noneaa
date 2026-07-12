@@ -57,18 +57,18 @@ export default function SecurityPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-[#e8edf5]">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
 
       {/* Hero */}
       <section className="relative min-h-[60vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-emerald-950 to-teal-950" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1E3A28] via-[#2F5233] to-[#1E3A28]" />
         <motion.div className="absolute top-16 right-20 w-72 h-72 bg-emerald-500/15 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.3, 0.15] }} transition={{ duration: 6, repeat: Infinity }} />
         <motion.div className="absolute bottom-10 left-16 w-56 h-56 bg-teal-500/15 rounded-full blur-3xl" animate={{ scale: [1, 1.15, 1], opacity: [0.1, 0.25, 0.1] }} transition={{ duration: 5, repeat: Infinity, delay: 1.5 }} />
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
           <motion.div initial="hidden" animate="visible">
             <motion.div variants={fadeUp} custom={0} className="flex justify-center mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 flex items-center justify-center border border-emerald-400/30">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-400/20 flex items-center justify-center border border-emerald-300/30">
                 <ShieldCheck className="w-8 h-8 text-emerald-400" />
               </div>
             </motion.div>
@@ -86,7 +86,7 @@ export default function SecurityPage() {
       </section>
 
       {/* Stats Bar */}
-      <section className="bg-[#dfe5f0] py-12">
+      <section className="bg-[#EFE7D6] py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {stats.map((stat, i) => (
@@ -132,10 +132,10 @@ export default function SecurityPage() {
       </AnimatedSection>
 
       {/* Security Architecture Visual */}
-      <AnimatedSection className="py-20 bg-[#dfe5f0]">
+      <AnimatedSection className="py-20 bg-[#EFE7D6]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Architecture</p>
+            <p className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Architecture</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">How We Protect Your Data</h2>
           </motion.div>
           <div className="space-y-4">
@@ -188,7 +188,7 @@ export default function SecurityPage() {
       </AnimatedSection>
 
       {/* Certifications */}
-      <AnimatedSection className="py-16 bg-[#dfe5f0]">
+      <AnimatedSection className="py-16 bg-[#EFE7D6]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Compliance & Certifications</h2>
@@ -224,13 +224,13 @@ export default function SecurityPage() {
                 <Mail className="w-4 h-4 text-emerald-600" /> security@noneaa.com
               </div>
             </motion.div>
-            <motion.div variants={fadeUp} custom={1} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 p-8">
-              <Clock className="w-10 h-10 text-blue-600 mb-4" />
+            <motion.div variants={fadeUp} custom={1} className="bg-gradient-to-br from-[#F6F1E7] to-[#EFE7D6] rounded-2xl border border-[#1E3A28]/20 p-8">
+              <Clock className="w-10 h-10 text-[#1E3A28] mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-3">Security Questions?</h3>
               <p className="text-sm text-gray-600 mb-6">
                 Need more details about our security practices? Our security team is happy to answer questions and provide documentation.
               </p>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white" asChild>
+              <Button className="bg-[#1E3A28] hover:bg-[#173420] text-white" asChild>
                 <Link to="/contact">Contact Security Team <ArrowRight className="w-4 h-4 ml-2" /></Link>
               </Button>
             </motion.div>
