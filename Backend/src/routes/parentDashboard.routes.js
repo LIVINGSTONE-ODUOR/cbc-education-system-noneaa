@@ -9,6 +9,9 @@ const { authenticate } = require('../middleware/auth');
 const {
   getMessages,
   markMessageRead,
+  getMessageContacts,
+  sendMessage,
+  getConversation,
   getAnnouncements,
   getTeacherComments,
   getTimetable,
@@ -25,6 +28,19 @@ router.get('/messages', getMessages);
 
 // PUT  /api/v1/parent-dashboard/messages/:id/read
 router.put('/messages/:id/read', markMessageRead);
+
+// POST /api/v1/parent-dashboard/messages
+//   Body: { recipient_user_id, learner_id, subject?, body }
+//   Send a new message or a reply — to a teacher or the principal.
+router.post('/messages', sendMessage);
+
+// GET  /api/v1/parent-dashboard/messages/conversation/:otherUserId?learner_id=...
+//   Full back-and-forth with one contact about one learner (chat view).
+router.get('/messages/conversation/:otherUserId', getConversation);
+
+// GET  /api/v1/parent-dashboard/learner/:learnerId/contacts
+//   Who the parent can message about this child: class/subject teachers + principal.
+router.get('/learner/:learnerId/contacts', getMessageContacts);
 
 // GET  /api/v1/parent-dashboard/announcements?limit=10
 //   School-wide announcements + any targeted at the caller's children's classes
