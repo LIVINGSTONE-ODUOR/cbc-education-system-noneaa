@@ -94,11 +94,11 @@ const supportResources = [
 
 export default function GettingStartedPage() {
   return (
-    <div className="min-h-screen bg-[#e8edf5]">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
 
       {/* Hero */}
-      <section className="pt-32 pb-16 bg-gradient-to-b from-slate-50 to-white">
+      <section className="pt-32 pb-16 bg-gradient-to-b from-[#EFE7D6] to-[#F6F1E7]">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -107,7 +107,7 @@ export default function GettingStartedPage() {
             className="max-w-3xl"
           >
             <p
-              className="text-3xl text-blue-600 mb-3"
+              className="text-3xl text-[#1E3A28] mb-3"
               style={{ fontFamily: "'Italianno', cursive" }}
             >
               Getting Started
@@ -139,14 +139,14 @@ export default function GettingStartedPage() {
                 >
                   <div className="flex items-start gap-5">
                     <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                      <div className="w-12 h-12 bg-[#1E3A28] rounded-xl flex items-center justify-center text-white font-bold text-lg">
                         {step.number}
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
                         <h3 className="text-lg font-bold text-slate-900">{step.title}</h3>
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full w-fit">
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-[#1E3A28] bg-[#1E3A28]/10 px-2.5 py-1 rounded-full w-fit">
                           <Icon className="w-3 h-3" />
                           {step.timeEstimate}
                         </span>
@@ -172,7 +172,7 @@ export default function GettingStartedPage() {
       </section>
 
       {/* Support Resources */}
-      <section className="py-16 bg-slate-50 border-t border-slate-200">
+      <section className="py-16 bg-[#EFE7D6] border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           <div className="text-center mb-10">
             <h2 className="text-2xl font-bold text-slate-900 mb-2">Need Help Along the Way?</h2>
@@ -186,7 +186,7 @@ export default function GettingStartedPage() {
                 href={resource.link}
                 className="bg-white border border-slate-200 rounded-xl p-6 hover:shadow-md transition-shadow block"
               >
-                <Headphones className="w-6 h-6 text-blue-600 mb-3" />
+                <Headphones className="w-6 h-6 text-[#1E3A28] mb-3" />
                 <h3 className="font-semibold text-slate-900 text-sm mb-1">{resource.title}</h3>
                 <p className="text-xs text-slate-600 leading-relaxed">{resource.description}</p>
               </a>
@@ -206,7 +206,7 @@ export default function GettingStartedPage() {
           </p>
           <a
             href="/get-started"
-            className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
+            className="inline-flex items-center justify-center gap-2 bg-[#1E3A28] hover:bg-[#173420] text-white font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
           >
             Create School Account
             <ArrowRight className="w-4 h-4" />
