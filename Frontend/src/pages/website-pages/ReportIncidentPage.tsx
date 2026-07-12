@@ -120,11 +120,11 @@ export default function ReportIncidentPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
 
       {/* Hero */}
-      <section className="py-16 bg-primary/5">
+      <section className="py-16 bg-[#EFE7D6]">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <motion.div
@@ -135,7 +135,7 @@ export default function ReportIncidentPage() {
               <AlertTriangle className="w-14 h-14 text-yellow-500 mx-auto mb-5" />
             </motion.div>
             <motion.h1
-              className="text-4xl md:text-5xl font-bold text-foreground mb-3"
+              className="text-4xl md:text-5xl font-bold text-gray-900 mb-3"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.15 }}
@@ -356,7 +356,7 @@ export default function ReportIncidentPage() {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isSubmitting} className="gap-2">
+                  <Button type="submit" disabled={isSubmitting} className="gap-2 bg-[#1E3A28] hover:bg-[#173420] text-white">
                     {isSubmitting ? (
                       <>
                         <Loader2 size={16} className="animate-spin" />
