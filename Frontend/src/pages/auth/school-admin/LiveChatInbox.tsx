@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Navigate } from 'react-router-dom';
 import { Headset, Send, Check, X as CloseIcon } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   getInbox,
   claimConversation,
@@ -24,6 +26,7 @@ function timeAgo(iso: string): string {
 }
 
 export default function LiveChatInbox() {
+  const { user } = useAuth();
   const [conversations, setConversations] = useState<LiveChatConversationSummary[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<LiveChatMessage[]>([]);
@@ -104,6 +107,12 @@ export default function LiveChatInbox() {
       console.error('Failed to close conversation:', err);
     }
   };
+
+  // Live chat now connects visitors to the website owner, not individual
+  // school admins (school admins are just another category of platform user).
+  if (user?.role !== 'super_admin') {
+    return <Navigate to="/school-admin/dashboard" replace />;
+  }
 
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col">
