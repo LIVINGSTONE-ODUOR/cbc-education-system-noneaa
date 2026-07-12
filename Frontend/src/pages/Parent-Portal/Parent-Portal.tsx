@@ -25,6 +25,9 @@ import {
 import MarksPanel from '@/components/marks/MarksPanel';
 import PerformanceTrends from '@/components/marks/PerformanceTrends';
 import ReportCards from './components/ReportCards';
+import Attendance from './components/Attendance';
+import Assignments from './components/Assignments';
+import Timetable from './components/Timetable';
 
 const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const todayDayOfWeek = () => {
@@ -1010,6 +1013,35 @@ const ParentPortal = () => {
               reloadKey={selectedChildId}
               child={selectedChild}
               emptyMessage={`No report cards are available for ${selectedChild.first_name} yet.`}
+            />
+          )}
+
+          {/* Attendance — full present/absent history, late arrivals,
+              attendance percentage, a monthly calendar, and absence reasons. */}
+          {selectedChild && (
+            <Attendance
+              learnerId={selectedChildId}
+              reloadKey={selectedChildId}
+              emptyMessage={`No attendance records yet this term for ${selectedChild.first_name}.`}
+            />
+          )}
+
+          {/* Assignments — full homework list (not just what's outstanding),
+              due dates, submission status, and teacher feedback. */}
+          {selectedChild && (
+            <Assignments
+              learnerId={selectedChildId}
+              reloadKey={selectedChildId}
+              emptyMessage={`No assignments have been posted for ${selectedChild.first_name} yet.`}
+            />
+          )}
+
+          {/* Timetable — daily, full weekly grid, and exam timetable. */}
+          {selectedChild && (
+            <Timetable
+              learnerId={selectedChildId}
+              reloadKey={selectedChildId}
+              emptyMessage={`No timetable set up yet for ${selectedChild.first_name}.`}
             />
           )}
 
