@@ -250,7 +250,7 @@ const FeatureCard = ({ feature, index }: { feature: SupportFeature; index: numbe
       whileHover={{ y: -5 }}
       className="group"
     >
-      <Card className="h-full border border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-300 hover:shadow-lg">
+      <Card className="h-full border border-gray-200 dark:border-gray-800 hover:border-[#1E3A28]/40 dark:hover:border-blue-700 transition-all duration-300 hover:shadow-lg">
         <CardContent className="p-6">
           <div className={`w-14 h-14 rounded-xl ${feature.bg} flex items-center justify-center mb-4`}>
             <Icon className={`w-7 h-7 ${feature.color}`} />
@@ -278,7 +278,7 @@ const SupportChannelCard = ({ channel, index }: { channel: SupportChannel; index
       className="relative"
     >
       {channel.popular && (
-        <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-10 bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-3 py-1">
+        <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-10 bg-gradient-to-r from-[#1E3A28] to-[#2F5233] text-white px-3 py-1">
           Most Popular
         </Badge>
       )}
@@ -327,11 +327,11 @@ const FAQItem = ({ faq, index, category }: { faq: FAQQuestion; index: number; ca
     <AccordionItem value={`${category.id}-${index}`} className="border-b border-gray-200 dark:border-gray-800">
       <AccordionTrigger className="py-4 text-left hover:no-underline group">
         <div className="flex items-start gap-4">
-          <div className={`w-8 h-8 rounded-lg ${category.bg} flex items-center justify-center flex-shrink-0 group-data-[state=open]:bg-blue-100 dark:group-data-[state=open]:bg-blue-900/20`}>
-            <category.icon className={`w-4 h-4 ${category.color} group-data-[state=open]:text-blue-600 dark:group-data-[state=open]:text-blue-400`} />
+          <div className={`w-8 h-8 rounded-lg ${category.bg} flex items-center justify-center flex-shrink-0 group-data-[state=open]:bg-[#1E3A28]/10 dark:group-data-[state=open]:bg-blue-900/20`}>
+            <category.icon className={`w-4 h-4 ${category.color} group-data-[state=open]:text-[#1E3A28] dark:group-data-[state=open]:text-blue-400`} />
           </div>
           <div className="text-left">
-            <h4 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
+            <h4 className="font-medium text-gray-900 dark:text-white group-hover:text-[#1E3A28] dark:group-hover:text-blue-400">
               {faq.question}
             </h4>
             <div className="flex flex-wrap gap-2 mt-2">
@@ -414,14 +414,14 @@ export default function SupportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+    <div className="min-h-screen bg-gradient-to-b from-[#F6F1E7] via-white to-[#EFE7D6] dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       <Header />
       
       {/* Enhanced Hero Section */}
       <section className="relative pt-24 pb-20 overflow-hidden">
         {/* Background Elements */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-emerald-50 dark:from-blue-950/20 dark:via-gray-900 dark:to-emerald-950/20" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#F6F1E7] via-white to-[#EFE7D6] dark:from-blue-950/20 dark:via-gray-900 dark:to-emerald-950/20" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#1E3A28]/20 to-transparent" />
         
         <div className="container mx-auto px-4 relative z-10">
           <motion.div
@@ -435,10 +435,10 @@ export default function SupportPage() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border border-blue-500/20 backdrop-blur-sm mb-8"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1E3A28]/10 border border-[#1E3A28]/20 backdrop-blur-sm mb-8"
             >
-              <Sparkles className="w-4 h-4 text-blue-500" />
-              <span className="text-3xl text-blue-700 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
+              <Sparkles className="w-4 h-4 text-[#1E3A28]" />
+              <span className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Premium Support Experience
               </span>
             </motion.div>
@@ -451,7 +451,7 @@ export default function SupportPage() {
               className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight"
             >
               We're Here to{' '}
-              <span className="bg-gradient-to-r from-blue-600 via-emerald-500 to-cyan-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#1E3A28] via-[#2F5233] to-emerald-500 bg-clip-text text-transparent">
                 Help You Succeed
               </span>
             </motion.h1>
@@ -485,7 +485,7 @@ export default function SupportPage() {
               className="max-w-2xl mx-auto"
             >
               <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-emerald-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500" />
+                <div className="absolute -inset-1 bg-gradient-to-r from-[#1E3A28] to-[#2F5233] rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500" />
                 <div className="relative bg-white dark:bg-gray-800 rounded-2xl p-2 border border-gray-200 dark:border-gray-700 shadow-lg">
                   <div className="flex items-center gap-2">
                     <Search className="w-5 h-5 text-gray-400 ml-4" />
@@ -495,7 +495,7 @@ export default function SupportPage() {
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-lg py-6"
                     />
-                    <Button className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-8 py-6 rounded-xl">
+                    <Button className="bg-[#1E3A28] hover:bg-[#173420] text-white px-8 py-6 rounded-xl">
                       <Search className="w-5 h-5 mr-2" />
                       Search
                     </Button>
@@ -505,16 +505,16 @@ export default function SupportPage() {
               
               {/* Quick Links */}
               <div className="flex flex-wrap justify-center gap-3 mt-6">
-                <Badge variant="secondary" className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900">
+                <Badge variant="secondary" className="cursor-pointer hover:bg-[#1E3A28]/10 dark:hover:bg-blue-900">
                   Student Management
                 </Badge>
-                <Badge variant="secondary" className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900">
+                <Badge variant="secondary" className="cursor-pointer hover:bg-[#1E3A28]/10 dark:hover:bg-blue-900">
                   Gradebook Setup
                 </Badge>
-                <Badge variant="secondary" className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900">
+                <Badge variant="secondary" className="cursor-pointer hover:bg-[#1E3A28]/10 dark:hover:bg-blue-900">
                   Parent Portal
                 </Badge>
-                <Badge variant="secondary" className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900">
+                <Badge variant="secondary" className="cursor-pointer hover:bg-[#1E3A28]/10 dark:hover:bg-blue-900">
                   Technical Issues
                 </Badge>
               </div>
@@ -685,7 +685,7 @@ export default function SupportPage() {
                         <div className={`w-14 h-14 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                           <Icon className={`w-7 h-7 ${resource.color}`} />
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-[#1E3A28] dark:group-hover:text-blue-400 transition-colors">
                           {resource.title}
                         </h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -695,7 +695,7 @@ export default function SupportPage() {
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             {resource.count}
                           </span>
-                          <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
+                          <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#1E3A28] group-hover:translate-x-1 transition-all" />
                         </div>
                       </CardContent>
                     </Card>
@@ -713,15 +713,15 @@ export default function SupportPage() {
             transition={{ delay: 0.4 }}
           >
             <div className="relative">
-              <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 to-emerald-500 rounded-3xl blur opacity-20" />
+              <div className="absolute -inset-4 bg-gradient-to-r from-[#1E3A28] to-[#2F5233] rounded-3xl blur opacity-20" />
               <Card className="relative bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 overflow-hidden">
                 <div className="grid lg:grid-cols-2">
                   {/* Left Side - Information */}
-                  <div className="bg-gradient-to-br from-blue-50 to-emerald-50 dark:from-blue-950/30 dark:to-emerald-950/30 p-8 lg:p-12">
+                  <div className="bg-gradient-to-br from-[#F6F1E7] to-[#EFE7D6] dark:from-blue-950/30 dark:to-emerald-950/30 p-8 lg:p-12">
                     <div className="h-full flex flex-col justify-center">
-                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border border-blue-500/20 mb-6 w-fit">
-                        <Send className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1E3A28]/10 border border-[#1E3A28]/20 mb-6 w-fit">
+                        <Send className="w-4 h-4 text-[#1E3A28]" />
+                        <span className="text-sm font-medium text-[#1E3A28] dark:text-blue-300">
                           Submit a Request
                         </span>
                       </div>
@@ -735,8 +735,8 @@ export default function SupportPage() {
                       
                       <div className="space-y-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/10 to-emerald-500/10 flex items-center justify-center">
-                            <Clock className="w-5 h-5 text-blue-500" />
+                          <div className="w-10 h-10 rounded-lg bg-[#1E3A28]/10 flex items-center justify-center">
+                            <Clock className="w-5 h-5 text-[#1E3A28]" />
                           </div>
                           <div>
                             <div className="font-medium text-gray-900 dark:text-white">
@@ -749,8 +749,8 @@ export default function SupportPage() {
                         </div>
                         
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/10 to-emerald-500/10 flex items-center justify-center">
-                            <Shield className="w-5 h-5 text-blue-500" />
+                          <div className="w-10 h-10 rounded-lg bg-[#1E3A28]/10 flex items-center justify-center">
+                            <Shield className="w-5 h-5 text-[#1E3A28]" />
                           </div>
                           <div>
                             <div className="font-medium text-gray-900 dark:text-white">
@@ -763,8 +763,8 @@ export default function SupportPage() {
                         </div>
                         
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/10 to-emerald-500/10 flex items-center justify-center">
-                            <Users className="w-5 h-5 text-blue-500" />
+                          <div className="w-10 h-10 rounded-lg bg-[#1E3A28]/10 flex items-center justify-center">
+                            <Users className="w-5 h-5 text-[#1E3A28]" />
                           </div>
                           <div>
                             <div className="font-medium text-gray-900 dark:text-white">
@@ -908,7 +908,7 @@ export default function SupportPage() {
                       <Button 
                         type="submit" 
                         disabled={isSubmitting}
-                        className="w-full h-14 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                        className="w-full h-14 bg-[#1E3A28] hover:bg-[#173420] text-white font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                       >
                         {isSubmitting ? (
                           <div className="flex items-center gap-3">
@@ -925,7 +925,7 @@ export default function SupportPage() {
                       
                       <div className="text-center text-sm text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-100 dark:border-gray-800">
                         By submitting, you agree to our{' '}
-                        <a href="#" className="text-blue-600 hover:underline">
+                        <a href="#" className="text-[#1E3A28] hover:underline">
                           Privacy Policy
                         </a>
                       </div>
