@@ -534,7 +534,10 @@ export default function HomePage() {
               Leading School Management Platform
             </p>
 
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.2] mb-6">
+            <h1
+              className="text-4xl md:text-5xl lg:text-6xl font-normal text-white leading-[1.3] mb-6"
+              style={{ fontFamily: "'Petit Formal Script', cursive" }}
+            >
               The School Management Platform for{' '}
               <span className="relative inline-block">
                 <span className="relative z-10 bg-gradient-to-r from-blue-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
