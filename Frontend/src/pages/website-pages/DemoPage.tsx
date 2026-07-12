@@ -54,11 +54,11 @@ const workflowSteps = [
 
 export default function DemoPage() {
   return (
-    <div className="min-h-screen bg-[#e8edf5]">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
 
       {/* Hero */}
-      <section className="pt-32 pb-20 bg-gradient-to-b from-slate-900 to-slate-800 text-white">
+      <section className="pt-32 pb-20 bg-gradient-to-b from-[#1E3A28] to-[#2F5233] text-white">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
@@ -67,7 +67,7 @@ export default function DemoPage() {
               transition={{ duration: 0.6 }}
             >
               <p
-                className="text-3xl text-blue-300 mb-3"
+                className="text-3xl text-emerald-300 mb-3"
                 style={{ fontFamily: "'Italianno', cursive" }}
               >
                 Product Tour
@@ -75,13 +75,13 @@ export default function DemoPage() {
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-5">
                 See Noneaa in Action
               </h1>
-              <p className="text-lg text-slate-300 leading-relaxed mb-8">
+              <p className="text-lg text-emerald-100/80 leading-relaxed mb-8">
                 Explore the platform that 150+ schools trust for CBE management. From daily assessments to automated term reports — see how Noneaa simplifies every step.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <a
                   href="/get-started"
-                  className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
+                  className="inline-flex items-center justify-center gap-2 bg-[#1E3A28] hover:bg-[#173420] text-white font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
                 >
                   Start Free Trial
                   <ArrowRight className="w-4 h-4" />
@@ -101,12 +101,12 @@ export default function DemoPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.7, delay: 0.2 }}
-              className="bg-slate-700/50 rounded-2xl border border-slate-600 p-4"
+              className="bg-[#2F5233]/30 rounded-2xl border border-[#2F5233]/40 p-4"
             >
-              <div className="bg-slate-800 rounded-xl aspect-video flex items-center justify-center">
+              <div className="bg-[#173420] rounded-xl aspect-video flex items-center justify-center">
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Play className="w-8 h-8 text-blue-400" />
+                  <div className="w-16 h-16 bg-emerald-400/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Play className="w-8 h-8 text-emerald-300" />
                   </div>
                   <p className="text-slate-400 text-sm">Platform Preview</p>
                 </div>
@@ -134,9 +134,9 @@ export default function DemoPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="relative p-6 rounded-xl border border-slate-200 hover:border-blue-200 transition-colors"
+                className="relative p-6 rounded-xl border border-slate-200 hover:border-[#1E3A28]/30 transition-colors"
               >
-                <div className="text-3xl font-bold text-blue-100 mb-3">{item.step}</div>
+                <div className="text-3xl font-bold text-[#1E3A28]/10 mb-3">{item.step}</div>
                 <h3 className="font-semibold text-slate-900 mb-2">{item.title}</h3>
                 <p className="text-sm text-slate-600 leading-relaxed">{item.description}</p>
               </motion.div>
@@ -146,7 +146,7 @@ export default function DemoPage() {
       </section>
 
       {/* Platform Features */}
-      <section className="py-20 bg-slate-50">
+      <section className="py-20 bg-[#EFE7D6]">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           <div className="text-center mb-14">
             <h2 className="text-3xl font-bold text-slate-900 mb-3">Platform Features</h2>
@@ -167,7 +167,7 @@ export default function DemoPage() {
                   transition={{ duration: 0.5, delay: index * 0.08 }}
                   className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-md transition-shadow"
                 >
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 mb-4">
+                  <div className="w-10 h-10 bg-[#1E3A28]/10 rounded-lg flex items-center justify-center text-[#1E3A28] mb-4">
                     <Icon className="w-5 h-5" />
                   </div>
                   <h3 className="font-semibold text-slate-900 mb-2">{feature.title}</h3>
@@ -199,14 +199,14 @@ export default function DemoPage() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a
               href="/get-started"
-              className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
+              className="inline-flex items-center justify-center gap-2 bg-[#1E3A28] hover:bg-[#173420] text-white font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
             >
               Start Free Trial
               <ArrowRight className="w-4 h-4" />
             </a>
             <a
               href="/contact"
-              className="inline-flex items-center justify-center gap-2 border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
+              className="inline-flex items-center justify-center gap-2 border border-slate-300 hover:bg-white text-slate-700 font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
             >
               Schedule Live Demo
             </a>
