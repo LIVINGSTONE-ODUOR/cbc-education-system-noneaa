@@ -6,14 +6,14 @@ import Footer from '@/components/Footer';
 
 export default function CBEStandardsPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
       {/* Hero Section */}
-      <section className="py-20 bg-primary/5">
+      <section className="py-20 bg-[#EFE7D6]">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
-            <BookOpen className="w-16 h-16 text-primary mx-auto mb-6" />
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+            <BookOpen className="w-16 h-16 text-[#1E3A28] mx-auto mb-6" />
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
               CBE Standards & Framework
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
@@ -95,7 +95,7 @@ export default function CBEStandardsPage() {
                     }
                   ].map((competency, index) => (
                     <div key={index} className="flex gap-3">
-                      <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                      <CheckCircle className="w-5 h-5 text-[#1E3A28] flex-shrink-0 mt-0.5" />
                       <div>
                         <h4 className="font-semibold mb-1">{competency.title}</h4>
                         <p className="text-sm text-muted-foreground">{competency.description}</p>
@@ -136,7 +136,7 @@ export default function CBEStandardsPage() {
                     'Life Skills Education'
                   ].map((area) => (
                     <div key={area} className="flex items-center gap-2 text-sm">
-                      <div className="w-2 h-2 rounded-full bg-primary"></div>
+                      <div className="w-2 h-2 rounded-full bg-[#1E3A28]"></div>
                       <span className="text-muted-foreground">{area}</span>
                     </div>
                   ))}
@@ -245,8 +245,8 @@ export default function CBEStandardsPage() {
                       description: 'Analytics dashboard to monitor school-wide CBE implementation and learner performance.'
                     }
                   ].map((feature, index) => (
-                    <div key={index} className="flex gap-3 p-3 rounded-lg bg-primary/5">
-                      <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                    <div key={index} className="flex gap-3 p-3 rounded-lg bg-[#1E3A28]/5">
+                      <CheckCircle className="w-5 h-5 text-[#1E3A28] flex-shrink-0 mt-0.5" />
                       <div>
                         <h4 className="font-semibold mb-1">{feature.title}</h4>
                         <p className="text-sm text-muted-foreground">{feature.description}</p>
@@ -320,7 +320,7 @@ export default function CBEStandardsPage() {
                     For more information about the Competency-Based Curriculum, visit:
                   </p>
                   <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                    <li>Kenya Institute of Curriculum Development (KICD) - <a href="https://kicd.ac.ke" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">kicd.ac.ke</a></li>
+                    <li>Kenya Institute of Curriculum Development (KICD) - <a href="https://kicd.ac.ke" className="text-[#1E3A28] hover:underline" target="_blank" rel="noopener noreferrer">kicd.ac.ke</a></li>
                     <li>Ministry of Education - Official CBE Guidelines and Resources</li>
                     <li>Teachers Service Commission (TSC) - CBE Implementation Support</li>
                   </ul>
