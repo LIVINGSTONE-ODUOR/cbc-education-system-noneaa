@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SchoolSettingsProvider } from "@/contexts/SchoolSettingsContext";
+import { getHostContext } from "@/utils/hostRouting";
 
 import AIAssistant from "@/components/ai-assistant/AIAssistant";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -170,13 +171,44 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// ─── Root Route (hostname-aware) ───────────────────────────────────────────────
+// On the bare root path "/", check the hostname first. If the visitor is on
+// one of the reserved page subdomains (status.noneaa.com, terms.noneaa.com,
+// etc.), render that page directly instead of the homepage. Every other
+// route (/status, /terms, /login, /school-admin/*, etc.) is untouched —
+// this only changes what "/" resolves to.
+function RootRoute() {
+  const host = getHostContext();
+
+  if (host.type === "reserved") {
+    switch (host.page) {
+      case "status":
+        return <SystemStatusPage />;
+      case "terms":
+        return <TermsPage />;
+      case "privacy":
+        return <PrivacyPage />;
+      case "security":
+        return <SecurityPage />;
+      case "methodology":
+        return <CBEMethodologyPage />;
+      case "teacher-resources":
+        return <TeacherResourcesPage />;
+      case "standards":
+        return <GlobalStandardsPage />;
+    }
+  }
+
+  return <HomePage />;
+}
+
 // ─── App Routes ───────────────────────────────────────────────────────────────
 function AppRoutes() {
   return (
     <Routes>
       {/* ── Public Routes ── */}
       <Route path="/explore" element={<HomePage />} />
-      <Route path="/" element={<HomePage />} />
+      <Route path="/" element={<RootRoute />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/resources" element={<EducationalResourcesPage />} />
       <Route path="/analytics" element={<NoneaaPlatformPage />} />
