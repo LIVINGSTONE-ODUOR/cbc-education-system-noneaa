@@ -614,13 +614,26 @@ export default function HomePage() {
                 Cropped with object-cover + object-position so the busy edges
                 (mug, hands) get trimmed — adjust the % values below to taste.
               */}
-              <div className="relative z-10 rounded-2xl overflow-hidden shadow-2xl shadow-black/20 aspect-[4/3]">
+              <div
+                className="relative z-10 rounded-2xl overflow-hidden shadow-2xl shadow-black/20 aspect-[4/3]"
+                onContextMenu={(e) => e.preventDefault()}
+              >
                 <img
                   src="/hero-laptop-dashboard.jpg"
                   alt="Noneaa dashboard shown on a laptop"
-                  className="w-full h-full object-cover"
-                  style={{ objectPosition: '50% 30%' }}
+                  className="w-full h-full object-cover select-none pointer-events-none"
+                  style={{ objectPosition: '50% 30%', WebkitUserDrag: 'none' } as React.CSSProperties}
+                  draggable={false}
+                  onDragStart={(e) => e.preventDefault()}
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+                {/* Invisible overlay: absorbs clicks/right-clicks/drag so the
+                    raw <img> element is never the direct target, hiding its
+                    URL from "copy image address" / "save image as" */}
+                <div
+                  className="absolute inset-0 z-10"
+                  onContextMenu={(e) => e.preventDefault()}
+                  onDragStart={(e) => e.preventDefault()}
                 />
               </div>
 
