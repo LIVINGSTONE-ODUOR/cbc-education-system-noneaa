@@ -64,7 +64,7 @@ const regionData = [
   { name: 'Mombasa', value: 20, color: '#9C7A3C' },
   { name: 'Kisumu', value: 15, color: '#2F5233' },
   { name: 'Nakuru', value: 12, color: '#B8934D' },
-  { name: 'Others', value: 8, color: '#B85C38' },
+  { name: 'Other', value: 8, color: '#B85C38' },
 ];
 
 /* ─────────── Custom Tooltip ─────────── */
