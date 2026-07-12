@@ -582,11 +582,36 @@ const searchLearners = asyncHandler(async (req, res) => {
 //    Compare a learner's performance across two or more exams
 // =============================================================================
 const compareResults = asyncHandler(async (req, res) => {
-  const { schoolId } = req.user;
+  const { schoolId, id: userId, role } = req.user;
   const { learner_id, exam_ids } = req.query;
 
   if (!learner_id) {
     return res.status(400).json({ success: false, message: 'learner_id is required' });
+  }
+
+  // Parents may only compare results for their OWN linked children — same
+  // authorization boundary enforced in getLearnerResults above. Without
+  // this check any authenticated parent could pull another family's
+  // child's performance trend just by knowing/guessing their learner_id.
+  if (role === 'parent') {
+    const { data: parentRow } = await supabase
+      .from('parents')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const { data: link } = parentRow
+      ? await supabase
+          .from('learner_parents')
+          .select('id')
+          .eq('parent_id', parentRow.id)
+          .eq('learner_id', learner_id)
+          .maybeSingle()
+      : { data: null };
+
+    if (!link) {
+      return res.status(403).json({ success: false, message: 'Not authorized to compare this learner\'s results' });
+    }
   }
 
   const examIdList = exam_ids
