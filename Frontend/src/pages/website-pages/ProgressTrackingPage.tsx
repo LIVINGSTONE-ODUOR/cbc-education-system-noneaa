@@ -92,7 +92,7 @@ export default function ProgressTrackingPage() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div initial="hidden" animate="visible">
-              <motion.p variants={fadeUp} custom={0} className="text-blue-300 font-semibold uppercase tracking-wider text-sm mb-4">
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-blue-300 mb-4" style={{ fontFamily: "'Italianno', cursive" }}>
                 Real-Time Progress Tracking
               </motion.p>
               <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
@@ -165,7 +165,7 @@ export default function ProgressTrackingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Subject Analytics
               </motion.p>
               <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
@@ -227,7 +227,7 @@ export default function ProgressTrackingPage() {
               </ResponsiveContainer>
             </motion.div>
             <div className="order-1 lg:order-2">
-              <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-purple-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Competency Mapping
               </motion.p>
               <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
@@ -259,7 +259,7 @@ export default function ProgressTrackingPage() {
       <AnimatedSection className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Why Schools Choose Us</p>
+            <p className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Why Schools Choose Us</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Progress Tracking That Makes a Difference</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Every feature is designed to help teachers, parents, and administrators understand and support each learner&apos;s journey.
