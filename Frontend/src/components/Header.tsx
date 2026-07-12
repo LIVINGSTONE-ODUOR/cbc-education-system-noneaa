@@ -330,10 +330,10 @@ export default function Header() {
 
           {/* Auth Actions */}
           <div className="hidden lg:flex items-center gap-3">
-            <Button variant="outline" size="sm" className="rounded-full border-[#1E3A28]/20 text-[#1C1C1C]" asChild>
+            <Button variant="outline" size="sm" className="rounded-md border-[#1E3A28]/20 text-[#1C1C1C]" asChild>
               <Link to="/login">Log in</Link>
             </Button>
-            <Button size="sm" className="rounded-full px-5 bg-[#1E3A28] hover:bg-[#173420] text-white" asChild>
+            <Button size="sm" className="rounded-md px-5 bg-[#1E3A28] hover:bg-[#173420] text-white" asChild>
               <Link to="/demo">
                 Request Demo
               </Link>
@@ -495,10 +495,10 @@ export default function Header() {
                 </Link>
 
                 <div className="grid grid-cols-2 gap-3 p-4 mt-2">
-                  <Button variant="outline" className="rounded-full border-[#1E3A28]/20" asChild onClick={closeMenus}>
+                  <Button variant="outline" className="rounded-md border-[#1E3A28]/20" asChild onClick={closeMenus}>
                     <Link to="/login">Log in</Link>
                   </Button>
-                  <Button className="rounded-full bg-[#1E3A28] hover:bg-[#173420] text-white" asChild onClick={closeMenus}>
+                  <Button className="rounded-md bg-[#1E3A28] hover:bg-[#173420] text-white" asChild onClick={closeMenus}>
                     <Link to="/demo">Request Demo</Link>
                   </Button>
                 </div>
