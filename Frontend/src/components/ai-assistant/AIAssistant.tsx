@@ -167,7 +167,11 @@ export default function AIAssistant() {
   const [greetingText, setGreetingText] = useState('');
   const [greetingComplete, setGreetingComplete] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+      : false
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -353,28 +357,28 @@ export default function AIAssistant() {
             exit={{ opacity: 0, y: 30, scale: 0.95 }}
             className={cn(
               "fixed bottom-6 right-6 z-50 w-[420px] max-w-[calc(100vw-2rem)] h-[620px] flex flex-col shadow-2xl overflow-hidden border",
-              isDarkMode ? "bg-[#141414] text-white border-zinc-800" : "bg-white text-gray-900 border-gray-300"
+              isDarkMode ? "bg-[#132018] text-[#F6F1E7] border-[#2a3f30]" : "bg-[#F6F1E7] text-[#1C1C1C] border-[#9C7A3C]/30"
             )}
           >
             {/* Header */}
             <div className={cn("px-4 py-3 flex items-center gap-3 border-b",
-              isDarkMode ? "bg-[#1f1f1f] border-zinc-800" : "bg-gray-100 border-gray-300"
+              isDarkMode ? "bg-[#0d1810] border-[#2a3f30]" : "bg-[#1E3A28] border-[#1E3A28]"
             )}>
               <div className="relative">
-                <img src={annaAvatar} alt="Anna" className="w-9 h-9 rounded-full object-cover ring-2 ring-red-600" />
-                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#1f1f1f]" />
+                <img src={annaAvatar} alt="Anna" className="w-9 h-9 rounded-full object-cover ring-2 ring-[#9C7A3C]" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-[#1E3A28]" />
               </div>
               <div className="flex-1">
-                <div className="font-semibold">Anna</div>
-                <div className="text-xs text-zinc-400">Customer Support • Online</div>
+                <div className="font-semibold text-white">Anna</div>
+                <div className="text-xs text-[#E4C68A]">Customer Support • Online</div>
               </div>
-              <button onClick={() => setIsOpen(false)} className="text-3xl text-zinc-400 hover:text-white">×</button>
+              <button onClick={() => setIsOpen(false)} className="text-3xl text-[#E4C68A] hover:text-white">×</button>
             </div>
 
             {/* Messages */}
-            <div ref={messagesContainerRef} onScroll={handleScroll} className={cn("flex-1 overflow-y-auto p-4 space-y-5", isDarkMode ? "bg-[#0a0a0a]" : "bg-gray-50")}>
+            <div ref={messagesContainerRef} onScroll={handleScroll} className={cn("flex-1 overflow-y-auto p-4 space-y-5", isDarkMode ? "bg-[#0a140d]" : "bg-[#F6F1E7]")}>
               <div className="flex justify-center">
-                <div className="bg-zinc-800 text-zinc-400 text-xs px-5 py-2 rounded-full">You are now chatting with: Anna</div>
+                <div className={cn("text-xs px-5 py-2 rounded-full", isDarkMode ? "bg-[#1E3A28]/40 text-[#E4C68A]" : "bg-[#9C7A3C]/15 text-[#6b5228]")}>You are now chatting with: Anna</div>
               </div>
               {messages.map((message) => (
                 <div key={message.id} className={cn("flex", message.role === 'user' ? "justify-end" : "justify-start")}>
@@ -384,8 +388,8 @@ export default function AIAssistant() {
                   <div className={cn("max-w-[76%]", message.role === 'user' ? "items-end" : "items-start")}>
                     <div className={cn(
                       "px-4 py-3 rounded-2xl text-[13px] font-tahoma leading-relaxed",
-                      message.role === 'user' ? "bg-[#e50914] text-white rounded-br-sm" :
-                      isDarkMode ? "bg-[#2f2f2f] text-white rounded-bl-sm" : "bg-white border border-gray-200 text-gray-900 rounded-bl-sm"
+                      message.role === 'user' ? "bg-[#1E3A28] text-white rounded-br-sm" :
+                      isDarkMode ? "bg-[#1a2b20] text-[#F6F1E7] border border-[#2a3f30] rounded-bl-sm" : "bg-white border border-[#9C7A3C]/25 text-[#1C1C1C] rounded-bl-sm"
                     )}>
                       {message.id === '1' && !greetingComplete ? (
                         <span>{greetingText}<span className="animate-pulse">▋</span></span>
@@ -393,7 +397,7 @@ export default function AIAssistant() {
                         <span className="whitespace-pre-wrap">{message.content}</span>
                       )}
                     </div>
-                    <div className="text-[10px] text-zinc-500 mt-1 px-1">
+                    <div className={cn("text-[10px] mt-1 px-1", isDarkMode ? "text-[#9C7A3C]/70" : "text-[#4A4A44]/60")}>
                       {formatTime(message.timestamp)}
                     </div>
                   </div>
@@ -402,11 +406,11 @@ export default function AIAssistant() {
               {isLoading && (
                 <div className="flex gap-3">
                   <img src={annaAvatar} alt="Anna" className="w-8 h-8 rounded-full flex-shrink-0 mt-1" />
-                  <div className="bg-[#2f2f2f] px-4 py-3 rounded-2xl rounded-bl-sm">
+                  <div className={cn("px-4 py-3 rounded-2xl rounded-bl-sm", isDarkMode ? "bg-[#1a2b20] border border-[#2a3f30]" : "bg-white border border-[#9C7A3C]/25")}>
                     <div className="flex gap-1.5">
-                      <div className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" />
-                      <div className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce delay-150" />
-                      <div className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce delay-300" />
+                      <div className="w-2 h-2 bg-[#9C7A3C] rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-[#9C7A3C] rounded-full animate-bounce delay-150" />
+                      <div className="w-2 h-2 bg-[#9C7A3C] rounded-full animate-bounce delay-300" />
                     </div>
                   </div>
                 </div>
@@ -415,7 +419,7 @@ export default function AIAssistant() {
             </div>
 
             {/* Input Area */}
-            <div className={cn("border-t p-4", isDarkMode ? "bg-[#141414] border-zinc-800" : "bg-white border-gray-200")}>
+            <div className={cn("border-t p-4", isDarkMode ? "bg-[#132018] border-[#2a3f30]" : "bg-white border-[#9C7A3C]/20")}>
               <form onSubmit={handleSendMessage} className="flex gap-3">
                 <textarea
                   ref={inputRef}
@@ -426,15 +430,15 @@ export default function AIAssistant() {
                   className={cn(
                     "flex-1 px-5 py-3 focus:outline-none resize-y max-h-[120px] text-[13px] font-tahoma",
                     isDarkMode
-                      ? "bg-zinc-900 border border-zinc-700 focus:border-red-600 text-white"
-                      : "bg-gray-100 border border-gray-300 focus:border-red-600 text-gray-900",
-                    "rounded-none"
+                      ? "bg-[#0d1810] border border-[#2a3f30] focus:border-[#9C7A3C] text-[#F6F1E7]"
+                      : "bg-[#F6F1E7] border border-[#9C7A3C]/30 focus:border-[#1E3A28] text-[#1C1C1C]",
+                    "rounded-lg"
                   )}
                 />
                 <button
                   type="submit"
                   disabled={!input.trim() || isLoading}
-                  className="w-12 h-12 bg-red-600 hover:bg-red-700 disabled:bg-zinc-700 rounded-lg flex items-center justify-center"
+                  className="w-12 h-12 bg-[#1E3A28] hover:bg-[#173420] disabled:bg-[#9C7A3C]/40 text-white rounded-lg flex items-center justify-center transition-colors"
                 >
                   <Send className="w-5 h-5" />
                 </button>
