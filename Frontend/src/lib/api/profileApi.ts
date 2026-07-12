@@ -275,3 +275,27 @@ export const updateActivity = async (): Promise<void> => {
   }
 };
 
+// ─── NOTIFICATION PREFERENCES ─────────────────────────────────────────────────
+
+export interface NotificationPreferences {
+  email: boolean;
+  sms: boolean;
+  announcements: boolean;
+  attendance: boolean;
+  grades: boolean;
+  fees: boolean;
+}
+
+export const getNotificationPreferences = async (): Promise<NotificationPreferences> => {
+  const url = `${API_URL}/api/v1/users/me/notification-preferences`;
+  const response = await fetch(url, getFetchOptions('GET'));
+  return handleResponse<{ data: NotificationPreferences }>(response).then((data) => data.data);
+};
+
+export const updateNotificationPreferences = async (
+  data: Partial<NotificationPreferences>
+): Promise<NotificationPreferences> => {
+  const url = `${API_URL}/api/v1/users/me/notification-preferences`;
+  const response = await fetch(url, getFetchOptions('PUT', data));
+  return handleResponse<{ data: NotificationPreferences }>(response).then((data) => data.data);
+};
