@@ -106,7 +106,7 @@ const HeroSection = () => {
           <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }}>
             <motion.div className="flex items-center gap-3 mb-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
               <div className="h-px w-10 bg-blue-400" />
-              <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">About NONEAA</span>
+              <span className="text-3xl text-blue-400 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>About NONEAA</span>
             </motion.div>
 
             <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-6">
@@ -194,7 +194,7 @@ export default function AboutPage() {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-16">
             <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-200 mb-6">
               <BookOpen className="w-4 h-4 text-blue-600" />
-              <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Who We Are</span>
+              <span className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Who We Are</span>
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-4">Building the Future of Education in Kenya</motion.h2>
             <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
@@ -246,7 +246,7 @@ export default function AboutPage() {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-16">
             <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-200 mb-6">
               <Target className="w-4 h-4 text-blue-600" />
-              <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Our Purpose</span>
+              <span className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Our Purpose</span>
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-4">Mission & Vision</motion.h2>
             <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-2xl mx-auto">Guiding principles that drive everything we build</motion.p>
@@ -322,7 +322,7 @@ export default function AboutPage() {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-16">
             <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-200 mb-6">
               <TrendingUp className="w-4 h-4 text-blue-600" />
-              <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Our Growth</span>
+              <span className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Our Growth</span>
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-4">Growing Across Kenya</motion.h2>
             <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-2xl mx-auto">From 5 pilot schools in 2023 to 120+ schools transforming education today</motion.p>
@@ -418,7 +418,7 @@ export default function AboutPage() {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-16">
             <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200 mb-6">
               <Award className="w-4 h-4 text-emerald-600" />
-              <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Proven Results</span>
+              <span className="text-3xl text-emerald-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Proven Results</span>
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-4">Measurable Student Improvement</motion.h2>
             <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-2xl mx-auto">Data-driven evidence of how NONEAA transforms learning outcomes</motion.p>
@@ -468,7 +468,7 @@ export default function AboutPage() {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-16">
             <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-50 border border-purple-200 mb-6">
               <Sparkles className="w-4 h-4 text-purple-600" />
-              <span className="text-xs font-semibold text-purple-600 uppercase tracking-wider">Why Choose Us</span>
+              <span className="text-3xl text-purple-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Why Choose Us</span>
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-4">What Makes NONEAA Different</motion.h2>
             <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-2xl mx-auto">Purpose-built for Kenya's CBC — not a generic tool adapted to fit</motion.p>
@@ -514,7 +514,7 @@ export default function AboutPage() {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-16">
             <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-200 mb-6">
               <Clock className="w-4 h-4 text-blue-600" />
-              <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Our Journey</span>
+              <span className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Our Journey</span>
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-4">From Idea to Impact</motion.h2>
             <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-2xl mx-auto">Key milestones in our journey to transform education</motion.p>
@@ -576,7 +576,7 @@ export default function AboutPage() {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-16">
             <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-200 mb-6">
               <Heart className="w-4 h-4 text-amber-600" />
-              <span className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Our Values</span>
+              <span className="text-3xl text-amber-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Our Values</span>
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-4">What We Stand For</motion.h2>
             <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-2xl mx-auto">The principles behind every line of code we write and every school we serve</motion.p>
@@ -609,7 +609,7 @@ export default function AboutPage() {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-16">
             <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200 mb-6">
               <Star className="w-4 h-4 text-emerald-600" />
-              <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Testimonials</span>
+              <span className="text-3xl text-emerald-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Testimonials</span>
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-4">What Educators Say</motion.h2>
             <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-2xl mx-auto">Real stories from schools transforming education with NONEAA</motion.p>
@@ -664,7 +664,7 @@ export default function AboutPage() {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-12">
             <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 border border-slate-200 mb-6">
               <HandshakeIcon className="w-4 h-4 text-slate-600" />
-              <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Partners & Alignment</span>
+              <span className="text-3xl text-slate-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Partners & Alignment</span>
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-4">Trusted & Aligned</motion.h2>
             <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-2xl mx-auto">Working with Kenya's leading education bodies and standards</motion.p>
