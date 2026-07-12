@@ -438,7 +438,7 @@ export default function SupportPage() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border border-blue-500/20 backdrop-blur-sm mb-8"
             >
               <Sparkles className="w-4 h-4 text-blue-500" />
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-300 uppercase tracking-wide">
+              <span className="text-3xl text-blue-700 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Premium Support Experience
               </span>
             </motion.div>
