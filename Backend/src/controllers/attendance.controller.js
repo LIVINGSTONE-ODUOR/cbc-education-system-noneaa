@@ -572,6 +572,10 @@ const getLearnerAttendanceSummary = asyncHandler(async (req, res) => {
       term,
       summary: { total_days: total, present, absent, late, excused, attendance_rate },
       recent_records: all.slice(0, 10),
+      // Full term history (already fetched above, no extra query) — powers
+      // the Parent Portal's attendance calendar, late-arrivals list, and
+      // absence-reasons view.
+      all_records: all,
     },
   });
 });
