@@ -292,7 +292,10 @@ export default function AssessmentToolsPage() {
       <section className="py-20 bg-gradient-to-br from-[#1E3A28] via-[#173420] to-[#2F5233]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+            <h2
+              className="text-4xl sm:text-5xl font-bold text-white mb-6"
+              style={{ fontFamily: "'Tangerine', cursive" }}
+            >
               Transform How You Assess Learners
             </h2>
             <p className="text-lg text-[#F6F1E7]/85 mb-8 max-w-2xl mx-auto">
