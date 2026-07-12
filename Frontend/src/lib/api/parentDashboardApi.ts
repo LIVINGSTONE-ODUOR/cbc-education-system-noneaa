@@ -157,6 +157,7 @@ export interface DashboardAnnouncement {
   title: string;
   body: string;
   class_id: string | null;
+  category: 'general' | 'fee_reminder';
   created_at: string;
   classes: { id: string; grade_level: string; stream_name: string | null } | null;
 }
@@ -166,10 +167,15 @@ export interface AnnouncementsResponse {
 }
 
 /**
- * GET /api/v1/parent-dashboard/announcements?limit=10
+ * GET /api/v1/parent-dashboard/announcements?limit=10&category=general|fee_reminder
  */
-export const getAnnouncements = async (limit = 10): Promise<ApiResponse<AnnouncementsResponse>> => {
-  const url = `${API_URL}/api/v1/parent-dashboard/announcements?limit=${limit}`;
+export const getAnnouncements = async (
+  limit = 10,
+  category?: 'general' | 'fee_reminder'
+): Promise<ApiResponse<AnnouncementsResponse>> => {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (category) params.set('category', category);
+  const url = `${API_URL}/api/v1/parent-dashboard/announcements?${params.toString()}`;
   const response = await fetch(url, getFetchOptions('GET'));
   return handleResponse<ApiResponse<AnnouncementsResponse>>(response);
 };
@@ -236,6 +242,7 @@ export interface SchoolEvent {
   start_time: string | null;
   location: string | null;
   audience: string;
+  event_type: 'event' | 'holiday' | 'pta_meeting';
 }
 
 export interface SchoolEventsResponse {
@@ -243,10 +250,15 @@ export interface SchoolEventsResponse {
 }
 
 /**
- * GET /api/v1/parent-dashboard/events?limit=10
+ * GET /api/v1/parent-dashboard/events?limit=10&type=event|holiday|pta_meeting
  */
-export const getSchoolEvents = async (limit = 10): Promise<ApiResponse<SchoolEventsResponse>> => {
-  const url = `${API_URL}/api/v1/parent-dashboard/events?limit=${limit}`;
+export const getSchoolEvents = async (
+  limit = 10,
+  type?: 'event' | 'holiday' | 'pta_meeting'
+): Promise<ApiResponse<SchoolEventsResponse>> => {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (type) params.set('type', type);
+  const url = `${API_URL}/api/v1/parent-dashboard/events?${params.toString()}`;
   const response = await fetch(url, getFetchOptions('GET'));
   return handleResponse<ApiResponse<SchoolEventsResponse>>(response);
 };
