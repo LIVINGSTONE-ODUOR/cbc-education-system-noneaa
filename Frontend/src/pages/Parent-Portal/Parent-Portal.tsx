@@ -31,6 +31,7 @@ import Timetable from './components/Timetable';
 import Messages from './components/Messages';
 import Announcements from './components/Announcements';
 import SchoolCalendar from './components/SchoolCalendar';
+import Settings from './components/Settings';
 import { useAuth } from '@/contexts/AuthContext';
 
 const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -1083,6 +1084,13 @@ const ParentPortal = () => {
               />
             </div>
           )}
+          {/* Settings — change password, update phone number, update email,
+              and notification preferences. Account-level, so it doesn't
+              depend on which child is selected. */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Settings</h3>
+            <Settings />
+          </div>
         </div>
       </div>
     </div>
