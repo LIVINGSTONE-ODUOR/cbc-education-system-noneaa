@@ -5,6 +5,8 @@
 // a Vercel preview URL, or localhost — and resolves it to that
 // school's basic info via the backend.
 
+import { RESERVED_PAGE_SUBDOMAINS } from '@/utils/hostRouting';
+
 export interface SubdomainSchool {
   id: string;
   name: string;
@@ -33,7 +35,11 @@ export const getCurrentSubdomain = (): string | null => {
 
   if (host.endsWith('.noneaa.com')) {
     const sub = host.replace('.noneaa.com', '');
-    return sub && sub !== 'www' ? sub : null;
+    if (!sub || sub === 'www') return null;
+    // status.noneaa.com, terms.noneaa.com, etc. are reserved pages,
+    // never school subdomains — don't attempt a school lookup for them.
+    if ((RESERVED_PAGE_SUBDOMAINS as readonly string[]).includes(sub)) return null;
+    return sub;
   }
 
   return null;
