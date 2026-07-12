@@ -14,7 +14,8 @@ const getApiUrl = (): string => {
 const API_URL = getApiUrl();
 const BASE = `${API_URL}/api/v1/live-chat`;
 
-const getAuthToken = (): string | null => localStorage.getItem('cbe_access_token');
+const getAuthToken = (): string | null =>
+  localStorage.getItem('cbe_access_token') || sessionStorage.getItem('noneaa_owner_token');
 
 const jsonHeaders = (): Record<string, string> => {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
