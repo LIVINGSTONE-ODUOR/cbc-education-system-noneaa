@@ -101,17 +101,17 @@ import { cn } from '@/lib/utils';
 
 /* ── Chart Data ─────────────────────────────────────────── */
 const enrollmentData = [
-  { grade: 'PP1', students: 420, color: '#3b82f6' },
-  { grade: 'PP2', students: 390, color: '#6366f1' },
-  { grade: 'G1', students: 510, color: '#8b5cf6' },
-  { grade: 'G2', students: 480, color: '#a855f7' },
-  { grade: 'G3', students: 530, color: '#d946ef' },
-  { grade: 'G4', students: 500, color: '#ec4899' },
-  { grade: 'G5', students: 470, color: '#f43f5e' },
-  { grade: 'G6', students: 450, color: '#f97316' },
-  { grade: 'G7', students: 520, color: '#eab308' },
-  { grade: 'G8', students: 490, color: '#22c55e' },
-  { grade: 'G9', students: 460, color: '#14b8a6' },
+  { grade: 'PP1', students: 420, color: '#6ee7b7' },
+  { grade: 'PP2', students: 390, color: '#34d399' },
+  { grade: 'G1', students: 510, color: '#10b981' },
+  { grade: 'G2', students: 480, color: '#059669' },
+  { grade: 'G3', students: 530, color: '#047857' },
+  { grade: 'G4', students: 500, color: '#0d9488' },
+  { grade: 'G5', students: 470, color: '#14b8a6' },
+  { grade: 'G6', students: 450, color: '#2dd4bf' },
+  { grade: 'G7', students: 520, color: '#84cc16' },
+  { grade: 'G8', students: 490, color: '#65a30d' },
+  { grade: 'G9', students: 460, color: '#4d7c0f' },
 ];
 
 const competencyData = [
@@ -770,43 +770,43 @@ export default function HomePage() {
                     </section>
 
       {/* ── Enrollment & Performance Charts ──────────────────── */}
-      <section className="py-24 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent" />
+      <section className="py-16 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1E3A28]/5 to-transparent" />
         <div className="container mx-auto px-4 lg:px-8 relative">
-          <motion.div initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} className="text-center mb-16">
+          <motion.div initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} className="text-center mb-10">
             <p
-              className="text-3xl text-primary mb-4"
+              className="text-2xl text-emerald-700 mb-2"
               style={{ fontFamily: "'Italianno', cursive" }}
             >
               Live Analytics
             </p>
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
               Data-Driven{' '}
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Education Insights</span>
+              <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Education Insights</span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-base text-muted-foreground max-w-2xl mx-auto">
               See how schools on NONEAA track enrollment, competencies, and student outcomes across every grade and learning area.
             </p>
           </motion.div>
 
-          <div className="grid lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
             {/* Enrollment by Grade */}
             <motion.div initial={{ x: -40, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
-              className="bg-card rounded-2xl border border-border/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-white" />
+              className="bg-card rounded-2xl border border-border/50 shadow-lg p-5 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+                  <Users className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground">Student Enrollment by Grade</h3>
-                  <p className="text-sm text-muted-foreground">PP1 through Grade 9 &bull; All schools combined</p>
+                  <h3 className="text-base font-semibold text-foreground">Student Enrollment by Grade</h3>
+                  <p className="text-xs text-muted-foreground">PP1 through Grade 9 &bull; All schools combined</p>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={enrollmentData} barSize={28}>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={enrollmentData} barSize={24}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="grade" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-                  <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                  <XAxis dataKey="grade" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                  <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
                   <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
                   <Bar dataKey="students" radius={[6, 6, 0, 0]}>
                     {enrollmentData.map((entry, idx) => (
@@ -819,22 +819,22 @@ export default function HomePage() {
 
             {/* Competency Radar */}
             <motion.div initial={{ x: 40, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
-              className="bg-card rounded-2xl border border-border/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-white" />
+              className="bg-card rounded-2xl border border-border/50 shadow-lg p-5 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center">
+                  <Brain className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground">7 Core Competency Coverage</h3>
-                  <p className="text-sm text-muted-foreground">CBC competency framework scores</p>
+                  <h3 className="text-base font-semibold text-foreground">7 Core Competency Coverage</h3>
+                  <p className="text-xs text-muted-foreground">CBC competency framework scores</p>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={300}>
-                <RadarChart data={competencyData} outerRadius={100}>
+              <ResponsiveContainer width="100%" height={260}>
+                <RadarChart data={competencyData} outerRadius={85}>
                   <PolarGrid stroke="hsl(var(--border))" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                  <PolarRadiusAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} domain={[0, 100]} />
-                  <Radar name="Score" dataKey="score" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.3} />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
+                  <PolarRadiusAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }} domain={[0, 100]} />
+                  <Radar name="Score" dataKey="score" stroke="#10b981" fill="#10b981" fillOpacity={0.3} />
                 </RadarChart>
               </ResponsiveContainer>
             </motion.div>
