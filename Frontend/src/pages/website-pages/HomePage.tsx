@@ -212,14 +212,14 @@ const tools = [
     icon: BarChart3,
     title: 'Progress Tracking',
     description: 'View each student\'s competency levels across all subjects with heatmaps and progress dashboards. Parents can see their child\'s standing in real time.',
-    gradient: 'from-purple-500 to-pink-500',
+    gradient: 'from-cyan-500 to-blue-600',
     features: ['Competency heatmaps', 'Parent access portal', 'Growth analytics'],
   },
   {
     icon: Upload,
     title: 'Evidence & Submissions',
     description: 'Students upload projects, documents, and videos as proof of mastery. Teachers review submissions and provide feedback directly on the platform.',
-    gradient: 'from-orange-500 to-red-500',
+    gradient: 'from-teal-500 to-emerald-600',
     features: ['File uploads (PDF, video, images)', 'Teacher feedback', 'Submission history'],
   },
 ];
@@ -246,8 +246,8 @@ const steps = [
     title: 'For School Admins',
     description: 'Oversee curriculum implementation across the entire school. Manage teacher assignments, view school-wide analytics, and generate compliance reports.',
     icon: Shield,
-    color: 'text-purple-500',
-    bg: 'bg-purple-500/10',
+    color: 'text-cyan-500',
+    bg: 'bg-cyan-500/10',
   },
 ];
 
