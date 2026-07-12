@@ -86,36 +86,36 @@ export default function GlobalStandardsPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-[#e8edf5]">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
 
       {/* Hero */}
       <section className="relative min-h-[70vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1E3A28] via-[#2F5233] to-[#1E3A28]" />
         <motion.div
-          className="absolute top-16 right-10 w-72 h-72 bg-blue-500/15 rounded-full blur-3xl"
+          className="absolute top-16 right-10 w-72 h-72 bg-[#2F5233]/25 rounded-full blur-3xl"
           animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.35, 0.2] }}
           transition={{ duration: 6, repeat: Infinity }}
         />
         <motion.div
-          className="absolute bottom-16 left-20 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl"
+          className="absolute bottom-16 left-20 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl"
           animate={{ scale: [1, 1.1, 1], opacity: [0.15, 0.3, 0.15] }}
           transition={{ duration: 5, repeat: Infinity, delay: 1.5 }}
         />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div initial="hidden" animate="visible">
-              <motion.p variants={fadeUp} custom={0} className="text-3xl text-blue-300 mb-4" style={{ fontFamily: "'Italianno', cursive" }}>
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-emerald-300 mb-4" style={{ fontFamily: "'Italianno', cursive" }}>
                 Global Standards
               </motion.p>
               <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-                Built to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">World-Class</span> Standards
+                Built to <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">World-Class</span> Standards
               </motion.h1>
-              <motion.p variants={fadeUp} custom={2} className="text-lg text-blue-100 mb-8 max-w-xl">
+              <motion.p variants={fadeUp} custom={2} className="text-lg text-emerald-100/80 mb-8 max-w-xl">
                 NONEAA meets international education, data protection, and accessibility standards. Your school&apos;s data is secure, your processes are compliant, and your learners get world-class tools.
               </motion.p>
               <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-white text-blue-900 hover:bg-blue-50" asChild>
+                <Button size="lg" className="bg-white text-[#1E3A28] hover:bg-[#F6F1E7]" asChild>
                   <Link to="/get-started">Get Started <ArrowRight className="w-4 h-4 ml-2" /></Link>
                 </Button>
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
@@ -146,7 +146,7 @@ export default function GlobalStandardsPage() {
       </section>
 
       {/* Certifications Bar */}
-      <section className="bg-[#dfe5f0] py-12">
+      <section className="bg-[#EFE7D6] py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {certifications.map((cert, i) => (
@@ -158,7 +158,7 @@ export default function GlobalStandardsPage() {
                 transition={{ delay: i * 0.1, duration: 0.5 }}
                 className="text-center p-6 rounded-xl bg-white shadow-sm"
               >
-                <cert.icon className="w-8 h-8 text-blue-600 mx-auto mb-3" />
+                <cert.icon className="w-8 h-8 text-[#1E3A28] mx-auto mb-3" />
                 <p className="text-base font-bold text-gray-900">{cert.name}</p>
                 <p className="text-xs text-muted-foreground mt-1">{cert.desc}</p>
               </motion.div>
@@ -169,10 +169,10 @@ export default function GlobalStandardsPage() {
 
       {/* Standards Sections */}
       {standards.map((section, sectionIdx) => (
-        <AnimatedSection key={section.category} className={sectionIdx % 2 === 0 ? 'py-20' : 'py-20 bg-[#dfe5f0]'}>
+        <AnimatedSection key={section.category} className={sectionIdx % 2 === 0 ? 'py-20' : 'py-20 bg-[#EFE7D6]'}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div variants={fadeUp} custom={0} className="mb-12">
-              <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-2">{section.category}</p>
+              <p className="text-sm font-semibold text-[#1E3A28] uppercase tracking-wide mb-2">{section.category}</p>
               <h2 className="text-3xl font-bold text-gray-900">{section.category}</h2>
             </motion.div>
             <div className="grid md:grid-cols-3 gap-8">
@@ -200,7 +200,7 @@ export default function GlobalStandardsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <motion.p variants={fadeUp} custom={0} className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Why Standards Matter
               </motion.p>
               <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
@@ -218,17 +218,17 @@ export default function GlobalStandardsPage() {
                   { text: 'Dedicated data protection officer', icon: Lock },
                 ].map((item, i) => (
                   <motion.div key={i} variants={fadeUp} custom={3 + i} className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 flex-shrink-0 mt-0.5">
-                      <item.icon className="w-4 h-4 text-blue-600" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1E3A28]/10 flex-shrink-0 mt-0.5">
+                      <item.icon className="w-4 h-4 text-[#1E3A28]" />
                     </div>
                     <p className="text-gray-700">{item.text}</p>
                   </motion.div>
                 ))}
               </div>
             </div>
-            <motion.div variants={fadeUp} custom={2} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 border border-blue-200">
+            <motion.div variants={fadeUp} custom={2} className="bg-gradient-to-br from-[#F6F1E7] to-[#EFE7D6] rounded-3xl p-8 border border-[#1E3A28]/20">
               <div className="text-center space-y-6">
-                <Globe className="w-16 h-16 text-blue-600 mx-auto" />
+                <Globe className="w-16 h-16 text-[#1E3A28] mx-auto" />
                 <h3 className="text-2xl font-bold text-gray-900">Trusted by 250+ Schools</h3>
                 <p className="text-gray-600">
                   Schools across Kenya trust NONEAA to manage their academic data securely and in compliance with national and international standards.
@@ -240,7 +240,7 @@ export default function GlobalStandardsPage() {
                     { value: '24/7', label: 'Monitoring' },
                   ].map((stat) => (
                     <div key={stat.label}>
-                      <p className="text-2xl font-bold text-blue-600">{stat.value}</p>
+                      <p className="text-2xl font-bold text-[#1E3A28]">{stat.value}</p>
                       <p className="text-xs text-muted-foreground">{stat.label}</p>
                     </div>
                   ))}
@@ -252,18 +252,18 @@ export default function GlobalStandardsPage() {
       </AnimatedSection>
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-br from-slate-800 to-blue-900">
+      <section className="py-20 bg-gradient-to-br from-[#1E3A28] to-[#2F5233]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
-            <Shield className="w-12 h-12 text-blue-300 mx-auto mb-6" />
+            <Shield className="w-12 h-12 text-emerald-100/70 mx-auto mb-6" />
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
               Global Standards. Local Impact.
             </h2>
-            <p className="text-lg text-blue-200 mb-8 max-w-2xl mx-auto">
+            <p className="text-lg text-emerald-100 mb-8 max-w-2xl mx-auto">
               Empower your school with a platform that meets world-class standards while being built specifically for Kenyan education.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="bg-white text-blue-900 hover:bg-blue-50" asChild>
+              <Button size="lg" className="bg-white text-[#1E3A28] hover:bg-[#F6F1E7]" asChild>
                 <Link to="/get-started">Get Started Free <ArrowRight className="w-4 h-4 ml-2" /></Link>
               </Button>
               <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
