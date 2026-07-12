@@ -87,7 +87,7 @@ export default function TeacherResourcesPage() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="max-w-3xl">
             <motion.div initial="hidden" animate="visible">
-              <motion.p variants={fadeUp} custom={0} className="text-amber-300 font-semibold uppercase tracking-wider text-sm mb-4">
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-amber-300 mb-4" style={{ fontFamily: "'Italianno', cursive" }}>
                 Teacher Resources
               </motion.p>
               <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
@@ -174,7 +174,7 @@ export default function TeacherResourcesPage() {
       <AnimatedSection className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-sm font-semibold text-amber-600 uppercase tracking-wide mb-3">Why Teachers Love Us</p>
+            <p className="text-3xl text-amber-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Why Teachers Love Us</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Save Time. Teach Better. Grow Together.</h2>
           </motion.div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -200,7 +200,7 @@ export default function TeacherResourcesPage() {
       <AnimatedSection className="py-20 bg-[#dfe5f0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-sm font-semibold text-amber-600 uppercase tracking-wide mb-3">Teacher Testimonials</p>
+            <p className="text-3xl text-amber-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Teacher Testimonials</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Hear From Fellow Educators</h2>
           </motion.div>
           <div className="grid md:grid-cols-3 gap-8">
