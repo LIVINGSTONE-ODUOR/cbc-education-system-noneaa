@@ -687,7 +687,7 @@ const getLearnerAssignmentsDue = asyncHandler(async (req, res) => {
   if (ids.length > 0) {
     const { data: subs } = await supabase
       .from('assignment_submissions')
-      .select('assignment_id, status, submitted_at, grade')
+      .select('assignment_id, status, submitted_at, grade, teacher_comment')
       .eq('learner_id', learnerId)
       .in('assignment_id', ids);
 
@@ -709,6 +709,8 @@ const getLearnerAssignmentsDue = asyncHandler(async (req, res) => {
       max_grade: a.max_grade,
       submission_status: submission?.status || 'not_submitted',
       grade: submission?.grade ?? null,
+      teacher_comment: submission?.teacher_comment ?? null,
+      submitted_at: submission?.submitted_at ?? null,
       is_overdue: !submission && dueDate < now,
     };
   });
@@ -726,7 +728,7 @@ const getLearnerAssignmentsDue = asyncHandler(async (req, res) => {
       learner: { id: learner.id, first_name: learner.first_name, last_name: learner.last_name },
       class: enrollment.classes,
       total_due: dueList.filter((a) => a.submission_status === 'not_submitted').length,
-      assignments: dueList.slice(0, 10),
+      assignments: dueList.slice(0, include_submitted === 'true' ? 50 : 10),
     },
   });
 });
