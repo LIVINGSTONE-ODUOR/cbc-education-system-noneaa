@@ -1059,7 +1059,10 @@ export default function CBETrackLanding() {
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <RevealSection>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            <h2
+              className="text-5xl md:text-6xl font-bold mb-6"
+              style={{ fontFamily: "'Tangerine', cursive" }}
+            >
               Ready to Transform Your School Management?
             </h2>
             <p className="text-xl mb-8 text-green-50">
