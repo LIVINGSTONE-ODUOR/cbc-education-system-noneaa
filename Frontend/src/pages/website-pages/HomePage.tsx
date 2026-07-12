@@ -665,8 +665,8 @@ export default function HomePage() {
       </section>
 
       {/* Quick Access Tools - Enhanced */}
-      <section ref={toolsRef} className="py-24 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-secondary/10 to-transparent" />
+      <section ref={toolsRef} className="py-24 relative bg-[#F6F1E7]">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1E3A28]/5 to-transparent" />
         <div className="container mx-auto px-4 lg:px-8 relative">
           <motion.div
             initial={{ y: 50, opacity: 0 }}
