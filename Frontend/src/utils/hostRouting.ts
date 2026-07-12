@@ -2,7 +2,7 @@
 
 // Subdomains that map to a standalone page instead of a school tenant.
 // Add new ones here in future (e.g. "blog", "docs") without touching App.tsx.
-const RESERVED_PAGE_SUBDOMAINS = [
+export const RESERVED_PAGE_SUBDOMAINS = [
   'status',
   'terms',
   'privacy',
