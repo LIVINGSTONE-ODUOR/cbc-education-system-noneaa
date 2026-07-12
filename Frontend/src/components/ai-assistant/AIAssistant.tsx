@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send } from 'lucide-react';
+import { X, Send, MessageCircle } from 'lucide-react';
 import annaAvatar from '@/assets/anna.png';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -314,19 +314,34 @@ export default function AIAssistant() {
     <>
       <AnimatePresence>
         {!isOpen && (
-          <motion.button
+          <motion.div
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 z-50"
+            className="fixed bottom-6 right-6 z-50 flex items-center gap-2"
           >
-            <div className="relative w-14 h-14 rounded-full overflow-hidden ring-4 ring-red-600/30 shadow-xl">
-              <img src={annaAvatar} alt="Anna" className="w-full h-full object-cover" />
-            </div>
-          </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsOpen(true)}
+              className="flex items-center gap-2 bg-[#1E3A28] text-white text-sm font-semibold pl-3 pr-4 py-2.5 rounded-full shadow-xl hover:bg-[#173420] transition-colors"
+            >
+              <div className="relative w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+                <img src={annaAvatar} alt="Anna" className="w-full h-full object-cover" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full border border-[#1E3A28]" />
+              </div>
+              Live Support
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsOpen(true)}
+              aria-label="Open chat"
+              className="w-11 h-11 rounded-full bg-[#1E3A28] shadow-xl flex items-center justify-center hover:bg-[#173420] transition-colors"
+            >
+              <MessageCircle className="w-5 h-5 text-white" />
+            </motion.button>
+          </motion.div>
         )}
       </AnimatePresence>
 
