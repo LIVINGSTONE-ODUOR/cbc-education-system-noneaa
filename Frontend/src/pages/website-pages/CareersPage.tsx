@@ -70,7 +70,7 @@ const values = [
 
 export default function CareersPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
 
       {/* Hero */}
@@ -83,7 +83,7 @@ export default function CareersPage() {
         }}
       >
         <motion.div
-          className="absolute inset-0 bg-slate-900/75 backdrop-blur-[1px]"
+          className="absolute inset-0 bg-[#1E3A28]/80 backdrop-blur-[1px]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1 }}
@@ -95,16 +95,16 @@ export default function CareersPage() {
             transition={{ duration: 0.8 }}
             className="max-w-3xl"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/20 border border-blue-400/30 mb-6">
-              <Briefcase className="w-4 h-4 text-blue-400" />
-              <span className="text-3xl text-blue-400 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#9C7A3C]/20 border border-[#9C7A3C]/40 mb-6">
+              <Briefcase className="w-4 h-4 text-[#E4C68A]" />
+              <span className="text-3xl text-[#E4C68A] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Careers
               </span>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-6">
               Help us transform education for every learner
             </h1>
-            <p className="text-lg text-gray-300 max-w-2xl leading-relaxed">
+            <p className="text-lg text-white/80 max-w-2xl leading-relaxed">
               Join a passionate team building the digital infrastructure for
               competency-based education — where data-driven mastery replaces
               one-size-fits-all assessment.
@@ -114,11 +114,11 @@ export default function CareersPage() {
       </section>
 
       {/* Values */}
-      <section className="py-20 bg-[#dfe5f0]">
+      <section className="py-20 bg-[#F6F1E7]">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div {...fadeInUp} className="text-center mb-16">
-            <h2 className="text-2xl font-bold text-foreground mb-4">Why work with us</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold text-[#1C1C1C] mb-4">Why work with us</h2>
+            <p className="text-lg text-[#4A4A44]/90 max-w-2xl mx-auto">
               We believe great products come from great teams — here's what makes ours special.
             </p>
           </motion.div>
@@ -131,13 +131,13 @@ export default function CareersPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="bg-white rounded-xl border border-gray-200 p-6 text-center shadow-sm hover:shadow-md transition-shadow"
+                className="bg-white rounded-xl border border-[#1E3A28]/10 p-6 text-center shadow-sm hover:shadow-md transition-shadow"
               >
-                <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
-                  <v.icon className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 rounded-full bg-[#1E3A28]/10 flex items-center justify-center mx-auto mb-4">
+                  <v.icon className="w-6 h-6 text-[#1E3A28]" />
                 </div>
-                <h3 className="font-semibold text-foreground mb-2">{v.title}</h3>
-                <p className="text-sm text-muted-foreground">{v.description}</p>
+                <h3 className="font-semibold text-[#1C1C1C] mb-2">{v.title}</h3>
+                <p className="text-sm text-[#4A4A44]/90">{v.description}</p>
               </motion.div>
             ))}
           </div>
@@ -145,11 +145,11 @@ export default function CareersPage() {
       </section>
 
       {/* Open Positions */}
-      <section className="py-20">
+      <section className="py-20 bg-white">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div {...fadeInUp} className="text-center mb-16">
-            <h2 className="text-2xl font-bold text-foreground mb-4">Open positions</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold text-[#1C1C1C] mb-4">Open positions</h2>
+            <p className="text-lg text-[#4A4A44]/90 max-w-2xl mx-auto">
               We're looking for people who are excited about education and technology.
             </p>
           </motion.div>
@@ -162,12 +162,12 @@ export default function CareersPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row md:items-center gap-4"
+                className="bg-[#F6F1E7] rounded-xl border border-[#1E3A28]/10 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row md:items-center gap-4"
               >
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-foreground mb-1">{job.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">{job.description}</p>
-                  <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                  <h3 className="text-lg font-semibold text-[#1C1C1C] mb-1">{job.title}</h3>
+                  <p className="text-sm text-[#4A4A44]/90 mb-3">{job.description}</p>
+                  <div className="flex flex-wrap gap-3 text-xs text-[#4A4A44]/80">
                     <span className="inline-flex items-center gap-1">
                       <Briefcase className="w-3.5 h-3.5" /> {job.department}
                     </span>
@@ -181,7 +181,7 @@ export default function CareersPage() {
                 </div>
                 <a
                   href={`mailto:careers@noneaa.com?subject=Application: ${job.title}`}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition shrink-0"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#1E3A28] text-white text-sm font-medium hover:bg-[#173420] transition shrink-0"
                 >
                   Apply <ArrowRight className="w-4 h-4" />
                 </a>
