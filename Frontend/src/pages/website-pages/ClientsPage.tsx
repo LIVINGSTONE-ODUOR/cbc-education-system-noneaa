@@ -183,7 +183,12 @@ const ClientsPage = () => {
         <div className="max-w-5xl mx-auto px-4 text-center">
           <div className="bg-gradient-to-r from-[#1E3A28] to-[#2F5233] rounded-3xl p-12 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 relative z-10">Ready to modernize your school?</h2>
+            <h2
+              className="text-4xl md:text-5xl font-bold text-white mb-6 relative z-10"
+              style={{ fontFamily: "'Tangerine', cursive" }}
+            >
+              Ready to modernize your school?
+            </h2>
             <p className="text-white/80 text-lg mb-10 max-w-2xl mx-auto relative z-10">
               Join 150+ Kenyan institutions. Get your CBE assessments and student tracking under one roof.
             </p>
