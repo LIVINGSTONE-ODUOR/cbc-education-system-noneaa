@@ -6,10 +6,11 @@ import {
   CircuitBoard, Database, Mail, Phone,
   Facebook, Twitter, Linkedin, Instagram,
   LineChart, ClipboardCheck, BookOpen, Users,
-  ShieldCheck, Globe
+  ShieldCheck, Globe, ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { getReservedPageUrl, isExternalReservedUrl, ReservedPage } from '@/utils/hostRouting';
 
 const platformLinks = [
   { label: 'Curriculum Management', href: '/curriculum', icon: CircuitBoard },
@@ -18,11 +19,11 @@ const platformLinks = [
   { label: 'Analytics Dashboard', href: '/analytics', icon: Database },
 ];
 
-const resourceLinks = [
-  { label: 'CBE Methodology', href: '/methodology', icon: BookOpen },
-  { label: 'Teacher Resources', href: '/teacher/resources', icon: Users },
-  { label: 'System Status', href: '/status', icon: ShieldCheck },
-  { label: 'Global Standards', href: '/standards', icon: Globe },
+const resourceLinks: { label: string; page: ReservedPage; icon: typeof BookOpen }[] = [
+  { label: 'CBE Methodology', page: 'methodology', icon: BookOpen },
+  { label: 'Teacher Resources', page: 'teacher-resources', icon: Users },
+  { label: 'System Status', page: 'status', icon: ShieldCheck },
+  { label: 'Global Standards', page: 'standards', icon: Globe },
 ];
 
 const containerVariants = {
@@ -150,16 +151,39 @@ export default function Footer() {
             <motion.div variants={itemVariants} className="space-y-6">
               <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white/90">Resources</h4>
               <nav className="flex flex-col gap-3">
-                {resourceLinks.map((link) => (
-                  <Link
-                    key={link.label}
-                    to={link.href}
-                    className="group flex items-center gap-3 text-slate-400 hover:text-emerald-400 transition-all"
-                  >
-                    <link.icon size={14} className="text-slate-600 group-hover:text-emerald-500 transition-colors" />
-                    <span className="text-sm font-medium">{link.label}</span>
-                  </Link>
-                ))}
+                {resourceLinks.map((link) => {
+                  const url = getReservedPageUrl(link.page);
+                  const external = isExternalReservedUrl(url);
+                  const content = (
+                    <>
+                      <link.icon size={14} className="text-slate-600 group-hover:text-emerald-500 transition-colors" />
+                      <span className="text-sm font-medium">{link.label}</span>
+                      {external && (
+                        <ExternalLink size={12} className="text-slate-600 group-hover:text-emerald-500 transition-colors" />
+                      )}
+                    </>
+                  );
+
+                  return external ? (
+                    <a
+                      key={link.label}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-3 text-slate-400 hover:text-emerald-400 transition-all"
+                    >
+                      {content}
+                    </a>
+                  ) : (
+                    <Link
+                      key={link.label}
+                      to={url}
+                      className="group flex items-center gap-3 text-slate-400 hover:text-emerald-400 transition-all"
+                    >
+                      {content}
+                    </Link>
+                  );
+                })}
               </nav>
             </motion.div>
           </div>
@@ -230,19 +254,34 @@ export default function Footer() {
           </div>
          
           <div className="flex gap-6">
-            {[
-              { label: 'Privacy', href: '/privacy' },
-              { label: 'Terms', href: '/terms' },
-              { label: 'Security', href: '/security' },
-            ].map((item) => (
-              <Link
-                key={item.label}
-                to={item.href}
-                className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 hover:text-emerald-500 transition-colors"
-              >
-                {item.label}
-              </Link>
-            ))}
+            {([
+              { label: 'Privacy', page: 'privacy' },
+              { label: 'Terms', page: 'terms' },
+              { label: 'Security', page: 'security' },
+            ] as { label: string; page: ReservedPage }[]).map((item) => {
+              const url = getReservedPageUrl(item.page);
+              const external = isExternalReservedUrl(url);
+
+              return external ? (
+                <a
+                  key={item.label}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 hover:text-emerald-500 transition-colors"
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <Link
+                  key={item.label}
+                  to={url}
+                  className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 hover:text-emerald-500 transition-colors"
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>
