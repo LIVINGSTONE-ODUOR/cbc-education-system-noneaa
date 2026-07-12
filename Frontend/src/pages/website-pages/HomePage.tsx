@@ -480,139 +480,153 @@ export default function HomePage() {
       {/* Enhanced Navbar with Glass Morphism */}
       <Header/>
       
-      {/* Hero Section with Enhanced Effects */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center pt-16 overflow-hidden">
-        {/* Background with Gradient Overlay */}
-        <div className="absolute inset-0">
-          {!videoError ? (
-            <motion.video
-              initial={{ scale: 1.1 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 2 }}
-              autoPlay
-              loop
-              muted
-              playsInline
-              onError={() => setVideoError(true)}
-              className="absolute inset-0 w-full h-full object-cover"
-            >
-              <source src={heroVideo} type="video/mp4" />
-            </motion.video>
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-slate-900 to-emerald-900" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/70 via-slate-900/70 to-emerald-900/70" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-background/20 to-background/80" />
-        </div>
+      {/* Hero Section — Cream / Editorial Style, matching reference layout */}
+      <section ref={heroRef} className="relative pt-32 pb-16 overflow-hidden bg-[#F6F1E7]">
+        {/* Decorative shapes, echoing the reference corners */}
+        <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-[#1E3A28]/10 blur-2xl pointer-events-none" />
+        <div className="absolute top-1/4 -right-10 w-64 h-64 rounded-full bg-[#1E3A28]/[0.08] blur-2xl pointer-events-none" />
+        <div
+          className="absolute bottom-0 left-0 w-56 h-56 bg-[#1E3A28] pointer-events-none"
+          style={{ clipPath: 'polygon(0 100%, 0 20%, 100% 100%)' }}
+        />
+        <div
+          className="absolute bottom-0 right-0 w-40 h-40 bg-[#2F5233]/70 pointer-events-none"
+          style={{ clipPath: 'polygon(100% 100%, 100% 30%, 0 100%)' }}
+        />
 
-        {/* Floating Elements */}
-        <FloatingElement delay={0}>
-          <div className="absolute top-20 left-10 w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/30" />
-        </FloatingElement>
-        <FloatingElement delay={0.2}>
-          <div className="absolute top-40 right-20 w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500/30" />
-        </FloatingElement>
-        <FloatingElement delay={0.4}>
-          <div className="absolute bottom-40 left-1/4 w-10 h-10 rounded-full bg-purple-500/20 border border-purple-500/30" />
-        </FloatingElement>
-
-        {/* Content */}
-        <div className="relative container mx-auto px-4 lg:px-8 py-20">
-          <motion.div
-            initial={{ y: 50, opacity: 0 }}
-            animate={isHeroInView ? { y: 0, opacity: 1 } : {}}
-            transition={{ duration: 0.8 }}
-            className="max-w-3xl"
-          >
-            <p
-              className="text-3xl text-white mb-6"
-              style={{ fontFamily: "'Italianno', cursive" }}
-            >
-              Leading School Management Platform
-            </p>
-
-            <h1
-              className="text-2xl md:text-3xl lg:text-4xl font-normal text-white leading-[1.4] mb-6"
-              style={{ fontFamily: "'Petit Formal Script', cursive" }}
-            >
-              The School Management Platform for{' '}
-              <span className="relative inline-block">
-                <span className="relative z-10 bg-gradient-to-r from-blue-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                  Kenya's CBC Curriculum
-                </span>
-                <div className="absolute -inset-2 bg-gradient-to-r from-blue-500/20 to-emerald-500/20 blur-xl" />
-              </span>
-            </h1>
-            
-            <p
-              className="text-xl md:text-2xl text-white/90 mb-10 max-w-2xl leading-relaxed"
-              style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
-            >
-              Noneaa helps schools manage curriculum, assess students using competency levels, track progress across all learning areas, and keep parents informed — from Pre-Primary to Senior Secondary.
-            </p>
-
-            {/* Role Selector */}
-            <div className="mb-8">
-              <p className="text-xs font-semibold text-white/50 mb-3 tracking-[0.2em] uppercase">
-                Select your role
-              </p>
-              <div className="inline-flex rounded-full bg-white/[0.08] backdrop-blur-md border border-white/10 p-1">
-                {roles.map((role) => (
-                  <button
-                    key={role}
-                    onClick={() => handleRoleClick(role)}
-                    className={cn(
-                      "relative px-5 py-2 rounded-full text-sm font-medium transition-all duration-200",
-                      selectedRole === role
-                        ? "bg-white text-gray-900 shadow-md"
-                        : "text-white/70 hover:text-white hover:bg-white/10"
-                    )}
-                  >
-                    {role}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-wrap gap-3">
-              <Link
-                to="/login"
-                className="group inline-flex items-center gap-2.5 bg-white text-gray-900 font-semibold py-3 px-7 rounded-full hover:bg-gray-100 transition-colors shadow-lg shadow-black/20"
-              >
-                <Rocket className="w-4 h-4" />
-                Explore Dashboard
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-              <Link
-                to="#demo"
-                className="group inline-flex items-center gap-2.5 border border-white/25 text-white font-medium py-3 px-7 rounded-full hover:bg-white/10 transition-colors backdrop-blur-sm"
-              >
-                <Play className="w-4 h-4" />
-                Watch Demo
-              </Link>
-            </div>
-
-            {/* Trust Badges */}
+        <div className="relative container mx-auto px-4 lg:px-8">
+          <div className="grid lg:grid-cols-[1.05fr_1fr] gap-12 items-start">
+            {/* Left column — your existing copy, restyled */}
             <motion.div
-              initial={{ y: 20, opacity: 0 }}
+              initial={{ y: 30, opacity: 0 }}
               animate={isHeroInView ? { y: 0, opacity: 1 } : {}}
-              transition={{ delay: 0.6 }}
-              className="mt-10 pt-6 border-t border-white/10"
+              transition={{ duration: 0.7 }}
             >
-              <p className="text-xs text-white/40 mb-3 tracking-wide">Built for Kenyan schools implementing CBC</p>
-              <div className="flex flex-wrap items-center gap-5">
-                {['KICD-Aligned', 'Pre-Primary to Grade 12', '4-Level Competency Scale', 'Parent & Teacher Portals'].map((name) => (
-                  <div key={name} className="flex items-center gap-1.5">
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400/80" />
-                    <span className="text-white/60 text-xs font-medium">{name}</span>
-                  </div>
-                ))}
+              <p className="text-sm font-semibold tracking-wide text-[#9C7A3C] mb-4">
+                Leading School Management Platform
+              </p>
+
+              <h1 className="text-3xl md:text-4xl lg:text-[2.75rem] font-bold text-[#1C1C1C] leading-[1.2] mb-6">
+                The School Management Platform for{' '}
+                <span className="text-[#1E3A28]">Kenya's CBC Curriculum</span>
+              </h1>
+
+              <p className="text-base md:text-lg text-[#4A4A44]/90 mb-8 max-w-xl leading-relaxed">
+                Noneaa helps schools manage curriculum, assess students using competency levels, track progress across all learning areas, and keep parents informed — from Pre-Primary to Senior Secondary.
+              </p>
+
+              {/* Role Selector — same roles/handler you already had, restyled as pills */}
+              <div className="mb-3">
+                <p className="text-xs font-semibold text-[#4A4A44]/60 mb-3 tracking-[0.2em] uppercase">
+                  Select your role
+                </p>
+                <div className="inline-flex flex-wrap rounded-full bg-white/70 border border-[#1E3A28]/10 p-1">
+                  {roles.map((role) => (
+                    <button
+                      key={role}
+                      onClick={() => handleRoleClick(role)}
+                      className={cn(
+                        "relative px-5 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                        selectedRole === role
+                          ? "bg-[#1E3A28] text-white shadow-md"
+                          : "text-[#1C1C1C]/70 hover:bg-white"
+                      )}
+                    >
+                      {role}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* CTA Buttons — same destinations you already had */}
+              <div className="flex flex-wrap gap-3 mb-10">
+                <Link
+                  to="/login"
+                  className="group inline-flex items-center gap-2.5 bg-[#1E3A28] text-white font-semibold py-3 px-7 rounded-full hover:bg-[#173420] transition-colors shadow-md"
+                >
+                  <Rocket className="w-4 h-4" />
+                  Explore Dashboard
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+                <Link
+                  to="#demo"
+                  className="group inline-flex items-center gap-2.5 border border-[#1E3A28]/25 text-[#1E3A28] font-medium py-3 px-7 rounded-full hover:bg-white transition-colors"
+                >
+                  <Play className="w-4 h-4" />
+                  Watch Demo
+                </Link>
+              </div>
+
+              {/* Testimonials — reusing your existing `testimonials` array verbatim */}
+              <div>
+                <p className="text-sm font-semibold text-[#1C1C1C] mb-4">Client Testimonials</p>
+                <div className="grid sm:grid-cols-2 gap-4 max-w-xl">
+                  {testimonials.map((t) => (
+                    <div key={t.author} className="bg-white/70 border border-[#1E3A28]/10 rounded-xl p-4">
+                      {/*
+                        TESTIMONIAL PHOTO SLOT
+                        Save the photo you download for this person to:
+                        Frontend/public/testimonials/<slug>.jpg
+                        e.g. Frontend/public/testimonials/oakwood-principal.jpg
+                        then set the src below to "/testimonials/oakwood-principal.jpg"
+                      */}
+                      <div className="w-9 h-9 rounded-full bg-[#1E3A28]/10 text-[#1E3A28] text-xs font-bold flex items-center justify-center mb-3 overflow-hidden">
+                        {t.avatar}
+                      </div>
+                      <p className="text-xs text-[#4A4A44]/90 leading-relaxed mb-2">"{t.quote}"</p>
+                      <p className="text-xs font-semibold text-[#1C1C1C]">{t.author}</p>
+                      <p className="text-[11px] text-[#4A4A44]/70">{t.role}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Trust badges — same content you already had */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={isHeroInView ? { y: 0, opacity: 1 } : {}}
+                transition={{ delay: 0.6 }}
+                className="mt-8 pt-6 border-t border-[#1E3A28]/10"
+              >
+                <div className="flex flex-wrap items-center gap-5">
+                  {['KICD-Aligned', 'Pre-Primary to Grade 12', '4-Level Competency Scale', 'Parent & Teacher Portals'].map((name) => (
+                    <div key={name} className="flex items-center gap-1.5">
+                      <CheckCircle className="w-3.5 h-3.5 text-[#1E3A28]/70" />
+                      <span className="text-[#4A4A44]/70 text-xs font-medium">{name}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </motion.div>
+
+            {/* Right column — laptop mockup photo slot */}
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={isHeroInView ? { y: 0, opacity: 1 } : {}}
+              transition={{ duration: 0.7, delay: 0.15 }}
+              className="relative lg:sticky lg:top-28"
+            >
+              {/*
+                LAPTOP MOCKUP PHOTO SLOT
+                Save the laptop/dashboard photo you download to:
+                Frontend/public/hero-laptop-dashboard.png
+                It will then show up automatically at the src path below.
+              */}
+              <img
+                src="/hero-laptop-dashboard.png"
+                alt="Noneaa dashboard shown on a laptop"
+                className="w-full h-auto rounded-2xl"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+
+              {/* Floating live-support pill, matching reference bottom-right */}
+              <div className="absolute bottom-4 right-4 flex items-center gap-2 bg-[#1E3A28] text-white text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
+                <Play className="w-3 h-3" />
+                Live Support
               </div>
             </motion.div>
-          </motion.div>
+          </div>
         </div>
-
       </section>
 
       {/* Quick Access Tools - Enhanced */}
