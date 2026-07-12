@@ -89,8 +89,8 @@ export default function Footer() {
     <footer className="relative bg-[#0b0f1a] text-slate-300 overflow-hidden border-t border-slate-800/50">
       {/* Dynamic Background */}
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-blue-600/5 blur-[120px] rounded-full" />
-        <div className="absolute bottom-0 right-1/4 w-[300px] h-[300px] bg-indigo-600/5 blur-[100px] rounded-full" />
+        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-emerald-600/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-0 right-1/4 w-[300px] h-[300px] bg-teal-600/5 blur-[100px] rounded-full" />
       </div>
 
       <motion.div
@@ -121,7 +121,7 @@ export default function Footer() {
                 <a
                   key={idx}
                   href="#"
-                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-white hover:bg-blue-600 hover:border-blue-500 transition-all duration-300"
+                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-white hover:bg-emerald-600 hover:border-emerald-500 transition-all duration-300"
                 >
                   <Icon size={18} />
                 </a>
@@ -138,9 +138,9 @@ export default function Footer() {
                   <Link
                     key={link.label}
                     to={link.href}
-                    className="group flex items-center gap-3 text-slate-400 hover:text-blue-400 transition-all"
+                    className="group flex items-center gap-3 text-slate-400 hover:text-emerald-400 transition-all"
                   >
-                    <link.icon size={14} className="text-slate-600 group-hover:text-blue-500 transition-colors" />
+                    <link.icon size={14} className="text-slate-600 group-hover:text-emerald-500 transition-colors" />
                     <span className="text-sm font-medium">{link.label}</span>
                   </Link>
                 ))}
@@ -154,9 +154,9 @@ export default function Footer() {
                   <Link
                     key={link.label}
                     to={link.href}
-                    className="group flex items-center gap-3 text-slate-400 hover:text-blue-400 transition-all"
+                    className="group flex items-center gap-3 text-slate-400 hover:text-emerald-400 transition-all"
                   >
-                    <link.icon size={14} className="text-slate-600 group-hover:text-blue-500 transition-colors" />
+                    <link.icon size={14} className="text-slate-600 group-hover:text-emerald-500 transition-colors" />
                     <span className="text-sm font-medium">{link.label}</span>
                   </Link>
                 ))}
@@ -181,7 +181,7 @@ export default function Footer() {
                       if (emailError) setEmailError(false);
                     }}
                     placeholder="email@school.ke"
-                    className={`pl-11 h-11 bg-slate-900/50 border-slate-700/50 rounded-xl focus-visible:ring-blue-500 text-sm transition-colors ${
+                    className={`pl-11 h-11 bg-slate-900/50 border-slate-700/50 rounded-xl focus-visible:ring-emerald-500 text-sm transition-colors ${
                       emailError ? 'border-red-500 focus-visible:ring-red-500' : ''
                     }`}
                   />
@@ -190,7 +190,7 @@ export default function Footer() {
                 <Button
                   onClick={handleSubscribe}
                   disabled={loading || success || alreadySubscribed}
-                  className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 disabled:opacity-75"
+                  className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-75"
                 >
                   {success || alreadySubscribed ? "✓ Subscribed" : loading ? "Subscribing..." : "Subscribe"}
                 </Button>
@@ -206,7 +206,7 @@ export default function Footer() {
               </div>
 
               <div className="mt-6 pt-6 border-t border-slate-700/50 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
                   <Phone size={16} />
                 </div>
                 <div>
@@ -238,7 +238,7 @@ export default function Footer() {
               <Link
                 key={item.label}
                 to={item.href}
-                className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 hover:text-blue-500 transition-colors"
+                className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 hover:text-emerald-500 transition-colors"
               >
                 {item.label}
               </Link>
