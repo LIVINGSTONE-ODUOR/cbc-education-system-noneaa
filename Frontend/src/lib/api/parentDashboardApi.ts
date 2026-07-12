@@ -242,7 +242,7 @@ export interface SchoolEvent {
   start_time: string | null;
   location: string | null;
   audience: string;
-  event_type: 'event' | 'holiday' | 'pta_meeting';
+  event_type: 'event' | 'holiday' | 'pta_meeting' | 'term_start' | 'term_end' | 'sports' | 'activity';
 }
 
 export interface SchoolEventsResponse {
@@ -250,11 +250,11 @@ export interface SchoolEventsResponse {
 }
 
 /**
- * GET /api/v1/parent-dashboard/events?limit=10&type=event|holiday|pta_meeting
+ * GET /api/v1/parent-dashboard/events?limit=10&type=event|holiday|pta_meeting|term_start|term_end|sports|activity
  */
 export const getSchoolEvents = async (
   limit = 10,
-  type?: 'event' | 'holiday' | 'pta_meeting'
+  type?: 'event' | 'holiday' | 'pta_meeting' | 'term_start' | 'term_end' | 'sports' | 'activity'
 ): Promise<ApiResponse<SchoolEventsResponse>> => {
   const params = new URLSearchParams({ limit: String(limit) });
   if (type) params.set('type', type);
