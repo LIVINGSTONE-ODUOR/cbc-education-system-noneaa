@@ -86,6 +86,70 @@ export const markMessageRead = async (id: string): Promise<ApiResponse<Record<st
   return handleResponse<ApiResponse<Record<string, never>>>(response);
 };
 
+// ── Messaging: contacts, send, conversation (chat + reply) ───────────────
+
+export interface MessageContact {
+  user_id: string;
+  name: string;
+  role_label: string; // e.g. "Class Teacher", "Mathematics Teacher", "Principal"
+}
+
+export interface MessageContactsResponse {
+  teachers: MessageContact[];
+  principal: MessageContact | null;
+}
+
+/**
+ * GET /api/v1/parent-dashboard/learner/:learnerId/contacts
+ * Who the parent can message about this child.
+ */
+export const getMessageContacts = async (
+  learnerId: string
+): Promise<ApiResponse<MessageContactsResponse>> => {
+  const url = `${API_URL}/api/v1/parent-dashboard/learner/${learnerId}/contacts`;
+  const response = await fetch(url, getFetchOptions('GET'));
+  return handleResponse<ApiResponse<MessageContactsResponse>>(response);
+};
+
+export interface ConversationMessage {
+  id: string;
+  subject: string | null;
+  body: string;
+  is_read: boolean;
+  created_at: string;
+  sender_user_id: string;
+  recipient_user_id: string;
+  sender?: { id: string; first_name: string; last_name: string; role: string } | null;
+}
+
+/**
+ * POST /api/v1/parent-dashboard/messages
+ * Sends a new message, or a reply within an existing conversation.
+ */
+export const sendMessage = async (payload: {
+  recipient_user_id: string;
+  learner_id: string;
+  subject?: string;
+  body: string;
+}): Promise<ApiResponse<ConversationMessage>> => {
+  const url = `${API_URL}/api/v1/parent-dashboard/messages`;
+  const response = await fetch(url, getFetchOptions('POST', payload));
+  return handleResponse<ApiResponse<ConversationMessage>>(response);
+};
+
+/**
+ * GET /api/v1/parent-dashboard/messages/conversation/:otherUserId?learner_id=...
+ * Full back-and-forth with one contact about one learner.
+ */
+export const getConversation = async (
+  otherUserId: string,
+  learnerId: string
+): Promise<ApiResponse<{ messages: ConversationMessage[] }>> => {
+  const url = `${API_URL}/api/v1/parent-dashboard/messages/conversation/${otherUserId}?learner_id=${encodeURIComponent(learnerId)}`;
+  const response = await fetch(url, getFetchOptions('GET'));
+  return handleResponse<ApiResponse<{ messages: ConversationMessage[] }>>(response);
+};
+
 // ── Announcements ───────────────────────────────────────────────────────
 
 export interface DashboardAnnouncement {
