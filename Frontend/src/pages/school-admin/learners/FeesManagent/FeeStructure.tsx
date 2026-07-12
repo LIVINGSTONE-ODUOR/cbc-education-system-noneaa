@@ -32,7 +32,9 @@ import {
   AlertCircle,
   School,
   GraduationCap,
-  DollarSign
+  DollarSign,
+  Sparkles,
+  Check
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -44,6 +46,7 @@ import {
   CreateFeeStructurePayload,
   UpdateFeeStructurePayload
 } from '@/lib/api/feeStructureApi';
+import { FEE_STRUCTURE_TEMPLATES, estimateAnnualTotal, FeeStructureTemplate } from './feeStructureTemplates';
 
 // Academic year types (matching backend)
 interface AcademicYear {
@@ -144,6 +147,12 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedFee, setSelectedFee] = useState<FeeStructure | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Template picker state
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<FeeStructureTemplate | null>(null);
+  const [templateGrade, setTemplateGrade] = useState<string>('');
+  const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState<{
@@ -395,7 +404,58 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
     }
   };
 
-  // Open edit dialog
+  // Apply a chosen template: create one fee structure per template item
+  // for the selected grade (or All Grades) in the current academic year.
+  const applyTemplate = async () => {
+    if (!selectedTemplate) return;
+    if (!selectedYear || !isValidUUID(selectedYear)) {
+      toast.error('Select a real academic year first (not a placeholder) before applying a template.');
+      return;
+    }
+
+    setIsApplyingTemplate(true);
+    let succeeded = 0;
+    let skipped = 0;
+
+    for (const item of selectedTemplate.items) {
+      // Skip zero-amount placeholder items (e.g. "government funded" tuition)
+      // — nothing to bill, so no fee record is needed.
+      if (item.amount <= 0) {
+        skipped++;
+        continue;
+      }
+      try {
+        await createFeeStructure({
+          academic_year_id: selectedYear,
+          name: item.label,
+          grade_level: templateGrade || undefined,
+          category: item.category,
+          amount: item.amount,
+          frequency: item.frequency,
+          is_mandatory: item.is_mandatory,
+          description: item.note,
+        });
+        succeeded++;
+      } catch (err: any) {
+        // Most likely a duplicate (already applied before) — skip and continue.
+        console.warn('[FeeStructure] Template item skipped:', item.label, err.message);
+        skipped++;
+      }
+    }
+
+    setIsApplyingTemplate(false);
+    setIsTemplateDialogOpen(false);
+    setSelectedTemplate(null);
+    setTemplateGrade('');
+
+    if (succeeded > 0) {
+      toast.success(`Applied "${selectedTemplate.name}" — ${succeeded} fee item${succeeded === 1 ? '' : 's'} created${skipped > 0 ? `, ${skipped} skipped` : ''}.`);
+      fetchFeeStructures();
+    } else {
+      toast.error('No fee items were created — they may already exist for this grade and year.');
+    }
+  };
+
   const openEditDialog = (fee: FeeStructure) => {
     setSelectedFee(fee);
     setFormData({
@@ -741,6 +801,120 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
                     Create Fee
                   </Button>
                 </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {isAdmin && (
+            <Dialog
+              open={isTemplateDialogOpen}
+              onOpenChange={(open) => {
+                setIsTemplateDialogOpen(open);
+                if (!open) {
+                  setSelectedTemplate(null);
+                  setTemplateGrade('');
+                }
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Use Template
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[720px] max-h-[85vh] overflow-y-auto">
+                {!selectedTemplate ? (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle>Choose a fee structure template</DialogTitle>
+                      <DialogDescription>
+                        Start from a typical Kenyan school fee structure, then customize amounts afterward. Applies to the academic year selected below ({currentYearName}).
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-2">
+                      {FEE_STRUCTURE_TEMPLATES.map((template) => (
+                        <button
+                          key={template.id}
+                          type="button"
+                          onClick={() => setSelectedTemplate(template)}
+                          className="text-left border rounded-lg p-4 hover:border-primary hover:shadow-sm transition-all"
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-1.5">
+                            <span className="font-semibold text-sm">{template.name}</span>
+                            <Badge variant="outline" className="shrink-0 text-[10px]">{template.tag}</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-3">{template.description}</p>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">{template.items.length} fee items</span>
+                            <span className="font-semibold">
+                              ~KES {estimateAnnualTotal(template.items).toLocaleString()}/yr
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" className="h-7 px-2 -ml-2" onClick={() => setSelectedTemplate(null)}>
+                          ← Back
+                        </Button>
+                      </DialogTitle>
+                      <DialogTitle>{selectedTemplate.name}</DialogTitle>
+                      <DialogDescription>{selectedTemplate.description}</DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-2">
+                      <div className="grid gap-2">
+                        <Label>Apply to grade</Label>
+                        <Select value={templateGrade} onValueChange={setTemplateGrade}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="All Grades" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">All Grades</SelectItem>
+                            {VALID_GRADES.map((grade) => (
+                              <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="border rounded-lg divide-y">
+                        {selectedTemplate.items.map((item, i) => (
+                          <div key={i} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">{item.label}</p>
+                              <p className="text-xs text-muted-foreground capitalize">
+                                {item.category} · {getFrequencyLabel(item.frequency)}
+                                {!item.is_mandatory && ' · Optional'}
+                              </p>
+                            </div>
+                            <span className="font-semibold shrink-0">
+                              {item.amount > 0 ? `KES ${item.amount.toLocaleString()}` : 'Free'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setSelectedTemplate(null)} disabled={isApplyingTemplate}>
+                        Cancel
+                      </Button>
+                      <Button onClick={applyTemplate} disabled={isApplyingTemplate}>
+                        {isApplyingTemplate ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <Check className="h-4 w-4 mr-2" />
+                        )}
+                        Apply Template
+                      </Button>
+                    </DialogFooter>
+                  </>
+                )}
               </DialogContent>
             </Dialog>
           )}
@@ -1132,4 +1306,3 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
     </div>
   );
 }
-
