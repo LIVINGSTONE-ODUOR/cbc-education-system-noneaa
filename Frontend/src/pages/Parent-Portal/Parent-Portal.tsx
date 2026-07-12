@@ -23,6 +23,7 @@ import {
   getChildProfile, ChildProfileResponse,
 } from '@/lib/api/parentDashboardApi';
 import MarksPanel from '@/components/marks/MarksPanel';
+import PerformanceTrends from '@/components/marks/PerformanceTrends';
 
 const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const todayDayOfWeek = () => {
@@ -998,6 +999,20 @@ const ParentPortal = () => {
               reloadKey={selectedChildId}
               emptyMessage={`No marks have been recorded for ${selectedChild.first_name} yet.`}
             />
+          )}
+
+          {/* Performance trends — subject progress, term comparison, overall
+              academic growth, and analytics. Needs at least 2 exams of
+              history, otherwise there's nothing to plot a trend from. */}
+          {selectedChild && (
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Performance Trends</h3>
+              <PerformanceTrends
+                learnerId={selectedChildId}
+                reloadKey={selectedChildId}
+                emptyMessage={`Not enough exam history yet to show trends for ${selectedChild.first_name}.`}
+              />
+            </div>
           )}
         </div>
       </div>
