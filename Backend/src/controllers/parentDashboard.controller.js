@@ -143,6 +143,171 @@ const markMessageRead = asyncHandler(async (req, res) => {
 });
 
 // -----------------------------------------------------------------------
+// 1b. Messaging — contacts, send, conversation
+//     (the sections above only ever supported a read-only inbox; parents
+//     had no way to reply or start a conversation until now)
+// -----------------------------------------------------------------------
+
+// GET /api/v1/parent-dashboard/learner/:learnerId/contacts
+// Everyone the parent can message about this child: the class teacher,
+// any subject teachers assigned to their class, and the school's principal.
+const getMessageContacts = asyncHandler(async (req, res) => {
+  const schoolId = getSchoolId(req);
+  const { id: userId, role } = req.user;
+  const { learnerId } = req.params;
+
+  if (role === 'parent' && !(await verifyParentLink(userId, learnerId))) {
+    return res.status(403).json({ success: false, message: "Not authorized to view this learner's contacts" });
+  }
+
+  const classId = await getLearnerClassId(learnerId);
+  const byUserId = new Map();
+
+  if (classId) {
+    const { data: classRow } = await supabase
+      .from('classes')
+      .select('teachers:class_teacher_id ( id, user_id, first_name, last_name )')
+      .eq('id', classId)
+      .maybeSingle();
+
+    const { data: assignments } = await supabase
+      .from('teacher_assignments')
+      .select('teachers:teacher_id ( id, user_id, first_name, last_name ), learning_areas:learning_area_id ( name )')
+      .eq('class_id', classId)
+      .eq('is_active', true)
+      .is('deleted_at', null);
+
+    if (classRow?.teachers?.user_id) {
+      byUserId.set(classRow.teachers.user_id, {
+        user_id: classRow.teachers.user_id,
+        name: `${classRow.teachers.first_name || ''} ${classRow.teachers.last_name || ''}`.trim(),
+        role_label: 'Class Teacher',
+      });
+    }
+    (assignments || []).forEach((a) => {
+      const t = a.teachers;
+      if (!t?.user_id || byUserId.has(t.user_id)) return;
+      byUserId.set(t.user_id, {
+        user_id: t.user_id,
+        name: `${t.first_name || ''} ${t.last_name || ''}`.trim(),
+        role_label: a.learning_areas?.name ? `${a.learning_areas.name} Teacher` : 'Subject Teacher',
+      });
+    });
+  }
+
+  const { data: principalRow } = await supabase
+    .from('school_admins')
+    .select('user_id, users:user_id ( first_name, last_name )')
+    .eq('school_id', schoolId)
+    .eq('is_principal', true)
+    .maybeSingle();
+
+  const principal = principalRow?.users
+    ? {
+        user_id: principalRow.user_id,
+        name: `${principalRow.users.first_name || ''} ${principalRow.users.last_name || ''}`.trim(),
+        role_label: 'Principal',
+      }
+    : null;
+
+  return res.json({
+    success: true,
+    message: 'Contacts fetched successfully',
+    data: { teachers: [...byUserId.values()], principal },
+  });
+});
+
+// POST /api/v1/parent-dashboard/messages
+// Body: { recipient_user_id, learner_id, subject?, body }
+// Sends a new message or a reply within an existing conversation.
+const sendMessage = asyncHandler(async (req, res) => {
+  const schoolId = getSchoolId(req);
+  const { id: userId, role } = req.user;
+  const { recipient_user_id, learner_id, subject, body } = req.body;
+
+  if (!recipient_user_id || !learner_id || !body?.trim()) {
+    return res.status(400).json({ success: false, message: 'recipient_user_id, learner_id, and body are required' });
+  }
+
+  if (role === 'parent' && !(await verifyParentLink(userId, learner_id))) {
+    return res.status(403).json({ success: false, message: 'Not authorized to message about this learner' });
+  }
+
+  // Recipient must be a staff member (teacher or school_admin/principal) at the same school.
+  const { data: recipient } = await supabase
+    .from('users')
+    .select('id, role, school_id')
+    .eq('id', recipient_user_id)
+    .maybeSingle();
+
+  if (!recipient || recipient.school_id !== schoolId || !['teacher', 'school_admin'].includes(recipient.role)) {
+    return res.status(400).json({ success: false, message: 'Invalid recipient' });
+  }
+
+  const { data: created, error } = await supabase
+    .from('messages')
+    .insert({
+      sender_user_id: userId,
+      recipient_user_id,
+      learner_id,
+      subject: subject?.trim() || null,
+      body: body.trim(),
+      is_read: false,
+    })
+    .select('id, subject, body, is_read, created_at, sender_user_id, recipient_user_id')
+    .single();
+
+  if (error) {
+    return res.status(500).json({ success: false, message: 'Failed to send message', error: error.message });
+  }
+
+  return res.status(201).json({ success: true, message: 'Message sent', data: created });
+});
+
+// GET /api/v1/parent-dashboard/messages/conversation/:otherUserId?learner_id=...
+// Full back-and-forth with one contact about one learner. Marks any
+// messages addressed to the caller as read.
+const getConversation = asyncHandler(async (req, res) => {
+  const { id: userId, role } = req.user;
+  const { otherUserId } = req.params;
+  const { learner_id } = req.query;
+
+  if (!learner_id) {
+    return res.status(400).json({ success: false, message: 'learner_id is required' });
+  }
+
+  if (role === 'parent' && !(await verifyParentLink(userId, learner_id))) {
+    return res.status(403).json({ success: false, message: 'Not authorized to view this conversation' });
+  }
+
+  const { data: messages, error } = await supabase
+    .from('messages')
+    .select(`
+      id, subject, body, is_read, created_at, sender_user_id, recipient_user_id,
+      sender:sender_user_id ( id, first_name, last_name, role )
+    `)
+    .eq('learner_id', learner_id)
+    .or(
+      `and(sender_user_id.eq.${userId},recipient_user_id.eq.${otherUserId}),and(sender_user_id.eq.${otherUserId},recipient_user_id.eq.${userId})`
+    )
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch conversation', error: error.message });
+  }
+
+  const unreadIds = (messages || [])
+    .filter((m) => m.recipient_user_id === userId && !m.is_read)
+    .map((m) => m.id);
+
+  if (unreadIds.length > 0) {
+    await supabase.from('messages').update({ is_read: true }).in('id', unreadIds);
+  }
+
+  return res.json({ success: true, message: 'Conversation fetched successfully', data: { messages: messages || [] } });
+});
+
+// -----------------------------------------------------------------------
 // 2. Announcements
 // -----------------------------------------------------------------------
 
@@ -378,6 +543,9 @@ const getChildProfile = asyncHandler(async (req, res) => {
 module.exports = {
   getMessages,
   markMessageRead,
+  getMessageContacts,
+  sendMessage,
+  getConversation,
   getAnnouncements,
   getTeacherComments,
   getTimetable,
