@@ -203,7 +203,7 @@ app.use('/api/v1/academic-years', require('./routes/academicYear.routes'));
 app.use('/api/v1/teachers', require('./routes/teacher.routes'));
 app.use('/api/v1/curriculum', require('./routes/curriculum.routes'));
 app.use('/api/v1/departments', require('./routes/department.routes'));
-app.use('/api/v1/fee-structure', require('./routes/feeStructure.routes'));
+app.use('/api/v1/fee-structures', require('./routes/feeStructure.routes'));
 app.use('/api/v1/ai', require('./routes/ai.routes'));
 app.use('/api/v1/ai-assistant', require('./routes/aiAssistant.routes'));
 app.use('/api/v1/live-chat', require('./routes/liveChat.routes'));
