@@ -607,17 +607,17 @@ export default function HomePage() {
               transition={{ duration: 0.7, delay: 0.15 }}
               className="relative lg:sticky lg:top-28"
             >
-              {/* Decorative floating icons, echoing the reference top area */}
-              <div className="hidden md:flex absolute -top-12 left-0 right-10 items-start justify-between text-[#1E3A28]/40 z-0 px-4">
+              {/* Decorative icon cluster, echoing the reference top-left corner */}
+              <div className="flex items-end gap-3 mb-3 text-[#1E3A28]/45 z-0 relative">
                 <Settings className="w-10 h-10" strokeWidth={1.3} />
-                <BarChart3 className="w-9 h-9 mt-2" strokeWidth={1.3} />
+                <BookOpen className="w-8 h-8 mb-1" strokeWidth={1.3} />
+                <BarChart3 className="w-9 h-9" strokeWidth={1.3} />
                 <TrendingUp className="w-10 h-10" strokeWidth={1.3} />
               </div>
-              <BookOpen className="hidden md:block absolute top-1/3 -left-12 w-8 h-8 text-[#1E3A28]/35 z-0" strokeWidth={1.3} />
 
               {/* Large gear shape, half-hidden behind the laptop photo top-right corner */}
               <Settings
-                className="hidden md:block absolute -top-16 -right-14 w-48 h-48 text-[#1E3A28]/15 z-0"
+                className="hidden md:block absolute -top-6 -right-14 w-48 h-48 text-[#1E3A28]/15 z-0"
                 strokeWidth={1}
               />
 
