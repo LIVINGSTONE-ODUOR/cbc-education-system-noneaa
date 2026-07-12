@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   User, BookOpen, Loader2, AlertCircle, CalendarCheck, Wallet, ClipboardList,
@@ -34,6 +35,18 @@ import Messages from './components/Messages';
 import Announcements from './components/Announcements';
 import SchoolCalendar from './components/SchoolCalendar';
 import Settings from './components/Settings';
+import {
+  AttendanceSummarySkeleton,
+  LatestAverageSkeleton,
+  AssignmentsDueSkeleton,
+  UpcomingExamsSkeleton,
+  UnreadMessagesSkeleton,
+  LatestAnnouncementsSkeleton,
+  TeacherCommentsSkeleton,
+  TodaysTimetableSkeleton,
+  SchoolEventsSkeleton,
+  ChildProfileSkeleton,
+} from './components/OverviewSkeletons';
 import { useAuth } from '@/contexts/AuthContext';
 
 const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -411,9 +424,9 @@ const ParentPortal = () => {
             <div className="min-w-0">
               <h1 className="text-sm font-bold leading-tight truncate">Parent Portal</h1>
               <p className="text-[11px] text-muted-foreground truncate">
-                {loadingChildren
-                  ? 'Loading...'
-                  : children.length > 1
+                {loadingChildren ? (
+                  <Skeleton className="h-2.5 w-20 inline-block align-middle" />
+                ) : children.length > 1
                   ? `${children.length} children linked`
                   : 'Welcome back'}
               </p>
@@ -594,9 +607,7 @@ const ParentPortal = () => {
                   </CardHeader>
                   <CardContent>
                     {loadingAttendance ? (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
-                      </div>
+                      <AttendanceSummarySkeleton />
                     ) : attendanceError ? (
                       <p className="text-sm text-red-600 flex items-center gap-1">
                         <AlertCircle className="h-4 w-4" /> {attendanceError}
@@ -646,9 +657,7 @@ const ParentPortal = () => {
                   </CardHeader>
                   <CardContent>
                     {loadingResults ? (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
-                      </div>
+                      <LatestAverageSkeleton />
                     ) : !latestExam ? (
                       <p className="text-sm text-muted-foreground">No exam results recorded yet.</p>
                     ) : (
@@ -682,9 +691,7 @@ const ParentPortal = () => {
                   </CardHeader>
                   <CardContent>
                     {loadingAssignments ? (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
-                      </div>
+                      <AssignmentsDueSkeleton />
                     ) : assignmentsError ? (
                       <p className="text-sm text-red-600 flex items-center gap-1">
                         <AlertCircle className="h-4 w-4" /> {assignmentsError}
@@ -735,9 +742,7 @@ const ParentPortal = () => {
                   </CardHeader>
                   <CardContent>
                     {loadingExams ? (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
-                      </div>
+                      <UpcomingExamsSkeleton />
                     ) : examsError ? (
                       <p className="text-sm text-red-600 flex items-center gap-1">
                         <AlertCircle className="h-4 w-4" /> {examsError}
@@ -788,9 +793,7 @@ const ParentPortal = () => {
                   </CardHeader>
                   <CardContent>
                     {loadingMessages ? (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
-                      </div>
+                      <UnreadMessagesSkeleton />
                     ) : messagesError ? (
                       <p className="text-sm text-red-600 flex items-center gap-1">
                         <AlertCircle className="h-4 w-4" /> {messagesError}
@@ -831,9 +834,7 @@ const ParentPortal = () => {
                   </CardHeader>
                   <CardContent>
                     {loadingAnnouncements ? (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
-                      </div>
+                      <LatestAnnouncementsSkeleton />
                     ) : announcementsError ? (
                       <p className="text-sm text-red-600 flex items-center gap-1">
                         <AlertCircle className="h-4 w-4" /> {announcementsError}
@@ -866,9 +867,7 @@ const ParentPortal = () => {
                   </CardHeader>
                   <CardContent>
                     {loadingComments ? (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
-                      </div>
+                      <TeacherCommentsSkeleton />
                     ) : commentsError ? (
                       <p className="text-sm text-red-600 flex items-center gap-1">
                         <AlertCircle className="h-4 w-4" /> {commentsError}
@@ -901,9 +900,7 @@ const ParentPortal = () => {
                   </CardHeader>
                   <CardContent>
                     {loadingTimetable ? (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
-                      </div>
+                      <TodaysTimetableSkeleton />
                     ) : timetableError ? (
                       <p className="text-sm text-red-600 flex items-center gap-1">
                         <AlertCircle className="h-4 w-4" /> {timetableError}
@@ -940,9 +937,7 @@ const ParentPortal = () => {
                   </CardHeader>
                   <CardContent>
                     {loadingEvents ? (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
-                      </div>
+                      <SchoolEventsSkeleton />
                     ) : eventsError ? (
                       <p className="text-sm text-red-600 flex items-center gap-1">
                         <AlertCircle className="h-4 w-4" /> {eventsError}
@@ -982,9 +977,7 @@ const ParentPortal = () => {
               </CardHeader>
               <CardContent>
                 {loadingProfile ? (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Loading...
-                  </div>
+                  <ChildProfileSkeleton />
                 ) : profileError ? (
                   <p className="text-sm text-red-600 flex items-center gap-1">
                     <AlertCircle className="h-4 w-4" /> {profileError}
