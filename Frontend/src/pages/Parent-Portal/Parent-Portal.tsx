@@ -28,6 +28,8 @@ import ReportCards from './components/ReportCards';
 import Attendance from './components/Attendance';
 import Assignments from './components/Assignments';
 import Timetable from './components/Timetable';
+import Messages from './components/Messages';
+import { useAuth } from '@/contexts/AuthContext';
 
 const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const todayDayOfWeek = () => {
@@ -50,6 +52,7 @@ interface Child {
 
 
 const ParentPortal = () => {
+  const { user } = useAuth();
   const [children, setChildren] = useState<Child[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string>('');
   const [loadingChildren, setLoadingChildren] = useState(true);
@@ -1042,6 +1045,16 @@ const ParentPortal = () => {
               learnerId={selectedChildId}
               reloadKey={selectedChildId}
               emptyMessage={`No timetable set up yet for ${selectedChild.first_name}.`}
+            />
+          )}
+
+          {/* Messages — chat with teachers, message the principal, and
+              reply to school messages (the old widget was read-only). */}
+          {selectedChild && user?.id && (
+            <Messages
+              learnerId={selectedChildId}
+              currentUserId={user.id}
+              reloadKey={selectedChildId}
             />
           )}
 
