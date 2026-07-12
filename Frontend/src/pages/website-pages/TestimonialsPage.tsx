@@ -63,27 +63,29 @@ const stats = [
 
 export default function TestimonialsPage() {
   return (
-    <div className="min-h-screen bg-[#e8edf5]">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
 
       {/* Hero */}
-      <section className="pt-32 pb-16 bg-gradient-to-b from-slate-50 to-white">
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 text-center">
+      <section className="relative pt-32 pb-16 bg-[#F6F1E7] overflow-hidden">
+        <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-[#1E3A28]/10 blur-2xl pointer-events-none" />
+        <div className="absolute top-1/4 -right-10 w-64 h-64 rounded-full bg-[#1E3A28]/[0.08] blur-2xl pointer-events-none" />
+        <div className="relative max-w-7xl mx-auto px-6 lg:px-12 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
             <p
-              className="text-3xl text-blue-600 mb-3"
+              className="text-3xl text-[#9C7A3C] mb-3"
               style={{ fontFamily: "'Italianno', cursive" }}
             >
               Testimonials
             </p>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-4">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#1C1C1C] mb-4">
               Trusted by Schools Across Kenya
             </h1>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            <p className="text-lg text-[#4A4A44]/90 max-w-2xl mx-auto">
               Hear from principals, teachers, and administrators who are using Noneaa to simplify competency-based education management.
             </p>
           </motion.div>
@@ -91,13 +93,13 @@ export default function TestimonialsPage() {
       </section>
 
       {/* Stats Bar */}
-      <section className="py-10 bg-blue-600">
+      <section className="py-10 bg-[#1E3A28]">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center text-white">
             {stats.map((stat) => (
               <div key={stat.label}>
                 <div className="text-3xl md:text-4xl font-bold">{stat.value}</div>
-                <div className="text-sm text-blue-100 mt-1">{stat.label}</div>
+                <div className="text-sm text-[#E4C68A] mt-1">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -105,7 +107,7 @@ export default function TestimonialsPage() {
       </section>
 
       {/* Testimonials Grid */}
-      <section className="py-20">
+      <section className="py-20 bg-[#F6F1E7]">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {testimonials.map((testimonial, index) => (
@@ -115,34 +117,34 @@ export default function TestimonialsPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="border border-slate-200 rounded-xl p-6 flex flex-col hover:shadow-md transition-shadow"
+                className="bg-white border border-[#1E3A28]/10 rounded-xl p-6 flex flex-col hover:shadow-md transition-shadow"
               >
-                <Quote className="w-8 h-8 text-blue-100 mb-4" />
-                <p className="text-sm text-slate-700 leading-relaxed flex-1 mb-5">
+                <Quote className="w-8 h-8 text-[#1E3A28]/15 mb-4" />
+                <p className="text-sm text-[#4A4A44] leading-relaxed flex-1 mb-5">
                   "{testimonial.quote}"
                 </p>
 
                 {/* Metric */}
-                <div className="bg-blue-50 rounded-lg px-4 py-3 mb-5">
-                  <div className="text-xl font-bold text-blue-700">{testimonial.metric.value}</div>
-                  <div className="text-xs text-blue-600">{testimonial.metric.label}</div>
+                <div className="bg-[#1E3A28]/5 rounded-lg px-4 py-3 mb-5">
+                  <div className="text-xl font-bold text-[#1E3A28]">{testimonial.metric.value}</div>
+                  <div className="text-xs text-[#1E3A28]/70">{testimonial.metric.label}</div>
                 </div>
 
                 {/* Author */}
-                <div className="flex items-center gap-3 border-t border-slate-100 pt-4">
-                  <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-semibold text-sm">
+                <div className="flex items-center gap-3 border-t border-[#1E3A28]/10 pt-4">
+                  <div className="w-10 h-10 rounded-full bg-[#F6F1E7] flex items-center justify-center text-[#1E3A28] font-semibold text-sm">
                     {testimonial.name.split(' ').map(n => n[0]).join('')}
                   </div>
                   <div>
-                    <div className="font-semibold text-slate-900 text-sm">{testimonial.name}</div>
-                    <div className="text-xs text-slate-500">{testimonial.role}, {testimonial.school}</div>
+                    <div className="font-semibold text-[#1C1C1C] text-sm">{testimonial.name}</div>
+                    <div className="text-xs text-[#4A4A44]/70">{testimonial.role}, {testimonial.school}</div>
                   </div>
                 </div>
 
                 {/* Rating */}
                 <div className="flex gap-0.5 mt-3">
                   {Array.from({ length: testimonial.rating }).map((_, i) => (
-                    <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />
+                    <Star key={i} className="w-4 h-4 text-[#9C7A3C] fill-[#9C7A3C]" />
                   ))}
                 </div>
               </motion.div>
@@ -152,25 +154,25 @@ export default function TestimonialsPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 bg-slate-50 border-t border-slate-200">
+      <section className="py-16 bg-white border-t border-[#1E3A28]/10">
         <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-[#1C1C1C] mb-4">
             Ready to Join 150+ Schools?
           </h2>
-          <p className="text-slate-600 mb-8">
+          <p className="text-[#4A4A44]/90 mb-8">
             Start your free trial today and see why schools across Kenya trust Noneaa for CBE management.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a
               href="/get-started"
-              className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
+              className="inline-flex items-center justify-center gap-2 bg-[#1E3A28] hover:bg-[#173420] text-white font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
             >
               Start Free Trial
               <ArrowRight className="w-4 h-4" />
             </a>
             <a
               href="/contact"
-              className="inline-flex items-center justify-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
+              className="inline-flex items-center justify-center gap-2 bg-[#F6F1E7] border border-[#1E3A28]/15 hover:bg-[#EDE4D3] text-[#1C1C1C] font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
             >
               Contact Sales
             </a>
