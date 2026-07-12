@@ -88,6 +88,20 @@ export function UpcomingExamsSkeleton() {
   );
 }
 
+// 5. Fee structure — grade label line, then up to 5 fee item rows.
+export function FeeStructureSkeleton() {
+  return (
+    <div className="space-y-3">
+      <Skeleton className="h-3 w-24" />
+      <div className="space-y-2">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <ListRowSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // 6. Unread messages — up to 4 rows (subject + sender).
 export function UnreadMessagesSkeleton() {
   return (
