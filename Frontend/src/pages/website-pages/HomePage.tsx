@@ -527,7 +527,10 @@ export default function HomePage() {
             transition={{ duration: 0.8 }}
             className="max-w-3xl"
           >
-            <p className="text-xl font-normal text-white mb-6">
+            <p
+              className="text-3xl text-white mb-6"
+              style={{ fontFamily: "'Italianno', cursive" }}
+            >
               Leading School Management Platform
             </p>
 
