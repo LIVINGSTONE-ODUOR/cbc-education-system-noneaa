@@ -29,6 +29,7 @@ import Attendance from './components/Attendance';
 import Assignments from './components/Assignments';
 import Timetable from './components/Timetable';
 import Messages from './components/Messages';
+import Announcements from './components/Announcements';
 import { useAuth } from '@/contexts/AuthContext';
 
 const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -1057,6 +1058,11 @@ const ParentPortal = () => {
               reloadKey={selectedChildId}
             />
           )}
+
+          {/* Announcements — school notices, PTA meetings, holidays, events,
+              and fee reminders. School-wide, so it doesn't depend on which
+              child is selected. */}
+          <Announcements />
 
           {/* Performance trends — subject progress, term comparison, overall
               academic growth, and analytics. Needs at least 2 exams of
