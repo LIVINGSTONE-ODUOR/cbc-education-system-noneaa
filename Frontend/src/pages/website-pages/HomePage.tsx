@@ -159,7 +159,7 @@ const growthTrend = [
   { term: 'T3 2025', schools: 155, students: 52000, teachers: 2900 },
 ];
 
-const roles = ['Student', 'Teacher', 'Parent', 'Admin'] as const;
+const roles = ['Student', 'Teacher', 'Parent'] as const;
 type Role = typeof roles[number];
 
 const stats = [
@@ -461,8 +461,6 @@ export default function HomePage() {
       navigate('/student/learning-materials');
     } else if (role === 'Teacher') {
       navigate('/teacher/resources');
-    } else if (role === 'Admin') {
-      navigate('/admin/register-school');
     } else {
       setSelectedRole(role);
     }
@@ -727,10 +725,12 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent" />
         <div className="container mx-auto px-4 lg:px-8 relative">
           <motion.div initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 mb-4">
-              <BarChart3 className="w-4 h-4 text-blue-500" />
-              <span className="text-sm font-medium text-primary">Live Analytics</span>
-            </div>
+            <p
+              className="text-3xl text-primary mb-4"
+              style={{ fontFamily: "'Italianno', cursive" }}
+            >
+              Live Analytics
+            </p>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
               Data-Driven{' '}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Education Insights</span>
