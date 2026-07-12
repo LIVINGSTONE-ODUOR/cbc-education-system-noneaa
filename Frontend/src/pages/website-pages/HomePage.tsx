@@ -528,8 +528,8 @@ export default function HomePage() {
             className="max-w-3xl"
           >
             <p
-              className="text-xl text-white/90 mb-6"
-              style={{ fontFamily: "'Italianno', cursive" }}
+              className="text-xl mb-6"
+              style={{ fontFamily: "'Italianno', cursive", color: '#7a9793' }}
             >
               Leading School Management Platform
             </p>
