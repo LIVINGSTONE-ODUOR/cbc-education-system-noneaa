@@ -742,7 +742,7 @@ export default function HomePage() {
       </section>
 
       {/* Stats Section */}
-              <section className="py-20 md:py-32 bg-blue-600">
+              <section className="py-20 md:py-32 bg-[#1E3A28]">
                       <div className="max-w-6xl mx-auto px-6">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
                           {[
@@ -761,7 +761,7 @@ export default function HomePage() {
                               <div className="text-4xl md:text-5xl font-bold mb-2">
                                 {stat.number}
                               </div>
-                              <p className="text-sm md:text-base text-blue-100">{stat.label}</p>
+                              <p className="text-sm md:text-base text-emerald-100/80">{stat.label}</p>
                             </motion.div>
                           ))}
                         </div>
