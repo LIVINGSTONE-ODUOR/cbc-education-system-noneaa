@@ -86,7 +86,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="relative bg-[#0b0f1a] text-slate-300 overflow-hidden border-t border-slate-800/50">
+    <footer className="relative bg-[#0c1a12] text-slate-300 overflow-hidden border-t border-emerald-900/40">
       {/* Dynamic Background */}
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-emerald-600/5 blur-[120px] rounded-full" />
@@ -220,7 +220,7 @@ export default function Footer() {
       </motion.div>
 
       {/* Footer Bottom */}
-      <div className="bg-[#080b14] border-t border-slate-800/50">
+      <div className="bg-[#081209] border-t border-emerald-900/40">
         <div className="container mx-auto px-6 py-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-center md:text-left">
             <p className="text-xs font-bold text-slate-400">
