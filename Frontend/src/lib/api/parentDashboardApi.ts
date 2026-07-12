@@ -116,7 +116,7 @@ export interface TeacherComment {
   id: string;
   comment: string;
   created_at: string;
-  teachers: { id: string; users: { first_name: string; last_name: string } | null } | null;
+  teachers: { id: string; first_name: string; last_name: string } | null;
   learning_areas: { id: string; name: string } | null;
 }
 
@@ -145,7 +145,7 @@ export interface TimetablePeriod {
   end_time: string;
   room: string | null;
   learning_areas: { id: string; name: string } | null;
-  teachers: { id: string; users: { first_name: string; last_name: string } | null } | null;
+  teachers: { id: string; first_name: string; last_name: string } | null;
 }
 
 export interface TimetableResponse {
@@ -185,4 +185,51 @@ export const getSchoolEvents = async (limit = 10): Promise<ApiResponse<SchoolEve
   const url = `${API_URL}/api/v1/parent-dashboard/events?limit=${limit}`;
   const response = await fetch(url, getFetchOptions('GET'));
   return handleResponse<ApiResponse<SchoolEventsResponse>>(response);
+};
+
+// ── Child profile ───────────────────────────────────────────────────────
+
+export interface ChildProfileClassTeacher {
+  name: string;
+  email: string | null;
+  phone: string | null;
+}
+
+export interface ChildProfileMedical {
+  conditions: string | null;
+  allergies: string | null;
+  special_needs: string | null;
+}
+
+export interface ChildProfileEmergencyContact {
+  name: string;
+  relationship: string | null;
+  phone: string | null;
+  email: string | null;
+  is_primary: boolean;
+}
+
+export interface ChildProfileResponse {
+  id: string;
+  first_name: string;
+  last_name: string;
+  admission_number: string;
+  photo_url: string | null;
+  date_of_birth: string | null;
+  grade_level: string | null;
+  stream_name: string | null;
+  class_teacher: ChildProfileClassTeacher | null;
+  medical: ChildProfileMedical;
+  emergency_contacts: ChildProfileEmergencyContact[];
+}
+
+/**
+ * GET /api/v1/parent-dashboard/learner/:learnerId/profile
+ * Powers the "Child Profile" card: photo, admission number, grade & class,
+ * stream, date of birth, class teacher, medical info, emergency contacts.
+ */
+export const getChildProfile = async (learnerId: string): Promise<ApiResponse<ChildProfileResponse>> => {
+  const url = `${API_URL}/api/v1/parent-dashboard/learner/${learnerId}/profile`;
+  const response = await fetch(url, getFetchOptions('GET'));
+  return handleResponse<ApiResponse<ChildProfileResponse>>(response);
 };
