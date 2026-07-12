@@ -16,7 +16,6 @@ import {
   BookOpen,
   Clock,
   LayoutGrid,
-  Target,
   ClipboardCheck,
   Upload,
   Quote,
@@ -799,7 +798,12 @@ export default function HomePage() {
         <motion.div className="absolute bottom-10 left-10 w-56 h-56 bg-purple-500/10 rounded-full blur-3xl" animate={{ scale: [1, 1.15, 1], opacity: [0.1, 0.2, 0.1] }} transition={{ duration: 5, repeat: Infinity, delay: 1.5 }} />
         <div className="container mx-auto px-4 lg:px-8 relative z-10">
           <motion.div initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} className="text-center mb-16">
-            <p className="text-sm font-semibold text-blue-400 uppercase tracking-wide mb-3">Progress Over Time</p>
+            <p
+              className="text-3xl text-blue-300 mb-3"
+              style={{ fontFamily: "'Italianno', cursive" }}
+            >
+              Progress Over Time
+            </p>
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
               Students Are <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Improving Every Term</span>
             </h2>
@@ -862,10 +866,12 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/5 to-transparent" />
         <div className="container mx-auto px-4 lg:px-8 relative">
           <motion.div initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border border-emerald-500/20 mb-4">
-              <TrendingUp className="w-4 h-4 text-emerald-500" />
-              <span className="text-sm font-medium text-primary">Performance & Growth</span>
-            </div>
+            <p
+              className="text-3xl text-primary mb-4"
+              style={{ fontFamily: "'Italianno', cursive" }}
+            >
+              Performance & Growth
+            </p>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
               Measurable{' '}
               <span className="bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">Results That Matter</span>
@@ -967,10 +973,12 @@ export default function HomePage() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 mb-4">
-              <Target className="w-4 h-4 text-purple-500" />
-              <span className="text-sm font-medium text-primary">Built for Every Role</span>
-            </div>
+            <p
+              className="text-3xl text-primary mb-4"
+              style={{ fontFamily: "'Italianno', cursive" }}
+            >
+              Built for Every Role
+            </p>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
               One Platform,{' '}
               <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
