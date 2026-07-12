@@ -124,7 +124,7 @@ export default function CurriculumPage() {
               <motion.p variants={fadeUp} custom={0} className="text-3xl text-emerald-300 mb-4" style={{ fontFamily: "'Italianno', cursive" }}>
                 Curriculum Management
               </motion.p>
-              <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+              <motion.h1 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
                 Manage Kenya&apos;s CBC Curriculum <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">with Confidence</span>
               </motion.h1>
               <motion.p variants={fadeUp} custom={2} className="text-lg text-emerald-100 mb-8 max-w-xl">
