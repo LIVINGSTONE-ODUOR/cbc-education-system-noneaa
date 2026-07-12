@@ -151,7 +151,7 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
   // Template picker state
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<FeeStructureTemplate | null>(null);
-  const [templateGrade, setTemplateGrade] = useState<string>('');
+  const [templateGrade, setTemplateGrade] = useState<string>('all');
   const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
   
   // Form state
@@ -428,7 +428,7 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
         await createFeeStructure({
           academic_year_id: selectedYear,
           name: item.label,
-          grade_level: templateGrade || undefined,
+          grade_level: templateGrade && templateGrade !== 'all' ? templateGrade : undefined,
           category: item.category,
           amount: item.amount,
           frequency: item.frequency,
@@ -446,7 +446,7 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
     setIsApplyingTemplate(false);
     setIsTemplateDialogOpen(false);
     setSelectedTemplate(null);
-    setTemplateGrade('');
+    setTemplateGrade('all');
 
     if (succeeded > 0) {
       toast.success(`Applied "${selectedTemplate.name}" — ${succeeded} fee item${succeeded === 1 ? '' : 's'} created${skipped > 0 ? `, ${skipped} skipped` : ''}.`);
@@ -812,7 +812,7 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
                 setIsTemplateDialogOpen(open);
                 if (!open) {
                   setSelectedTemplate(null);
-                  setTemplateGrade('');
+                  setTemplateGrade('all');
                 }
               }}
             >
@@ -874,7 +874,7 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
                             <SelectValue placeholder="All Grades" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">All Grades</SelectItem>
+                            <SelectItem value="all">All Grades</SelectItem>
                             {VALID_GRADES.map((grade) => (
                               <SelectItem key={grade} value={grade}>{grade}</SelectItem>
                             ))}
