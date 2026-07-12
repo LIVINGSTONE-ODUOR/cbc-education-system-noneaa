@@ -94,7 +94,7 @@ export default function AssessmentToolsPage() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div initial="hidden" animate="visible">
-              <motion.p variants={fadeUp} custom={0} className="text-purple-300 font-semibold uppercase tracking-wider text-sm mb-4">
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-purple-300 mb-4" style={{ fontFamily: "'Italianno', cursive" }}>
                 CBE Assessment Tools
               </motion.p>
               <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
@@ -142,7 +142,7 @@ export default function AssessmentToolsPage() {
       <AnimatedSection className="py-20 bg-[#dfe5f0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">How It Works</p>
+            <p className="text-3xl text-purple-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>How It Works</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Assess in 3 Simple Steps</h2>
           </motion.div>
           <div className="grid md:grid-cols-3 gap-8">
@@ -171,7 +171,7 @@ export default function AssessmentToolsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Granular Insights
               </motion.p>
               <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
@@ -229,7 +229,7 @@ export default function AssessmentToolsPage() {
               </ResponsiveContainer>
             </motion.div>
             <div className="order-1 lg:order-2">
-              <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-purple-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Holistic Assessment
               </motion.p>
               <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
