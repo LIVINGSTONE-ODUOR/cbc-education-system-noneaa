@@ -11,7 +11,10 @@ router.post('/:id/escalate', liveChat.escalateConversation);
 router.get('/:id/messages', liveChat.getMessages);
 
 // ── Protected: used by the staff live-chat inbox ──
-const STAFF_ROLES = ['admin', 'teacher', 'school_admin', 'super_admin'];
+// Live chat connects visitors to the website owner only — school admins,
+// teachers, etc. are platform users, not the support team, so they must
+// not see or reply to escalated conversations.
+const STAFF_ROLES = ['super_admin'];
 
 router.get('/inbox', authenticate, authorize(...STAFF_ROLES), liveChat.getInbox);
 router.post('/:id/claim', authenticate, authorize(...STAFF_ROLES), liveChat.claimConversation);
