@@ -68,36 +68,36 @@ export default function TeacherResourcesPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-[#e8edf5]">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
 
       {/* Hero */}
       <section className="relative min-h-[70vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-900 via-amber-900 to-yellow-900" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1E3A28] via-[#2F5233] to-[#1E3A28]" />
         <motion.div
-          className="absolute top-20 right-20 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl"
+          className="absolute top-20 right-20 w-80 h-80 bg-[#2F5233]/25 rounded-full blur-3xl"
           animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.35, 0.2] }}
           transition={{ duration: 5, repeat: Infinity }}
         />
         <motion.div
-          className="absolute bottom-10 left-16 w-64 h-64 bg-orange-500/20 rounded-full blur-3xl"
+          className="absolute bottom-10 left-16 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl"
           animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.3, 0.15] }}
           transition={{ duration: 6, repeat: Infinity, delay: 1 }}
         />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="max-w-3xl">
             <motion.div initial="hidden" animate="visible">
-              <motion.p variants={fadeUp} custom={0} className="text-3xl text-amber-300 mb-4" style={{ fontFamily: "'Italianno', cursive" }}>
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-emerald-300 mb-4" style={{ fontFamily: "'Italianno', cursive" }}>
                 Teacher Resources
               </motion.p>
               <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-                Everything You Need to <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-300">Teach with Confidence</span>
+                Everything You Need to <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">Teach with Confidence</span>
               </motion.h1>
-              <motion.p variants={fadeUp} custom={2} className="text-lg text-amber-100 mb-8 max-w-2xl">
+              <motion.p variants={fadeUp} custom={2} className="text-lg text-emerald-100/80 mb-8 max-w-2xl">
                 Lesson plans, assessment templates, training videos, and a community of CBC educators — all in one place. Free for all registered teachers.
               </motion.p>
               <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-white text-amber-900 hover:bg-amber-50" asChild>
+                <Button size="lg" className="bg-white text-[#1E3A28] hover:bg-[#F6F1E7]" asChild>
                   <Link to="/get-started">Access Resources <ArrowRight className="w-4 h-4 ml-2" /></Link>
                 </Button>
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
@@ -110,7 +110,7 @@ export default function TeacherResourcesPage() {
       </section>
 
       {/* Stats */}
-      <section className="bg-[#dfe5f0] py-12">
+      <section className="bg-[#EFE7D6] py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
@@ -127,7 +127,7 @@ export default function TeacherResourcesPage() {
                 transition={{ delay: i * 0.1, duration: 0.5 }}
                 className="text-center p-6 rounded-xl bg-white shadow-sm"
               >
-                <stat.icon className="w-8 h-8 text-amber-600 mx-auto mb-3" />
+                <stat.icon className="w-8 h-8 text-[#1E3A28] mx-auto mb-3" />
                 <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
                 <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
               </motion.div>
@@ -138,10 +138,10 @@ export default function TeacherResourcesPage() {
 
       {/* Resources Sections */}
       {resources.map((section, sectionIdx) => (
-        <AnimatedSection key={section.category} className={sectionIdx % 2 === 0 ? 'py-20' : 'py-20 bg-[#dfe5f0]'}>
+        <AnimatedSection key={section.category} className={sectionIdx % 2 === 0 ? 'py-20' : 'py-20 bg-[#EFE7D6]'}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div variants={fadeUp} custom={0} className="mb-12">
-              <p className="text-sm font-semibold text-amber-600 uppercase tracking-wide mb-2">{section.category}</p>
+              <p className="text-sm font-semibold text-[#1E3A28] uppercase tracking-wide mb-2">{section.category}</p>
               <h2 className="text-3xl font-bold text-gray-900">{section.category} Resources</h2>
             </motion.div>
             <div className="grid md:grid-cols-3 gap-8">
@@ -153,14 +153,14 @@ export default function TeacherResourcesPage() {
                   className="bg-white rounded-2xl p-6 shadow-sm border hover:shadow-lg hover:-translate-y-1 transition-all group"
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-600 group-hover:scale-110 transition-transform">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#1E3A28]/10 text-[#1E3A28] group-hover:scale-110 transition-transform">
                       <item.icon className="w-6 h-6" />
                     </div>
-                    <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full">{item.downloads}</span>
+                    <span className="text-xs font-medium text-[#1E3A28] bg-[#1E3A28]/10 px-2 py-1 rounded-full">{item.downloads}</span>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>
                   <p className="text-sm text-gray-600 mb-4">{item.desc}</p>
-                  <Button variant="ghost" size="sm" className="text-amber-600 hover:text-amber-700 p-0">
+                  <Button variant="ghost" size="sm" className="text-[#1E3A28] hover:text-[#173420] p-0">
                     Learn more <ArrowRight className="w-3 h-3 ml-1" />
                   </Button>
                 </motion.div>
@@ -174,7 +174,7 @@ export default function TeacherResourcesPage() {
       <AnimatedSection className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-3xl text-amber-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Why Teachers Love Us</p>
+            <p className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Why Teachers Love Us</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Save Time. Teach Better. Grow Together.</h2>
           </motion.div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -197,10 +197,10 @@ export default function TeacherResourcesPage() {
       </AnimatedSection>
 
       {/* Testimonials */}
-      <AnimatedSection className="py-20 bg-[#dfe5f0]">
+      <AnimatedSection className="py-20 bg-[#EFE7D6]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-3xl text-amber-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Teacher Testimonials</p>
+            <p className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Teacher Testimonials</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Hear From Fellow Educators</h2>
           </motion.div>
           <div className="grid md:grid-cols-3 gap-8">
@@ -213,8 +213,8 @@ export default function TeacherResourcesPage() {
                 </div>
                 <p className="text-gray-700 mb-6 italic">&ldquo;{t.quote}&rdquo;</p>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                    <GraduationCap className="w-5 h-5 text-amber-600" />
+                  <div className="w-10 h-10 rounded-full bg-[#1E3A28]/10 flex items-center justify-center">
+                    <GraduationCap className="w-5 h-5 text-[#1E3A28]" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-900">{t.name}</p>
@@ -228,18 +228,18 @@ export default function TeacherResourcesPage() {
       </AnimatedSection>
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-br from-amber-600 to-orange-700">
+      <section className="py-20 bg-gradient-to-br from-[#1E3A28] to-[#2F5233]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
-            <BookOpen className="w-12 h-12 text-amber-200 mx-auto mb-6" />
+            <BookOpen className="w-12 h-12 text-emerald-100/70 mx-auto mb-6" />
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
               Start Teaching Smarter Today
             </h2>
-            <p className="text-lg text-amber-100 mb-8 max-w-2xl mx-auto">
+            <p className="text-lg text-emerald-100/80 mb-8 max-w-2xl mx-auto">
               Access all resources for free when you sign up. Join thousands of teachers already making CBC work.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="bg-white text-amber-700 hover:bg-amber-50" asChild>
+              <Button size="lg" className="bg-white text-[#1E3A28] hover:bg-[#F6F1E7]" asChild>
                 <Link to="/get-started">Get Started Free <ArrowRight className="w-4 h-4 ml-2" /></Link>
               </Button>
               <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
