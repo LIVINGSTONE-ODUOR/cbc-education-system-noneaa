@@ -30,6 +30,7 @@ import Assignments from './components/Assignments';
 import Timetable from './components/Timetable';
 import Messages from './components/Messages';
 import Announcements from './components/Announcements';
+import SchoolCalendar from './components/SchoolCalendar';
 import { useAuth } from '@/contexts/AuthContext';
 
 const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -1063,6 +1064,11 @@ const ParentPortal = () => {
               and fee reminders. School-wide, so it doesn't depend on which
               child is selected. */}
           <Announcements />
+
+          {/* School Calendar — opening dates, closing dates, holidays,
+              exams, sports events, and school activities. Calendar-wide
+              sections are school-level; the Exams tab is per-child. */}
+          <SchoolCalendar learnerId={selectedChildId} reloadKey={selectedChildId} />
 
           {/* Performance trends — subject progress, term comparison, overall
               academic growth, and analytics. Needs at least 2 exams of
