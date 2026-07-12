@@ -80,6 +80,8 @@ import {
   Terminal,
   Palette,
   DollarSign,
+  Map,
+  MessageCircle,
 } from 'lucide-react';
 import heroVideo from '@/assets/teacher-teaching.mp4';
 import heroBg from '@/assets/hero-bg.png';
@@ -606,23 +608,62 @@ export default function HomePage() {
               transition={{ duration: 0.7, delay: 0.15 }}
               className="relative lg:sticky lg:top-28"
             >
+              {/* Decorative floating icons, echoing the reference top area */}
+              <div className="hidden md:flex absolute -top-10 left-6 items-center gap-4 text-[#1E3A28]/50 z-0">
+                <Settings className="w-9 h-9" strokeWidth={1.5} />
+                <BarChart3 className="w-8 h-8" strokeWidth={1.5} />
+                <TrendingUp className="w-9 h-9" strokeWidth={1.5} />
+              </div>
+              <BookOpen className="hidden md:block absolute -top-2 -left-10 w-7 h-7 text-[#1E3A28]/30 z-0" strokeWidth={1.5} />
+
               {/*
                 LAPTOP MOCKUP PHOTO SLOT
                 Save the laptop/dashboard photo you download to:
                 Frontend/public/hero-laptop-dashboard.jpg
-                It will then show up automatically at the src path below.
+                Cropped with object-cover + object-position so the busy edges
+                (mug, hands) get trimmed — adjust the % values below to taste.
               */}
-              <img
-                src="/hero-laptop-dashboard.jpg"
-                alt="Noneaa dashboard shown on a laptop"
-                className="w-full h-auto rounded-2xl"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-              />
+              <div className="relative z-10 rounded-2xl overflow-hidden shadow-2xl shadow-black/20 aspect-[4/3]">
+                <img
+                  src="/hero-laptop-dashboard.jpg"
+                  alt="Noneaa dashboard shown on a laptop"
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: '50% 30%' }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              </div>
 
-              {/* Floating live-support pill, matching reference bottom-right */}
-              <div className="absolute bottom-4 right-4 flex items-center gap-2 bg-[#1E3A28] text-white text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
-                <Play className="w-3 h-3" />
-                Live Support
+              {/* Floating info cards, matching reference left-edge overlay */}
+              <div className="absolute z-20 top-1/2 -translate-y-1/2 -left-4 md:-left-8 flex flex-col gap-3 w-48 md:w-56">
+                <div className="bg-white rounded-xl shadow-lg p-4 flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#1E3A28]/10 flex items-center justify-center flex-shrink-0">
+                    <Map className="w-4 h-4 text-[#1E3A28]" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-[#1C1C1C]">Curriculum Map</p>
+                    <p className="text-[11px] text-[#4A4A44]/70 leading-snug">Curriculum Map & competency Scale module.</p>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl shadow-lg p-4 flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#1E3A28]/10 flex items-center justify-center flex-shrink-0">
+                    <Users2 className="w-4 h-4 text-[#1E3A28]" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-[#1C1C1C]">Parent Portal</p>
+                    <p className="text-[11px] text-[#4A4A44]/70 leading-snug">Composite competency and parent portal.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating live-support pill + chat bubble, matching reference bottom-right */}
+              <div className="absolute z-20 -bottom-4 right-4 flex items-center gap-2">
+                <div className="flex items-center gap-2 bg-[#1E3A28] text-white text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
+                  <Play className="w-3 h-3" />
+                  Live Support
+                </div>
+                <div className="w-10 h-10 rounded-full bg-[#1E3A28] shadow-lg flex items-center justify-center">
+                  <MessageCircle className="w-4 h-4 text-white" />
+                </div>
               </div>
             </motion.div>
           </div>
