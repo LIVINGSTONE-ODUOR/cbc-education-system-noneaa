@@ -23,7 +23,6 @@ import {
   Receipt,
   Banknote,
   UserCircle,
-  Headset,
   LucideIcon,
 } from 'lucide-react';
 
@@ -374,14 +373,6 @@ export const menuSections: NavigationMenu = [
         icon: Shield,
         href: '/school-admin/users',
         description: 'Manage system users and permissions',
-      },
-      {
-        id: 'live-chat',
-        label: 'Live Chat',
-        icon: Headset,
-        href: '/school-admin/live-chat',
-        description: 'Respond to visitors escalated from the AI assistant',
-        requiredRole: 'super_admin',
       },
       {
         id: 'settings',
