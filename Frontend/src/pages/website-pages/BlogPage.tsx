@@ -36,16 +36,16 @@ export default function BlogPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#e8edf5]">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
 
       {/* Hero */}
-      <section className="relative pt-24 pb-16 bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900 overflow-hidden">
+      <section className="relative pt-24 pb-16 bg-gradient-to-br from-[#1E3A28] via-[#2F5233] to-[#1E3A28] overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-full h-full" style={{ backgroundImage: 'radial-gradient(circle at 30% 50%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         </div>
         <motion.div
-          className="absolute top-20 right-20 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl"
+          className="absolute top-20 right-20 w-64 h-64 bg-[#2F5233]/30 rounded-full blur-3xl"
           animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
           transition={{ duration: 5, repeat: Infinity }}
         />
@@ -62,7 +62,7 @@ export default function BlogPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-xl text-blue-200 mb-8 max-w-2xl mx-auto"
+            className="text-xl text-emerald-100/80 mb-8 max-w-2xl mx-auto"
           >
             Insights, updates, and guides on competency-based education and school management technology.
           </motion.p>
@@ -80,14 +80,14 @@ export default function BlogPage() {
               placeholder="Search articles..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-emerald-100/60 focus:outline-none focus:ring-2 focus:ring-[#2F5233]"
             />
           </motion.div>
         </div>
       </section>
 
       {/* Categories */}
-      <section className="py-6 bg-white border-b border-gray-100 sticky top-16 z-40">
+      <section className="py-6 bg-[#F6F1E7] border-b border-[#1E3A28]/10 sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
             {categories.map((cat) => (
@@ -96,7 +96,7 @@ export default function BlogPage() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                   selectedCategory === cat
-                    ? 'bg-blue-600 text-white shadow-md'
+                    ? 'bg-[#1E3A28] text-white shadow-md'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
@@ -135,7 +135,7 @@ export default function BlogPage() {
                       </div>
                       <div className="p-8 flex flex-col justify-center">
                         <div className="flex items-center gap-3 mb-4">
-                          <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                          <span className="px-3 py-1 bg-[#1E3A28]/10 text-[#1E3A28] text-xs font-medium rounded-full">
                             {filteredPosts[0].category}
                           </span>
                           <span className="text-sm text-gray-500 flex items-center gap-1">
@@ -143,13 +143,13 @@ export default function BlogPage() {
                             {getReadTime(filteredPosts[0].content)} min read
                           </span>
                         </div>
-                        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors">
+                        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 group-hover:text-[#1E3A28] transition-colors">
                           {filteredPosts[0].title}
                         </h2>
                         <p className="text-gray-600 mb-6 line-clamp-3">{filteredPosts[0].excerpt}</p>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                            <div className="w-8 h-8 bg-gradient-to-br from-[#1E3A28] to-[#2F5233] rounded-full flex items-center justify-center">
                               <User className="w-4 h-4 text-white" />
                             </div>
                             <div>
@@ -157,7 +157,7 @@ export default function BlogPage() {
                               <p className="text-xs text-gray-500">{formatDate(filteredPosts[0].publishedAt)}</p>
                             </div>
                           </div>
-                          <span className="text-blue-600 font-medium text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
+                          <span className="text-[#1E3A28] font-medium text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
                             Read more <ArrowRight className="w-4 h-4" />
                           </span>
                         </div>
@@ -188,7 +188,7 @@ export default function BlogPage() {
                         </div>
                         <div className="p-6 flex flex-col flex-1">
                           <div className="flex items-center gap-3 mb-3">
-                            <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
+                            <span className="px-3 py-1 bg-[#1E3A28]/10 text-[#1E3A28] text-xs font-medium rounded-full">
                               {post.category}
                             </span>
                             <span className="text-xs text-gray-500 flex items-center gap-1">
@@ -196,18 +196,18 @@ export default function BlogPage() {
                               {getReadTime(post.content)} min
                             </span>
                           </div>
-                          <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+                          <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-[#1E3A28] transition-colors line-clamp-2">
                             {post.title}
                           </h3>
                           <p className="text-gray-600 text-sm mb-4 flex-1 line-clamp-3">{post.excerpt}</p>
                           <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                             <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                              <div className="w-6 h-6 bg-gradient-to-br from-[#1E3A28] to-[#2F5233] rounded-full flex items-center justify-center">
                                 <User className="w-3 h-3 text-white" />
                               </div>
                               <span className="text-xs text-gray-500">{formatDate(post.publishedAt)}</span>
                             </div>
-                            <ArrowRight className="w-4 h-4 text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <ArrowRight className="w-4 h-4 text-[#1E3A28] opacity-0 group-hover:opacity-100 transition-opacity" />
                           </div>
                         </div>
                       </div>
