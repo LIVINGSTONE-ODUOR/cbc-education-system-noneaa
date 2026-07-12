@@ -17,6 +17,8 @@ import { getLearnerResults, ExamSummary } from '@/lib/api/resultsApi';
 import { getLearnerAttendanceSummary, LearnerAttendanceSummaryResponse, AttendanceStatus } from '@/lib/api/attendanceApi';
 import { getLearnerAssignmentsDue, LearnerAssignmentsDueResponse } from '@/lib/api/assignmentApi';
 import { getLearnerUpcomingExams, LearnerUpcomingExamsResponse } from '@/lib/api/examApi';
+import { getFeeStructures, FeeStructure } from '@/lib/api/feeStructureApi';
+import { getAcademicTerms } from '@/lib/api/academicTermsApi';
 import {
   getMessages, markMessageRead, DashboardMessage,
   getAnnouncements, DashboardAnnouncement,
@@ -40,6 +42,7 @@ import {
   LatestAverageSkeleton,
   AssignmentsDueSkeleton,
   UpcomingExamsSkeleton,
+  FeeStructureSkeleton,
   UnreadMessagesSkeleton,
   LatestAnnouncementsSkeleton,
   TeacherCommentsSkeleton,
@@ -55,6 +58,15 @@ const todayDayOfWeek = () => {
   return jsDay === 0 ? 7 : jsDay; // convert to 1 = Monday ... 7 = Sunday
 };
 const formatTime = (t: string) => t?.slice(0, 5) || '';
+const formatFeeFrequency = (freq: string): string => {
+  const labels: Record<string, string> = {
+    per_term: 'per term',
+    per_year: 'per year',
+    once_off: 'once-off',
+    monthly: 'per month',
+  };
+  return labels[freq] || freq;
+};
 
 const NAV_ITEMS = [
   { key: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -105,6 +117,10 @@ const ParentPortal = () => {
   const [upcomingExams, setUpcomingExams] = useState<LearnerUpcomingExamsResponse | null>(null);
   const [loadingExams, setLoadingExams] = useState(false);
   const [examsError, setExamsError] = useState<string | null>(null);
+  const [feeStructures, setFeeStructures] = useState<FeeStructure[] | null>(null);
+  const [loadingFees, setLoadingFees] = useState(false);
+  const [feesError, setFeesError] = useState<string | null>(null);
+  const [currentAcademicYearId, setCurrentAcademicYearId] = useState<string>('');
 
   const [messages, setMessages] = useState<DashboardMessage[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -243,6 +259,54 @@ const ParentPortal = () => {
     })();
     return () => { cancelled = true; };
   }, [selectedChildId]);
+
+  // Resolve the current academic year once schoolId is known — fee
+  // structures are scoped to a year, and we only want the active one.
+  useEffect(() => {
+    if (!user?.schoolId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const terms = await getAcademicTerms(user.schoolId!);
+        if (cancelled) return;
+        const current = terms.find(t => t.is_current) || terms[0];
+        if (current) setCurrentAcademicYearId(current.id);
+      } catch (err) {
+        // Non-fatal — the fees card will just show its error state.
+        console.error('[ParentPortal] Failed to resolve current academic year:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.schoolId]);
+
+  // Whenever the selected child (and their grade) is known, pull the
+  // fee structure that applies to that grade for the current year.
+  useEffect(() => {
+    const child = children.find(c => c.id === selectedChildId);
+    if (!child?.grade_level || !currentAcademicYearId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingFees(true);
+        setFeesError(null);
+        const res = await getFeeStructures({
+          grade_level: child.grade_level,
+          academic_year_id: currentAcademicYearId,
+          is_active: true,
+        });
+        if (cancelled) return;
+        setFeeStructures(res.fee_structures);
+      } catch (err: any) {
+        if (!cancelled) {
+          setFeesError(err.message || 'Failed to load fee structure');
+          setFeeStructures(null);
+        }
+      } finally {
+        if (!cancelled) setLoadingFees(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedChildId, children, currentAcademicYearId]);
 
   // Inbox messages don't depend on which child is selected — load once.
   useEffect(() => {
@@ -767,15 +831,43 @@ const ParentPortal = () => {
                   </CardContent>
                 </Card>
 
-                {/* 5. Fees balance — placeholder until the billing backend is built */}
-                <Card className="opacity-70 transition-all duration-200">
+                {/* 5. Fee structure — grade-specific breakdown from /api/v1/fee-structures */}
+                <Card className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium flex items-center gap-2">
-                      <Wallet className="h-4 w-4 text-muted-foreground" /> Fees balance
+                      <Wallet className="h-4 w-4 text-primary" /> Fee structure
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-muted-foreground">Coming soon</p>
+                    {loadingFees ? (
+                      <FeeStructureSkeleton />
+                    ) : feesError ? (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-4 w-4" /> {feesError}
+                      </p>
+                    ) : !feeStructures || feeStructures.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No fee structure published for {selectedChild?.grade_level || 'this grade'} yet.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">{selectedChild?.grade_level}</p>
+                        {feeStructures.map((fee) => (
+                          <div key={fee.id} className="flex items-start justify-between gap-2 text-xs border-t pt-2 first:border-t-0 first:pt-0">
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">{fee.name}</p>
+                              <p className="text-muted-foreground truncate capitalize">
+                                {fee.category} · {formatFeeFrequency(fee.frequency)}
+                                {!fee.is_mandatory && ' · Optional'}
+                              </p>
+                            </div>
+                            <span className="font-semibold shrink-0">
+                              KES {Number(fee.amount).toLocaleString()}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
