@@ -15,7 +15,7 @@ const openings = [
     title: 'Senior Frontend Engineer',
     department: 'Engineering',
     location: 'Remote',
-    type: 'Full-time',
+    type: 'Full time',
     description:
       'Build and refine the React-based interfaces that thousands of teachers and learners use every day.',
   },
