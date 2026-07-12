@@ -90,8 +90,11 @@ const ClientsPage = () => {
 
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
     <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold text-foreground tracking-tight mb-6">
-        Our{" "}
+      <h1
+        className="text-4xl font-normal tracking-tight mb-6"
+        style={{ fontFamily: "'Italianno', cursive" }}
+      >
+        <span className="text-foreground">Our </span>
         <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
           Trusted Partners
         </span>
