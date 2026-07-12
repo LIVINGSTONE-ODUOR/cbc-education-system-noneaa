@@ -158,7 +158,7 @@ export default function BlogPage() {
                             </div>
                           </div>
                           <span className="text-[#1E3A28] font-medium text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
-                            Read more <ArrowRight className="w-4 h-4" />
+                            Read more... <ArrowRight className="w-4 h-4" />
                           </span>
                         </div>
                       </div>
