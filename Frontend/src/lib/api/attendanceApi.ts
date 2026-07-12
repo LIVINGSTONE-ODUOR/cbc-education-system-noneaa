@@ -174,6 +174,8 @@ export interface LearnerAttendanceSummaryResponse {
   term: AttendanceApiTerm | null;
   summary: AttendanceApiLearnerSummary;
   recent_records: AttendanceApiRecord[];
+  /** Full term history — powers the calendar, late-arrivals, and absence-reasons views. */
+  all_records: AttendanceApiRecord[];
 }
 
 /**
