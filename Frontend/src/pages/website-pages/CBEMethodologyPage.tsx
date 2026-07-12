@@ -78,7 +78,7 @@ export default function CBEMethodologyPage() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="max-w-3xl">
             <motion.div initial="hidden" animate="visible">
-              <motion.p variants={fadeUp} custom={0} className="text-emerald-300 font-semibold uppercase tracking-wider text-sm mb-4">
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-emerald-300 mb-4" style={{ fontFamily: "'Italianno', cursive" }}>
                 CBE Methodology
               </motion.p>
               <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
@@ -105,7 +105,7 @@ export default function CBEMethodologyPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold text-emerald-600 uppercase tracking-wide mb-3">
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-emerald-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Understanding CBE
               </motion.p>
               <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
@@ -155,7 +155,7 @@ export default function CBEMethodologyPage() {
       <AnimatedSection className="py-20 bg-[#dfe5f0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wide mb-3">Core Competencies</p>
+            <p className="text-3xl text-emerald-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Core Competencies</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">The 7 Pillars of CBE</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Every learner is assessed across these 7 competencies, ensuring holistic development beyond academic subjects.
@@ -185,7 +185,7 @@ export default function CBEMethodologyPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Assessment Framework
               </motion.p>
               <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
@@ -226,7 +226,7 @@ export default function CBEMethodologyPage() {
       <AnimatedSection className="py-20 bg-[#dfe5f0]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wide mb-3">The Journey</p>
+            <p className="text-3xl text-emerald-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>The Journey</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">CBC Implementation Timeline</h2>
           </motion.div>
           <div className="relative">
@@ -257,7 +257,7 @@ export default function CBEMethodologyPage() {
       <AnimatedSection className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wide mb-3">Our Platform</p>
+            <p className="text-3xl text-emerald-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Our Platform</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">How NONEAA Brings CBE to Life</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               We didn&apos;t just adapt an old system. NONEAA was built from scratch for competency-based education.
