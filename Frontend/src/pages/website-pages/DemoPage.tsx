@@ -66,9 +66,12 @@ export default function DemoPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <span className="inline-block text-sm font-semibold text-blue-300 uppercase tracking-wider mb-3">
+              <p
+                className="text-3xl text-blue-300 mb-3"
+                style={{ fontFamily: "'Italianno', cursive" }}
+              >
                 Product Tour
-              </span>
+              </p>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-5">
                 See Noneaa in Action
               </h1>
