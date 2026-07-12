@@ -156,7 +156,7 @@ export default function TestimonialsPage() {
       {/* CTA */}
       <section className="py-16 bg-white border-t border-[#1E3A28]/10">
         <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#1C1C1C] mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-[#1C1C1C] mb-4" style={{ fontFamily: "'Tangerine', cursive" }}>
             Ready to Join 150+ Schools?
           </h2>
           <p className="text-[#4A4A44]/90 mb-8">
