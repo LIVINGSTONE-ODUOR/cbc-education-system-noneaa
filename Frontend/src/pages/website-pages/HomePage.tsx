@@ -912,74 +912,74 @@ export default function HomePage() {
       </section>
 
       {/* ── Subject Performance & Platform Growth ──────────── */}
-      <section className="py-24 relative">
+      <section className="py-16 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/5 to-transparent" />
         <div className="container mx-auto px-4 lg:px-8 relative">
-          <motion.div initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} className="text-center mb-16">
+          <motion.div initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} className="text-center mb-10">
             <p
-              className="text-3xl text-primary mb-4"
+              className="text-2xl text-emerald-700 mb-2"
               style={{ fontFamily: "'Italianno', cursive" }}
             >
               Performance & Growth
             </p>
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
               Measurable{' '}
-              <span className="bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">Results That Matter</span>
+              <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Results That Matter</span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-base text-muted-foreground max-w-2xl mx-auto">
               Real performance data from schools using NONEAA &mdash; subject averages, top scores, and platform adoption trends.
             </p>
           </motion.div>
 
-          <div className="grid lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
             {/* Subject Performance */}
             <motion.div initial={{ x: -40, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
-              className="bg-card rounded-2xl border border-border/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
-                  <Award className="w-5 h-5 text-white" />
+              className="bg-card rounded-2xl border border-border/50 shadow-lg p-5 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+                  <Award className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground">Subject Performance</h3>
-                  <p className="text-sm text-muted-foreground">Average vs top-performing scores per subject</p>
+                  <h3 className="text-base font-semibold text-foreground">Subject Performance</h3>
+                  <p className="text-xs text-muted-foreground">Average vs top-performing scores per subject</p>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={subjectPerformance} barGap={4}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} angle={-20} textAnchor="end" height={50} />
-                  <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} domain={[0, 100]} />
+                  <XAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} angle={-20} textAnchor="end" height={45} />
+                  <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} domain={[0, 100]} />
                   <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
-                  <Bar dataKey="avg" name="Class Average" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={18} />
-                  <Bar dataKey="top" name="Top Score" fill="#22c55e" radius={[4, 4, 0, 0]} barSize={18} />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="avg" name="Class Average" fill="#14b8a6" radius={[4, 4, 0, 0]} barSize={16} />
+                  <Bar dataKey="top" name="Top Score" fill="#22c55e" radius={[4, 4, 0, 0]} barSize={16} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
                 </BarChart>
               </ResponsiveContainer>
             </motion.div>
 
             {/* Platform Growth Line Chart */}
             <motion.div initial={{ x: 40, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
-              className="bg-card rounded-2xl border border-border/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
-                  <Rocket className="w-5 h-5 text-white" />
+              className="bg-card rounded-2xl border border-border/50 shadow-lg p-5 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center">
+                  <Rocket className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground">NONEAA Platform Growth</h3>
-                  <p className="text-sm text-muted-foreground">Schools, students &amp; teachers over time</p>
+                  <h3 className="text-base font-semibold text-foreground">NONEAA Platform Growth</h3>
+                  <p className="text-xs text-muted-foreground">Schools, students &amp; teachers over time</p>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={growthTrend}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="term" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                  <YAxis yAxisId="left" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-                  <YAxis yAxisId="right" orientation="right" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                  <XAxis dataKey="term" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
+                  <YAxis yAxisId="left" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
                   <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
-                  <Line yAxisId="left" type="monotone" dataKey="schools" name="Schools" stroke="#f97316" strokeWidth={3} dot={{ r: 5 }} />
-                  <Line yAxisId="right" type="monotone" dataKey="students" name="Students" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
-                  <Line yAxisId="left" type="monotone" dataKey="teachers" name="Teachers" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 4 }} />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Line yAxisId="left" type="monotone" dataKey="schools" name="Schools" stroke="#84cc16" strokeWidth={3} dot={{ r: 4 }} />
+                  <Line yAxisId="right" type="monotone" dataKey="students" name="Students" stroke="#14b8a6" strokeWidth={2} dot={{ r: 3 }} />
+                  <Line yAxisId="left" type="monotone" dataKey="teachers" name="Teachers" stroke="#059669" strokeWidth={2} dot={{ r: 3 }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
                 </LineChart>
               </ResponsiveContainer>
             </motion.div>
