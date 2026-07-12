@@ -487,7 +487,7 @@ export default function HomePage() {
         <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-[#1E3A28]/10 blur-2xl pointer-events-none" />
         <div className="absolute top-1/4 -right-10 w-64 h-64 rounded-full bg-[#1E3A28]/[0.08] blur-2xl pointer-events-none" />
         <div
-          className="absolute bottom-0 left-0 w-56 h-56 bg-[#1E3A28] pointer-events-none"
+          className="absolute bottom-0 left-0 w-32 h-32 bg-[#1E3A28] pointer-events-none"
           style={{ clipPath: 'polygon(0 100%, 0 20%, 100% 100%)' }}
         />
         <div
@@ -562,7 +562,7 @@ export default function HomePage() {
               </div>
 
               {/* Testimonials — reusing your existing `testimonials` array verbatim */}
-              <div>
+              <div className="pl-2 md:pl-6">
                 <p className="text-sm font-semibold text-[#1C1C1C] mb-2">Client Testimonials</p>
                 <div className="grid sm:grid-cols-2 gap-3 max-w-xl">
                   {testimonials.map((t) => (
@@ -584,23 +584,6 @@ export default function HomePage() {
                   ))}
                 </div>
               </div>
-
-              {/* Trust badges — same content you already had */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={isHeroInView ? { y: 0, opacity: 1 } : {}}
-                transition={{ delay: 0.6 }}
-                className="mt-4 pt-4 border-t border-[#1E3A28]/10"
-              >
-                <div className="flex flex-wrap items-center gap-4">
-                  {['KICD-Aligned', 'Pre-Primary to Grade 12', '4-Level Competency Scale', 'Parent & Teacher Portals'].map((name) => (
-                    <div key={name} className="flex items-center gap-1.5">
-                      <CheckCircle className="w-3.5 h-3.5 text-[#1E3A28]/70" />
-                      <span className="text-[#4A4A44]/70 text-[11px] font-medium">{name}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
             </motion.div>
 
             {/* Right column — laptop mockup photo slot */}
