@@ -609,12 +609,12 @@ export default function HomePage() {
               className="relative lg:sticky lg:top-28"
             >
               {/* Decorative floating icons, echoing the reference top area */}
-              <div className="hidden md:flex absolute -top-10 left-6 items-center gap-4 text-[#1E3A28]/50 z-0">
-                <Settings className="w-9 h-9" strokeWidth={1.5} />
-                <BarChart3 className="w-8 h-8" strokeWidth={1.5} />
-                <TrendingUp className="w-9 h-9" strokeWidth={1.5} />
+              <div className="hidden md:flex absolute -top-12 left-0 right-10 items-start justify-between text-[#1E3A28]/40 z-0 px-4">
+                <Settings className="w-10 h-10" strokeWidth={1.3} />
+                <BarChart3 className="w-9 h-9 mt-2" strokeWidth={1.3} />
+                <TrendingUp className="w-10 h-10" strokeWidth={1.3} />
               </div>
-              <BookOpen className="hidden md:block absolute -top-2 -left-10 w-7 h-7 text-[#1E3A28]/30 z-0" strokeWidth={1.5} />
+              <BookOpen className="hidden md:block absolute top-1/3 -left-12 w-8 h-8 text-[#1E3A28]/35 z-0" strokeWidth={1.3} />
 
               {/*
                 LAPTOP MOCKUP PHOTO SLOT
