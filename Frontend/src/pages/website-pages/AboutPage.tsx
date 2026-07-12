@@ -700,7 +700,12 @@ export default function AboutPage() {
               <motion.div className="absolute bottom-0 left-0 w-56 h-56 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
 
               <div className="relative z-10">
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Transform Your School?</h2>
+                <h2
+                  className="text-4xl md:text-5xl font-bold mb-4"
+                  style={{ fontFamily: "'Tangerine', cursive" }}
+                >
+                  Ready to Transform Your School?
+                </h2>
                 <p className="text-lg text-[#F6F1E7]/85 mb-8 max-w-2xl mx-auto">
                   Join 120+ schools across Kenya already using NONEAA to improve CBC implementation, teacher productivity, and student outcomes.
                 </p>
