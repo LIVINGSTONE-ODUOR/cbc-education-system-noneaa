@@ -429,7 +429,7 @@ const getTimetable = asyncHandler(async (req, res) => {
 const getSchoolEvents = asyncHandler(async (req, res) => {
   const schoolId = getSchoolId(req);
   const limit = parseInt(req.query.limit) || 10;
-  const { type } = req.query; // optional: 'event' | 'holiday' | 'pta_meeting'
+  const { type } = req.query; // optional: 'event' | 'holiday' | 'pta_meeting' | 'term_start' | 'term_end' | 'sports' | 'activity'
   const today = new Date().toISOString().slice(0, 10);
 
   let query = supabase
