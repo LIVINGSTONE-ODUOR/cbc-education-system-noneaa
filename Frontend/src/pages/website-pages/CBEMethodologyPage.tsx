@@ -59,12 +59,12 @@ export default function CBEMethodologyPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-[#e8edf5]">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
 
       {/* Hero */}
       <section className="relative min-h-[70vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-green-900" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1E3A28] via-[#2F5233] to-[#1E3A28]" />
         <motion.div
           className="absolute top-10 right-16 w-80 h-80 bg-emerald-500/15 rounded-full blur-3xl"
           animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.35, 0.2] }}
@@ -88,7 +88,7 @@ export default function CBEMethodologyPage() {
                 Kenya&apos;s Competency-Based Education (CBE) framework focuses on developing real-world skills and competencies — not just memorization. Learn how our platform brings this methodology to life.
               </motion.p>
               <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-white text-emerald-900 hover:bg-emerald-50" asChild>
+                <Button size="lg" className="bg-white text-[#1E3A28] hover:bg-[#F6F1E7]" asChild>
                   <Link to="/get-started">Get Started <ArrowRight className="w-4 h-4 ml-2" /></Link>
                 </Button>
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
@@ -105,7 +105,7 @@ export default function CBEMethodologyPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <motion.p variants={fadeUp} custom={0} className="text-3xl text-emerald-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
+              <motion.p variants={fadeUp} custom={0} className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Understanding CBE
               </motion.p>
               <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
@@ -152,10 +152,10 @@ export default function CBEMethodologyPage() {
       </AnimatedSection>
 
       {/* 7 Core Competencies */}
-      <AnimatedSection className="py-20 bg-[#dfe5f0]">
+      <AnimatedSection className="py-20 bg-[#EFE7D6]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-3xl text-emerald-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Core Competencies</p>
+            <p className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Core Competencies</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">The 7 Pillars of CBE</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Every learner is assessed across these 7 competencies, ensuring holistic development beyond academic subjects.
@@ -223,14 +223,14 @@ export default function CBEMethodologyPage() {
       </AnimatedSection>
 
       {/* Timeline */}
-      <AnimatedSection className="py-20 bg-[#dfe5f0]">
+      <AnimatedSection className="py-20 bg-[#EFE7D6]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-3xl text-emerald-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>The Journey</p>
+            <p className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>The Journey</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">CBC Implementation Timeline</h2>
           </motion.div>
           <div className="relative">
-            <div className="absolute left-4 sm:left-1/2 sm:-translate-x-px top-0 bottom-0 w-0.5 bg-emerald-200" />
+            <div className="absolute left-4 sm:left-1/2 sm:-translate-x-px top-0 bottom-0 w-0.5 bg-[#1E3A28]/20" />
             {cbeTimeline.map((item, i) => (
               <motion.div
                 key={item.year}
@@ -239,11 +239,11 @@ export default function CBEMethodologyPage() {
                 className={`relative flex items-start gap-6 mb-10 ${i % 2 === 0 ? 'sm:flex-row' : 'sm:flex-row-reverse'} flex-row`}
               >
                 <div className="hidden sm:block sm:w-1/2" />
-                <div className="absolute left-4 sm:left-1/2 -translate-x-1/2 w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center text-xs font-bold z-10 flex-shrink-0">
+                <div className="absolute left-4 sm:left-1/2 -translate-x-1/2 w-8 h-8 bg-[#1E3A28] text-white rounded-full flex items-center justify-center text-xs font-bold z-10 flex-shrink-0">
                   {i + 1}
                 </div>
                 <div className="ml-14 sm:ml-0 sm:w-1/2 bg-white rounded-xl border p-5 shadow-sm">
-                  <span className="text-sm font-bold text-emerald-600">{item.year}</span>
+                  <span className="text-sm font-bold text-[#1E3A28]">{item.year}</span>
                   <h4 className="font-semibold text-gray-900 mt-1">{item.event}</h4>
                   <p className="text-sm text-gray-600 mt-1">{item.desc}</p>
                 </div>
@@ -257,7 +257,7 @@ export default function CBEMethodologyPage() {
       <AnimatedSection className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-3xl text-emerald-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Our Platform</p>
+            <p className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Our Platform</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">How NONEAA Brings CBE to Life</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               We didn&apos;t just adapt an old system. NONEAA was built from scratch for competency-based education.
@@ -285,10 +285,10 @@ export default function CBEMethodologyPage() {
       </AnimatedSection>
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-br from-emerald-600 to-teal-700">
+      <section className="py-20 bg-gradient-to-br from-[#1E3A28] to-[#2F5233]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
-            <GraduationCap className="w-12 h-12 text-emerald-200 mx-auto mb-6" />
+            <GraduationCap className="w-12 h-12 text-emerald-100/70 mx-auto mb-6" />
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
               Embrace the CBE Methodology Today
             </h2>
@@ -296,7 +296,7 @@ export default function CBEMethodologyPage() {
               Join the movement toward competency-based education. NONEAA makes the transition seamless for your school.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="bg-white text-emerald-700 hover:bg-emerald-50" asChild>
+              <Button size="lg" className="bg-white text-[#1E3A28] hover:bg-[#F6F1E7]" asChild>
                 <Link to="/get-started">Get Started Free <ArrowRight className="w-4 h-4 ml-2" /></Link>
               </Button>
               <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
