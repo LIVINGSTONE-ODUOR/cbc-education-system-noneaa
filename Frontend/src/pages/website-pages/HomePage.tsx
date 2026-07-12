@@ -528,14 +528,14 @@ export default function HomePage() {
             className="max-w-3xl"
           >
             <p
-              className="text-xl mb-6"
-              style={{ fontFamily: "'Italianno', cursive", color: '#7a9793' }}
+              className="text-xl text-white mb-6"
+              style={{ fontFamily: "'Italianno', cursive" }}
             >
               Leading School Management Platform
             </p>
 
             <h1
-              className="text-4xl md:text-5xl lg:text-6xl font-normal text-white leading-[1.3] mb-6"
+              className="text-2xl md:text-3xl lg:text-4xl font-normal text-white leading-[1.4] mb-6"
               style={{ fontFamily: "'Petit Formal Script', cursive" }}
             >
               The School Management Platform for{' '}
@@ -547,7 +547,10 @@ export default function HomePage() {
               </span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-2xl leading-relaxed">
+            <p
+              className="text-xl md:text-2xl text-white/90 mb-10 max-w-2xl leading-relaxed"
+              style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+            >
               Noneaa helps schools manage curriculum, assess students using competency levels, track progress across all learning areas, and keep parents informed — from Pre-Primary to Senior Secondary.
             </p>
 
