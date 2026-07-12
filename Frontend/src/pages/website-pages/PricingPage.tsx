@@ -91,9 +91,12 @@ export default function PricingPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <span className="inline-block text-sm font-semibold text-blue-600 uppercase tracking-wider mb-3">
+            <p
+              className="text-3xl text-blue-600 mb-3"
+              style={{ fontFamily: "'Italianno', cursive" }}
+            >
               Pricing
-            </span>
+            </p>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-4">
               Simple, Transparent Pricing
             </h1>
