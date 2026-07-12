@@ -121,7 +121,7 @@ const HeroSection = () => {
 
             <div className="flex flex-wrap gap-4 mb-10">
               <motion.a href="/features" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="px-8 py-3 bg-gradient-to-r from-[#1E3A28] to-[#173420] text-white font-semibold rounded-lg inline-flex items-center gap-2 shadow-lg hover:shadow-[#1E3A28]/25">
-                Explore Features <ArrowRight className="w-4 h-4" />
+                Explore the Features <ArrowRight className="w-4 h-4" />
               </motion.a>
               <motion.a href="/contact" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="px-8 py-3 border-2 border-[#1E3A28]/30 text-[#1E3A28] font-semibold rounded-lg hover:bg-[#1E3A28]/5 transition-all">
                 Talk to Us
