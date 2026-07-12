@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const liveChat = require('../controllers/liveChat.controller');
-const { authenticate, authorize } = require('../middleware/auth');
+const { authenticateSupportStaff } = require('../middleware/auth');
 
 // ── Public: used by the website chat widget (no auth) ──
 router.post('/start', liveChat.startConversation);
@@ -11,14 +11,14 @@ router.post('/:id/escalate', liveChat.escalateConversation);
 router.get('/:id/messages', liveChat.getMessages);
 
 // ── Protected: used by the staff live-chat inbox ──
-// Live chat connects visitors to the website owner only — school admins,
+// Live chat connects visitors to the website owner. authenticateSupportStaff
+// accepts either a website-owner login (website_owners table) or a
+// school-platform super_admin login (users table) — school admins,
 // teachers, etc. are platform users, not the support team, so they must
 // not see or reply to escalated conversations.
-const STAFF_ROLES = ['super_admin'];
-
-router.get('/inbox', authenticate, authorize(...STAFF_ROLES), liveChat.getInbox);
-router.post('/:id/claim', authenticate, authorize(...STAFF_ROLES), liveChat.claimConversation);
-router.post('/:id/reply', authenticate, authorize(...STAFF_ROLES), liveChat.postAgentReply);
-router.post('/:id/close', authenticate, authorize(...STAFF_ROLES), liveChat.closeConversation);
+router.get('/inbox', authenticateSupportStaff, liveChat.getInbox);
+router.post('/:id/claim', authenticateSupportStaff, liveChat.claimConversation);
+router.post('/:id/reply', authenticateSupportStaff, liveChat.postAgentReply);
+router.post('/:id/close', authenticateSupportStaff, liveChat.closeConversation);
 
 module.exports = router;
