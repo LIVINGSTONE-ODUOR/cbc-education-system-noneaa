@@ -192,12 +192,18 @@ exports.claimConversation = async (req, res) => {
     const { id } = req.params;
     const agentName = req.user?.email || 'Support agent';
 
+    // assigned_agent_id has a foreign key to the school-platform `users`
+    // table. Website owners authenticate against the separate
+    // `website_owners` table, so their id would violate that FK — store
+    // the name only for them and leave assigned_agent_id null.
+    const agentId = req.user?.isOwner ? null : req.user.id;
+
     const result = await query(
       `UPDATE support_conversations
        SET assigned_agent_id = $2, assigned_agent_name = $3, updated_at = NOW()
        WHERE id = $1
        RETURNING id, assigned_agent_id, assigned_agent_name`,
-      [id, req.user.id, agentName]
+      [id, agentId, agentName]
     );
     if (result.rows.length === 0) {
       return respond(res, 404, false, 'Conversation not found');
