@@ -121,28 +121,28 @@ export default function PrivacyPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <div className="min-h-screen bg-[#e8edf5]">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
 
       {/* Hero */}
       <section className="relative min-h-[60vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950" />
-        <motion.div className="absolute top-16 right-16 w-72 h-72 bg-blue-500/15 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.3, 0.15] }} transition={{ duration: 6, repeat: Infinity }} />
-        <motion.div className="absolute bottom-10 left-10 w-56 h-56 bg-indigo-500/15 rounded-full blur-3xl" animate={{ scale: [1, 1.15, 1], opacity: [0.1, 0.25, 0.1] }} transition={{ duration: 5, repeat: Infinity, delay: 1.5 }} />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1E3A28] via-[#2F5233] to-[#1E3A28]" />
+        <motion.div className="absolute top-16 right-16 w-72 h-72 bg-[#2F5233]/25 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.3, 0.15] }} transition={{ duration: 6, repeat: Infinity }} />
+        <motion.div className="absolute bottom-10 left-10 w-56 h-56 bg-emerald-500/15 rounded-full blur-3xl" animate={{ scale: [1, 1.15, 1], opacity: [0.1, 0.25, 0.1] }} transition={{ duration: 5, repeat: Infinity, delay: 1.5 }} />
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
           <motion.div initial="hidden" animate="visible">
             <motion.div variants={fadeUp} custom={0} className="flex justify-center mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-blue-500/20 flex items-center justify-center border border-blue-400/30">
-                <Shield className="w-8 h-8 text-blue-400" />
+              <div className="w-16 h-16 rounded-2xl bg-emerald-400/20 flex items-center justify-center border border-emerald-300/30">
+                <Shield className="w-8 h-8 text-emerald-300" />
               </div>
             </motion.div>
             <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
               Privacy Policy
             </motion.h1>
-            <motion.p variants={fadeUp} custom={2} className="text-lg text-blue-200 mb-6 max-w-2xl mx-auto">
+            <motion.p variants={fadeUp} custom={2} className="text-lg text-emerald-100/80 mb-6 max-w-2xl mx-auto">
               Your privacy is important to us. This policy explains how we collect, use, and protect your information when using the NONEAA platform.
             </motion.p>
-            <motion.p variants={fadeUp} custom={3} className="text-sm text-blue-300/70">
+            <motion.p variants={fadeUp} custom={3} className="text-sm text-emerald-200/60">
               Last updated: June 2026
             </motion.p>
           </motion.div>
@@ -150,10 +150,10 @@ export default function PrivacyPage() {
       </section>
 
       {/* Principles Grid */}
-      <AnimatedSection className="py-20 bg-[#dfe5f0]">
+      <AnimatedSection className="py-20 bg-[#EFE7D6]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Our Commitment</p>
+            <p className="text-3xl text-[#1E3A28] mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Our Commitment</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Privacy Principles We Live By</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               These principles guide every decision we make about your data.
@@ -175,7 +175,7 @@ export default function PrivacyPage() {
 
       {/* Policy Sections */}
       {sections.map((section, sIdx) => (
-        <AnimatedSection key={section.title} className={sIdx % 2 === 0 ? 'py-16' : 'py-16 bg-[#dfe5f0]'}>
+        <AnimatedSection key={section.title} className={sIdx % 2 === 0 ? 'py-16' : 'py-16 bg-[#EFE7D6]'}>
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div variants={fadeUp} custom={0} className={`bg-white rounded-2xl border-l-4 ${section.color} border shadow-sm p-8`}>
               <div className="flex items-center gap-3 mb-6">
@@ -190,7 +190,7 @@ export default function PrivacyPage() {
                     <ul className="space-y-2">
                       {sub.items.map((item, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
-                          <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                          <CheckCircle className="w-4 h-4 text-[#1E3A28] flex-shrink-0 mt-0.5" />
                           {item}
                         </li>
                       ))}
@@ -246,7 +246,7 @@ export default function PrivacyPage() {
       </AnimatedSection>
 
       {/* Children's Privacy */}
-      <AnimatedSection className="py-16 bg-[#dfe5f0]">
+      <AnimatedSection className="py-16 bg-[#EFE7D6]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="bg-white rounded-2xl border shadow-sm p-8 text-center">
             <div className="w-14 h-14 rounded-2xl bg-rose-100 flex items-center justify-center mx-auto mb-4">
@@ -266,7 +266,7 @@ export default function PrivacyPage() {
       {/* Contact */}
       <AnimatedSection className="py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div variants={fadeUp} custom={0} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 p-8">
+          <motion.div variants={fadeUp} custom={0} className="bg-gradient-to-br from-[#F6F1E7] to-[#EFE7D6] rounded-2xl border border-[#1E3A28]/20 p-8">
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Questions About Your Privacy?</h3>
@@ -275,15 +275,15 @@ export default function PrivacyPage() {
                 </p>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 text-sm text-gray-700">
-                    <Mail className="w-4 h-4 text-blue-600" /> privacy@noneaa.com
+                    <Mail className="w-4 h-4 text-[#1E3A28]" /> privacy@noneaa.com
                   </div>
                   <div className="flex items-center gap-3 text-sm text-gray-700">
-                    <Globe className="w-4 h-4 text-blue-600" /> www.noneaa.com/privacy
+                    <Globe className="w-4 h-4 text-[#1E3A28]" /> www.noneaa.com/privacy
                   </div>
                 </div>
               </div>
               <div className="text-center md:text-right">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white" asChild>
+                <Button size="lg" className="bg-[#1E3A28] hover:bg-[#173420] text-white" asChild>
                   <Link to="/contact">Contact Us <ArrowRight className="w-4 h-4 ml-2" /></Link>
                 </Button>
               </div>
