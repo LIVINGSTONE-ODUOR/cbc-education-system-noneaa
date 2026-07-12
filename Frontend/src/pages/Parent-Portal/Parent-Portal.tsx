@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   User, BookOpen, Loader2, AlertCircle, CalendarCheck, Wallet, ClipboardList,
   FileText, MessageSquare, Megaphone, MessageCircle, Clock, PartyPopper,
+  HeartPulse, Phone, GraduationCap, Cake,
 } from 'lucide-react';
 import { getMyChildren } from '@/lib/api/parentsApi';
 import { getLearnerResults, ExamSummary } from '@/lib/api/resultsApi';
@@ -19,6 +20,7 @@ import {
   getLearnerTeacherComments, TeacherComment,
   getLearnerTimetable, TimetablePeriod,
   getSchoolEvents, SchoolEvent,
+  getChildProfile, ChildProfileResponse,
 } from '@/lib/api/parentDashboardApi';
 import MarksPanel from '@/components/marks/MarksPanel';
 
@@ -82,6 +84,10 @@ const ParentPortal = () => {
   const [schoolEvents, setSchoolEvents] = useState<SchoolEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [eventsError, setEventsError] = useState<string | null>(null);
+
+  const [childProfile, setChildProfile] = useState<ChildProfileResponse | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   // Load every child linked to the logged-in parent (handles 1 or many children)
   useEffect(() => {
@@ -301,6 +307,30 @@ const ParentPortal = () => {
     return () => { cancelled = true; };
   }, []);
 
+  // Whenever the selected child changes, pull their full profile (photo,
+  // DOB, class teacher, medical info, emergency contacts).
+  useEffect(() => {
+    if (!selectedChildId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingProfile(true);
+        setProfileError(null);
+        const res = await getChildProfile(selectedChildId);
+        if (cancelled) return;
+        setChildProfile(res.data);
+      } catch (err: any) {
+        if (!cancelled) {
+          setProfileError(err.message || 'Failed to load child profile');
+          setChildProfile(null);
+        }
+      } finally {
+        if (!cancelled) setLoadingProfile(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedChildId]);
+
   const handleMarkMessageRead = async (id: string) => {
     try {
       await markMessageRead(id);
@@ -408,8 +438,12 @@ const ParentPortal = () => {
             <Card>
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
-                  <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 border-4 border-primary/20">
-                    <User className="w-10 h-10 text-primary" />
+                  <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 border-4 border-primary/20 overflow-hidden">
+                    {childProfile?.photo_url ? (
+                      <img src={childProfile.photo_url} alt={`${selectedChild.first_name} ${selectedChild.last_name}`} className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-10 h-10 text-primary" />
+                    )}
                   </div>
                   <div className="space-y-2 text-center md:text-left">
                     <div>
@@ -433,6 +467,132 @@ const ParentPortal = () => {
                     )}
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Child Profile — student photo, admission number, grade & class,
+              stream, date of birth, class teacher, medical info, emergency contacts.
+              Wired to /api/v1/parent-dashboard/learner/:id/profile */}
+          {selectedChild && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <User className="h-4 w-4 text-primary" /> Child Profile
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingProfile ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+                  </div>
+                ) : profileError ? (
+                  <p className="text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="h-4 w-4" /> {profileError}
+                  </p>
+                ) : !childProfile ? (
+                  <p className="text-sm text-muted-foreground">No profile data available.</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {childProfile.photo_url ? (
+                          <img src={childProfile.photo_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="h-6 w-6 text-primary" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Student photo</p>
+                        <p className="text-sm font-medium">{childProfile.photo_url ? 'On file' : 'Not uploaded'}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <ClipboardList className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Admission number</p>
+                        <p className="text-sm font-medium">{childProfile.admission_number}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <GraduationCap className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Grade &amp; class</p>
+                        <p className="text-sm font-medium">{childProfile.grade_level || 'Not set'}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <BookOpen className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Stream</p>
+                        <p className="text-sm font-medium">{childProfile.stream_name || 'Not set'}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <Cake className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Date of birth</p>
+                        <p className="text-sm font-medium">
+                          {childProfile.date_of_birth
+                            ? new Date(childProfile.date_of_birth).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+                            : 'Not set'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <User className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Class teacher</p>
+                        <p className="text-sm font-medium">{childProfile.class_teacher?.name || 'Not assigned'}</p>
+                        {childProfile.class_teacher?.phone && (
+                          <p className="text-xs text-muted-foreground">{childProfile.class_teacher.phone}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 sm:col-span-2">
+                      <HeartPulse className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Medical information</p>
+                        {!childProfile.medical.conditions && !childProfile.medical.allergies && !childProfile.medical.special_needs ? (
+                          <p className="text-sm text-muted-foreground">None on file</p>
+                        ) : (
+                          <div className="text-sm space-y-0.5">
+                            {childProfile.medical.conditions && <p><span className="text-muted-foreground">Conditions:</span> {childProfile.medical.conditions}</p>}
+                            {childProfile.medical.allergies && <p><span className="text-muted-foreground">Allergies:</span> {childProfile.medical.allergies}</p>}
+                            {childProfile.medical.special_needs && <p><span className="text-muted-foreground">Special needs:</span> {childProfile.medical.special_needs}</p>}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 sm:col-span-2">
+                      <Phone className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div className="w-full">
+                        <p className="text-xs text-muted-foreground mb-1">Emergency contacts</p>
+                        {childProfile.emergency_contacts.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">None on file</p>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {childProfile.emergency_contacts.map((c, i) => (
+                              <div key={i} className="flex flex-wrap items-center gap-x-2 text-sm">
+                                <span className="font-medium">{c.name || 'Unnamed contact'}</span>
+                                {c.relationship && <span className="text-muted-foreground capitalize">({c.relationship})</span>}
+                                {c.is_primary && <Badge variant="outline" className="text-xs">Primary</Badge>}
+                                {c.phone && <span className="text-muted-foreground">{c.phone}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -742,7 +902,7 @@ const ParentPortal = () => {
                           <div key={c.id} className="text-xs border-t pt-2 first:border-t-0 first:pt-0">
                             <p className="truncate">{c.comment}</p>
                             <p className="text-muted-foreground truncate">
-                              {c.teachers?.users ? `${c.teachers.users.first_name} ${c.teachers.users.last_name}` : 'Teacher'}
+                              {c.teachers ? `${c.teachers.first_name} ${c.teachers.last_name}` : 'Teacher'}
                               {c.learning_areas ? ` • ${c.learning_areas.name}` : ''}
                             </p>
                           </div>
@@ -778,7 +938,7 @@ const ParentPortal = () => {
                             <div className="min-w-0">
                               <p className="font-medium truncate">{p.learning_areas?.name || 'Lesson'}</p>
                               <p className="text-muted-foreground truncate">
-                                {p.teachers?.users ? `${p.teachers.users.first_name} ${p.teachers.users.last_name}` : ''}
+                                {p.teachers ? `${p.teachers.first_name} ${p.teachers.last_name}` : ''}
                                 {p.room ? ` • ${p.room}` : ''}
                               </p>
                             </div>
