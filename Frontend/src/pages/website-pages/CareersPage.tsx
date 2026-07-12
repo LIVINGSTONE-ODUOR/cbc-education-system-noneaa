@@ -97,7 +97,7 @@ export default function CareersPage() {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/20 border border-blue-400/30 mb-6">
               <Briefcase className="w-4 h-4 text-blue-400" />
-              <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">
+              <span className="text-3xl text-blue-400 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 Careers
               </span>
             </div>
