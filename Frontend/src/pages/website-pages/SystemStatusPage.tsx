@@ -232,11 +232,11 @@ export default function SystemStatusPage() {
   const banner = overallBanner(services);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
 
       {/* Hero */}
-      <section className="py-20 bg-primary/5">
+      <section className="py-20 bg-[#EFE7D6]">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <motion.div
@@ -244,10 +244,10 @@ export default function SystemStatusPage() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
             >
-              <Activity className="w-16 h-16 text-primary mx-auto mb-6" />
+              <Activity className="w-16 h-16 text-[#1E3A28] mx-auto mb-6" />
             </motion.div>
             <motion.h1
-              className="text-4xl md:text-5xl font-bold text-foreground mb-4"
+              className="text-4xl md:text-5xl font-bold text-gray-900 mb-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.15 }}
@@ -348,11 +348,11 @@ export default function SystemStatusPage() {
                       className="flex items-center justify-between p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors"
                     >
                       <div className="flex items-center gap-4 min-w-0">
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <svc.icon size={18} className="text-primary" />
+                        <div className="w-10 h-10 rounded-lg bg-[#1E3A28]/10 flex items-center justify-center shrink-0">
+                          <svc.icon size={18} className="text-[#1E3A28]" />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-semibold text-sm text-foreground">{svc.name}</p>
+                          <p className="font-semibold text-sm text-gray-900">{svc.name}</p>
                           <p className="text-xs text-muted-foreground truncate">{svc.detail ?? svc.description}</p>
                         </div>
                       </div>
