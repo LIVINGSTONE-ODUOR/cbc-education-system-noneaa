@@ -15,20 +15,20 @@ interface TestimonialCardProps {
 
 // Sub-component for Testimonials to reduce redundancy
 const TestimonialCard = ({ quote, author, role, initials }: TestimonialCardProps) => (
-  <div className="bg-slate-800/50 backdrop-blur-md rounded-2xl p-8 border border-slate-700 hover:border-indigo-500/50 transition-colors">
+  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/15 hover:border-[#9C7A3C]/60 transition-colors">
     <div className="flex items-center gap-1 mb-4">
       {[...Array(5)].map((_, i) => (
-        <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+        <Star key={i} className="w-4 h-4 fill-[#E4C68A] text-[#E4C68A]" />
       ))}
     </div>
-    <p className="text-slate-300 mb-6 italic leading-relaxed">"{quote}"</p>
+    <p className="text-white/80 mb-6 italic leading-relaxed">"{quote}"</p>
     <div className="flex items-center gap-3">
-      <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-600 to-cyan-500 flex items-center justify-center text-white font-bold shadow-inner">
+      <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#9C7A3C] to-[#1E3A28] flex items-center justify-center text-white font-bold shadow-inner">
         {initials}
       </div>
       <div>
         <div className="text-white font-semibold">{author}</div>
-        <div className="text-slate-400 text-sm">{role}</div>
+        <div className="text-white/60 text-sm">{role}</div>
       </div>
     </div>
   </div>
@@ -71,7 +71,7 @@ const ClientsPage = () => {
   [activeCategory]);
 
   return (
-    <div className="min-h-screen bg-[#e8edf5]">
+    <div className="min-h-screen bg-[#F6F1E7]">
       <Header />
 
       {/* Hero Section: Refined Gradient & Typography */}
@@ -86,7 +86,7 @@ const ClientsPage = () => {
   />
 
   {/* Dark Overlay */}
-  <div className="absolute inset-0 bg-slate-900/80" />
+  <div className="absolute inset-0 bg-[#1E3A28]/80" />
 
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
     <div className="max-w-3xl">
@@ -94,13 +94,13 @@ const ClientsPage = () => {
         className="text-4xl font-normal tracking-tight mb-6"
         style={{ fontFamily: "'Italianno', cursive" }}
       >
-        <span className="text-foreground">Our </span>
-        <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
+        <span className="text-white">Our </span>
+        <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#E4C68A] to-[#9C7A3C]">
           Trusted Partners
         </span>
       </h1>
 
-      <p className="text-xl text-slate-300 leading-relaxed">
+      <p className="text-xl text-white/80 leading-relaxed">
         {typedText}
         <span className="animate-pulse">|</span>
       </p>
@@ -120,12 +120,12 @@ const ClientsPage = () => {
       />
 
       {/* Category Filter Section */}
-      <section className="py-24">
+      <section className="py-24 bg-[#F6F1E7]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
             <div className="max-w-xl">
-              <h2 className="text-3xl font-bold text-slate-900 mb-4">Explore our Network</h2>
-              <p className="text-slate-600">Filter by institution type to see how we tailor CBE solutions for different learning environments.</p>
+              <h2 className="text-3xl font-bold text-[#1C1C1C] mb-4">Explore our Network</h2>
+              <p className="text-[#4A4A44]/90">Filter by institution type to see how we tailor CBE solutions for different learning environments.</p>
             </div>
             
             <div className="flex flex-wrap gap-2">
@@ -135,8 +135,8 @@ const ClientsPage = () => {
                   onClick={() => setActiveCategory(cat.id)}
                   className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
                     activeCategory === cat.id
-                      ? 'bg-slate-900 text-white shadow-lg shadow-slate-200'
-                      : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+                      ? 'bg-[#1E3A28] text-white shadow-lg shadow-[#1E3A28]/20'
+                      : 'bg-white text-[#4A4A44] hover:bg-[#EDE4D3] border border-[#1E3A28]/10'
                   }`}
                 >
                   {cat.name} <span className="ml-1 opacity-60 font-normal">({cat.count})</span>
@@ -154,11 +154,11 @@ const ClientsPage = () => {
       </section>
 
       {/* Success Stories Section: Dark Mode Aesthetic */}
-      <section className="py-24 bg-slate-900">
+      <section className="py-24 bg-[#1E3A28]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-white mb-4">Voice of the Educators</h2>
-            <div className="h-1 w-20 bg-indigo-500 mx-auto rounded-full" />
+            <div className="h-1 w-20 bg-[#9C7A3C] mx-auto rounded-full" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -179,19 +179,19 @@ const ClientsPage = () => {
       </section>
 
       {/* CTA Section: Clean & Professional */}
-      <section className="py-20 bg-[#e8edf5]">
+      <section className="py-20 bg-[#F6F1E7]">
         <div className="max-w-5xl mx-auto px-4 text-center">
-          <div className="bg-gradient-to-r from-indigo-600 to-blue-700 rounded-3xl p-12 shadow-2xl relative overflow-hidden">
+          <div className="bg-gradient-to-r from-[#1E3A28] to-[#2F5233] rounded-3xl p-12 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 relative z-10">Ready to modernize your school?</h2>
-            <p className="text-indigo-100 text-lg mb-10 max-w-2xl mx-auto relative z-10">
+            <p className="text-white/80 text-lg mb-10 max-w-2xl mx-auto relative z-10">
               Join 150+ Kenyan institutions. Get your CBE assessments and student tracking under one roof.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
-              <a href="/contact" className="bg-white text-indigo-700 font-bold py-4 px-8 rounded-xl hover:bg-indigo-50 transition-colors shadow-lg">
+              <a href="/contact" className="bg-white text-[#1E3A28] font-bold py-4 px-8 rounded-xl hover:bg-[#F6F1E7] transition-colors shadow-lg">
                 Request a Free Demo
               </a>
-              <a href="/pricing" className="bg-indigo-500/30 text-white border border-indigo-400 font-bold py-4 px-8 rounded-xl hover:bg-indigo-500/50 transition-colors">
+              <a href="/pricing" className="bg-white/10 text-white border border-white/30 font-bold py-4 px-8 rounded-xl hover:bg-white/20 transition-colors">
                 View Pricing
               </a>
             </div>
