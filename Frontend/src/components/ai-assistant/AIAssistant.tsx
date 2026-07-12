@@ -1,8 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, MessageCircle } from 'lucide-react';
+import { X, Send, MessageCircle, Headset } from 'lucide-react';
 import annaAvatar from '@/assets/anna.png';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  startConversation,
+  sendVisitorMessage,
+  escalateConversation,
+  getMessages,
+} from '@/lib/api/liveChatApi';
 
 interface Message {
   id: string;
@@ -178,6 +184,97 @@ export default function AIAssistant() {
   const greetingStartedRef = useRef(false);
   const greetingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Live chat: conversation persistence + human handoff ──
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isEscalated, setIsEscalated] = useState(false);
+  const [agentName, setAgentName] = useState<string | null>(null);
+  const seenMessageIdsRef = useRef<Set<string>>(new Set());
+  const lastPolledAtRef = useRef<string | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Create (or reuse) a conversation as soon as the widget is opened.
+  useEffect(() => {
+    if (!isOpen || conversationId) return;
+    const existingId = sessionStorage.getItem('noneaa_chat_conversation_id');
+    if (existingId) {
+      setConversationId(existingId);
+      return;
+    }
+    startConversation(window.location.pathname)
+      .then((conv) => {
+        setConversationId(conv.id);
+        sessionStorage.setItem('noneaa_chat_conversation_id', conv.id);
+      })
+      .catch((err) => console.error('Failed to start live chat conversation:', err));
+  }, [isOpen, conversationId]);
+
+  // Poll for agent replies once the conversation has been escalated.
+  useEffect(() => {
+    if (!isOpen || !isEscalated || !conversationId) {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+      return;
+    }
+
+    const poll = async () => {
+      try {
+        const { messages: newMessages } = await getMessages(conversationId, lastPolledAtRef.current || undefined);
+        if (newMessages.length === 0) return;
+        lastPolledAtRef.current = newMessages[newMessages.length - 1].created_at;
+
+        const fresh = newMessages.filter(
+          (m) => (m.sender_type === 'agent' || m.sender_type === 'system') && !seenMessageIdsRef.current.has(m.id)
+        );
+        if (fresh.length === 0) return;
+
+        fresh.forEach((m) => seenMessageIdsRef.current.add(m.id));
+        if (fresh.some((m) => m.sender_type === 'agent')) {
+          const lastAgentMsg = [...fresh].reverse().find((m) => m.sender_type === 'agent');
+          if (lastAgentMsg?.sender_name) setAgentName(lastAgentMsg.sender_name);
+        }
+
+        setMessages((prev) => [
+          ...prev,
+          ...fresh.map((m) => ({
+            id: m.id,
+            role: 'assistant' as const,
+            content: m.content,
+            timestamp: new Date(m.created_at),
+          })),
+        ]);
+      } catch (err) {
+        console.error('Live chat polling error:', err);
+      }
+    };
+
+    poll();
+    pollIntervalRef.current = setInterval(poll, 3500);
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  }, [isOpen, isEscalated, conversationId]);
+
+  const handleTalkToHuman = async () => {
+    if (!conversationId || isEscalated) return;
+    try {
+      await escalateConversation(conversationId);
+    } catch (err) {
+      console.error('Failed to escalate conversation:', err);
+    }
+    setIsEscalated(true);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `escalate-${Date.now()}`,
+        role: 'assistant',
+        content: "Connecting you to a member of our team. Someone will be with you shortly.",
+        timestamp: new Date(),
+      },
+    ]);
+  };
+
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     setIsDarkMode(mediaQuery.matches);
@@ -243,6 +340,39 @@ export default function AIAssistant() {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+
+    // Always persist the visitor's message so an agent can see full history,
+    // and check whether this message should trigger a handoff to a human.
+    let justEscalated = false;
+    if (conversationId) {
+      try {
+        const { escalated } = await sendVisitorMessage(conversationId, messageText);
+        if (escalated && !isEscalated) {
+          justEscalated = true;
+          setIsEscalated(true);
+        }
+      } catch (err) {
+        console.error('Failed to persist visitor message:', err);
+      }
+    }
+
+    // Once escalated, a human is handling replies — stop generating AI replies
+    // and just wait on the polling loop above.
+    if (isEscalated || justEscalated) {
+      if (justEscalated) {
+        setMessages(prev => [
+          ...prev,
+          {
+            id: `escalate-${Date.now()}`,
+            role: 'assistant',
+            content: "Connecting you to a member of our team. Someone will be with you shortly.",
+            timestamp: new Date(),
+          },
+        ]);
+      }
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const searchResults = await searchNoneaaWebsite(messageText);
@@ -370,8 +500,23 @@ export default function AIAssistant() {
               </div>
               <div className="flex-1">
                 <div className="font-semibold text-white">Anna</div>
-                <div className="text-xs text-[#E4C68A]">Customer Support • Online</div>
+                <div className="text-xs text-[#E4C68A]">
+                  {isEscalated
+                    ? agentName
+                      ? `Connected to ${agentName}`
+                      : 'Connecting you to a team member…'
+                    : 'Customer Support • Online'}
+                </div>
               </div>
+              {!isEscalated && (
+                <button
+                  onClick={handleTalkToHuman}
+                  title="Talk to a human"
+                  className="text-[#E4C68A] hover:text-white transition-colors mr-1"
+                >
+                  <Headset className="w-5 h-5" />
+                </button>
+              )}
               <button onClick={() => setIsOpen(false)} className="text-3xl text-[#E4C68A] hover:text-white">×</button>
             </div>
 
