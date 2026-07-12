@@ -28,7 +28,6 @@ import {
   Linkedin,
   Instagram,
   ArrowRight,
-  Sparkles,
   Star,
   CheckCircle,
   Play,
@@ -528,10 +527,12 @@ export default function HomePage() {
             transition={{ duration: 0.8 }}
             className="max-w-3xl"
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-6">
-              <Sparkles className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm font-medium text-white/90">Leading CBE Platform</span>
-            </div>
+            <p
+              className="text-xl text-white/90 mb-6"
+              style={{ fontFamily: "'Italianno', cursive" }}
+            >
+              Leading School Management Platform
+            </p>
 
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.2] mb-6">
               The School Management Platform for{' '}
