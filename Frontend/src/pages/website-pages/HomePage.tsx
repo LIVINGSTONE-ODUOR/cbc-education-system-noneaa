@@ -628,10 +628,12 @@ export default function HomePage() {
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border border-blue-500/20 mb-4">
-              <Zap className="w-4 h-4 text-blue-500" />
-              <span className="text-sm font-medium text-primary">Platform Features</span>
-            </div>
+            <p
+              className="text-3xl text-primary mb-4"
+              style={{ fontFamily: "'Italianno', cursive" }}
+            >
+              Platform Features
+            </p>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
               What Noneaa{' '}
               <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
