@@ -317,8 +317,11 @@ export default function CBETrackLanding() {
             {/* Text Side */}
             <RevealSection>
               <div>
-                <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
-                  COMPREHENSIVE SYSTEM
+                <p
+                  className="text-3xl text-blue-600 mb-3"
+                  style={{ fontFamily: "'Italianno', cursive" }}
+                >
+                  Comprehensive System
                 </p>
 
                 <h2 className="text-4xl font-bold text-gray-900 mb-6">
@@ -404,8 +407,11 @@ export default function CBETrackLanding() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <RevealSection>
             <div className="text-center mb-16">
-              <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">
-                DATA-DRIVEN INSIGHTS
+              <p
+                className="text-3xl text-indigo-600 mb-3"
+                style={{ fontFamily: "'Italianno', cursive" }}
+              >
+                Data-Driven Insights
               </p>
               <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
                 Real-Time Analytics & Performance Tracking
@@ -604,7 +610,7 @@ export default function CBETrackLanding() {
             <RevealSection delay={0.2} className="order-1 md:order-2">
               <div>
 
-                <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
+                <p className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                   ACCOUNTING SYSTEM
                 </p>
 
@@ -670,7 +676,7 @@ export default function CBETrackLanding() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <RevealSection>
             <div className="text-center mb-16">
-              <p className="text-sm font-semibold text-green-600 uppercase tracking-wide mb-3">
+              <p className="text-3xl text-green-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 PLATFORM CAPABILITIES
               </p>
               <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
@@ -748,7 +754,7 @@ export default function CBETrackLanding() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <RevealSection>
               <div>
-                <p className="text-sm font-semibold text-green-600 uppercase tracking-wide mb-3">
+                <p className="text-3xl text-green-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                   USER & ROLES
                 </p>
                 <h2 className="text-4xl font-bold text-gray-900 mb-6">
@@ -837,7 +843,7 @@ export default function CBETrackLanding() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <RevealSection>
             <div className="text-center mb-16">
-              <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
+              <p className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 GET STARTED
               </p>
               <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
@@ -898,7 +904,7 @@ export default function CBETrackLanding() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <RevealSection>
             <div className="text-center mb-16">
-              <p className="text-sm font-semibold text-blue-300 uppercase tracking-wide mb-3">
+              <p className="text-3xl text-blue-300 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                 TESTIMONIALS
               </p>
               <h2 className="text-4xl md:text-5xl font-bold mb-6">
@@ -963,7 +969,7 @@ export default function CBETrackLanding() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <RevealSection>
               <div>
-                <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">
+                <p className="text-3xl text-indigo-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>
                   SEAMLESS INTEGRATIONS
                 </p>
                 <h2 className="text-4xl font-bold text-gray-900 mb-6">
