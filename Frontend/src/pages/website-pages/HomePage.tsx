@@ -609,11 +609,11 @@ export default function HomePage() {
               {/*
                 LAPTOP MOCKUP PHOTO SLOT
                 Save the laptop/dashboard photo you download to:
-                Frontend/public/hero-laptop-dashboard.png
+                Frontend/public/hero-laptop-dashboard.jpg
                 It will then show up automatically at the src path below.
               */}
               <img
-                src="/hero-laptop-dashboard.png"
+                src="/hero-laptop-dashboard.jpg"
                 alt="Noneaa dashboard shown on a laptop"
                 className="w-full h-auto rounded-2xl"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
