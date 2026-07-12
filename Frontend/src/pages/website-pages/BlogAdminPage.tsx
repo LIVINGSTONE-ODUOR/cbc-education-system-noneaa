@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Edit3, LogOut, Eye, Calendar, Tag, Image, FileText, X, Save, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Edit3, LogOut, Eye, Calendar, Tag, Image, FileText, X, Save, ArrowLeft, Headset } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBlog, BlogPost } from '@/contexts/BlogContext';
 
@@ -106,6 +106,13 @@ export default function BlogAdminPage() {
             </span>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/owner/support-inbox')}
+              className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white text-sm transition"
+            >
+              <Headset className="w-4 h-4" />
+              Support Inbox
+            </button>
             <button
               onClick={() => navigate('/blog')}
               className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white text-sm transition"
