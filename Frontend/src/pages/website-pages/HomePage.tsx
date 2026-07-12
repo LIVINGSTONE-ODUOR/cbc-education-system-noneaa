@@ -198,7 +198,7 @@ const tools = [
     icon: LayoutGrid,
     title: 'Curriculum Management',
     description: 'Organise all CBC learning areas, strands, and sub-strands. Assign teachers to subjects and track coverage across Pre-Primary to Senior Secondary.',
-    gradient: 'from-blue-500 to-cyan-500',
+    gradient: 'from-emerald-400 to-teal-600',
     features: ['Learning areas & strands', 'Teacher allocation', 'KICD-aligned structure'],
   },
   {
@@ -212,7 +212,7 @@ const tools = [
     icon: BarChart3,
     title: 'Progress Tracking',
     description: 'View each student\'s competency levels across all subjects with heatmaps and progress dashboards. Parents can see their child\'s standing in real time.',
-    gradient: 'from-cyan-500 to-blue-600',
+    gradient: 'from-teal-400 to-emerald-700',
     features: ['Competency heatmaps', 'Parent access portal', 'Growth analytics'],
   },
   {
@@ -675,14 +675,14 @@ export default function HomePage() {
             className="text-center mb-16"
           >
             <p
-              className="text-3xl text-primary mb-4"
+              className="text-3xl text-emerald-700 mb-4"
               style={{ fontFamily: "'Italianno', cursive" }}
             >
               Platform Features
             </p>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
               What Noneaa{' '}
-              <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
                 Does for Your School
               </span>
             </h2>
@@ -711,7 +711,7 @@ export default function HomePage() {
                         <span className="text-xs font-bold text-white">{index + 1}</span>
                       </div>
                     </div>
-                    <h3 className="text-xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors">
+                    <h3 className="text-xl font-bold text-foreground mb-3 group-hover:text-emerald-700 transition-colors">
                       {tool.title}
                     </h3>
                     <p className="text-muted-foreground mb-4">{tool.description}</p>
