@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { ownerLoginRequest, getOwnerToken, OWNER_TOKEN_KEY, WebsiteOwner } from '@/lib/api/ownerAuthApi';
 
 export interface BlogPost {
   id: string;
@@ -15,7 +16,8 @@ export interface BlogPost {
 interface BlogContextType {
   posts: BlogPost[];
   isOwnerAuthenticated: boolean;
-  ownerLogin: (password: string) => boolean;
+  owner: WebsiteOwner | null;
+  ownerLogin: (email: string, password: string) => Promise<boolean>;
   ownerLogout: () => void;
   addPost: (post: Omit<BlogPost, 'id' | 'publishedAt'>) => void;
   deletePost: (id: string) => void;
@@ -24,9 +26,8 @@ interface BlogContextType {
 
 const BlogContext = createContext<BlogContextType | undefined>(undefined);
 
-const OWNER_PASSWORD = 'noneaa-owner-2024';
 const STORAGE_KEY = 'noneaa_blog_posts';
-const AUTH_KEY = 'noneaa_owner_auth';
+const OWNER_KEY = 'noneaa_owner_profile';
 
 const defaultPosts: BlogPost[] = [
   {
@@ -92,26 +93,37 @@ export function BlogProvider({ children }: { children: React.ReactNode }) {
     return stored ? JSON.parse(stored) : defaultPosts;
   });
 
+  const [owner, setOwner] = useState<WebsiteOwner | null>(() => {
+    const stored = sessionStorage.getItem(OWNER_KEY);
+    return stored ? JSON.parse(stored) : null;
+  });
+
   const [isOwnerAuthenticated, setIsOwnerAuthenticated] = useState(() => {
-    return sessionStorage.getItem(AUTH_KEY) === 'true';
+    return Boolean(getOwnerToken());
   });
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
   }, [posts]);
 
-  const ownerLogin = (password: string): boolean => {
-    if (password === OWNER_PASSWORD) {
+  const ownerLogin = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const { token, owner: loggedInOwner } = await ownerLoginRequest(email, password);
+      sessionStorage.setItem(OWNER_TOKEN_KEY, token);
+      sessionStorage.setItem(OWNER_KEY, JSON.stringify(loggedInOwner));
+      setOwner(loggedInOwner);
       setIsOwnerAuthenticated(true);
-      sessionStorage.setItem(AUTH_KEY, 'true');
       return true;
+    } catch {
+      return false;
     }
-    return false;
   };
 
   const ownerLogout = () => {
     setIsOwnerAuthenticated(false);
-    sessionStorage.removeItem(AUTH_KEY);
+    setOwner(null);
+    sessionStorage.removeItem(OWNER_TOKEN_KEY);
+    sessionStorage.removeItem(OWNER_KEY);
   };
 
   const addPost = (post: Omit<BlogPost, 'id' | 'publishedAt'>) => {
@@ -132,7 +144,7 @@ export function BlogProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <BlogContext.Provider value={{ posts, isOwnerAuthenticated, ownerLogin, ownerLogout, addPost, deletePost, updatePost }}>
+    <BlogContext.Provider value={{ posts, isOwnerAuthenticated, owner, ownerLogin, ownerLogout, addPost, deletePost, updatePost }}>
       {children}
     </BlogContext.Provider>
   );
