@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Eye, EyeOff, ArrowLeft, Building2, Shield, GraduationCap, Users, Check, CheckCircle2, Clock, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, Building2, Shield, GraduationCap, Users, Check, CheckCircle2, Clock } from 'lucide-react';
 import loginBg from '@/assets/hero-bg.png';
 import PageLoader from '@/components/PageLoader';
 import { cn } from '@/lib/utils';
@@ -203,9 +203,6 @@ export default function LoginPage() {
               <div className="text-center mb-8">
                 <div className="relative inline-block">
                   <img src="/Noneea-logo.jpg" alt="NONEAA" className="h-20 w-20 object-cover rounded-2xl mx-auto mb-3 shadow-lg ring-4 ring-white" />
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 border-2 border-white flex items-center justify-center">
-                    <Sparkles className="w-3 h-3 text-white" />
-                  </div>
                 </div>
                 <h2 className="text-xl font-bold text-slate-900">NONEAA</h2>
                 <p className="text-xs text-slate-500 mt-0.5">Competency-Based Education Platform</p>
