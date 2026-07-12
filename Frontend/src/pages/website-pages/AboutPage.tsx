@@ -42,7 +42,7 @@ const growthData = [
 ];
 
 const impactData = [
-  { subject: 'Math', before: 52, after: 78 },
+  { subject: 'Maths', before: 52, after: 78 },
   { subject: 'Science', before: 48, after: 74 },
   { subject: 'English', before: 61, after: 82 },
   { subject: 'Kiswahili', before: 58, after: 79 },
