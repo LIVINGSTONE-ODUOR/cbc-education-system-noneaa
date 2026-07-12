@@ -623,6 +623,72 @@ router.delete('/:id', authenticate, authorize('super_admin', 'school_admin'), au
   }
 });
 
+// ==================== NOTIFICATION PREFERENCES ====================
+
+// GET /api/users/me/notification-preferences
+router.get('/me/notification-preferences', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const result = await db.query(
+      'SELECT notification_preferences FROM users WHERE id = $1 AND deleted_at IS NULL',
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    return res.json({
+      success: true,
+      data: result.rows[0].notification_preferences || {
+        email: true, sms: true, announcements: true, attendance: true, grades: true, fees: true
+      }
+    });
+  } catch (error) {
+    console.error('Get notification preferences error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch notification preferences' });
+  }
+});
+
+// PUT /api/users/me/notification-preferences
+router.put('/me/notification-preferences', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { email, sms, announcements, attendance, grades, fees } = req.body;
+
+    // Merge into the existing JSONB so a partial update (e.g. just toggling
+    // "sms") never wipes out the other preference keys.
+    const patch = {};
+    if (typeof email === 'boolean') patch.email = email;
+    if (typeof sms === 'boolean') patch.sms = sms;
+    if (typeof announcements === 'boolean') patch.announcements = announcements;
+    if (typeof attendance === 'boolean') patch.attendance = attendance;
+    if (typeof grades === 'boolean') patch.grades = grades;
+    if (typeof fees === 'boolean') patch.fees = fees;
+
+    const result = await db.query(
+      `UPDATE users
+       SET notification_preferences = notification_preferences || $1::jsonb, updated_at = NOW()
+       WHERE id = $2 AND deleted_at IS NULL
+       RETURNING notification_preferences`,
+      [JSON.stringify(patch), userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    return res.json({
+      success: true,
+      data: result.rows[0].notification_preferences,
+      message: 'Notification preferences updated successfully'
+    });
+  } catch (error) {
+    console.error('Update notification preferences error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to update notification preferences' });
+  }
+});
+
 // ==================== LOGIN SECURITY SETTINGS ====================
 
 // GET /api/users/me/security-settings
