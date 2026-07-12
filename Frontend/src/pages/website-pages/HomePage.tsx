@@ -81,7 +81,6 @@ import {
   Palette,
   DollarSign,
   Map,
-  MessageCircle,
 } from 'lucide-react';
 import heroVideo from '@/assets/teacher-teaching.mp4';
 import heroBg from '@/assets/hero-bg.png';
@@ -655,16 +654,6 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Floating live-support pill + chat bubble, matching reference bottom-right */}
-              <div className="absolute z-20 -bottom-4 right-4 flex items-center gap-2">
-                <div className="flex items-center gap-2 bg-[#1E3A28] text-white text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
-                  <Play className="w-3 h-3" />
-                  Live Support
-                </div>
-                <div className="w-10 h-10 rounded-full bg-[#1E3A28] shadow-lg flex items-center justify-center">
-                  <MessageCircle className="w-4 h-4 text-white" />
-                </div>
-              </div>
             </motion.div>
           </div>
         </div>
