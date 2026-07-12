@@ -256,7 +256,7 @@ export default function ContactPage() {
             <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }}>
               <motion.div className="flex items-center gap-3 mb-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
                 <div className="h-px w-10 bg-blue-400" />
-                <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Get in Touch</span>
+                <span className="text-3xl text-blue-400 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Get in Touch</span>
               </motion.div>
 
               <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-6">
@@ -571,7 +571,7 @@ export default function ContactPage() {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-12">
             <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200 mb-6">
               <Sparkles className="w-4 h-4 text-emerald-600" />
-              <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Why Choose NONEAA</span>
+              <span className="text-3xl text-emerald-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Why Choose NONEAA</span>
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">We're More Than Just Software</motion.h2>
             <motion.p variants={fadeUp} className="text-lg text-slate-600 max-w-2xl mx-auto">Every school gets a dedicated team committed to their success</motion.p>
@@ -604,7 +604,7 @@ export default function ContactPage() {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-12">
             <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-200 mb-6">
               <MessageSquare className="w-4 h-4 text-blue-600" />
-              <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">FAQ</span>
+              <span className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>FAQ</span>
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Frequently Asked Questions</motion.h2>
             <motion.p variants={fadeUp} className="text-lg text-slate-600 max-w-2xl mx-auto">Find quick answers to common questions about NONEAA and getting started</motion.p>
@@ -657,7 +657,7 @@ export default function ContactPage() {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-12">
             <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-50 border border-purple-200 mb-6">
               <CreditCard className="w-4 h-4 text-purple-600" />
-              <span className="text-xs font-semibold text-purple-600 uppercase tracking-wider">Payments</span>
+              <span className="text-3xl text-purple-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Payments</span>
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Flexible Payment Options</motion.h2>
             <motion.p variants={fadeUp} className="text-lg text-slate-600 max-w-2xl mx-auto">We support safe and automated clearings across mainstream gateways</motion.p>
