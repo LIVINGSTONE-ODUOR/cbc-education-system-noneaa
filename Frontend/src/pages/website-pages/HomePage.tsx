@@ -362,7 +362,7 @@ const FloatingElement = ({ children, delay = 0 }: { children: React.ReactNode; d
 const GlowingCard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={cn('relative group', className)}>
     <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-xl blur opacity-30 group-hover:opacity-70 transition duration-500 group-hover:duration-200 animate-pulse" />
-    <div className="relative bg-card rounded-xl p-8 border border-border/50">
+    <div className="relative bg-card rounded-xl p-5 border border-border/50">
       {children}
     </div>
   </div>
@@ -665,33 +665,33 @@ export default function HomePage() {
       </section>
 
       {/* Quick Access Tools - Enhanced */}
-      <section ref={toolsRef} className="py-24 relative bg-[#F6F1E7]">
+      <section ref={toolsRef} className="py-16 relative bg-[#F6F1E7]">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1E3A28]/5 to-transparent" />
         <div className="container mx-auto px-4 lg:px-8 relative">
           <motion.div
             initial={{ y: 50, opacity: 0 }}
             animate={isToolsInView ? { y: 0, opacity: 1 } : {}}
             transition={{ duration: 0.6 }}
-            className="text-center mb-16"
+            className="text-center mb-10"
           >
             <p
-              className="text-3xl text-emerald-700 mb-4"
+              className="text-2xl text-emerald-700 mb-2"
               style={{ fontFamily: "'Italianno', cursive" }}
             >
               Platform Features
             </p>
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
               What Noneaa{' '}
               <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
                 Does for Your School
               </span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Four core modules that cover everything from curriculum setup to parent communication.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto">
             {tools.map((tool, index) => {
               const Icon = tool.icon;
               return (
@@ -704,33 +704,34 @@ export default function HomePage() {
                   className="relative group"
                 >
                   <GlowingCard>
-                    <div className={`absolute top-0 right-0 w-16 h-16 rounded-full bg-gradient-to-br ${tool.gradient} blur-2xl opacity-20 group-hover:opacity-40 transition-opacity`} />
-                    <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${tool.gradient} flex items-center justify-center mb-6 relative`}>
-                      <Icon className="w-8 h-8 text-white" />
-                      <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
-                        <span className="text-xs font-bold text-white">{index + 1}</span>
+                    <div className={`absolute top-0 right-0 w-12 h-12 rounded-full bg-gradient-to-br ${tool.gradient} blur-2xl opacity-20 group-hover:opacity-40 transition-opacity`} />
+                    <div className={`w-11 h-11 rounded-lg bg-gradient-to-br ${tool.gradient} flex items-center justify-center mb-4 relative`}>
+                      <Icon className="w-5 h-5 text-white" />
+                      <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                        <span className="text-[9px] font-bold text-white">{index + 1}</span>
                       </div>
                     </div>
-                    <h3 className="text-xl font-bold text-foreground mb-3 group-hover:text-emerald-700 transition-colors">
+                    <h3 className="text-base font-bold text-foreground mb-2 group-hover:text-emerald-700 transition-colors">
                       {tool.title}
                     </h3>
-                    <p className="text-muted-foreground mb-4">{tool.description}</p>
-                    <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground mb-3 leading-relaxed">{tool.description}</p>
+                    <div className="space-y-1.5">
                       {tool.features.map((feature, idx) => (
                         <div key={idx} className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-emerald-500" />
-                          <span className="text-sm text-muted-foreground">{feature}</span>
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                          <span className="text-xs text-muted-foreground">{feature}</span>
                         </div>
                       ))}
                     </div>
                     <Button
                       variant="ghost"
-                      className="w-full mt-6 group-hover:bg-secondary/50 transition-colors"
+                      size="sm"
+                      className="w-full mt-4 group-hover:bg-secondary/50 transition-colors text-xs"
                       asChild
                     >
                       <Link to={`/${tool.title.toLowerCase().replace(' ', '-')}`}>
                         Explore
-                        <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="ml-2 w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                       </Link>
                     </Button>
                   </GlowingCard>
