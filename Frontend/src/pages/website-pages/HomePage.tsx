@@ -615,6 +615,12 @@ export default function HomePage() {
               </div>
               <BookOpen className="hidden md:block absolute top-1/3 -left-12 w-8 h-8 text-[#1E3A28]/35 z-0" strokeWidth={1.3} />
 
+              {/* Large gear shape, half-hidden behind the laptop photo top-right corner */}
+              <Settings
+                className="hidden md:block absolute -top-16 -right-14 w-48 h-48 text-[#1E3A28]/15 z-0"
+                strokeWidth={1}
+              />
+
               {/*
                 LAPTOP MOCKUP PHOTO SLOT
                 Save the laptop/dashboard photo you download to:
