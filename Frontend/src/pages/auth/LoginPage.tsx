@@ -190,7 +190,7 @@ export default function LoginPage() {
                   <CheckCircle2 className="w-10 h-10 text-white" strokeWidth={2} />
                 </div>
                 <h2 className="text-3xl font-bold text-slate-900">Welcome Back!</h2>
-                <p className="text-slate-500 text-sm tracking-widest animate-pulse">Redirecting to your dashboard...</p>
+                <p className="text-slate-500 text-sm tracking-widest animate-pulse">directing to your dashboard...</p>
               </div>
             </div>
           )}
@@ -210,7 +210,7 @@ export default function LoginPage() {
 
               {/* Role selector */}
               <div className="flex-1">
-                <p className="text-base font-semibold text-slate-400 mb-3" style={{ fontFamily: "'Allura', cursive" }}>Select Your Role</p>
+                <p className="text-base font-semibold text-slate-400 mb-3" style={{ fontFamily: "'Allura', cursive" }}>Select Your Role:</p>
                 <div className="space-y-2.5">
                   {roles.map((role, index) => {
                     const Icon = role.icon;
