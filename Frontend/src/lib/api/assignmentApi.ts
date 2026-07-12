@@ -300,6 +300,8 @@ export interface LearnerDueAssignment {
   max_grade: number;
   submission_status: LearnerAssignmentStatus;
   grade: number | null;
+  teacher_comment: string | null;
+  submitted_at: string | null;
   is_overdue: boolean;
 }
 
