@@ -153,7 +153,7 @@ export default function PrivacyPage() {
       <AnimatedSection className="py-20 bg-[#dfe5f0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
-            <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Our Commitment</p>
+            <p className="text-3xl text-blue-600 mb-3" style={{ fontFamily: "'Italianno', cursive" }}>Our Commitment</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Privacy Principles We Live By</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               These principles guide every decision we make about your data.
