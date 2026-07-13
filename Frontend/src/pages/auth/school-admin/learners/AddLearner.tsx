@@ -1500,14 +1500,14 @@ export default function AddLearnerPage() {
             </Card>
 
             {/* Nationality */}
-            <Card className="border-0 shadow-sm bg-orange-50 dark:bg-orange-950/30">
+            <Card className="border-0 shadow-sm bg-orange-100 dark:bg-orange-950/30">
               <CardContent className="p-4 space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-orange-600/80">Nationality</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-orange-700/80">Nationality</p>
                 <Select
                   value={learnerData.nationality}
                   onValueChange={(value) => setLearnerData((prev) => ({ ...prev, nationality: value }))}
                 >
-                  <SelectTrigger className="h-10 border-orange-200 bg-white font-semibold text-orange-900 focus:border-orange-500">
+                  <SelectTrigger className="h-11 border-orange-200 bg-white text-lg font-bold text-orange-950 focus:border-orange-500">
                     <SelectValue placeholder="Select nationality" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1566,17 +1566,17 @@ export default function AddLearnerPage() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-11 gap-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white shadow-sm"
+                  className="w-full h-auto min-h-11 py-2.5 px-3 gap-2 whitespace-normal text-center leading-snug bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white shadow-sm"
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin shrink-0" />
                       {isEditMode ? 'Updating...' : 'Creating...'}
                     </>
                   ) : (
                     <>
-                      {isEditMode ? 'Update Student' : 'Complete Application & Create Student'}
-                      <CheckCircle2 className="h-4 w-4" />
+                      <span>{isEditMode ? 'Update Student' : 'Complete Application & Create Student'}</span>
+                      <CheckCircle2 className="h-4 w-4 shrink-0" />
                     </>
                   )}
                 </Button>
