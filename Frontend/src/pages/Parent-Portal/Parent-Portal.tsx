@@ -10,7 +10,7 @@ import {
   User, BookOpen, Loader2, AlertCircle, CalendarCheck, Wallet, ClipboardList,
   FileText, MessageSquare, Megaphone, MessageCircle, Clock, PartyPopper,
   HeartPulse, Phone, GraduationCap, Cake, LayoutDashboard, CalendarClock,
-  Settings as SettingsIcon, LogOut,
+  Settings as SettingsIcon, LogOut, Download,
 } from 'lucide-react';
 import { getMyChildren } from '@/lib/api/parentsApi';
 import { getLearnerResults, ExamSummary } from '@/lib/api/resultsApi';
@@ -448,6 +448,87 @@ const ParentPortal = () => {
   };
 
   const selectedChild = children.find((c) => c.id === selectedChildId);
+
+  const downloadFeeStructurePDF = () => {
+    if (!feeStructures || feeStructures.length === 0) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const schoolName = user?.schoolName || 'School';
+    const gradeLabel = selectedChild?.grade_level || '';
+    const childName = selectedChild ? `${selectedChild.first_name} ${selectedChild.last_name}` : '';
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Fee Structure - ${gradeLabel}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px; }
+          .header h1 { font-size: 20px; margin-bottom: 4px; }
+          .header h2 { font-size: 16px; font-weight: normal; color: #444; margin-bottom: 4px; }
+          .header p { font-size: 13px; color: #666; }
+          .meta { margin-bottom: 20px; padding: 10px; background: #f5f5f5; border-radius: 5px; }
+          .meta p { font-size: 13px; margin: 3px 0; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 12px; }
+          th { background-color: #333; color: white; }
+          tr:nth-child(even) { background-color: #f9f9f9; }
+          .amount { text-align: right; font-weight: bold; }
+          .optional { color: #888; }
+          .footer { margin-top: 30px; text-align: right; font-size: 11px; color: #666; }
+          @media print { body { -webkit-print-color-adjust: exact; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${schoolName}</h1>
+          <h2>Fee Structure</h2>
+          <p>${gradeLabel}${childName ? ` &middot; ${childName}` : ''}</p>
+        </div>
+
+        <div class="meta">
+          <p><strong>Total Fee Items:</strong> ${feeStructures.length}</p>
+          <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Fee Name</th>
+              <th>Category</th>
+              <th>Frequency</th>
+              <th>Amount (KES)</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${feeStructures.map(fee => `
+              <tr>
+                <td>${fee.name}</td>
+                <td>${fee.category.charAt(0).toUpperCase() + fee.category.slice(1)}</td>
+                <td>${formatFeeFrequency(fee.frequency)}</td>
+                <td class="amount">${Number(fee.amount).toLocaleString()}</td>
+                <td class="${fee.is_mandatory ? '' : 'optional'}">${fee.is_mandatory ? 'Mandatory' : 'Optional'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <p>Generated on ${new Date().toLocaleString()}</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.onload = () => { printWindow.print(); };
+  };
+
   const latestExam = exams[0] || null;
   const todaysPeriods = timetable.filter((p) => p.day_of_week === todayDayOfWeek());
 
@@ -833,10 +914,20 @@ const ParentPortal = () => {
 
                 {/* 5. Fee structure — grade-specific breakdown from /api/v1/fee-structures */}
                 <Card className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
-                  <CardHeader className="pb-2">
+                  <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
                     <CardTitle className="text-sm font-medium flex items-center gap-2">
                       <Wallet className="h-4 w-4 text-primary" /> Fee structure
                     </CardTitle>
+                    {!loadingFees && feeStructures && feeStructures.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs gap-1"
+                        onClick={downloadFeeStructurePDF}
+                      >
+                        <Download className="h-3.5 w-3.5" /> Download
+                      </Button>
+                    )}
                   </CardHeader>
                   <CardContent>
                     {loadingFees ? (
