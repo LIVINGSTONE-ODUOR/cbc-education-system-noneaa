@@ -782,6 +782,99 @@ const getLearnersForSchool = async (req, res) => {
   }
 };
 
+// ================================================================
+// GET /api/v1/schools/:id/administrators
+// List a school's administrator accounts (school_admins joined with
+// users) — name, email, title/role, and which one is currently the
+// signatory (is_principal). Used by the "School Signatory" settings
+// card so a school_admin can see and reassign who signs documents
+// like the fee structure.
+// ================================================================
+
+const getAdministrators = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (req.user.role === 'school_admin' && req.user.schoolId !== id) {
+      return respond(res, 403, false, 'You can only view your own school.');
+    }
+
+    const result = await query(
+      `SELECT u.id AS user_id, u.first_name, u.last_name, u.email, u.role,
+              sa.is_principal, sa.appointment_date
+       FROM school_admins sa
+       JOIN users u ON u.id = sa.user_id
+       WHERE sa.school_id = $1
+       ORDER BY sa.is_principal DESC, u.first_name ASC`,
+      [id]
+    );
+
+    const administrators = result.rows.map((row) => ({
+      user_id: row.user_id,
+      name: `${row.first_name || ''} ${row.last_name || ''}`.trim(),
+      email: row.email,
+      role: row.role,
+      is_principal: row.is_principal,
+      appointment_date: row.appointment_date,
+    }));
+
+    return respond(res, 200, true, 'Administrators retrieved', { administrators });
+  } catch (error) {
+    return dbFailure(res, error, 'Failed to fetch administrators.');
+  }
+};
+
+// ================================================================
+// PATCH /api/v1/schools/:id/administrators/:userId/signatory
+// Sets the given administrator as the school's signatory (is_principal
+// = true) and unsets it for every other administrator at the same
+// school, atomically. This is how the "principal" shown on the Fee
+// Structure page (and its PDF export) gets (re)assigned after
+// registration — previously there was no way to change it once set.
+// ================================================================
+
+const setSignatory = async (req, res) => {
+  try {
+    const { id, userId } = req.params;
+
+    if (req.user.role === 'school_admin' && req.user.schoolId !== id) {
+      return respond(res, 403, false, 'You can only manage your own school.');
+    }
+
+    const result = await transaction(async (client) => {
+      const membership = await client.query(
+        `SELECT 1 FROM school_admins WHERE school_id = $1 AND user_id = $2`,
+        [id, userId]
+      );
+
+      if (membership.rows.length === 0) {
+        throw new Error('That user is not an administrator at this school.');
+      }
+
+      await client.query(
+        `UPDATE school_admins SET is_principal = FALSE WHERE school_id = $1`,
+        [id]
+      );
+
+      const updated = await client.query(
+        `UPDATE school_admins SET is_principal = TRUE
+         WHERE school_id = $1 AND user_id = $2
+         RETURNING user_id`,
+        [id, userId]
+      );
+
+      return updated.rows[0];
+    });
+
+    return respond(res, 200, true, 'Signatory updated successfully.', result);
+  } catch (error) {
+    if (error.message === 'That user is not an administrator at this school.') {
+      return respond(res, 404, false, error.message);
+    }
+    return dbFailure(res, error, 'Failed to update signatory.');
+  }
+};
+
 module.exports = {
   getPlans,        // NEW: Public plans endpoint
   getSchools,
@@ -796,4 +889,6 @@ module.exports = {
   checkExpiry,
   getBranches,
   getLearnersForSchool,
+  getAdministrators,
+  setSignatory,
 };
