@@ -42,6 +42,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SchoolSignatoryCard } from './SchoolSignatoryCard';
 
 // ─────────────────────────────────────────────────────────────────
 // TYPES & INTERFACES
@@ -492,6 +493,8 @@ function SchoolProfileTab({
           </Button>
         </CardContent>
       </Card>
+
+      <SchoolSignatoryCard />
     </div>
   );
 }
