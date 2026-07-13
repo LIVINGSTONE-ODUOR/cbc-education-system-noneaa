@@ -388,29 +388,48 @@ const createSchool = async (req, res) => {
 const updateSchool = async (req, res) => {
   try {
     const { id } = req.params;
-    const allowedFields = [
-      'name',
-      'code',
-      'level',
-      'school_type',
-      'county',
-      'sub_county',
-      'ward',
-      'physical_address',
-      'postal_address',
-      'phone_number',
-      'email',
-      'admin_email',
-      'website',
-      'year_established',
-      'student_capacity',
-      'motto',
-      'subscription_plan',
-      'subscription_status',
-      'payment_due',
-      'fee_payment_instructions',
-      'is_active',
-    ];
+
+    // school_admin can only ever edit their own school, and only a small
+    // safe subset of fields — self-service content, not identity/billing
+    // data. Everything else (code, subscription_status, is_active, etc.)
+    // stays super_admin-only via this same endpoint.
+    const isSchoolAdmin = req.user.role === 'school_admin';
+
+    if (isSchoolAdmin && req.user.schoolId !== id) {
+      return respond(res, 403, false, 'You can only update your own school.');
+    }
+
+    const allowedFields = isSchoolAdmin
+      ? [
+          'phone_number',
+          'email',
+          'website',
+          'motto',
+          'fee_payment_instructions',
+        ]
+      : [
+          'name',
+          'code',
+          'level',
+          'school_type',
+          'county',
+          'sub_county',
+          'ward',
+          'physical_address',
+          'postal_address',
+          'phone_number',
+          'email',
+          'admin_email',
+          'website',
+          'year_established',
+          'student_capacity',
+          'motto',
+          'subscription_plan',
+          'subscription_status',
+          'payment_due',
+          'fee_payment_instructions',
+          'is_active',
+        ];
 
     const updates = [];
     const values = [];
