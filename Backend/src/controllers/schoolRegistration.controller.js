@@ -378,6 +378,15 @@ const registerSchoolAdmin = async (req, res) => {
       user_id:       authUserId,
       school_id:     school.id,
       appointment_date: effectiveAppointmentDate,
+      // This person is the only administrator that exists at registration
+      // time, so they become the default signatory — the name/title shown
+      // on documents like the Fee Structure PDF — regardless of which
+      // title (Principal/Headteacher/Director/Administrator) they picked.
+      // Previously this was never set at all, so no school ever had a
+      // signatory until someone manually assigned one afterward. Whoever
+      // registers can be reassigned later via School Settings > School
+      // Signatory once more administrators exist.
+      is_principal: true,
     };
     
   // Only add optional fields if they have values
