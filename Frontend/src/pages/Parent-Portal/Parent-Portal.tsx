@@ -449,6 +449,16 @@ const ParentPortal = () => {
 
   const selectedChild = children.find((c) => c.id === selectedChildId);
 
+  // Subtotal per frequency, mandatory items only — optional fees (e.g.
+  // transport) aren't automatically owed, so they're excluded from the
+  // "what you owe" figures and shown per-item instead.
+  const feeSubtotalsByFrequency = (feeStructures || [])
+    .filter((f) => f.is_mandatory)
+    .reduce((acc, f) => {
+      acc[f.frequency] = (acc[f.frequency] || 0) + Number(f.amount);
+      return acc;
+    }, {} as Record<string, number>);
+
   const downloadFeeStructurePDF = () => {
     if (!feeStructures || feeStructures.length === 0) return;
     const printWindow = window.open('', '_blank');
@@ -492,6 +502,9 @@ const ParentPortal = () => {
         <div class="meta">
           <p><strong>Total Fee Items:</strong> ${feeStructures.length}</p>
           <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
+          ${Object.entries(feeSubtotalsByFrequency).map(([freq, total]) =>
+            `<p><strong>Subtotal (${formatFeeFrequency(freq)}, mandatory):</strong> KES ${total.toLocaleString()}</p>`
+          ).join('')}
         </div>
 
         <table>
@@ -943,6 +956,15 @@ const ParentPortal = () => {
                     ) : (
                       <div className="space-y-2">
                         <p className="text-xs text-muted-foreground">{selectedChild?.grade_level}</p>
+                        {Object.keys(feeSubtotalsByFrequency).length > 0 && (
+                          <div className="flex flex-wrap gap-2 pb-2 border-b">
+                            {Object.entries(feeSubtotalsByFrequency).map(([freq, total]) => (
+                              <span key={freq} className="text-xs bg-muted px-2 py-1 rounded-md font-medium">
+                                {formatFeeFrequency(freq)}: KES {total.toLocaleString()}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                         {feeStructures.map((fee) => (
                           <div key={fee.id} className="flex items-start justify-between gap-2 text-xs border-t pt-2 first:border-t-0 first:pt-0">
                             <div className="min-w-0">
