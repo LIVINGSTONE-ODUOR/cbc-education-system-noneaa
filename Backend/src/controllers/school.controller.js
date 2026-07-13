@@ -226,7 +226,7 @@ const getSchoolById = async (req, res) => {
               county, sub_county, ward, level, school_type, admin_email, website, 
               year_established, student_capacity, motto, is_active, 
               subscription_plan, subscription_status, subscription_expires_at,
-              payment_due, created_at, updated_at
+              payment_due, fee_payment_instructions, created_at, updated_at
        FROM schools
        WHERE id = $1 AND deleted_at IS NULL`,
       [id]
@@ -408,6 +408,7 @@ const updateSchool = async (req, res) => {
       'subscription_plan',
       'subscription_status',
       'payment_due',
+      'fee_payment_instructions',
       'is_active',
     ];
 
