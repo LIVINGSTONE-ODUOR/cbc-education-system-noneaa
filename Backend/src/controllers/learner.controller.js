@@ -11,6 +11,7 @@ const asyncHandler = require('express-async-handler');
 const csv = require('csv-parse/sync');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { sendParentCredentialsEmail } = require('../utils/email');
 
 // Supabase service-role client (bypasses RLS for admin operations)
 const supabase = createClient(
@@ -207,7 +208,7 @@ const registerLearner = asyncHandler(async (req, res) => {
 
   const { data: schoolRow, error: schoolLookupErr } = await supabase
     .from('schools')
-    .select('subdomain')
+    .select('subdomain, name')
     .eq('id', school_id)
     .maybeSingle();
 
@@ -273,6 +274,10 @@ const registerLearner = asyncHandler(async (req, res) => {
   // ✅ Create parent if parent_info provided
   let parentInfo = null;
   let parentWarning = null;
+  // Only set when a BRAND NEW parent user account is created in this
+  // request — an existing parent already has credentials, so we must not
+  // re-send/overwrite them.
+  let newParentAccount = null; // { tempPassword }
 
   if (parent_info && parent_info.email) {
     const parentEmail = parent_info.email.toLowerCase().trim();
@@ -371,6 +376,7 @@ const registerLearner = asyncHandler(async (req, res) => {
               parentWarning = `Learner registered, but parent account could not be created: ${userError.message}`;
             } else {
               parentUserId = newUser.id;
+              newParentAccount = { tempPassword };
             }
           }
 
@@ -415,6 +421,26 @@ const registerLearner = asyncHandler(async (req, res) => {
                 .update({ parent_id: parentRecord.id })
                 .eq('id', learner.id);
               if (updateErr) console.error('[registerLearner] Failed to set learner.parent_id:', updateErr.message);
+
+              // ✅ Email the parent their portal login (only for brand-new
+              // accounts — an existing parent already has credentials).
+              if (newParentAccount) {
+                const childFullName = `${first_name.trim()} ${last_name.trim()}`;
+                const emailSent = await sendParentCredentialsEmail(
+                  parentEmail,
+                  parent_info.first_name,
+                  childFullName,
+                  newParentAccount.tempPassword,
+                  schoolRow?.name || null,
+                  schoolRow?.subdomain || null
+                );
+                if (!emailSent) {
+                  parentWarning = [
+                    parentWarning,
+                    `Parent account created, but the login-details email could not be sent. Share these manually: ${parentEmail} / ${newParentAccount.tempPassword}`,
+                  ].filter(Boolean).join(' ');
+                }
+              }
             }
           }
         }
