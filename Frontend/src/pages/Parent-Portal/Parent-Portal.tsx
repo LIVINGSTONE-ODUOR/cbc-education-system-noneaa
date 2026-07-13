@@ -295,7 +295,7 @@ const ParentPortal = () => {
           is_active: true,
         });
         if (cancelled) return;
-        setFeeStructures(res.fee_structures);
+        setFeeStructures((res as any).data?.fee_structures ?? (res as any).fee_structures ?? []);
       } catch (err: any) {
         if (!cancelled) {
           setFeesError(err.message || 'Failed to load fee structure');
