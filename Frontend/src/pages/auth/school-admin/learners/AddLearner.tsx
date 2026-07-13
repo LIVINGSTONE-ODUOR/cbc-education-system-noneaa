@@ -28,6 +28,9 @@ import {
   X,
   AlertCircle,
   CheckCircle2,
+  Users,
+  Copy,
+  Lock,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Gender } from '@/types';
@@ -118,6 +121,23 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 };
 
 type TabValue = 'student' | 'academic' | 'guardian' | 'health' | 'documents' | 'notes';
+
+// ✅ PROGRESS TRACKER SECTION CONFIG — colors/icons for the sidebar nav
+const SECTIONS: Array<{
+  value: TabValue;
+  label: string;
+  icon: typeof User;
+  iconBg: string;
+  iconColor: string;
+  barColor: string;
+}> = [
+  { value: 'student', label: 'Student Info', icon: User, iconBg: 'bg-blue-100', iconColor: 'text-blue-600', barColor: 'bg-blue-500' },
+  { value: 'academic', label: 'Academic', icon: BookOpen, iconBg: 'bg-green-100', iconColor: 'text-green-600', barColor: 'bg-green-500' },
+  { value: 'guardian', label: 'Guardian', icon: Users, iconBg: 'bg-rose-100', iconColor: 'text-rose-500', barColor: 'bg-rose-400' },
+  { value: 'health', label: 'Health', icon: Heart, iconBg: 'bg-teal-100', iconColor: 'text-teal-600', barColor: 'bg-teal-400' },
+  { value: 'documents', label: 'Documents', icon: FileText, iconBg: 'bg-sky-100', iconColor: 'text-sky-600', barColor: 'bg-sky-400' },
+  { value: 'notes', label: 'Notes', icon: BarChart3, iconBg: 'bg-amber-100', iconColor: 'text-amber-600', barColor: 'bg-amber-400' },
+];
 
 // ✅ MAIN COMPONENT
 export default function AddLearnerPage() {
@@ -615,6 +635,41 @@ export default function AddLearnerPage() {
     );
   }
 
+  // ✅ PROGRESS: rough completion % per section, for the sidebar tracker
+  const pct = (filled: number, total: number) => (total === 0 ? 0 : Math.round((filled / total) * 100));
+  const countFilled = (values: Array<string | null | undefined | File>) =>
+    values.filter((v) => (v instanceof File ? true : !!v && String(v).trim() !== '')).length;
+
+  const sectionCompletion: Record<TabValue, number> = {
+    student: pct(
+      countFilled([
+        learnerData.admissionNumber,
+        learnerData.firstName,
+        learnerData.lastName,
+        learnerData.middleName,
+        learnerData.dateOfBirth,
+        learnerData.gender,
+        learnerData.profilePhoto,
+      ]),
+      7
+    ),
+    academic: pct(countFilled([selectedClassId, learnerData.academicYear, learnerData.admissionDate]), 3),
+    guardian: pct(
+      countFilled([
+        parentData.firstName,
+        parentData.lastName,
+        parentData.email,
+        parentData.phoneNumber,
+        parentData.relationship,
+        parentData.nationalId,
+      ]),
+      6
+    ),
+    health: pct(countFilled([learnerData.specialNeeds, learnerData.medicalConditions, learnerData.allergies]), 3),
+    documents: 0,
+    notes: pct(countFilled([documentsData.notes]), 1),
+  };
+
   // ✅ RENDER
   return (
     <div className="w-full space-y-6 p-4 md:p-6 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
@@ -642,95 +697,60 @@ export default function AddLearnerPage() {
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
-        <CardContent className="p-0">
-          <Tabs
-            value={activeTab}
-            onValueChange={(value) => setActiveTab(value as TabValue)}
-            className="w-full"
-          >
-            <TabsList className="w-full justify-start rounded-none border-b border-slate-200 bg-slate-50 p-0 h-auto gap-0">
-              <TabsTrigger
-                value="student"
-                className={cn(
-                  'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
-                  activeTab === 'student'
-                    ? 'border-blue-500 text-blue-600 bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-100'
-                )}
-              >
-                <User className="w-4 h-4 mr-2" />
-                Student Info
-              </TabsTrigger>
+      {/* Form: sidebar progress tracker + main content + right rail */}
+      <form onSubmit={handleSubmit} noValidate className="w-full">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as TabValue)}
+          className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)_300px] gap-6 items-start"
+        >
+          {/* Progress Tracker sidebar */}
+          <Card className="border-0 shadow-sm bg-white dark:bg-slate-900 p-3 lg:sticky lg:top-6">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 px-2 pb-2">
+              Progress Tracker
+            </p>
+            <nav className="space-y-1">
+              {SECTIONS.map((section) => {
+                const Icon = section.icon;
+                const percent = sectionCompletion[section.value];
+                return (
+                  <button
+                    key={section.value}
+                    type="button"
+                    onClick={() => setActiveTab(section.value)}
+                    className={cn(
+                      'w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
+                      activeTab === section.value
+                        ? 'bg-slate-100 dark:bg-slate-800'
+                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                    )}
+                  >
+                    <span className={cn('w-9 h-9 rounded-lg flex items-center justify-center shrink-0', section.iconBg)}>
+                      <Icon className={cn('w-4 h-4', section.iconColor)} />
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                          {section.label}
+                        </span>
+                        <span className="text-xs text-slate-400">{percent}%</span>
+                      </span>
+                      <span className="mt-1.5 block h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                        <span
+                          className={cn('block h-full rounded-full transition-all', section.barColor)}
+                          style={{ width: `${percent}%` }}
+                        />
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+          </Card>
 
-              <TabsTrigger
-                value="academic"
-                className={cn(
-                  'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
-                  activeTab === 'academic'
-                    ? 'border-blue-500 text-blue-600 bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-100'
-                )}
-              >
-                <BookOpen className="w-4 h-4 mr-2" />
-                Academic
-              </TabsTrigger>
-
-              <TabsTrigger
-                value="guardian"
-                className={cn(
-                  'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
-                  activeTab === 'guardian'
-                    ? 'border-blue-500 text-blue-600 bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-100'
-                )}
-              >
-                <User className="w-4 h-4 mr-2" />
-                Guardian
-              </TabsTrigger>
-
-              <TabsTrigger
-                value="health"
-                className={cn(
-                  'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
-                  activeTab === 'health'
-                    ? 'border-blue-500 text-blue-600 bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-100'
-                )}
-              >
-                <Heart className="w-4 h-4 mr-2" />
-                Health
-              </TabsTrigger>
-
-              <TabsTrigger
-                value="documents"
-                className={cn(
-                  'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
-                  activeTab === 'documents'
-                    ? 'border-blue-500 text-blue-600 bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-100'
-                )}
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Documents
-              </TabsTrigger>
-
-              <TabsTrigger
-                value="notes"
-                className={cn(
-                  'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
-                  activeTab === 'notes'
-                    ? 'border-blue-500 text-blue-600 bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-100'
-                )}
-              >
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Notes
-              </TabsTrigger>
-            </TabsList>
-
-            <form onSubmit={handleSubmit} noValidate className="w-full">
+          {/* Main content */}
+          <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
+            <CardContent className="p-0">
               {/* Student Tab */}
               <TabsContent value="student" className="p-6 space-y-6 m-0 bg-white dark:bg-slate-900">
                 <Card className="border-2 border-slate-200 bg-slate-50 dark:bg-slate-800">
@@ -955,64 +975,10 @@ export default function AddLearnerPage() {
                         </div>
                       </div>
 
-                      {/* Government & CBC Details */}
-                      <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-200">
-                        <h4 className="font-semibold text-blue-900 mb-4 flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4" />
-                          Government & CBC Details
-                        </h4>
-                        <div className="grid grid-cols-3 gap-4">
-                          <div className="space-y-2">
-                            <Label
-                              htmlFor="birthCertificateNumber"
-                              className="font-semibold text-sm text-slate-900 dark:text-slate-100"
-                            >
-                              Birth Certificate Number
-                            </Label>
-                            <Input
-                              id="birthCertificateNumber"
-                              name="birthCertificateNumber"
-                              placeholder="123456789ABC"
-                              value={learnerData.birthCertificateNumber}
-                              onChange={handleLearnerChange}
-                              className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label
-                              htmlFor="nemisNumber"
-                              className="font-semibold text-sm text-slate-900 dark:text-slate-100"
-                            >
-                              NEMIS Number
-                            </Label>
-                            <Input
-                              id="nemisNumber"
-                              name="nemisNumber"
-                              placeholder="NEMIS123456"
-                              value={learnerData.nemisNumber}
-                              onChange={handleLearnerChange}
-                              className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label
-                              htmlFor="nationality"
-                              className="font-semibold text-sm text-slate-900 dark:text-slate-100"
-                            >
-                              Nationality
-                            </Label>
-                            <Input
-                              id="nationality"
-                              name="nationality"
-                              value={learnerData.nationality}
-                              onChange={handleLearnerChange}
-                              className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
-                            />
-                          </div>
-                        </div>
-                      </div>
+                      <p className="text-xs text-slate-400 flex items-center gap-1.5">
+                        <Lock className="w-3 h-3" />
+                        Birth certificate, NEMIS number and nationality are set in the panel on the right.
+                      </p>
                     </CardContent>
                   )}
                 </Card>
@@ -1506,21 +1472,101 @@ export default function AddLearnerPage() {
                   </div>
                 </div>
               </TabsContent>
-              {/* Navigation */}
-              <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
-                <Button
-                  type="button"
-                  variant="outline"
-                  asChild
-                  className="border-slate-200 hover:bg-slate-100 dark:bg-slate-700"
-                >
-                  <Link to="/school-admin/learners">Back</Link>
-                </Button>
+            </CardContent>
+          </Card>
 
+          {/* Right rail */}
+          <div className="space-y-4 lg:sticky lg:top-6">
+            {/* Admission ID */}
+            <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
+              <CardContent className="p-4 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Admission ID</p>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-lg font-bold text-slate-900 dark:text-slate-100 truncate">
+                    {learnerData.admissionNumber || 'Not set yet'}
+                  </span>
+                  {learnerData.admissionNumber && (
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard?.writeText(learnerData.admissionNumber)}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 shrink-0"
+                      aria-label="Copy admission number"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Nationality */}
+            <Card className="border-0 shadow-sm bg-orange-50 dark:bg-orange-950/30">
+              <CardContent className="p-4 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-orange-600/80">Nationality</p>
+                <Select
+                  value={learnerData.nationality}
+                  onValueChange={(value) => setLearnerData((prev) => ({ ...prev, nationality: value }))}
+                >
+                  <SelectTrigger className="h-10 border-orange-200 bg-white font-semibold text-orange-900 focus:border-orange-500">
+                    <SelectValue placeholder="Select nationality" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Kenyan">Kenyan</SelectItem>
+                    <SelectItem value="Ugandan">Ugandan</SelectItem>
+                    <SelectItem value="Tanzanian">Tanzanian</SelectItem>
+                    <SelectItem value="Rwandan">Rwandan</SelectItem>
+                    <SelectItem value="Burundian">Burundian</SelectItem>
+                    <SelectItem value="South Sudanese">South Sudanese</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+
+            {/* Government & CBC Details */}
+            <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
+              <CardContent className="p-4 space-y-4">
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-slate-400" />
+                  Government &amp; CBC Details
+                </h4>
+                <div className="space-y-2">
+                  <Label htmlFor="birthCertificateNumber" className="text-xs font-medium text-slate-500">
+                    Birth Certificate Number
+                  </Label>
+                  <Input
+                    id="birthCertificateNumber"
+                    name="birthCertificateNumber"
+                    placeholder="123456789ABC"
+                    value={learnerData.birthCertificateNumber}
+                    onChange={handleLearnerChange}
+                    className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="nemisNumber" className="text-xs font-medium text-slate-500">
+                    NEMIS Number
+                  </Label>
+                  <Input
+                    id="nemisNumber"
+                    name="nemisNumber"
+                    placeholder="NEMIS123456"
+                    value={learnerData.nemisNumber}
+                    onChange={handleLearnerChange}
+                    className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Primary Action Center */}
+            <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
+              <CardContent className="p-4 space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Primary Action Center</p>
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white gap-2 h-11 px-6"
+                  className="w-full h-11 gap-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white shadow-sm"
                 >
                   {isLoading ? (
                     <>
@@ -1529,16 +1575,24 @@ export default function AddLearnerPage() {
                     </>
                   ) : (
                     <>
-                      {isEditMode ? 'Update Student' : 'Create Student'}
+                      {isEditMode ? 'Update Student' : 'Complete Application & Create Student'}
                       <CheckCircle2 className="h-4 w-4" />
                     </>
                   )}
                 </Button>
-              </div>
-            </form>
-          </Tabs>
-        </CardContent>
-      </Card>
+                <Button
+                  type="button"
+                  variant="outline"
+                  asChild
+                  className="w-full border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-700"
+                >
+                  <Link to="/school-admin/learners">Cancel</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </Tabs>
+      </form>
     </div>
   );
 }
