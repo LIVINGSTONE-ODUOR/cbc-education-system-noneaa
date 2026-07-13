@@ -45,4 +45,11 @@ router.get('/:schoolId/branches', authorize('super_admin', 'school_admin'), scho
 // Learners for a specific school (School Management UI)
 router.get('/:id/learners', authorize('super_admin', 'school_admin'), schoolController.getLearnersForSchool);
 
+// Administrators / signatory management
+// GET  lists a school's administrators (name, title, who's currently signatory)
+// PATCH reassigns which administrator is the signatory — both scoped to
+// the caller's own school for school_admin (enforced in the controller).
+router.get('/:id/administrators', authorize('super_admin', 'school_admin'), schoolController.getAdministrators);
+router.patch('/:id/administrators/:userId/signatory', authorize('super_admin', 'school_admin'), schoolController.setSignatory);
+
 module.exports = router;
