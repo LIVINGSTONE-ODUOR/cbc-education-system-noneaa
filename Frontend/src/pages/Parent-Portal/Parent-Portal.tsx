@@ -19,6 +19,7 @@ import { getLearnerAssignmentsDue, LearnerAssignmentsDueResponse } from '@/lib/a
 import { getLearnerUpcomingExams, LearnerUpcomingExamsResponse } from '@/lib/api/examApi';
 import { getFeeStructures, FeeStructure } from '@/lib/api/feeStructureApi';
 import { getAcademicTerms } from '@/lib/api/academicTermsApi';
+import { getSchoolById } from '@/lib/api/schoolsApi';
 import {
   getMessages, markMessageRead, DashboardMessage,
   getAnnouncements, DashboardAnnouncement,
@@ -121,6 +122,7 @@ const ParentPortal = () => {
   const [loadingFees, setLoadingFees] = useState(false);
   const [feesError, setFeesError] = useState<string | null>(null);
   const [currentAcademicYearId, setCurrentAcademicYearId] = useState<string>('');
+  const [feePaymentInstructions, setFeePaymentInstructions] = useState<string>('');
 
   const [messages, setMessages] = useState<DashboardMessage[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -274,6 +276,24 @@ const ParentPortal = () => {
       } catch (err) {
         // Non-fatal — the fees card will just show its error state.
         console.error('[ParentPortal] Failed to resolve current academic year:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.schoolId]);
+
+  // School-wide, optional — how to pay fees (accounts, paybill, etc.).
+  useEffect(() => {
+    if (!user?.schoolId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getSchoolById(user.schoolId!);
+        if (cancelled) return;
+        const instructions = (res as any).data?.fee_payment_instructions;
+        if (instructions) setFeePaymentInstructions(instructions);
+      } catch (err) {
+        // Non-fatal — the fees card just won't show a payment note.
+        console.error('[ParentPortal] Failed to load payment instructions:', err);
       }
     })();
     return () => { cancelled = true; };
@@ -489,6 +509,9 @@ const ParentPortal = () => {
           .amount { text-align: right; font-weight: bold; }
           .optional { color: #888; }
           .footer { margin-top: 30px; text-align: right; font-size: 11px; color: #666; }
+          .payment-instructions { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+          .payment-instructions h3 { font-size: 14px; margin-bottom: 8px; }
+          .payment-instructions p { font-size: 12px; line-height: 1.6; white-space: pre-line; }
           @media print { body { -webkit-print-color-adjust: exact; } }
         </style>
       </head>
@@ -529,6 +552,13 @@ const ParentPortal = () => {
             `).join('')}
           </tbody>
         </table>
+
+        ${feePaymentInstructions ? `
+        <div class="payment-instructions">
+          <h3>How to pay</h3>
+          <p>${feePaymentInstructions.replace(/\n/g, '<br/>')}</p>
+        </div>
+        ` : ''}
 
         <div class="footer">
           <p>Generated on ${new Date().toLocaleString()}</p>
@@ -979,6 +1009,12 @@ const ParentPortal = () => {
                             </span>
                           </div>
                         ))}
+                        {feePaymentInstructions && (
+                          <div className="mt-2 pt-2 border-t">
+                            <p className="text-xs font-medium mb-1">How to pay</p>
+                            <p className="text-xs text-muted-foreground whitespace-pre-line">{feePaymentInstructions}</p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </CardContent>
