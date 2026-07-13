@@ -55,7 +55,7 @@ const competencyData = [
   { competency: 'Creativity', score: 82 },
   { competency: 'Digital Literacy', score: 90 },
   { competency: 'Citizenship', score: 75 },
-  { competency: 'Self-Efficacy', score: 80 },
+  { competency: 'Self Efficacy', score: 80 },
   { competency: 'Learning to Learn', score: 88 },
 ];
 
