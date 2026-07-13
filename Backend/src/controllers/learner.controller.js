@@ -30,6 +30,19 @@ const GRADE_LEVELS = [
 // Valid gender values
 const GENDERS = ['male', 'female'];
 
+// Normalizes a phone number to satisfy the `users_phone_format` check
+// constraint: CHECK (phone_number IS NULL OR phone_number ~ '^\+?[0-9]{10,15}$')
+// i.e. an optional leading '+' followed by 10-15 digits — no spaces, dashes,
+// parentheses, etc. Returns null if nothing usable is left.
+function normalizePhoneNumber(raw) {
+  if (!raw) return null;
+  const trimmed = String(raw).trim();
+  const hasPlus = trimmed.startsWith('+');
+  const digitsOnly = trimmed.replace(/[^0-9]/g, '');
+  if (digitsOnly.length < 10 || digitsOnly.length > 15) return null;
+  return (hasPlus ? '+' : '') + digitsOnly;
+}
+
 // Valid nationalities
 const NATIONALITIES = ['Kenyan', 'Ugandan', 'Tanzanian', 'Rwandan', 'Burundian', 'South Sudanese', 'Other'];
 
@@ -198,13 +211,16 @@ const registerLearner = asyncHandler(async (req, res) => {
   }
 
   // ✅ Create the student's own login account.
-  // Username: `{admission_number}@{school_subdomain}` (e.g. "5339@maseno").
+  // Username: `{admission_number}@{school_subdomain}.{root_domain}` (e.g.
+  // "5339@maseno.noneaa.com"). Must include a real TLD suffix to satisfy the
+  // `users_email_format` check constraint — a bare "@maseno" fails it.
   // Password: the parent/guardian's phone number if one was given, otherwise
   // a randomly generated temporary password (so every student always gets
   // a login, even when no guardian phone number was captured at admission).
   let learnerAccountWarning = null;
   let studentCredentials = null;
-  const parentPhoneForLogin = parent_info?.phone_number?.trim();
+  const parentPhoneForLogin = normalizePhoneNumber(parent_info?.phone_number);
+  const rootDomain = process.env.ROOT_DOMAIN || 'noneaa.com';
 
   const { data: schoolRow, error: schoolLookupErr } = await supabase
     .from('schools')
@@ -216,7 +232,7 @@ const registerLearner = asyncHandler(async (req, res) => {
     console.error('[registerLearner] Could not resolve school subdomain for student login:', schoolLookupErr?.message);
     learnerAccountWarning = 'Learner registered, but a student login could not be created (school subdomain missing).';
   } else {
-    const studentUsername = `${admission_number}@${schoolRow.subdomain}`;
+    const studentUsername = `${admission_number}@${schoolRow.subdomain}.${rootDomain}`;
 
     const { data: existingStudentUser } = await supabase
       .from('users')
@@ -347,7 +363,7 @@ const registerLearner = asyncHandler(async (req, res) => {
             // Portal login = parent's email (username) + phone number (password) —
             // same convention used for the student account above and in
             // parent.controller.js's registerParent/sendInvite.
-            const parentPhoneForPassword = parent_info.phone_number?.trim();
+            const parentPhoneForPassword = normalizePhoneNumber(parent_info.phone_number);
             const tempPassword = parentPhoneForPassword || crypto.randomBytes(12).toString('hex');
             const passwordHash = await bcrypt.hash(tempPassword, 10);
 
@@ -358,7 +374,7 @@ const registerLearner = asyncHandler(async (req, res) => {
                 password_hash: passwordHash,
                 first_name: parent_info.first_name,
                 last_name: parent_info.last_name,
-                phone_number: parent_info.phone_number || null,
+                phone_number: normalizePhoneNumber(parent_info.phone_number),
                 role: 'parent',
                 status: 'pending',
                 email_verified: false,
@@ -390,7 +406,7 @@ const registerLearner = asyncHandler(async (req, res) => {
                 first_name: parent_info.first_name,
                 last_name: parent_info.last_name,
                 email: parentEmail,
-                phone_number: parent_info.phone_number || null,
+                phone_number: normalizePhoneNumber(parent_info.phone_number),
                 national_id: parent_info.national_id || null,
                 occupation: parent_info.occupation || null,
                 relationship: parent_info.relationship || 'guardian',
