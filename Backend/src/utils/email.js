@@ -124,4 +124,65 @@ const sendSchoolAdminWelcomeEmail = async (email, firstName, schoolName, tempPas
   }
 };
 
-module.exports = { sendLoginAlertEmail, sendSchoolAdminWelcomeEmail };
+// Sends a parent/guardian their Parent Portal login details (email + temp
+// password) right after a learner is admitted and a new parent account is
+// created for them. Same delivery mechanism as sendSchoolAdminWelcomeEmail:
+// a Supabase Edge Function that calls Resend.
+// See: supabase/functions/send-parent-credentials
+const sendParentCredentialsEmail = async (
+  email,
+  firstName,
+  childName,
+  tempPassword,
+  schoolName = null,
+  subdomain = null
+) => {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error('❌ Cannot send parent credentials email: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set');
+    return false;
+  }
+
+  const functionUrl = `${supabaseUrl.replace(/\/+$/, '')}/functions/v1/send-parent-credentials`;
+
+  // Prefer the school's own subdomain so the parent lands on the
+  // school-branded login page, same convention as the admin welcome email.
+  const rootDomain = process.env.ROOT_DOMAIN || 'noneaa.com';
+  const loginUrl = subdomain
+    ? `https://${subdomain}.${rootDomain}/login`
+    : `${process.env.FRONTEND_URL || 'https://yourapp.com'}/login`;
+
+  // Send from "<schoolname>@noneaa.com" using the school's own subdomain as
+  // the local part (it's already URL-safe, so it's email-safe too). Falls
+  // back to a generic "welcome@" address if no subdomain is on record.
+  const localPart = (subdomain || 'welcome').toLowerCase().replace(/[^a-z0-9.\-_]/g, '') || 'welcome';
+  const fromAddress = `${schoolName || 'CBC Education System'} <${localPart}@${rootDomain}>`;
+
+  try {
+    const response = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify({ email, firstName, childName, schoolName, tempPassword, loginUrl, fromAddress }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      console.error('❌ send-parent-credentials edge function error:', data);
+      return false;
+    }
+
+    console.log(`✅ Parent credentials email sent to ${email} (Resend id: ${data.id})`);
+    return true;
+  } catch (error) {
+    console.error('❌ Failed to call send-parent-credentials edge function:', error);
+    return false;
+  }
+};
+
+module.exports = { sendLoginAlertEmail, sendSchoolAdminWelcomeEmail, sendParentCredentialsEmail };
