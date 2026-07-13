@@ -20,7 +20,12 @@ router.post('/', authorize('super_admin'), schoolController.createSchool);
 // school_admin gets only their own — scoping happens in getSchools().
 router.get('/', authorize('super_admin', 'school_admin'), schoolController.getSchools);
 router.get('/:id', authorize('super_admin', 'school_admin'), schoolController.getSchoolById);
-router.put('/:id', authorize('super_admin'), schoolController.updateSchool);
+// school_admin can edit their own school here too (e.g. fee payment
+// instructions on the Fee Structure page) — updateSchool() itself
+// restricts school_admin to a small safe field whitelist and enforces
+// req.user.schoolId === :id, so this does NOT open up editing other
+// schools' identity/billing fields, only super_admin can touch those.
+router.put('/:id', authorize('super_admin', 'school_admin'), schoolController.updateSchool);
 router.delete('/:id', authorize('super_admin'), schoolController.deleteSchool);
 
 // Subscription management
