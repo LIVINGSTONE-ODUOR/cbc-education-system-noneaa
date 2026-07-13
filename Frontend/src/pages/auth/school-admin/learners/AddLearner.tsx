@@ -686,7 +686,10 @@ export default function AddLearnerPage() {
           </Link>
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100">
+          <h1
+            className="text-3xl md:text-4xl font-semibold italic text-slate-900 dark:text-slate-100"
+            style={{ fontFamily: "'EB Garamond', serif" }}
+          >
             {isEditMode ? 'Edit Student Details' : 'New Admission Application'}
           </h1>
           <p className="text-slate-600 mt-2">
