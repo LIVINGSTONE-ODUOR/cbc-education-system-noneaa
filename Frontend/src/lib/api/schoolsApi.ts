@@ -36,6 +36,7 @@ export interface School {
   email: string;
   phone: string;
   address: string;
+  fee_payment_instructions?: string | null;
   is_active: boolean;
   created_at: string;
 }
@@ -53,6 +54,7 @@ export interface CreateSchoolPayload {
   email: string;
   phone?: string;
   address?: string;
+  fee_payment_instructions?: string;
 }
 
 export interface ApiResponse<T> {
