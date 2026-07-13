@@ -47,6 +47,7 @@ import {
   UpdateFeeStructurePayload
 } from '@/lib/api/feeStructureApi';
 import { FEE_STRUCTURE_TEMPLATES, estimateAnnualTotal, FeeStructureTemplate } from './feeStructureTemplates';
+import { getSchoolById } from '@/lib/api/schoolsApi';
 
 // Academic year types (matching backend)
 interface AcademicYear {
@@ -136,6 +137,7 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
   // State
   const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([]);
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>(DEFAULT_ACADEMIC_YEARS);
+  const [schoolDetails, setSchoolDetails] = useState<{ name: string; address: string }>({ name: '', address: '' });
   const [selectedYear, setSelectedYear] = useState<string>('');
   const [selectedGrade, setSelectedGrade] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(false);
@@ -295,6 +297,28 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
     };
     
     loadAcademicYears();
+  }, [user?.schoolId]);
+
+  // Fetch school name/address once, for the PDF header.
+  useEffect(() => {
+    const loadSchoolDetails = async () => {
+      if (!user?.schoolId) return;
+      try {
+        const res = await getSchoolById(user.schoolId);
+        const school = (res as any).data;
+        if (school) {
+          setSchoolDetails({
+            name: school.name || '',
+            // Backend returns 'physical_address', not 'address' —
+            // the School type is aspirational, not what the API sends.
+            address: school.physical_address || school.address || '',
+          });
+        }
+      } catch (err) {
+        console.error('[FeeStructure] Failed to load school details:', err);
+      }
+    };
+    loadSchoolDetails();
   }, [user?.schoolId]);
 
   // Fetch when year or grade changes
@@ -583,6 +607,9 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
           .footer { margin-top: 30px; text-align: right; font-size: 12px; color: #666; }
           .summary { margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 5px; }
           .summary-row { display: flex; justify-content: space-between; padding: 5px 0; }
+          .signature { margin-top: 60px; display: flex; justify-content: space-between; }
+          .signature-block { width: 45%; }
+          .signature-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 6px; font-size: 12px; }
           @media print {
             body { -webkit-print-color-adjust: exact; }
           }
@@ -590,8 +617,9 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
       </head>
       <body>
         <div class="header">
-          <h1>Fee Structure Report</h1>
-          <p>School Management System</p>
+          <h1>${schoolDetails.name || 'Fee Structure Report'}</h1>
+          ${schoolDetails.address ? `<p>${schoolDetails.address}</p>` : ''}
+          <p>Fee Structure Report</p>
         </div>
         
         <div class="filters">
@@ -634,6 +662,15 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
           <div class="summary-row">
             <span><strong>Total Amount:</strong></span>
             <span><strong>KES ${feeStructures.reduce((sum, fee) => sum + Number(fee.amount), 0).toLocaleString()}</strong></span>
+          </div>
+        </div>
+
+        <div class="signature">
+          <div class="signature-block">
+            <div class="signature-line">Principal Name</div>
+          </div>
+          <div class="signature-block">
+            <div class="signature-line">Signature &amp; Date</div>
           </div>
         </div>
 
