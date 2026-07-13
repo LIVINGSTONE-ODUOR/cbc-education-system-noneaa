@@ -170,6 +170,35 @@ export const getFeeStructuresSummary = async (academic_year_id?: string): Promis
 };
 
 /**
+ * GET /api/v1/schools/:id/administrators
+ * Returns the school's current signatory (the administrator marked
+ * is_principal) formatted for the Fee Structure header / PDF export.
+ * Returns { signatory: null } if no signatory has been set yet — this
+ * is an expected state, not an error.
+ */
+export const getFeeStructuresSignatory = async (
+  schoolId: string
+): Promise<{ signatory: { name: string; title: string } | null }> => {
+  const url = `${API_URL}/api/v1/schools/${schoolId}/administrators`;
+  const response = await fetch(url, getFetchOptions('GET'));
+  const data = await handleResponse<{
+    data?: { administrators?: { name: string; role: string; is_principal: boolean }[] };
+  }>(response);
+
+  const administrators = data.data?.administrators || [];
+  const principal = administrators.find((a) => a.is_principal);
+
+  if (!principal) return { signatory: null };
+
+  return {
+    signatory: {
+      name: principal.name,
+      title: principal.role === 'school_admin' ? 'School Administrator' : principal.role,
+    },
+  };
+};
+
+/**
  * POST /api/v1/fee-structures
  * Create a new fee structure
  */
