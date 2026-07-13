@@ -20,12 +20,11 @@ import {
 import { initials, avatarBg } from "../helpers";
 import { TopNav, NavBtn, StatusBadge, FormField, Toast } from "./index";
 import { cn } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import type { Branch } from "@/lib/api/schoolsApi";
 
@@ -49,8 +48,24 @@ interface FormViewProps {
 }
 
 const inputClasses =
-  "w-full px-3 py-2.5 border border-border rounded-lg text-sm text-foreground bg-background outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground font-sans";
+  "w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder:text-slate-400 font-sans";
 const selectClasses = cn(inputClasses, "appearance-none pr-8 cursor-pointer");
+
+// ✅ PROGRESS TRACKER SECTION CONFIG — mirrors the Add Learner page's sidebar nav
+const SECTIONS: Array<{
+  value: "general" | "teaching" | "contact";
+  label: string;
+  icon: typeof Users;
+  iconBg: string;
+  iconColor: string;
+  barColor: string;
+}> = [
+  { value: "general", label: "Personal & Employment", icon: Users, iconBg: "bg-blue-100", iconColor: "text-blue-600", barColor: "bg-blue-500" },
+  { value: "teaching", label: "Teaching Details", icon: Camera, iconBg: "bg-green-100", iconColor: "text-green-600", barColor: "bg-green-500" },
+  { value: "contact", label: "Contact & Address", icon: Users, iconBg: "bg-rose-100", iconColor: "text-rose-500", barColor: "bg-rose-400" },
+];
+
+const pct = (filled: number, total: number) => (total ? Math.round((filled / total) * 100) : 0);
 
 export const FormView: React.FC<FormViewProps> = ({
   form,
@@ -126,7 +141,7 @@ export const FormView: React.FC<FormViewProps> = ({
         </select>
         <ChevronDown
           size={16}
-          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground"
+          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"
         />
       </div>
     );
@@ -172,28 +187,41 @@ const branchOptions = useMemo(() => {
     ["Salary", !!form.salary],
   ] as [string, boolean][];
 
+  // ✅ Per-section completion — purely presentational, drives the Progress Tracker bars
+  const sectionCompletion: Record<"general" | "teaching" | "contact", number> = {
+    general: pct(
+      [form.firstName, form.lastName, form.idNumber, form.sex, form.designation, form.branch].filter(Boolean).length,
+      6
+    ),
+    teaching: pct(
+      [form.tscNumber, form.qualifications?.length > 0, slots.some(Boolean)].filter(Boolean).length,
+      3
+    ),
+    contact: pct([form.email, form.mobilePhone].filter(Boolean).length, 2),
+  };
+
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-6 p-4 md:p-6 bg-[#EAEFF9] dark:bg-slate-950 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onBack} 
-            className="flex items-center gap-2 px-4 py-2 border-2 border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 shadow-sm"
+      <div className="flex items-start gap-4">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={onBack}
+          className="mt-0.5 border-slate-200 hover:bg-slate-100 dark:bg-slate-700"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div className="flex-1">
+          <h1
+            className="text-3xl md:text-4xl font-semibold italic text-slate-900 dark:text-slate-100"
+            style={{ fontFamily: "'EB Garamond', serif" }}
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="font-medium">Back</span>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              {selected ? "Edit Staff Member" : "Register New Staff"}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {selected ? "Update staff information" : "Add a new staff member to your school"}
-            </p>
-          </div>
+            {selected ? "Edit Staff Member" : "Register New Staff"}
+          </h1>
+          <p className="text-slate-600 mt-2">
+            {selected ? "Update staff information" : "Add a new staff member to your school"}
+          </p>
         </div>
       </div>
 
@@ -207,56 +235,75 @@ const branchOptions = useMemo(() => {
         </Alert>
       )}
 
-      {/* Tabs */}
-      <Tabs value={tab} onValueChange={(t) => onTabChange(t as any)} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-auto p-0 bg-transparent border-b border-border rounded-none">
-          <TabsTrigger
-            value="general"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-4"
-          >
-            <span className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Personal & Employment</span>
-              <span className="sm:hidden">Personal</span>
-            </span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="teaching"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-4"
-          >
-            <span className="flex items-center gap-2">
-              <Camera className="w-4 h-4" />
-              <span className="hidden sm:inline">Teaching Details</span>
-              <span className="sm:hidden">Teaching</span>
-            </span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="contact"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-4"
-          >
-            <span className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Contact & Address</span>
-              <span className="sm:hidden">Contact</span>
-            </span>
-          </TabsTrigger>
-        </TabsList>
+      {/* Sidebar progress tracker + main content + right rail */}
+      <Tabs
+        value={tab}
+        onValueChange={(t) => onTabChange(t as "general" | "teaching" | "contact")}
+        className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)_300px] gap-6 items-start"
+      >
+        {/* Progress Tracker sidebar */}
+        <Card className="border-0 shadow-sm bg-white dark:bg-slate-900 p-3 lg:sticky lg:top-6">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 px-2 pb-2">
+            Progress Tracker
+          </p>
+          <nav className="space-y-1">
+            {SECTIONS.map((section) => {
+              const Icon = section.icon;
+              const percent = sectionCompletion[section.value];
+              return (
+                <button
+                  key={section.value}
+                  type="button"
+                  onClick={() => onTabChange(section.value)}
+                  className={cn(
+                    "w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                    tab === section.value
+                      ? "bg-slate-100 dark:bg-slate-800"
+                      : "hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                  )}
+                >
+                  <span className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", section.iconBg)}>
+                    <Icon className={cn("w-4 h-4", section.iconColor)} />
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        {section.label}
+                      </span>
+                      <span className="text-xs text-slate-400">{percent}%</span>
+                    </span>
+                    <span className="mt-1.5 block h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                      <span
+                        className={cn("block h-full rounded-full transition-all", section.barColor)}
+                        style={{ width: `${percent}%` }}
+                      />
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+        </Card>
 
-        {/* Form Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 mt-6">
-          {/* Main Content */}
-          <div className="space-y-6">
+        {/* Main content */}
+        <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
+          <CardContent className="p-0">
             {/* General Tab */}
-            <TabsContent value="general" className="space-y-6 mt-0">
+            <TabsContent value="general" className="p-6 space-y-6 m-0 bg-white dark:bg-slate-900">
               {/* Photo Section */}
-              <Card className="border-0 shadow-sm overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-50/50 pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Camera className="w-4 h-4" />
-                    Staff Photo
-                  </CardTitle>
+              <Card className="border-2 border-slate-200 bg-slate-50 dark:bg-slate-800">
+                <CardHeader className="pb-4 border-b border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                      <Camera className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base text-slate-900 dark:text-slate-100">Staff Photo</CardTitle>
+                      <CardDescription>Upload a photo URL or paste an image.</CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent className="pt-6">
+                <CardContent className="pt-6 bg-white dark:bg-slate-900">
                   <div className="flex items-end gap-6">
                     {/* Photo Preview */}
                     <div className="flex-shrink-0">
@@ -264,12 +311,12 @@ const branchOptions = useMemo(() => {
                         <img
                           src={photoPreview}
                           alt="Staff preview"
-                          className="w-24 h-24 rounded-lg object-cover shadow-md border border-border"
+                          className="w-24 h-24 rounded-lg object-cover shadow-md border border-slate-200"
                           onError={() => setPhotoPreview("")}
                         />
                       ) : (
                         <div
-                          className="w-24 h-24 rounded-lg flex items-center justify-center text-2xl font-bold text-white shadow-md border border-border"
+                          className="w-24 h-24 rounded-lg flex items-center justify-center text-2xl font-bold text-white shadow-md border border-slate-200"
                           style={{
                             background: form.firstName
                               ? `linear-gradient(135deg, ${avatarBg(selected?.id ?? "0")}, ${avatarBg(selected?.id ?? "0")}dd)`
@@ -279,15 +326,15 @@ const branchOptions = useMemo(() => {
                           {form.firstName && form.lastName ? (
                             initials(form.firstName, form.lastName)
                           ) : (
-                            <Camera size={24} className="text-muted-foreground" />
+                            <Camera size={24} className="text-slate-300" />
                           )}
                         </div>
                       )}
                     </div>
 
                     {/* Input */}
-                    <div className="flex-1">
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                    <div className="flex-1 rounded-lg p-4 bg-blue-50 dark:bg-blue-950/30">
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                         Photo URL or Paste Image
                       </label>
                       <input
@@ -297,7 +344,7 @@ const branchOptions = useMemo(() => {
                         onPaste={handleImagePaste}
                         placeholder="Enter photo URL or paste an image"
                       />
-                      <p className="text-xs text-muted-foreground mt-2">
+                      <p className="text-xs text-slate-500 mt-2">
                         Enter a URL or paste an image directly from clipboard
                       </p>
                     </div>
@@ -306,14 +353,19 @@ const branchOptions = useMemo(() => {
               </Card>
 
               {/* Personal Information */}
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="bg-gradient-to-r from-indigo-50 to-indigo-50/50 pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Personal Information
-                  </CardTitle>
+              <Card className="border-2 border-slate-200 bg-slate-50 dark:bg-slate-800">
+                <CardHeader className="pb-4 border-b border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base text-slate-900 dark:text-slate-100">Personal Information</CardTitle>
+                      <CardDescription>Staff member's personal details.</CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent className="pt-6">
+                <CardContent className="pt-6 bg-white dark:bg-slate-900">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField label="First Name" required>
                       <input
@@ -374,14 +426,19 @@ const branchOptions = useMemo(() => {
               </Card>
 
               {/* Employment Details */}
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="bg-gradient-to-r from-amber-50 to-amber-50/50 pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Employment Details
-                  </CardTitle>
+              <Card className="border-2 border-slate-200 bg-slate-50 dark:bg-slate-800">
+                <CardHeader className="pb-4 border-b border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base text-slate-900 dark:text-slate-100">Employment Details</CardTitle>
+                      <CardDescription>Role, branch and contract information.</CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent className="pt-6">
+                <CardContent className="pt-6 bg-white dark:bg-slate-900">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField label="Staff Type" required>
                       <div className="relative">
@@ -400,7 +457,7 @@ const branchOptions = useMemo(() => {
                         </select>
                         <ChevronDown
                           size={16}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"
                         />
                       </div>
                     </FormField>
@@ -428,7 +485,7 @@ const branchOptions = useMemo(() => {
                         </select>
                         <ChevronDown
                           size={16}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"
                         />
                       </div>
                     </FormField>
@@ -468,12 +525,20 @@ const branchOptions = useMemo(() => {
             </TabsContent>
 
             {/* Teaching Tab */}
-            <TabsContent value="teaching" className="space-y-6 mt-0">
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-50/50 pb-3">
-                  <CardTitle className="text-sm">Teaching Details</CardTitle>
+            <TabsContent value="teaching" className="p-6 space-y-6 m-0 bg-white dark:bg-slate-900">
+              <Card className="border-2 border-slate-200 bg-slate-50 dark:bg-slate-800">
+                <CardHeader className="pb-4 border-b border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                      <Camera className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base text-slate-900 dark:text-slate-100">Teaching Details</CardTitle>
+                      <CardDescription>TSC registration, subjects and qualifications.</CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent className="pt-6 space-y-6">
+                <CardContent className="pt-6 space-y-6 bg-white dark:bg-slate-900">
                   {/* TSC Number */}
                   <FormField label="TSC Number">
                     <input
@@ -488,13 +553,13 @@ const branchOptions = useMemo(() => {
 
                   {/* Subjects */}
                   <div>
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
                       Subjects Assigned (up to 4)
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {slots.map((s, i) => (
                         <div key={i}>
-                          <label className="text-xs text-muted-foreground block mb-2">
+                          <label className="text-xs text-slate-500 block mb-2">
                             Subject {i + 1}
                           </label>
                           <div className="relative">
@@ -514,7 +579,7 @@ const branchOptions = useMemo(() => {
                             </select>
                             <ChevronDown
                               size={16}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground"
+                              className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"
                             />
                           </div>
                         </div>
@@ -543,7 +608,7 @@ const branchOptions = useMemo(() => {
                   {/* Qualification Tags */}
                   {form.qualifications && form.qualifications.length > 0 && (
                     <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                         Added Qualifications
                       </label>
                       <div className="flex flex-wrap gap-2">
@@ -560,12 +625,20 @@ const branchOptions = useMemo(() => {
             </TabsContent>
 
             {/* Contact Tab */}
-            <TabsContent value="contact" className="space-y-6 mt-0">
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="bg-gradient-to-r from-green-50 to-green-50/50 pb-3">
-                  <CardTitle className="text-sm">Contact & Address</CardTitle>
+            <TabsContent value="contact" className="p-6 space-y-6 m-0 bg-white dark:bg-slate-900">
+              <Card className="border-2 border-slate-200 bg-slate-50 dark:bg-slate-800">
+                <CardHeader className="pb-4 border-b border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-rose-100 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-rose-500" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base text-slate-900 dark:text-slate-100">Contact & Address</CardTitle>
+                      <CardDescription>How to reach this staff member.</CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent className="pt-6">
+                <CardContent className="pt-6 bg-white dark:bg-slate-900">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField label="Email" required>
                       <input
@@ -605,114 +678,113 @@ const branchOptions = useMemo(() => {
                 </CardContent>
               </Card>
             </TabsContent>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Sidebar */}
-          <div className="space-y-4">
-            {/* Profile Preview */}
-            <Card className="border-0 shadow-sm overflow-hidden sticky top-6">
-              <CardContent className="p-6 text-center">
-                {form.photo ? (
-                  <img
-                    src={form.photo}
-                    alt="Staff"
-                    className="w-20 h-20 rounded-full object-cover mx-auto mb-3 shadow-md border border-border"
-                  />
-                ) : (
+        {/* Right rail */}
+        <div className="space-y-4 lg:sticky lg:top-6">
+          {/* Profile Preview */}
+          <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
+            <CardContent className="p-6 text-center">
+              {form.photo ? (
+                <img
+                  src={form.photo}
+                  alt="Staff"
+                  className="w-20 h-20 rounded-full object-cover mx-auto mb-3 shadow-md border border-slate-200"
+                />
+              ) : (
+                <div
+                  className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold shadow-md border border-slate-200"
+                  style={{
+                    background: form.firstName
+                      ? `linear-gradient(135deg, ${avatarBg(selected?.id ?? "0")}, ${avatarBg(selected?.id ?? "0")}dd)`
+                      : undefined,
+                    color: form.firstName ? "white" : undefined,
+                  }}
+                >
+                  {form.firstName && form.lastName ? (
+                    initials(form.firstName, form.lastName)
+                  ) : (
+                    <Users size={20} className="text-slate-400" />
+                  )}
+                </div>
+              )}
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                {form.firstName || "First"} {form.lastName || "Last"}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                {form.designation || "No designation"}
+              </p>
+              {form.jobStatus && (
+                <div className="mt-3 flex justify-center">
+                  <StatusBadge status={form.jobStatus} />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Completion Checklist */}
+          <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
+            <CardContent className="p-4 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 flex items-center justify-between">
+                <span>Form Completion</span>
+                <span className="text-blue-600 font-bold">{completionPercent}%</span>
+              </p>
+              <Progress value={completionPercent} className="h-2" />
+              <div className="space-y-2">
+                {completionChecks.map(([label, done]) => (
                   <div
-                    className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold shadow-md border border-border"
-                    style={{
-                      background: form.firstName
-                        ? `linear-gradient(135deg, ${avatarBg(selected?.id ?? "0")}, ${avatarBg(selected?.id ?? "0")}dd)`
-                        : undefined,
-                      color: form.firstName ? "white" : undefined,
-                    }}
+                    key={label}
+                    className="flex items-center justify-between gap-2"
                   >
-                    {form.firstName && form.lastName ? (
-                      initials(form.firstName, form.lastName)
+                    <span className="text-xs text-slate-500">
+                      {label}
+                    </span>
+                    {done ? (
+                      <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
                     ) : (
-                      <Users size={20} className="text-muted-foreground" />
+                      <div className="w-4 h-4 rounded-full border-2 border-slate-200 flex-shrink-0" />
                     )}
                   </div>
-                )}
-                <p className="text-sm font-semibold text-foreground">
-                  {form.firstName || "First"} {form.lastName || "Last"}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {form.designation || "No designation"}
-                </p>
-                {form.jobStatus && (
-                  <div className="mt-3 flex justify-center">
-                    <StatusBadge status={form.jobStatus} />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* Completion Checklist */}
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center justify-between">
-                  <span>Form Completion</span>
-                  <span className="text-xs font-bold text-primary">
-                    {completionPercent}%
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Progress value={completionPercent} className="h-2" />
-                <div className="space-y-2">
-                  {completionChecks.map(([label, done]) => (
-                    <div
-                      key={label}
-                      className="flex items-center justify-between gap-2"
-                    >
-                      <span className="text-xs text-muted-foreground">
-                        {label}
-                      </span>
-                      {done ? (
-                        <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
-                      ) : (
-                        <div className="w-4 h-4 rounded-full border-2 border-border flex-shrink-0" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col gap-2 sticky bottom-6">
+          {/* Primary Action Center */}
+          <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
+            <CardContent className="p-4 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Primary Action Center</p>
               <Button
+                type="button"
                 onClick={onSave}
-                className="w-full gap-2"
-                size="lg"
+                className="w-full h-auto min-h-11 py-2.5 px-3 gap-2 whitespace-normal text-center leading-snug bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white shadow-sm"
               >
-                <Save className="w-4 h-4" />
-                {selected ? "Save Changes" : "Register"}
+                <Save className="w-4 h-4 shrink-0" />
+                <span>{selected ? "Save Changes" : "Register"}</span>
               </Button>
               {selected && onDiscard && (
                 <Button
+                  type="button"
                   onClick={onDiscard}
                   variant="outline"
-                  className="w-full gap-2"
-                  size="lg"
+                  className="w-full gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-700"
                 >
                   <X className="w-4 h-4" />
                   Discard Changes
                 </Button>
               )}
               <Button
+                type="button"
                 onClick={onBack}
                 variant="outline"
-                className="w-full gap-2"
-                size="lg"
+                className="w-full gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-700"
               >
                 <ArrowLeft className="w-4 h-4" />
                 {selected ? "Cancel" : "Back"}
               </Button>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </Tabs>
 
