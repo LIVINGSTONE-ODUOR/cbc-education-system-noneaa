@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { SchoolSignatoryCard } from './SchoolSignatoryCard';
 import {
   Settings,
   Building,
@@ -20,7 +21,8 @@ import {
   Save,
   Upload,
   Eye,
-  EyeOff
+  EyeOff,
+  PenLine
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -88,11 +90,12 @@ export default function SettingsPage() {
 
       {/* Settings Tabs */}
       <Tabs defaultValue="school" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="school">School Profile</TabsTrigger>
           <TabsTrigger value="academic">Academic Year</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="signatory">Signatory</TabsTrigger>
         </TabsList>
 
         {/* School Profile Tab */}
@@ -553,6 +556,11 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Signatory Tab */}
+        <TabsContent value="signatory" className="space-y-6">
+          <SchoolSignatoryCard />
         </TabsContent>
       </Tabs>
     </div>
