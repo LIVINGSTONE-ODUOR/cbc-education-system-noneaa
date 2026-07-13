@@ -6,6 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -34,7 +35,8 @@ import {
   GraduationCap,
   DollarSign,
   Sparkles,
-  Check
+  Check,
+  Info
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -47,7 +49,7 @@ import {
   UpdateFeeStructurePayload
 } from '@/lib/api/feeStructureApi';
 import { FEE_STRUCTURE_TEMPLATES, estimateAnnualTotal, FeeStructureTemplate } from './feeStructureTemplates';
-import { getSchoolById } from '@/lib/api/schoolsApi';
+import { getSchoolById, updateSchool } from '@/lib/api/schoolsApi';
 
 // Academic year types (matching backend)
 interface AcademicYear {
@@ -137,7 +139,10 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
   // State
   const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([]);
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>(DEFAULT_ACADEMIC_YEARS);
-  const [schoolDetails, setSchoolDetails] = useState<{ name: string; address: string }>({ name: '', address: '' });
+  const [schoolDetails, setSchoolDetails] = useState<{ name: string; address: string; paymentInstructions: string }>({ name: '', address: '', paymentInstructions: '' });
+  const [isEditingPaymentInfo, setIsEditingPaymentInfo] = useState(false);
+  const [paymentInfoDraft, setPaymentInfoDraft] = useState('');
+  const [isSavingPaymentInfo, setIsSavingPaymentInfo] = useState(false);
   const [selectedYear, setSelectedYear] = useState<string>('');
   const [selectedGrade, setSelectedGrade] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(false);
@@ -299,7 +304,8 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
     loadAcademicYears();
   }, [user?.schoolId]);
 
-  // Fetch school name/address once, for the PDF header.
+  // Fetch school name/address/payment instructions once, for the PDF
+  // header and the editable Payment Instructions section below.
   useEffect(() => {
     const loadSchoolDetails = async () => {
       if (!user?.schoolId) return;
@@ -307,12 +313,15 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
         const res = await getSchoolById(user.schoolId);
         const school = (res as any).data;
         if (school) {
+          const instructions = school.fee_payment_instructions || '';
           setSchoolDetails({
             name: school.name || '',
             // Backend returns 'physical_address', not 'address' —
             // the School type is aspirational, not what the API sends.
             address: school.physical_address || school.address || '',
+            paymentInstructions: instructions,
           });
+          setPaymentInfoDraft(instructions);
         }
       } catch (err) {
         console.error('[FeeStructure] Failed to load school details:', err);
@@ -320,6 +329,21 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
     };
     loadSchoolDetails();
   }, [user?.schoolId]);
+
+  const handleSavePaymentInstructions = async () => {
+    if (!user?.schoolId) return;
+    setIsSavingPaymentInfo(true);
+    try {
+      await updateSchool(user.schoolId, { fee_payment_instructions: paymentInfoDraft.trim() });
+      setSchoolDetails(prev => ({ ...prev, paymentInstructions: paymentInfoDraft.trim() }));
+      setIsEditingPaymentInfo(false);
+      toast.success('Payment instructions saved');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save payment instructions');
+    } finally {
+      setIsSavingPaymentInfo(false);
+    }
+  };
 
   // Fetch when year or grade changes
   useEffect(() => {
@@ -610,6 +634,9 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
           .signature { margin-top: 60px; display: flex; justify-content: space-between; }
           .signature-block { width: 45%; }
           .signature-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 6px; font-size: 12px; }
+          .payment-instructions { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+          .payment-instructions h3 { font-size: 14px; margin-bottom: 8px; }
+          .payment-instructions p { font-size: 12px; line-height: 1.6; white-space: pre-line; }
           @media print {
             body { -webkit-print-color-adjust: exact; }
           }
@@ -664,6 +691,13 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
             <span><strong>KES ${feeStructures.reduce((sum, fee) => sum + Number(fee.amount), 0).toLocaleString()}</strong></span>
           </div>
         </div>
+
+        ${schoolDetails.paymentInstructions ? `
+        <div class="payment-instructions">
+          <h3>Payment Instructions</h3>
+          <p>${schoolDetails.paymentInstructions.replace(/\n/g, '<br/>')}</p>
+        </div>
+        ` : ''}
 
         <div class="signature">
           <div class="signature-block">
@@ -1049,7 +1083,60 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
         </CardContent>
       </Card>
 
-      {/* Error State */}
+      {/* Payment Instructions — optional, school-wide, shown to parents and included in the PDF */}
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Info className="h-4 w-4 text-muted-foreground" /> Payment Instructions
+            </CardTitle>
+            {!isEditingPaymentInfo && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setPaymentInfoDraft(schoolDetails.paymentInstructions); setIsEditingPaymentInfo(true); }}
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                {schoolDetails.paymentInstructions ? 'Edit' : 'Add'}
+              </Button>
+            )}
+          </div>
+          <CardDescription>
+            Optional — how parents should pay (accounts, paybill/till numbers, deadlines, etc.). Shown on the parent portal and included when the fee structure is downloaded.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isEditingPaymentInfo ? (
+            <div className="space-y-3">
+              <Textarea
+                value={paymentInfoDraft}
+                onChange={(e) => setPaymentInfoDraft(e.target.value)}
+                placeholder="e.g. M-Pesa Paybill 123456, Account: Admission Number. Bank: KCB, Acc 0123456789. Contact the Bursar for installment plans."
+                rows={5}
+              />
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { setIsEditingPaymentInfo(false); setPaymentInfoDraft(schoolDetails.paymentInstructions); }}
+                  disabled={isSavingPaymentInfo}
+                >
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleSavePaymentInstructions} disabled={isSavingPaymentInfo}>
+                  {isSavingPaymentInfo ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
+                  Save
+                </Button>
+              </div>
+            </div>
+          ) : schoolDetails.paymentInstructions ? (
+            <p className="text-sm whitespace-pre-line">{schoolDetails.paymentInstructions}</p>
+          ) : (
+            <p className="text-sm text-muted-foreground">No payment instructions added yet — optional.</p>
+          )}
+        </CardContent>
+      </Card>
+
       {error && (
         <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-6">
