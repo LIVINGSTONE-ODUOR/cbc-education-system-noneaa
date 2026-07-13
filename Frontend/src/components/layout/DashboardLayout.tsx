@@ -83,23 +83,22 @@ const Sidebar = ({
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300 ease-in-out',
-          'border-r border-gray-200 dark:border-gray-800',
+          'bg-[#152C21] border-r border-[#2A4A3A]',
           collapsed ? 'w-20' : 'w-64',
-          theme.sidebar.bg,
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         {/* Header Section */}
         <div
           className={cn(
-            'flex-shrink-0 border-b border-gray-200 dark:border-gray-800',
+            'flex-shrink-0 border-b border-[#2A4A3A]',
             'flex items-center justify-between gap-3',
             collapsed ? 'px-3 py-5' : 'px-5 py-6'
           )}
         >
           {!collapsed && (
-            <Link to="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity group">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center flex-shrink-0 group-hover:shadow-lg transition-shadow">
+            <Link to="/dashboard" className="flex items-center gap-3 hover:opacity-90 transition-opacity group">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0 shadow-sm group-hover:shadow-md transition-shadow ring-1 ring-amber-300/40">
                 <img 
                   src="/Noneea-logo.jpg" 
                   alt="CBE" 
@@ -110,17 +109,17 @@ const Sidebar = ({
                 />
               </div>
               <div className="min-w-0">
-                <p className="font-bold text-sm text-gray-900 dark:text-white truncate">
+                <p className="font-bold text-sm text-white truncate">
                   {user?.schoolName || 'CBE'}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Education</p>
+                <p className="text-xs text-emerald-200/60 truncate">Education</p>
               </div>
             </Link>
           )}
 
           {collapsed && (
-            <Link to="/dashboard" className="w-full flex justify-center hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center flex-shrink-0">
+            <Link to="/dashboard" className="w-full flex justify-center hover:opacity-90 transition-opacity">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0 ring-1 ring-amber-300/40">
                 <Home className="w-5 h-5 text-white" />
               </div>
             </Link>
@@ -130,35 +129,35 @@ const Sidebar = ({
           <button
             className={cn(
               'hidden lg:flex p-2 rounded-lg transition-colors',
-              'hover:bg-gray-100 dark:hover:bg-gray-800'
+              'hover:bg-white/10'
             )}
             onClick={() => onCollapsedChange(!collapsed)}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={collapsed ? 'Expand' : 'Collapse'}
           >
             {collapsed ? (
-              <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <ChevronRight className="w-4 h-4 text-emerald-200/70" />
             ) : (
-              <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <ChevronLeft className="w-4 h-4 text-emerald-200/70" />
             )}
           </button>
 
           {/* Close Button - Mobile only */}
           <button
-            className={cn('lg:hidden p-2 rounded-lg transition-colors', 'hover:bg-gray-100 dark:hover:bg-gray-800')}
+            className={cn('lg:hidden p-2 rounded-lg transition-colors', 'hover:bg-white/10')}
             onClick={() => onSidebarOpenChange(false)}
             aria-label="Close sidebar"
           >
-            <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            <X className="w-5 h-5 text-emerald-200/70" />
           </button>
         </div>
 
         {/* Navigation Menu */}
-        <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-6 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+        <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-6 scrollbar-thin scrollbar-thumb-[#2A4A3A]">
           {visibleMenuSections.map((section) => (
             <div key={section.title} className="space-y-2">
               {!collapsed && (
-                <div className="px-3 text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                <div className="px-3 text-xs font-semibold uppercase tracking-widest text-amber-300/80">
                   {section.title}
                 </div>
               )}
@@ -181,17 +180,17 @@ const Sidebar = ({
                             collapsed ? 'px-2' : 'px-3',
                             isActive
                               ? cn(
-                                  'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
-                                  'border-r-2 border-blue-600 shadow-sm'
+                                  'bg-gradient-to-r from-amber-500/20 to-transparent text-amber-300',
+                                  'border-r-2 border-amber-400 shadow-sm'
                                 )
                               : cn(
-                                  'text-gray-700 dark:text-gray-300',
-                                  'hover:bg-gray-100 dark:hover:bg-gray-800/50'
+                                  'text-emerald-100/80',
+                                  'hover:bg-white/5 hover:text-white'
                                 )
                           )}
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <Icon className={cn('w-5 h-5 flex-shrink-0', isActive && 'text-blue-600 dark:text-blue-400')} />
+                            <Icon className={cn('w-5 h-5 flex-shrink-0', isActive && 'text-amber-300')} />
                             {!collapsed && <span className="truncate">{item.label}</span>}
                           </div>
 
@@ -204,7 +203,7 @@ const Sidebar = ({
                               )}
                               <ChevronDown
                                 className={cn(
-                                  'w-4 h-4 transition-transform duration-200 text-gray-400',
+                                  'w-4 h-4 transition-transform duration-200 text-emerald-200/50',
                                   isExpanded && 'rotate-180'
                                 )}
                               />
@@ -226,17 +225,17 @@ const Sidebar = ({
                             collapsed ? 'px-2' : 'px-3',
                             isActive
                               ? cn(
-                                  'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
-                                  'border-r-2 border-blue-600 shadow-sm'
+                                  'bg-gradient-to-r from-amber-500/20 to-transparent text-amber-300',
+                                  'border-r-2 border-amber-400 shadow-sm'
                                 )
                               : cn(
-                                  'text-gray-700 dark:text-gray-300',
-                                  'hover:bg-gray-100 dark:hover:bg-gray-800/50'
+                                  'text-emerald-100/80',
+                                  'hover:bg-white/5 hover:text-white'
                                 )
                           )}
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <Icon className={cn('w-5 h-5 flex-shrink-0', isActive && 'text-blue-600 dark:text-blue-400')} />
+                            <Icon className={cn('w-5 h-5 flex-shrink-0', isActive && 'text-amber-300')} />
                             {!collapsed && <span className="truncate">{item.label}</span>}
                           </div>
 
@@ -256,7 +255,7 @@ const Sidebar = ({
 
                       {/* Submenu */}
                       {hasSubmenu && isExpanded && !collapsed && (
-                        <div className="mt-1 ml-4 space-y-1 border-l border-gray-200 dark:border-gray-700 pl-3 py-1">
+                        <div className="mt-1 ml-4 space-y-1 border-l border-[#2A4A3A] pl-3 py-1">
                           {item.submenu?.map((subitem) => {
                             const isSubActive = location.pathname === subitem.href;
                             return (
@@ -266,8 +265,8 @@ const Sidebar = ({
                                 className={cn(
                                   'flex items-center gap-3 px-3 py-2 text-xs rounded-lg transition-all duration-200',
                                   isSubActive
-                                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
-                                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50'
+                                    ? 'bg-amber-500/10 text-amber-300 font-medium'
+                                    : 'text-emerald-100/60 hover:bg-white/5 hover:text-emerald-50'
                                 )}
                               >
                                 <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
@@ -286,22 +285,22 @@ const Sidebar = ({
         </nav>
 
         {/* User Section */}
-        <div className={cn('flex-shrink-0 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50')}>
+        <div className={cn('flex-shrink-0 border-t border-[#2A4A3A] bg-[#122519]')}>
           {!collapsed ? (
             <>
               <div className="p-4 space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0 ring-1 ring-amber-300/40">
                     <span className="text-sm font-bold text-white">
                       {user?.firstName?.[0]}
                       {user?.lastName?.[0]}
                     </span>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                    <p className="text-sm font-semibold text-white truncate">
                       {user?.firstName} {user?.lastName}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.role || 'User'}</p>
+                    <p className="text-xs text-emerald-200/60 truncate">{user?.role || 'User'}</p>
                   </div>
                 </div>
 
@@ -309,7 +308,7 @@ const Sidebar = ({
                   onClick={onLogout}
                   className={cn(
                     'w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-200',
-                    'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                    'text-rose-300 hover:bg-rose-500/10 hover:text-rose-200'
                   )}
                 >
                   <LogOut className="w-4 h-4 flex-shrink-0" />
@@ -319,7 +318,7 @@ const Sidebar = ({
             </>
           ) : (
             <div className="flex flex-col items-center justify-center space-y-4 p-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0 ring-1 ring-amber-300/40">
                 <span className="text-sm font-bold text-white">
                   {user?.firstName?.[0]}
                   {user?.lastName?.[0]}
@@ -329,7 +328,7 @@ const Sidebar = ({
                 onClick={onLogout}
                 className={cn(
                   'p-2 rounded-lg transition-all duration-200',
-                  'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                  'text-rose-300 hover:bg-rose-500/10 hover:text-rose-200'
                 )}
                 title="Sign out"
               >
