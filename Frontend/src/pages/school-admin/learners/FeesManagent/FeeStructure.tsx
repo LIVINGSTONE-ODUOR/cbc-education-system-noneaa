@@ -6,7 +6,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -35,8 +34,7 @@ import {
   GraduationCap,
   DollarSign,
   Sparkles,
-  Check,
-  Info
+  Check
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -44,12 +42,12 @@ import {
   createFeeStructure, 
   updateFeeStructure, 
   deleteFeeStructure,
+  getFeeStructuresSignatory,
   FeeStructure,
   CreateFeeStructurePayload,
   UpdateFeeStructurePayload
 } from '@/lib/api/feeStructureApi';
 import { FEE_STRUCTURE_TEMPLATES, estimateAnnualTotal, FeeStructureTemplate } from './feeStructureTemplates';
-import { getSchoolById, updateSchool } from '@/lib/api/schoolsApi';
 
 // Academic year types (matching backend)
 interface AcademicYear {
@@ -139,10 +137,7 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
   // State
   const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([]);
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>(DEFAULT_ACADEMIC_YEARS);
-  const [schoolDetails, setSchoolDetails] = useState<{ name: string; address: string; paymentInstructions: string }>({ name: '', address: '', paymentInstructions: '' });
-  const [isEditingPaymentInfo, setIsEditingPaymentInfo] = useState(false);
-  const [paymentInfoDraft, setPaymentInfoDraft] = useState('');
-  const [isSavingPaymentInfo, setIsSavingPaymentInfo] = useState(false);
+  const [signatory, setSignatory] = useState<{ name: string; title: string } | null>(null);
   const [selectedYear, setSelectedYear] = useState<string>('');
   const [selectedGrade, setSelectedGrade] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(false);
@@ -304,46 +299,39 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
     loadAcademicYears();
   }, [user?.schoolId]);
 
-  // Fetch school name/address/payment instructions once, for the PDF
-  // header and the editable Payment Instructions section below.
+  // Fetch the school's signatory (principal/headteacher) on mount —
+  // shown in the header and on the PDF export "Approved by" line.
+  // Not every school will have one set yet, so a null result is expected
+  // and just means the signatory line is omitted, not an error.
   useEffect(() => {
-    const loadSchoolDetails = async () => {
+    const loadSignatory = async () => {
       if (!user?.schoolId) return;
       try {
-        const res = await getSchoolById(user.schoolId);
-        const school = (res as any).data;
-        if (school) {
-          const instructions = school.fee_payment_instructions || '';
-          setSchoolDetails({
-            name: school.name || '',
-            // Backend returns 'physical_address', not 'address' —
-            // the School type is aspirational, not what the API sends.
-            address: school.physical_address || school.address || '',
-            paymentInstructions: instructions,
-          });
-          setPaymentInfoDraft(instructions);
-        }
+        const { signatory } = await getFeeStructuresSignatory();
+        setSignatory(signatory);
       } catch (err) {
-        console.error('[FeeStructure] Failed to load school details:', err);
+        console.error('[FeeStructure] Failed to load signatory:', err);
+        setSignatory(null);
       }
     };
-    loadSchoolDetails();
+
+    loadSignatory();
   }, [user?.schoolId]);
 
-  const handleSavePaymentInstructions = async () => {
-    if (!user?.schoolId) return;
-    setIsSavingPaymentInfo(true);
-    try {
-      await updateSchool(user.schoolId, { fee_payment_instructions: paymentInfoDraft.trim() });
-      setSchoolDetails(prev => ({ ...prev, paymentInstructions: paymentInfoDraft.trim() }));
-      setIsEditingPaymentInfo(false);
-      toast.success('Payment instructions saved');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to save payment instructions');
-    } finally {
-      setIsSavingPaymentInfo(false);
-    }
-  };
+  // Load the Parisienne signature font for on-screen display too (the
+  // PDF export loads its own copy inside the print popup separately).
+  // Injected here rather than in index.html so it only loads on pages
+  // that actually use it.
+  useEffect(() => {
+    const linkId = 'parisienne-signature-font';
+    if (document.getElementById(linkId)) return;
+
+    const link = document.createElement('link');
+    link.id = linkId;
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Parisienne&display=swap';
+    document.head.appendChild(link);
+  }, []);
 
   // Fetch when year or grade changes
   useEffect(() => {
@@ -613,6 +601,9 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
       <html>
       <head>
         <title>Fee Structure - ${currentYearName}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Parisienne&display=swap" rel="stylesheet">
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
@@ -629,14 +620,19 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
           .mandatory-yes { color: green; font-weight: bold; }
           .mandatory-no { color: #888; }
           .footer { margin-top: 30px; text-align: right; font-size: 12px; color: #666; }
+          .signature-block { margin-top: 60px; display: flex; justify-content: flex-end; }
+          .signature-block .signature { text-align: center; width: 240px; }
+          .signature-block .signature-name {
+            font-family: 'Parisienne', cursive;
+            font-size: 32px;
+            line-height: 1.2;
+            font-weight: normal;
+            color: #1a1a2e;
+          }
+          .signature-block .signature-line { border-top: 1px solid #333; margin-top: 4px; padding-top: 6px; }
+          .signature-block .signature-title { font-size: 11px; color: #666; }
           .summary { margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 5px; }
           .summary-row { display: flex; justify-content: space-between; padding: 5px 0; }
-          .signature { margin-top: 60px; display: flex; justify-content: space-between; }
-          .signature-block { width: 45%; }
-          .signature-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 6px; font-size: 12px; }
-          .payment-instructions { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
-          .payment-instructions h3 { font-size: 14px; margin-bottom: 8px; }
-          .payment-instructions p { font-size: 12px; line-height: 1.6; white-space: pre-line; }
           @media print {
             body { -webkit-print-color-adjust: exact; }
           }
@@ -644,9 +640,8 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
       </head>
       <body>
         <div class="header">
-          <h1>${schoolDetails.name || 'Fee Structure Report'}</h1>
-          ${schoolDetails.address ? `<p>${schoolDetails.address}</p>` : ''}
-          <p>Fee Structure Report</p>
+          <h1>Fee Structure Report</h1>
+          <p>School Management System</p>
         </div>
         
         <div class="filters">
@@ -692,21 +687,15 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
           </div>
         </div>
 
-        ${schoolDetails.paymentInstructions ? `
-        <div class="payment-instructions">
-          <h3>Payment Instructions</h3>
-          <p>${schoolDetails.paymentInstructions.replace(/\n/g, '<br/>')}</p>
+        ${signatory ? `
+        <div class="signature-block">
+          <div class="signature">
+            <div class="signature-name">${signatory.name}</div>
+            <div class="signature-line"></div>
+            <div class="signature-title">${signatory.title}</div>
+          </div>
         </div>
         ` : ''}
-
-        <div class="signature">
-          <div class="signature-block">
-            <div class="signature-line">Principal Name</div>
-          </div>
-          <div class="signature-block">
-            <div class="signature-line">Signature &amp; Date</div>
-          </div>
-        </div>
 
         <div class="footer">
           <p>Generated from CBC Education System on ${new Date().toLocaleString()}</p>
@@ -718,9 +707,14 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
     printWindow.document.write(htmlContent);
     printWindow.document.close();
     
-    // Wait for content to load then print
+    // Wait for content to load then print. The extra delay gives the
+    // Parisienne signature font (loaded from Google Fonts) time to
+    // actually finish downloading — without it, the first print can
+    // occasionally fall back to a default cursive font.
     printWindow.onload = () => {
-      printWindow.print();
+      setTimeout(() => {
+        printWindow.print();
+      }, 300);
     };
     
     toast.success('Preparing PDF for download...');
@@ -742,6 +736,18 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
         <div>
           <h2 className="text-2xl font-bold">Fee Structure</h2>
           <p className="text-muted-foreground">Manage fee structures by grade and academic year</p>
+          {signatory && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Approved by:{' '}
+              <span
+                className="text-base font-normal align-middle"
+                style={{ fontFamily: "'Parisienne', cursive" }}
+              >
+                {signatory.name}
+              </span>
+              , {signatory.title}
+            </p>
+          )}
         </div>
         
         <div className="flex items-center gap-2">
@@ -1083,60 +1089,7 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
         </CardContent>
       </Card>
 
-      {/* Payment Instructions — optional, school-wide, shown to parents and included in the PDF */}
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Info className="h-4 w-4 text-muted-foreground" /> Payment Instructions
-            </CardTitle>
-            {!isEditingPaymentInfo && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => { setPaymentInfoDraft(schoolDetails.paymentInstructions); setIsEditingPaymentInfo(true); }}
-              >
-                <Pencil className="h-4 w-4 mr-2" />
-                {schoolDetails.paymentInstructions ? 'Edit' : 'Add'}
-              </Button>
-            )}
-          </div>
-          <CardDescription>
-            Optional — how parents should pay (accounts, paybill/till numbers, deadlines, etc.). Shown on the parent portal and included when the fee structure is downloaded.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isEditingPaymentInfo ? (
-            <div className="space-y-3">
-              <Textarea
-                value={paymentInfoDraft}
-                onChange={(e) => setPaymentInfoDraft(e.target.value)}
-                placeholder="e.g. M-Pesa Paybill 123456, Account: Admission Number. Bank: KCB, Acc 0123456789. Contact the Bursar for installment plans."
-                rows={5}
-              />
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => { setIsEditingPaymentInfo(false); setPaymentInfoDraft(schoolDetails.paymentInstructions); }}
-                  disabled={isSavingPaymentInfo}
-                >
-                  Cancel
-                </Button>
-                <Button size="sm" onClick={handleSavePaymentInstructions} disabled={isSavingPaymentInfo}>
-                  {isSavingPaymentInfo ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
-                  Save
-                </Button>
-              </div>
-            </div>
-          ) : schoolDetails.paymentInstructions ? (
-            <p className="text-sm whitespace-pre-line">{schoolDetails.paymentInstructions}</p>
-          ) : (
-            <p className="text-sm text-muted-foreground">No payment instructions added yet — optional.</p>
-          )}
-        </CardContent>
-      </Card>
-
+      {/* Error State */}
       {error && (
         <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-6">
