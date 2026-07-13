@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
-// ── Animation Variants ─────────────────────────────────────────
+// ── Animation Variant ─────────────────────────────────────────
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
