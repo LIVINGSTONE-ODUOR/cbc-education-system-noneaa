@@ -168,7 +168,12 @@ exports.registerSchoolAdmin = async (req, res) => {
       await client.query(
         `INSERT INTO school_admins (user_id, school_id, tsc_number, appointment_date, is_principal)
          VALUES ($1, $2, $3, $4, $5)`,
-        [userId, schoolId, tscNo, new Date(), role === 'principal']
+        // This person is the only administrator that exists at registration
+        // time, so they become the default signatory, regardless of which
+        // title they picked — same logic as schoolRegistration.controller.js
+        // (the actually-live registration path). Kept consistent here too
+        // in case this route is ever re-wired.
+        [userId, schoolId, tscNo, new Date(), true]
       );
 
       // Create the main user account (if different from administrator)
