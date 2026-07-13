@@ -340,7 +340,7 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
     const loadSignatory = async () => {
       if (!user?.schoolId) return;
       try {
-        const { signatory } = await getFeeStructuresSignatory();
+        const { signatory } = await getFeeStructuresSignatory(user.schoolId);
         setSignatory(signatory);
       } catch (err) {
         console.error('[FeeStructure] Failed to load signatory:', err);
