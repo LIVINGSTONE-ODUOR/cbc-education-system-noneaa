@@ -672,7 +672,7 @@ export default function AddLearnerPage() {
 
   // ✅ RENDER
   return (
-    <div className="w-full space-y-6 p-4 md:p-6 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+    <div className="w-full space-y-6 p-4 md:p-6 bg-[#EAEFF9] dark:bg-slate-950 min-h-screen">
       {/* Header */}
       <div className="flex items-start gap-4">
         <Button
@@ -765,7 +765,7 @@ export default function AddLearnerPage() {
                         </div>
                         <div>
                           <CardTitle className="text-base text-slate-900 dark:text-slate-100">
-                            Basic Information
+                            Student Profile Card
                           </CardTitle>
                           <CardDescription>Student's personal details.</CardDescription>
                         </div>
@@ -783,33 +783,37 @@ export default function AddLearnerPage() {
                   {expandedSections['student'] && (
                     <CardContent className="pt-6 space-y-6 bg-white dark:bg-slate-900">
                       {/* Photo Upload */}
-                      <div className="bg-slate-50 rounded-lg p-6 border-2 border-dashed border-slate-300 hover:border-blue-500 transition-colors">
-                        <div className="flex flex-col items-center justify-center">
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="shrink-0 w-full sm:w-28 h-28 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center bg-slate-50 mx-auto sm:mx-0 overflow-hidden">
                           {learnerData.profilePhoto ? (
-                            <div className="relative">
+                            <div className="relative w-full h-full">
                               <img
                                 src={URL.createObjectURL(learnerData.profilePhoto)}
                                 alt="Profile"
-                                className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+                                className="w-full h-full rounded-full object-cover"
                               />
                               <button
                                 type="button"
                                 onClick={() =>
                                   setLearnerData((prev) => ({ ...prev, profilePhoto: null }))
                                 }
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-md"
+                                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-md"
                               >
-                                <X className="w-4 h-4" />
+                                <X className="w-3 h-3" />
                               </button>
                             </div>
                           ) : (
-                            <Upload className="w-8 h-8 text-slate-400 mb-2" />
+                            <User className="w-12 h-12 text-slate-300" />
                           )}
+                        </div>
+
+                        <div className="flex-1 rounded-lg p-5 bg-blue-50 dark:bg-blue-950/30 flex flex-col items-center justify-center text-center gap-2">
+                          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Photo Upload</p>
                           <Label
                             htmlFor="profilePhoto"
-                            className="text-sm font-semibold text-slate-700 cursor-pointer hover:text-blue-600 mt-2"
+                            className="inline-flex items-center justify-center rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-1.5 cursor-pointer transition-colors"
                           >
-                            {learnerData.profilePhoto ? 'Change Photo' : 'Upload Photo'}
+                            {learnerData.profilePhoto ? 'Change' : 'Upload'}
                           </Label>
                           <Input
                             id="profilePhoto"
@@ -818,38 +822,14 @@ export default function AddLearnerPage() {
                             onChange={handlePhotoUpload}
                             className="hidden"
                           />
-                          <p className="text-xs text-slate-500 mt-2">JPG, PNG up to 5MB (Optional)</p>
+                          <p className="text-xs text-slate-500">JPG, PNG up to 5MB (Optional)</p>
                         </div>
                       </div>
 
-                      {/* Admission Number */}
-                      <div className="space-y-2">
-                        <Label htmlFor="admissionNumber" className="font-semibold text-slate-900 dark:text-slate-100">
-                          Admission Number <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id="admissionNumber"
-                          name="admissionNumber"
-                          placeholder="ADM2024001"
-                          value={learnerData.admissionNumber}
-                          onChange={handleLearnerChange}
-                          required
-                          disabled={isEditMode}
-                          className={cn(
-                            'h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10',
-                            validationErrors.admissionNumber && 'border-red-500',
-                            isEditMode && 'bg-slate-100 cursor-not-allowed'
-                          )}
-                        />
-                        {validationErrors.admissionNumber && (
-                          <p className="text-xs text-red-500 flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" />
-                            {validationErrors.admissionNumber}
-                          </p>
-                        )}
-                        {isEditMode && (
-                          <p className="text-xs text-slate-500 dark:text-slate-400">Admission number cannot be changed</p>
-                        )}
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 pt-4 pb-1">
+                          Personal Details
+                        </h4>
                       </div>
 
                       {/* Name Fields */}
@@ -1480,11 +1460,24 @@ export default function AddLearnerPage() {
             {/* Admission ID */}
             <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
               <CardContent className="p-4 space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Admission ID</p>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-lg font-bold text-slate-900 dark:text-slate-100 truncate">
-                    {learnerData.admissionNumber || 'Not set yet'}
-                  </span>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Admission ID <span className="text-red-500">*</span>
+                </p>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="admissionNumber"
+                    name="admissionNumber"
+                    placeholder="ADM2024001"
+                    value={learnerData.admissionNumber}
+                    onChange={handleLearnerChange}
+                    required
+                    disabled={isEditMode}
+                    className={cn(
+                      'h-10 text-lg font-bold border-slate-200 focus:border-blue-500 focus:ring-blue-500/10',
+                      validationErrors.admissionNumber && 'border-red-500',
+                      isEditMode && 'bg-slate-100 cursor-not-allowed'
+                    )}
+                  />
                   {learnerData.admissionNumber && (
                     <button
                       type="button"
@@ -1496,6 +1489,15 @@ export default function AddLearnerPage() {
                     </button>
                   )}
                 </div>
+                {validationErrors.admissionNumber && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {validationErrors.admissionNumber}
+                  </p>
+                )}
+                {isEditMode && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Admission number cannot be changed</p>
+                )}
               </CardContent>
             </Card>
 
