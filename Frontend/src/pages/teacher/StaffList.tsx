@@ -155,15 +155,15 @@ interface StatCardProps {
 function StatCard({ title, value, icon: Icon, description, bgColor }: StatCardProps) {
   return (
     <Card className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-3xl font-bold">{value}</p>
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-1 min-w-0">
+            <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">{title}</p>
+            <p className="text-2xl sm:text-3xl font-bold">{value}</p>
             {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
           </div>
-          <div className={cn('p-3 rounded-lg', bgColor)}>
-            <Icon className="h-5 w-5" />
+          <div className={cn('p-2 sm:p-3 rounded-lg shrink-0', bgColor)}>
+            <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
         </div>
       </CardContent>
@@ -752,12 +752,12 @@ export default function AdminTeachers() {
         {/* Header */}
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-100 dark:bg-blue-950 rounded-lg">
-              <GraduationCap className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            <div className="p-2 sm:p-2.5 bg-blue-100 dark:bg-blue-950 rounded-lg shrink-0">
+              <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Teachers</h1>
-              <p className="text-sm text-muted-foreground">Manage and monitor teaching staff</p>
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-3xl font-bold text-foreground">Teachers</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">Manage and monitor teaching staff</p>
             </div>
           </div>
         </div>
@@ -794,31 +794,31 @@ export default function AdminTeachers() {
 
         {/* Filter Bar Card */}
         <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
+          <CardHeader className="pb-4 p-4 sm:p-6 sm:pb-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
-                <Filter className="h-5 w-5 text-muted-foreground" />
-                <CardTitle className="text-lg">Filters & Search</CardTitle>
+                <Filter className="h-5 w-5 text-muted-foreground shrink-0" />
+                <CardTitle className="text-base sm:text-lg">Filters & Search</CardTitle>
               </div>
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
                   variant="outline"
-                  className="gap-2"
+                  className="gap-2 flex-1 sm:flex-none"
                   onClick={handleRefresh}
                   disabled={refreshing || loading}
                 >
                   <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
                   Refresh
                 </Button>
-                <Button size="sm" className="gap-2" onClick={() => navigate('/school-admin/teachers?add=1')}>
+                <Button size="sm" className="gap-2 flex-1 sm:flex-none" onClick={() => navigate('/school-admin/teachers?add=1')}>
                   <Plus className="h-4 w-4" />
                   Add Teacher
                 </Button>
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
             <FilterBar
               filters={filters}
               onFilterChange={handleFilterChange}
