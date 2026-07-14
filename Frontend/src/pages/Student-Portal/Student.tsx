@@ -1,69 +1,162 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow
 } from "@/components/ui/table";
-import { BookOpen, Calendar, ChevronRight, User, Users, ArrowRight } from 'lucide-react';
+import { BookOpen, Calendar, ClipboardList, AlertCircle } from 'lucide-react';
 import MarksPanel from '@/components/marks/MarksPanel';
-import { getMyResults } from '@/lib/api/resultsApi';
+import { getMyResults, ExamSummary, PerformanceLevel } from '@/lib/api/resultsApi';
+import { getLearners } from '@/lib/api/learnersApi';
+import { getClassById, ClassApiTeacherPayload } from '@/lib/api/classApi';
+import { useAuth } from '@/contexts/AuthContext';
+// Reuse the Parent Portal's already-real, backend-backed components instead
+// of re-implementing assignments/attendance with fake data — the backend
+// resolves the caller's own learner record for both when the role is
+// 'student', so the same components work here unchanged.
+import Assignments from '../Parent-Portal/components/Assignments';
+import Attendance from '../Parent-Portal/components/Attendance';
+
+const GRADE_STYLES: Record<PerformanceLevel, string> = {
+  EE: 'text-green-600',
+  ME: 'text-blue-600',
+  AE: 'text-amber-600',
+  BE: 'text-red-600',
+};
+
+const GRADE_REMARKS: Record<PerformanceLevel, string> = {
+  EE: 'Exceeding expectations.',
+  ME: 'Meeting expectations.',
+  AE: 'Approaching expectations.',
+  BE: 'Below expectations.',
+};
+
+interface StudentLearner {
+  id: string;
+  first_name: string;
+  last_name: string;
+  admission_number: string;
+  grade_level: string;
+  stream_name: string | null;
+  class_id: string | null;
+  date_of_birth: string | null;
+  admission_date: string | null;
+  photo_url: string | null;
+}
+
+const calculateAge = (dob: string | null): number | null => {
+  if (!dob) return null;
+  const birth = new Date(dob);
+  if (Number.isNaN(birth.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+};
+
+const formatDate = (value: string | null): string | null => {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+};
 
 const StudentPortal = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
-  
-  // Student details
-  const student = {
-    id: "ST12345",
-    name: "David Ochieng",
-    grade: "Grade 6",
-    school: "Nairobi Academy",
-    class: "6B",
-    classTeacher: "Mrs. Njoroge",
-    age: 12,
-    joinDate: "January 2020",
-    image: "https://images.unsplash.com/photo-1531384441138-2736e62e0919?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80"
-  };
-  
-  // Academic data
-  const subjects = [
-    { name: "Mathematics", completed: 78, upcoming: 3, score: 85 },
-    { name: "English", completed: 82, upcoming: 1, score: 92 },
-    { name: "Kiswahili", completed: 75, upcoming: 4, score: 88 },
-    { name: "Science", completed: 80, upcoming: 2, score: 76 },
-    { name: "Social Studies", completed: 85, upcoming: 0, score: 91 },
-    { name: "Creative Arts", completed: 90, upcoming: 2, score: 94 }
-  ];
-  
-  // Homework and assignments
-  const assignments = [
-    { id: 1, title: "Mathematics Problem Set", dueDate: "May 5, 2025", status: "completed" },
-    { id: 2, title: "English Essay Writing", dueDate: "May 7, 2025", status: "pending" },
-    { id: 3, title: "Science Project", dueDate: "May 10, 2025", status: "pending" },
-    { id: 4, title: "Social Studies Research", dueDate: "May 12, 2025", status: "pending" },
-  ];
-  
-  // Attendance data
-  const attendance = {
-    present: 87,
-    absent: 4,
-    late: 9,
-    total: 100
-  };
-  
-  // Recent activities
-  const recentActivities = [
-    { id: 1, activity: "Submitted Mathematics assignment", date: "May 1, 2025", time: "10:30 AM" },
-    { id: 2, activity: "Participated in Science lab experiment", date: "April 29, 2025", time: "2:15 PM" },
-    { id: 3, activity: "Completed English quiz", date: "April 28, 2025", time: "11:45 AM" },
-    { id: 4, activity: "Attended virtual field trip", date: "April 25, 2025", time: "9:00 AM" }
-  ];
+
+  const [learner, setLearner] = useState<StudentLearner | null>(null);
+  const [loadingLearner, setLoadingLearner] = useState(true);
+  const [learnerError, setLearnerError] = useState<string | null>(null);
+
+  const [classTeacherName, setClassTeacherName] = useState<string | null>(null);
+
+  const [exams, setExams] = useState<ExamSummary[]>([]);
+  const [loadingResults, setLoadingResults] = useState(true);
+  const [resultsError, setResultsError] = useState<string | null>(null);
+
+  // Load the logged-in student's own learner profile.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingLearner(true);
+        setLearnerError(null);
+        const res = await getLearners();
+        const own = res.students?.[0] || null;
+        if (!cancelled) setLearner(own);
+      } catch (err: any) {
+        if (!cancelled) setLearnerError(err.message || 'Failed to load your profile');
+      } finally {
+        if (!cancelled) setLoadingLearner(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Once we know the class, look up the class teacher's name.
+  useEffect(() => {
+    if (!learner?.class_id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getClassById(learner.class_id as string);
+        const teacher = res.data?.teachers as ClassApiTeacherPayload | null | undefined;
+        const name = teacher?.users ? `${teacher.users.first_name || ''} ${teacher.users.last_name || ''}`.trim() : null;
+        if (!cancelled) setClassTeacherName(name || null);
+      } catch {
+        // Non-critical — just leave the class teacher field blank.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [learner?.class_id]);
+
+  // Load results (marks) for the "Subject Progress" and "Academic
+  // Performance" summaries — same endpoint the Marks tab uses, most recent
+  // exam first.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingResults(true);
+        setResultsError(null);
+        const res = await getMyResults();
+        if (!cancelled) setExams(res.data.exams || []);
+      } catch (err: any) {
+        if (!cancelled) setResultsError(err.message || 'Failed to load results');
+      } finally {
+        if (!cancelled) setLoadingResults(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const latestExam = exams[0] || null;
+
+  const age = useMemo(() => calculateAge(learner?.date_of_birth || null), [learner]);
+  const joined = useMemo(() => formatDate(learner?.admission_date || null), [learner]);
+
+  const displayName = learner
+    ? `${learner.first_name} ${learner.last_name}`
+    : user
+      ? `${user.firstName} ${user.lastName}`
+      : '';
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 
   return (
       <div className="container mx-auto px-4 py-8">
@@ -72,61 +165,77 @@ const StudentPortal = () => {
           <div className="col-span-1">
             <Card className="mb-6">
               <CardContent className="pt-6">
-                <div className="flex flex-col items-center mb-6">
-                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary/30">
-                    <img 
-                      src={student.image} 
-                      alt={student.name} 
-                      className="w-full h-full object-cover"
-                    />
+                {loadingLearner ? (
+                  <div className="flex flex-col items-center mb-6 gap-3">
+                    <Skeleton className="w-32 h-32 rounded-full" />
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-24" />
                   </div>
-                  <h2 className="text-xl font-bold mt-4">{student.name}</h2>
-                  <p className="text-muted-foreground">{student.grade}, {student.class}</p>
-                  <div className="bg-primary/10 text-primary text-sm px-3 py-1 rounded-full mt-2">
-                    ID: {student.id}
+                ) : (
+                  <div className="flex flex-col items-center mb-6">
+                    <Avatar className="w-32 h-32 border-4 border-primary/30">
+                      <AvatarImage src={learner?.photo_url || user?.avatarUrl || undefined} alt={displayName} className="object-cover" />
+                      <AvatarFallback className="text-2xl">{initials || 'S'}</AvatarFallback>
+                    </Avatar>
+                    <h2 className="text-xl font-bold mt-4">{displayName}</h2>
+                    <p className="text-muted-foreground">
+                      {learner?.grade_level || '—'}{learner?.stream_name ? `, ${learner.stream_name}` : ''}
+                    </p>
+                    {learner?.admission_number && (
+                      <div className="bg-primary/10 text-primary text-sm px-3 py-1 rounded-full mt-2">
+                        ID: {learner.admission_number}
+                      </div>
+                    )}
                   </div>
-                </div>
-                
-                <div className="space-y-1 border-t pt-4">
-                  <div className="flex justify-between py-1">
-                    <span className="text-muted-foreground">School:</span>
-                    <span className="font-medium">{student.school}</span>
+                )}
+
+                {learnerError ? (
+                  <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    {learnerError}
                   </div>
-                  <div className="flex justify-between py-1">
-                    <span className="text-muted-foreground">Class Teacher:</span>
-                    <span className="font-medium">{student.classTeacher}</span>
+                ) : (
+                  <div className="space-y-1 border-t pt-4">
+                    <div className="flex justify-between py-1">
+                      <span className="text-muted-foreground">School:</span>
+                      <span className="font-medium">{user?.schoolName || '—'}</span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span className="text-muted-foreground">Class Teacher:</span>
+                      <span className="font-medium">{classTeacherName || '—'}</span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span className="text-muted-foreground">Age:</span>
+                      <span className="font-medium">{age != null ? `${age} years` : '—'}</span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span className="text-muted-foreground">Joined:</span>
+                      <span className="font-medium">{joined || '—'}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between py-1">
-                    <span className="text-muted-foreground">Age:</span>
-                    <span className="font-medium">{student.age} years</span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span className="text-muted-foreground">Joined:</span>
-                    <span className="font-medium">{student.joinDate}</span>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
-            
+
             {/* Quick actions */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-start">
-                  <Calendar className="mr-2 h-4 w-4" /> View Schedule
+                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('attendance')}>
+                  <Calendar className="mr-2 h-4 w-4" /> View Attendance
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <BookOpen className="mr-2 h-4 w-4" /> Learning Materials
+                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('marks')}>
+                  <BookOpen className="mr-2 h-4 w-4" /> View Marks
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Users className="mr-2 h-4 w-4" /> Class Community
+                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('dashboard')}>
+                  <ClipboardList className="mr-2 h-4 w-4" /> View Assignments
                 </Button>
               </CardContent>
             </Card>
           </div>
-          
+
           {/* Main content */}
           <div className="col-span-1 md:col-span-3 space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -136,168 +245,120 @@ const StudentPortal = () => {
                 <TabsTrigger value="marks">Marks</TabsTrigger>
                 <TabsTrigger value="attendance">Attendance</TabsTrigger>
               </TabsList>
-              
+
               {/* Dashboard Tab */}
               <TabsContent value="dashboard" className="space-y-6">
-                {/* Subject Progress Overview */}
+                {/* Subject Progress — most recent exam's per-subject scores */}
                 <Card>
                   <CardHeader>
                     <CardTitle>Subject Progress</CardTitle>
-                    <CardDescription>Your current learning progress across subjects</CardDescription>
+                    <CardDescription>
+                      {latestExam?.exam?.exam_name ? `Scores from ${latestExam.exam.exam_name}` : 'Your most recent exam scores by subject'}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {subjects.map((subject, index) => (
-                        <div key={index} className="space-y-2">
-                          <div className="flex justify-between">
-                            <span className="font-medium">{subject.name}</span>
-                            <span className="text-muted-foreground">{subject.completed}% Completed</span>
+                    {loadingResults ? (
+                      <div className="space-y-3">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                    ) : resultsError ? (
+                      <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        {resultsError}
+                      </div>
+                    ) : !latestExam || latestExam.subjects.length === 0 ? (
+                      <p className="py-8 text-center text-sm text-muted-foreground">
+                        No exam results have been recorded for you yet.
+                      </p>
+                    ) : (
+                      <div className="space-y-4">
+                        {latestExam.subjects.map((s, index) => (
+                          <div key={index} className="space-y-2">
+                            <div className="flex justify-between">
+                              <span className="font-medium">{s.learning_area?.name || 'Subject'}</span>
+                              <span className="text-muted-foreground">
+                                {s.is_absent ? 'Absent' : `${Math.round(s.percentage)}%`}
+                              </span>
+                            </div>
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-primary rounded-full"
+                                style={{ width: `${s.is_absent ? 0 : Math.min(100, Math.round(s.percentage))}%` }}
+                              ></div>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span>{s.performance_level || '—'}</span>
+                              <span>Score: {s.marks_obtained}/{s.max_marks}</span>
+                            </div>
                           </div>
-                          <div className="h-2 bg-muted rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-primary rounded-full" 
-                              style={{ width: `${subject.completed}%` }}
-                            ></div>
-                          </div>
-                          <div className="flex justify-between text-xs">
-                            <span>{subject.upcoming} upcoming lessons</span>
-                            <span>Score: {subject.score}/100</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button className="ml-auto" variant="outline">
-                      View All Subjects <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </CardFooter>
-                </Card>
-                
-                {/* Assignments */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Homework & Assignments</CardTitle>
-                    <CardDescription>Track your pending and completed tasks</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {assignments.map((assignment) => (
-                        <div key={assignment.id} className="flex justify-between items-center p-3 hover:bg-muted/50 rounded-md transition-colors">
-                          <div>
-                            <h4 className="font-semibold">{assignment.title}</h4>
-                            <p className="text-sm text-muted-foreground">Due: {assignment.dueDate}</p>
-                          </div>
-                          <div>
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              assignment.status === 'completed' 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-amber-100 text-amber-800'
-                            }`}>
-                              {assignment.status}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
-                
-                {/* Recent Activity */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Activities</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {recentActivities.map((activity) => (
-                        <div key={activity.id} className="flex justify-between items-center p-3 hover:bg-muted/50 rounded-md transition-colors">
-                          <div>
-                            <h4 className="font-semibold">{activity.activity}</h4>
-                            <p className="text-sm text-muted-foreground">{activity.date} • {activity.time}</p>
-                          </div>
-                          <Button variant="ghost" size="sm">
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+
+                {/* Assignments — real due/submitted assignments from the backend */}
+                <Assignments learnerId={learner?.id || ''} emptyMessage="No assignments have been posted yet." />
               </TabsContent>
-              
+
               {/* Academics Tab */}
               <TabsContent value="academics" className="space-y-6">
-                {/* Academic Performance */}
                 <Card>
                   <CardHeader>
                     <CardTitle>Academic Performance</CardTitle>
-                    <CardDescription>Subject-wise performance analytics</CardDescription>
+                    <CardDescription>
+                      {latestExam?.exam?.exam_name ? `Subject-wise results for ${latestExam.exam.exam_name}` : 'Subject-wise performance analytics'}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Subject</TableHead>
-                          <TableHead>Current Score</TableHead>
-                          <TableHead>Grade</TableHead>
-                          <TableHead>Teacher Comments</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {subjects.map((subject, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="font-medium">{subject.name}</TableCell>
-                            <TableCell>{subject.score}/100</TableCell>
-                            <TableCell>
-                              <span className={`font-semibold ${
-                                subject.score >= 90 ? 'text-green-600' : 
-                                subject.score >= 80 ? 'text-blue-600' : 
-                                subject.score >= 70 ? 'text-amber-600' : 
-                                'text-red-600'
-                              }`}>
-                                {subject.score >= 90 ? 'A' : 
-                                 subject.score >= 80 ? 'B' : 
-                                 subject.score >= 70 ? 'C' : 'D'}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {subject.score >= 90 ? 'Excellent work!' : 
-                               subject.score >= 80 ? 'Good progress.' : 
-                               subject.score >= 70 ? 'Satisfactory.' : 'Needs improvement.'}
-                            </TableCell>
+                    {loadingResults ? (
+                      <div className="space-y-3">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                    ) : resultsError ? (
+                      <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        {resultsError}
+                      </div>
+                    ) : !latestExam || latestExam.subjects.length === 0 ? (
+                      <p className="py-8 text-center text-sm text-muted-foreground">
+                        No exam results have been recorded for you yet.
+                      </p>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Subject</TableHead>
+                            <TableHead>Score</TableHead>
+                            <TableHead>Grade</TableHead>
+                            <TableHead>Teacher Comments</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-                
-                {/* Learning Resources */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Learning Resources</CardTitle>
-                    <CardDescription>Access your study materials</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {['Mathematics', 'English', 'Science', 'Social Studies'].map((subject, index) => (
-                        <Card key={index} className="overflow-hidden">
-                          <CardContent className="p-0">
-                            <div className="p-4">
-                              <h3 className="font-semibold">{subject}</h3>
-                              <p className="text-sm text-muted-foreground">
-                                {Math.floor(Math.random() * 10) + 5} resources available
-                              </p>
-                            </div>
-                            <div className="bg-muted/50 px-4 py-2 flex justify-between items-center">
-                              <span className="text-sm">View Materials</span>
-                              <ChevronRight className="h-4 w-4" />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
+                        </TableHeader>
+                        <TableBody>
+                          {latestExam.subjects.map((s, index) => (
+                            <TableRow key={index}>
+                              <TableCell className="font-medium">{s.learning_area?.name || 'Subject'}</TableCell>
+                              <TableCell>{s.is_absent ? 'Absent' : `${s.marks_obtained}/${s.max_marks}`}</TableCell>
+                              <TableCell>
+                                {s.performance_level ? (
+                                  <span className={`font-semibold ${GRADE_STYLES[s.performance_level]}`}>
+                                    {s.performance_level}
+                                  </span>
+                                ) : (
+                                  '—'
+                                )}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">
+                                {s.remarks || (s.performance_level ? GRADE_REMARKS[s.performance_level] : 'No comments yet.')}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -310,60 +371,9 @@ const StudentPortal = () => {
                 />
               </TabsContent>
 
-              {/* Attendance Tab */}
+              {/* Attendance Tab — real records from the backend */}
               <TabsContent value="attendance" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Attendance Overview</CardTitle>
-                    <CardDescription>Term 2, 2025 attendance record</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-3 gap-4 mb-6">
-                      <Card className="bg-green-50">
-                        <CardContent className="pt-6 text-center">
-                          <h3 className="text-3xl font-bold text-green-600">{attendance.present}%</h3>
-                          <p className="text-green-800">Present</p>
-                        </CardContent>
-                      </Card>
-                      <Card className="bg-amber-50">
-                        <CardContent className="pt-6 text-center">
-                          <h3 className="text-3xl font-bold text-amber-600">{attendance.late}%</h3>
-                          <p className="text-amber-800">Late</p>
-                        </CardContent>
-                      </Card>
-                      <Card className="bg-red-50">
-                        <CardContent className="pt-6 text-center">
-                          <h3 className="text-3xl font-bold text-red-600">{attendance.absent}%</h3>
-                          <p className="text-red-800">Absent</p>
-                        </CardContent>
-                      </Card>
-                    </div>
-                    
-                    <div className="mt-8">
-                      <h3 className="text-lg font-semibold mb-4">Monthly Breakdown</h3>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Month</TableHead>
-                            <TableHead>Present</TableHead>
-                            <TableHead>Late</TableHead>
-                            <TableHead>Absent</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {["January", "February", "March", "April"].map((month, index) => (
-                            <TableRow key={index}>
-                              <TableCell>{month}</TableCell>
-                              <TableCell>{85 + Math.floor(Math.random() * 10)}%</TableCell>
-                              <TableCell>{Math.floor(Math.random() * 10)}%</TableCell>
-                              <TableCell>{Math.floor(Math.random() * 7)}%</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </Card>
+                <Attendance learnerId={learner?.id || ''} emptyMessage="No attendance records yet this term." />
               </TabsContent>
             </Tabs>
           </div>
