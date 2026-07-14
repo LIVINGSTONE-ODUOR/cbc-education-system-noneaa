@@ -76,14 +76,15 @@ Be accurate, concise, and helpful. Use simple English.
 - Use numbered lists for steps.
 - Keep answers short unless user asks for details.
 
-# SEARCH CAPABILITY
-You have access to search noneaa.com including subpages. Use the search results to give accurate answers.
+# SITE KNOWLEDGE
+Relevant excerpts from the real NONEAA public website pages (mission, vision,
+features, pricing, etc.) are looked up automatically for each question and
+provided to you as additional system context when available. Prefer that
+content over guessing. If no relevant excerpt was provided and you're not
+sure, say so honestly and point the visitor to contact@noneaa.com.
 `;
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-const TAVILY_API_KEY = import.meta.env.VITE_TAVILY_API_KEY || '';
-
-console.log("Tavily Key Loaded:", !!TAVILY_API_KEY); // Debug
 
 const normalizeAiEndpoint = (raw?: string) => {
   const fallback = '/api/v1/ai/ai-chat';
@@ -118,41 +119,6 @@ async function callGemini(messages: { role: string; content: string }[], systemP
   if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
   const data = await response.json();
   return data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
-}
-
-async function searchNoneaaWebsite(query: string): Promise<string> {
-  if (!TAVILY_API_KEY) {
-    console.log("Tavily key is missing");
-    return "";
-  }
-  console.log("Searching Tavily for:", query);
-  try {
-    const response = await fetch('https://api.tavily.com/search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        api_key: TAVILY_API_KEY,
-        query: `${query} site:noneaa.com`,
-        search_depth: "advanced",
-        include_answer: true,
-        max_results: 8,
-      }),
-    });
-    console.log("Tavily status:", response.status);
-    if (!response.ok) return "";
-    const data = await response.json();
-    console.log("Tavily results found:", data.results?.length || 0);
-    if (!data.results || data.results.length === 0) return "";
-    return data.results.map((result: any, index: number) => `
-Source ${index + 1}:
-Title: ${result.title}
-URL: ${result.url}
-Content: ${result.content}
-`).join('\n---\n');
-  } catch (error) {
-    console.error("Tavily error:", error);
-    return "";
-  }
 }
 
 const cleanResponse = (text: string): string => {
@@ -375,20 +341,18 @@ export default function AIAssistant() {
     }
 
     try {
-      const searchResults = await searchNoneaaWebsite(messageText);
       const allMessages = [...messages, userMessage].map(m => ({
         role: m.role,
         content: m.content,
       }));
 
-      const enhancedSystemPrompt = searchResults
-        ? `${SYSTEM_CONTEXT}\n\n=== Search Results from noneaa.com ===\n${searchResults}\n\nAnswer based ONLY on the search results above.`
-        : SYSTEM_CONTEXT;
-
       let reply: string;
       if (GEMINI_API_KEY) {
-        reply = await callGemini(allMessages, enhancedSystemPrompt);
+        reply = await callGemini(allMessages, SYSTEM_CONTEXT);
       } else {
+        // The backend looks up relevant excerpts from the real public
+        // website pages for the latest message and attaches them
+        // server-side, so we just send the base persona prompt here.
         const accessToken = localStorage.getItem('cbe_access_token');
         const response = await fetch(AI_API_ENDPOINT, {
           method: 'POST',
@@ -398,7 +362,7 @@ export default function AIAssistant() {
           },
           body: JSON.stringify({
             messages: allMessages,
-            systemPrompt: enhancedSystemPrompt,
+            systemPrompt: SYSTEM_CONTEXT,
           }),
         });
         if (!response.ok) throw new Error('ASSISTANT_OFFLINE');
