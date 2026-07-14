@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "build": "echo 'No build needed'",
+    "build": "npm run build:knowledge",
+    "build:knowledge": "node scripts/build-site-knowledge.js",
     "test": "jest",
     "lint": "eslint src/**/*.js"
   },
