@@ -92,8 +92,22 @@ interface LearnerDetailsResponse {
   previous_school?: string;
   admission_date?: string;
   academic_year?: string;
-  grade_level: string;
+  // NOTE: grade_level / stream_name are NOT top-level fields on the backend
+  // response - they only exist nested under current_enrollment.class, since
+  // a learner's class is tracked via an enrollment record, not a fixed
+  // column on the learner. Keeping these here (optional) only as a fallback
+  // for any older API responses that might still send them flat.
+  grade_level?: string;
   stream_name?: string;
+  current_enrollment?: {
+    class_id?: string;
+    status?: string;
+    class?: {
+      id: string;
+      grade_level: string;
+      stream_name?: string | null;
+    } | null;
+  } | null;
   learner_parents?: Array<{
     parents: {
       users: {
@@ -243,6 +257,13 @@ export default function AddLearnerPage() {
         const result = await response.json();
         const data: LearnerDetailsResponse = result.data;
 
+        // Grade/stream live under current_enrollment.class on the real API
+        // response, not as top-level fields - read them from there (with a
+        // flat fallback, in case an older backend response shape shows up).
+        const enrolledClass = data.current_enrollment?.class;
+        const gradeLevel = enrolledClass?.grade_level || data.grade_level || '';
+        const streamName = enrolledClass?.stream_name || data.stream_name || '';
+
         // Populate learner data with all fields including new ones
         setLearnerData({
           admissionNumber: data.admission_number || '',
@@ -262,18 +283,27 @@ export default function AddLearnerPage() {
           academicYear: data.academic_year || new Date().getFullYear().toString(),
           admissionDate: data.admission_date || new Date().toISOString().split('T')[0],
           term: 'Term 1',
-          gradeLevel: data.grade_level || '',
-          streamName: data.stream_name || '',
+          gradeLevel,
+          streamName,
         });
 
-        // Find and set the class ID
-        const matchingClass = classes.find(
-          (c) =>
-            c.grade_level === data.grade_level &&
-            (c.stream_name === data.stream_name || (!c.stream_name && !data.stream_name))
-        );
-        if (matchingClass) {
-          setSelectedClassId(matchingClass.id);
+        // Set the class dropdown directly from the enrollment's class_id -
+        // this is the reliable source of truth and doesn't depend on the
+        // separate `classes` list having finished loading yet. Only fall
+        // back to name-matching if the enrollment itself didn't come back
+        // with a class_id for some reason.
+        const enrolledClassId = data.current_enrollment?.class_id || enrolledClass?.id;
+        if (enrolledClassId) {
+          setSelectedClassId(enrolledClassId);
+        } else if (gradeLevel) {
+          const matchingClass = classes.find(
+            (c) =>
+              c.grade_level === gradeLevel &&
+              (c.stream_name === streamName || (!c.stream_name && !streamName))
+          );
+          if (matchingClass) {
+            setSelectedClassId(matchingClass.id);
+          }
         }
 
         // Populate parent data if available
@@ -309,7 +339,13 @@ export default function AddLearnerPage() {
     };
 
     fetchLearnerDetails();
-  }, [isEditMode, editId, classes, toast, navigate]);
+    // Deliberately NOT depending on `classes` here: the class dropdown is
+    // now set directly from current_enrollment.class_id, so this fetch
+    // doesn't need to wait on (or re-run when) the separate classes list
+    // finishes loading. Re-running this effect on every `classes` update
+    // was also causing the learner details fetch - and its success toast -
+    // to fire twice.
+  }, [isEditMode, editId, toast, navigate]);
 
   // ✅ HANDLERS
   const toggleSection = (section: string) => {
