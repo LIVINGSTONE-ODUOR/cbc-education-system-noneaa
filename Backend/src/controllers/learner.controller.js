@@ -9,7 +9,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const asyncHandler = require('express-async-handler');
 const csv = require('csv-parse/sync');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const { sendParentCredentialsEmail } = require('../utils/email');
 
