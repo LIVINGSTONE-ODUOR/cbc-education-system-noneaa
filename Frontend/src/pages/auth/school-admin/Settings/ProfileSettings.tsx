@@ -884,23 +884,23 @@ function SecurityTab({
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle>Two-Factor Authentication (2FA)</CardTitle>
-          <CardDescription>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-lg sm:text-2xl">Two-Factor Authentication (2FA)</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
             Add an extra layer of security to your account.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Enable Two-Factor Authentication</Label>
-              <p className="text-sm text-muted-foreground">
+        <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-0.5 min-w-0">
+              <Label className="text-sm sm:text-base">Enable Two-Factor Authentication</Label>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {securitySettings.twoFactorEnabled
                   ? '2FA is currently active on your account.'
                   : 'Protect your account with an authenticator app.'}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Badge
                 variant={
                   securitySettings.twoFactorEnabled ? 'default' : 'secondary'
@@ -922,9 +922,9 @@ function SecurityTab({
             </div>
           </div>
           {securitySettings.twoFactorEnabled && (
-            <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <p className="text-sm text-green-700 dark:text-green-300">
+            <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg flex items-start sm:items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5 sm:mt-0" />
+              <p className="text-xs sm:text-sm text-green-700 dark:text-green-300">
                 Two-factor authentication is enabled. Your account is more
                 secure.
               </p>
@@ -934,17 +934,17 @@ function SecurityTab({
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Login Security</CardTitle>
-          <CardDescription>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-lg sm:text-2xl">Login Security</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
             Control how you are alerted about sign-in activity.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Login Alerts</Label>
-              <p className="text-sm text-muted-foreground">
+        <CardContent className="space-y-5 p-4 pt-0 sm:p-6 sm:pt-0">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-0.5 min-w-0">
+              <Label className="text-sm sm:text-base">Login Alerts</Label>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Receive an email when someone signs in to your account.
               </p>
             </div>
@@ -957,13 +957,14 @@ function SecurityTab({
                 })
               }
               disabled={isSaving}
+              className="shrink-0"
             />
           </div>
           <Separator />
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Session Timeout</Label>
-              <p className="text-sm text-muted-foreground">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-0.5 min-w-0">
+              <Label className="text-sm sm:text-base">Session Timeout</Label>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Auto sign-out after inactivity period.
               </p>
             </div>
@@ -977,7 +978,7 @@ function SecurityTab({
               }
               disabled={isSaving}
             >
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -992,7 +993,7 @@ function SecurityTab({
           <Button
             onClick={onSave}
             disabled={isSaving}
-            className="gap-2"
+            className="gap-2 w-full sm:w-auto"
           >
             {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
             <Save className="h-4 w-4" />
