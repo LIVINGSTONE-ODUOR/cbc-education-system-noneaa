@@ -149,6 +149,16 @@ export const getClasses = async (params: {
   return handleResponse<ApiResponse<ClassesApiResponse>>(response);
 };
 
+// GET /api/v1/classes/:id — single class detail, including its class teacher.
+// Any authenticated role can call this for a class in their own school
+// (students included, e.g. to show their own class teacher's name).
+export const getClassById = async (
+  id: string
+): Promise<ApiResponse<ClassApiItem & { teachers?: ClassApiTeacherPayload | null }>> => {
+  const response = await fetchWithAuth(`${API_URL}/api/v1/classes/${id}`, getFetchOptions('GET'));
+  return handleResponse(response);
+};
+
 export const createClass = async (payload: {
   grade_level: string;
   stream_name?: string | null;
