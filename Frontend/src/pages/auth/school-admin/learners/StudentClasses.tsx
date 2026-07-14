@@ -505,7 +505,7 @@ const StudentClasses: React.FC = () => {
               <BookOpen className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Student Classes</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-100">Student Classes</h1>
               <p className="text-slate-600 dark:text-slate-400">Select a class to view details</p>
             </div>
           </div>
