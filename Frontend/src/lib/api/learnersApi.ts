@@ -133,6 +133,7 @@ const mapBackendToLearner = (backend: LearnerBackend): any => ({
   date_of_birth: backend.date_of_birth || null,
   grade_level: backend.current_class?.grade_level || backend.current_enrollment?.class?.grade_level || '',
   stream_name: backend.current_class?.stream_name || backend.current_enrollment?.class?.stream_name || null,
+  class_id: backend.current_class?.id || backend.current_enrollment?.class?.id || null,
   gender: backend.gender,
   special_needs: backend.special_needs || null,
   is_active: backend.is_active,
@@ -155,7 +156,7 @@ const mapBackendToLearner = (backend: LearnerBackend): any => ({
           ]
         : [],
   email: backend.email || null,
-  photo_url: backend.photo_url || null,
+  photo_url: backend.photo_url || (backend as any).profile_photo || null,
   birth_certificate_number: backend.birth_certificate_number || null,
   nemis_number: backend.nemis_number || null,
   admission_date: backend.admission_date || null,
