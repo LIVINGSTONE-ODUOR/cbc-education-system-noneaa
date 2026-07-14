@@ -7,10 +7,10 @@
 // nothing is committed.
 //
 // Dependencies:
-//   npm install @supabase/supabase-js bcryptjs
+//   npm install @supabase/supabase-js bcrypt
 // ================================================================
 
-const bcrypt    = require('bcryptjs');
+const bcrypt    = require('bcrypt');
 const { createClient } = require('@supabase/supabase-js');
 const { sendSchoolAdminWelcomeEmail } = require('../utils/email');
 
