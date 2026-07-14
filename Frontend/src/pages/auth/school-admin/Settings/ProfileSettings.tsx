@@ -8,6 +8,8 @@ import {
   changePassword,
   uploadAvatar,
   removeAvatar,
+  fetchSecuritySettings,
+  updateSecuritySettings,
 } from '@/lib/api/profileApi';
 import {
   Card,
@@ -1017,6 +1019,7 @@ export default function ProfileSettings() {
   const [securitySettings, setSecuritySettings] = useState({
     twoFactorEnabled: false,
     loginAlerts: true,
+    trustedDevicesOnly: false,
     sessionTimeout: '30',
   });
 
@@ -1059,6 +1062,20 @@ export default function ProfileSettings() {
         ...prev,
         twoFactorEnabled: profile.twoFactorEnabled || false,
       }));
+
+      // Load the user's own saved security settings (session timeout, etc.)
+      try {
+        const security = await fetchSecuritySettings();
+        setSecuritySettings((prev) => ({
+          ...prev,
+          loginAlerts: security.loginAlerts ?? prev.loginAlerts,
+          trustedDevicesOnly: security.trustedDevicesOnly ?? prev.trustedDevicesOnly,
+          sessionTimeout: String(security.sessionTimeout ?? prev.sessionTimeout),
+        }));
+      } catch (securityError) {
+        console.error('Failed to load security settings:', securityError);
+        // Non-fatal: keep defaults so the rest of the profile page still works
+      }
     } catch (error) {
       console.error('Failed to load profile:', error);
       toast.error('Failed to load profile data', {
@@ -1170,6 +1187,29 @@ export default function ProfileSettings() {
       setIsSaving(false);
     }
   }, [personalInfo]);
+
+  const handleSaveSecuritySettings = useCallback(async () => {
+    try {
+      setIsSaving(true);
+
+      await updateSecuritySettings({
+        loginAlerts: securitySettings.loginAlerts,
+        trustedDevicesOnly: securitySettings.trustedDevicesOnly,
+        sessionTimeout: Number(securitySettings.sessionTimeout),
+      });
+
+      toast.success('✓ Security settings saved successfully', {
+        icon: <CheckCircle2 className="h-4 w-4" />,
+      });
+    } catch (error: any) {
+      console.error('Security settings update failed:', error);
+      toast.error(error.message || 'Failed to save security settings', {
+        icon: <AlertCircle className="h-4 w-4" />,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [securitySettings]);
 
   const handleChangePassword = useCallback(async () => {
     if (!changePasswordForm.currentPassword) {
@@ -1328,7 +1368,7 @@ export default function ProfileSettings() {
               securitySettings={securitySettings}
               isSaving={isSaving}
               onSecuritySettingsChange={setSecuritySettings}
-              onSave={() => toast.info('Security settings saved')}
+              onSave={handleSaveSecuritySettings}
             />
           )}
 
