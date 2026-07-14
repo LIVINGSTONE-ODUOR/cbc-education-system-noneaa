@@ -72,6 +72,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { getLearners } from '@/lib/api/learnersApi';
 import ProtectedPageSkeleton from '@/components/skeletons/ProtectedPageSkeleton';
+import { LearnersPageSkeleton } from '@/components/skeletons/LearnersPageSkeleton';
 
 import type { Learner } from './Learners';
 import { cn } from '@/lib/utils';
@@ -704,8 +705,8 @@ const StudentManagement = () => {
   };
 
   if (loading && !students.length) {
-    // Skeleton flex for protected pages (after login)
-    return <ProtectedPageSkeleton variant="table" />;
+    // Skeleton that exactly matches the All Students layout
+    return <LearnersPageSkeleton />;
   }
 
 
@@ -752,7 +753,7 @@ const StudentManagement = () => {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 flex items-center gap-3">
+          <h1 className="text-xl md:text-2xl font-bold text-slate-900 flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
               <GraduationCap className="w-6 h-6 text-white" />
             </div>
