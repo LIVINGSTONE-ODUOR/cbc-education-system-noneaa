@@ -27,8 +27,23 @@ const ASSIGNMENT_SELECT = `
   *,
   classes:class_id (id, grade_level, stream_name),
   learning_areas:learning_area_id (id, name, code),
-  teachers:teacher_id (id, first_name, last_name)
+  teachers:teacher_id (id, users:user_id (first_name, last_name))
 `;
+
+// first_name/last_name live on `users`, not `teachers` — teachers only has
+// a user_id FK. Supabase returns the nested join as teachers.users.{...};
+// flatten it back to teachers.{first_name,last_name} so the API response
+// shape (and the frontend's AssignmentTeacher type) doesn't have to change.
+const flattenTeacher = (row) => {
+  if (row?.teachers?.users) {
+    row.teachers = {
+      id: row.teachers.id,
+      first_name: row.teachers.users.first_name,
+      last_name: row.teachers.users.last_name,
+    };
+  }
+  return row;
+};
 
 const paginate = (query, page = 1, limit = 20) => {
   const from = (page - 1) * limit;
@@ -284,7 +299,7 @@ const createAssignment = asyncHandler(async (req, res) => {
     return res.status(500).json({ success: false, message: 'Failed to create assignment', error: error.message });
   }
 
-  return res.status(201).json({ success: true, data: created });
+  return res.status(201).json({ success: true, data: flattenTeacher(created) });
 });
 
 // =============================================================================
@@ -341,7 +356,7 @@ const listAssignments = asyncHandler(async (req, res) => {
   }
 
   const enriched = (assignments || []).map((a) => ({
-    ...a,
+    ...flattenTeacher(a),
     submission_counts: countsByAssignment[a.id] || { submitted: 0, graded: 0 },
   }));
 
@@ -370,7 +385,7 @@ const getAssignment = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'Assignment not found' });
   }
 
-  return res.json({ success: true, data: assignment });
+  return res.json({ success: true, data: flattenTeacher(assignment) });
 });
 
 // =============================================================================
@@ -436,7 +451,7 @@ const updateAssignment = asyncHandler(async (req, res) => {
     return res.status(500).json({ success: false, message: 'Failed to update assignment', error: error.message });
   }
 
-  return res.json({ success: true, data: updated });
+  return res.json({ success: true, data: flattenTeacher(updated) });
 });
 
 // =============================================================================
