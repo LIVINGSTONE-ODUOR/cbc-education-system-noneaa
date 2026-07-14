@@ -57,6 +57,17 @@ router.post('/v1/login',
   authController.login
 );
 
+// Step 2 of login when the account has 2FA enabled
+router.post('/v1/login/2fa-verify',
+  authLimiter,
+  [
+    body('tempToken').notEmpty().withMessage('tempToken is required'),
+    body('code').notEmpty().withMessage('Code is required'),
+  ],
+  auditLog('USER_LOGIN_2FA_VERIFY'),
+  authController.verifyTwoFactorLogin
+);
+
 // Logout endpoint
 router.post('/v1/logout',
   authenticate,
@@ -135,6 +146,17 @@ router.post('/login',
   ],
   auditLog('USER_LOGIN'),
   authController.login
+);
+
+// Step 2 of login when the account has 2FA enabled (legacy alias)
+router.post('/login/2fa-verify',
+  authLimiter,
+  [
+    body('tempToken').notEmpty().withMessage('tempToken is required'),
+    body('code').notEmpty().withMessage('Code is required'),
+  ],
+  auditLog('USER_LOGIN_2FA_VERIFY'),
+  authController.verifyTwoFactorLogin
 );
 
 // Logout endpoint (legacy)
