@@ -55,7 +55,7 @@ export interface ApiResponse<T> {
 // ─────────────────────────────────────────────────────────────────────────
 
 export type SubmissionStatus = 'submitted' | 'late' | 'graded' | 'returned';
-export type AttachmentType = 'pdf' | 'word';
+export type AttachmentType = 'pdf' | 'word' | 'video';
 
 export interface AssignmentClass {
   id: string;
