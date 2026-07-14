@@ -11,7 +11,7 @@
 
 const { createClient } = require('@supabase/supabase-js');
 const asyncHandler     = require('express-async-handler');
-const bcrypt           = require('bcryptjs');
+const bcrypt           = require('bcrypt');
 const crypto           = require('crypto');
 
 // ---------------------------------------------------------------------------
