@@ -10,6 +10,9 @@ import {
   removeAvatar,
   fetchSecuritySettings,
   updateSecuritySettings,
+  setupTwoFactor,
+  verifyTwoFactorSetup,
+  disableTwoFactor,
 } from '@/lib/api/profileApi';
 import {
   Card,
@@ -32,6 +35,19 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from '@/components/ui/input-otp';
 import {
   Avatar,
   AvatarFallback,
@@ -855,6 +871,7 @@ interface SecurityTabProps {
   isSaving: boolean;
   onSecuritySettingsChange: (settings: any) => void;
   onSave: () => void;
+  onManageTwoFactor: (action: 'enable' | 'disable') => void;
 }
 
 function SecurityTab({
@@ -862,6 +879,7 @@ function SecurityTab({
   isSaving,
   onSecuritySettingsChange,
   onSave,
+  onManageTwoFactor,
 }: SecurityTabProps) {
   return (
     <div className="space-y-6">
@@ -882,13 +900,26 @@ function SecurityTab({
                   : 'Protect your account with an authenticator app.'}
               </p>
             </div>
-            <Badge
-              variant={
-                securitySettings.twoFactorEnabled ? 'default' : 'secondary'
-              }
-            >
-              {securitySettings.twoFactorEnabled ? 'Enabled' : 'Disabled'}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant={
+                  securitySettings.twoFactorEnabled ? 'default' : 'secondary'
+                }
+              >
+                {securitySettings.twoFactorEnabled ? 'Enabled' : 'Disabled'}
+              </Badge>
+              <Button
+                size="sm"
+                variant={securitySettings.twoFactorEnabled ? 'outline' : 'default'}
+                onClick={() =>
+                  onManageTwoFactor(
+                    securitySettings.twoFactorEnabled ? 'disable' : 'enable'
+                  )
+                }
+              >
+                {securitySettings.twoFactorEnabled ? 'Disable' : 'Enable'}
+              </Button>
+            </div>
           </div>
           {securitySettings.twoFactorEnabled && (
             <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
@@ -1021,6 +1052,30 @@ export default function ProfileSettings() {
     loginAlerts: true,
     trustedDevicesOnly: false,
     sessionTimeout: '30',
+  });
+
+  const [twoFactorDialog, setTwoFactorDialog] = useState<{
+    open: boolean;
+    mode: 'enable' | 'disable' | null;
+    step: 'loading' | 'scan' | 'backupCodes' | 'confirmDisable';
+    qrCode: string;
+    secret: string;
+    code: string;
+    backupCodes: string[];
+    disablePassword: string;
+    isSubmitting: boolean;
+    error: string | null;
+  }>({
+    open: false,
+    mode: null,
+    step: 'loading',
+    qrCode: '',
+    secret: '',
+    code: '',
+    backupCodes: [],
+    disablePassword: '',
+    isSubmitting: false,
+    error: null,
   });
 
   // ─────────────────────────────────────────────────────────────────
@@ -1211,6 +1266,98 @@ export default function ProfileSettings() {
     }
   }, [securitySettings]);
 
+  // Opens the 2FA dialog. For "enable" it immediately calls the backend to
+  // generate a fresh secret + QR code. For "disable" it just asks for the
+  // account password to confirm.
+  const handleManageTwoFactor = useCallback(async (action: 'enable' | 'disable') => {
+    if (action === 'disable') {
+      setTwoFactorDialog({
+        open: true,
+        mode: 'disable',
+        step: 'confirmDisable',
+        qrCode: '',
+        secret: '',
+        code: '',
+        backupCodes: [],
+        disablePassword: '',
+        isSubmitting: false,
+        error: null,
+      });
+      return;
+    }
+
+    setTwoFactorDialog({
+      open: true,
+      mode: 'enable',
+      step: 'loading',
+      qrCode: '',
+      secret: '',
+      code: '',
+      backupCodes: [],
+      disablePassword: '',
+      isSubmitting: false,
+      error: null,
+    });
+
+    try {
+      const setup = await setupTwoFactor();
+      setTwoFactorDialog((prev) => ({
+        ...prev,
+        step: 'scan',
+        qrCode: setup.qrCode,
+        secret: setup.secret,
+      }));
+    } catch (error: any) {
+      console.error('2FA setup failed:', error);
+      setTwoFactorDialog((prev) => ({ ...prev, open: false }));
+      toast.error(error.message || 'Failed to start two-factor authentication setup', {
+        icon: <AlertCircle className="h-4 w-4" />,
+      });
+    }
+  }, []);
+
+  const handleConfirmTwoFactorCode = useCallback(async () => {
+    setTwoFactorDialog((prev) => ({ ...prev, isSubmitting: true, error: null }));
+    try {
+      const result = await verifyTwoFactorSetup(twoFactorDialog.code.trim());
+      setSecuritySettings((prev) => ({ ...prev, twoFactorEnabled: true }));
+      setTwoFactorDialog((prev) => ({
+        ...prev,
+        step: 'backupCodes',
+        backupCodes: result.backupCodes,
+        isSubmitting: false,
+      }));
+    } catch (error: any) {
+      setTwoFactorDialog((prev) => ({
+        ...prev,
+        isSubmitting: false,
+        error: error.message || 'Invalid code. Please try again.',
+      }));
+    }
+  }, [twoFactorDialog.code]);
+
+  const handleConfirmDisableTwoFactor = useCallback(async () => {
+    setTwoFactorDialog((prev) => ({ ...prev, isSubmitting: true, error: null }));
+    try {
+      await disableTwoFactor(twoFactorDialog.disablePassword);
+      setSecuritySettings((prev) => ({ ...prev, twoFactorEnabled: false }));
+      setTwoFactorDialog((prev) => ({ ...prev, open: false, isSubmitting: false }));
+      toast.success('Two-factor authentication disabled', {
+        icon: <CheckCircle2 className="h-4 w-4" />,
+      });
+    } catch (error: any) {
+      setTwoFactorDialog((prev) => ({
+        ...prev,
+        isSubmitting: false,
+        error: error.message || 'Incorrect password',
+      }));
+    }
+  }, [twoFactorDialog.disablePassword]);
+
+  const closeTwoFactorDialog = useCallback(() => {
+    setTwoFactorDialog((prev) => ({ ...prev, open: false }));
+  }, []);
+
   const handleChangePassword = useCallback(async () => {
     if (!changePasswordForm.currentPassword) {
       toast.error('Please enter your current password', {
@@ -1369,6 +1516,7 @@ export default function ProfileSettings() {
               isSaving={isSaving}
               onSecuritySettingsChange={setSecuritySettings}
               onSave={handleSaveSecuritySettings}
+              onManageTwoFactor={handleManageTwoFactor}
             />
           )}
 
@@ -1389,6 +1537,229 @@ export default function ProfileSettings() {
           )}
         </div>
       </div>
+
+      <TwoFactorDialog
+        state={twoFactorDialog}
+        onCodeChange={(code) => setTwoFactorDialog((prev) => ({ ...prev, code, error: null }))}
+        onPasswordChange={(disablePassword) =>
+          setTwoFactorDialog((prev) => ({ ...prev, disablePassword, error: null }))
+        }
+        onConfirmCode={handleConfirmTwoFactorCode}
+        onConfirmDisable={handleConfirmDisableTwoFactor}
+        onClose={closeTwoFactorDialog}
+      />
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// TWO-FACTOR AUTHENTICATION DIALOG
+// ─────────────────────────────────────────────────────────────────
+
+interface TwoFactorDialogState {
+  open: boolean;
+  mode: 'enable' | 'disable' | null;
+  step: 'loading' | 'scan' | 'backupCodes' | 'confirmDisable';
+  qrCode: string;
+  secret: string;
+  code: string;
+  backupCodes: string[];
+  disablePassword: string;
+  isSubmitting: boolean;
+  error: string | null;
+}
+
+interface TwoFactorDialogProps {
+  state: TwoFactorDialogState;
+  onCodeChange: (code: string) => void;
+  onPasswordChange: (password: string) => void;
+  onConfirmCode: () => void;
+  onConfirmDisable: () => void;
+  onClose: () => void;
+}
+
+function TwoFactorDialog({
+  state,
+  onCodeChange,
+  onPasswordChange,
+  onConfirmCode,
+  onConfirmDisable,
+  onClose,
+}: TwoFactorDialogProps) {
+  // Closing after backup codes are shown is a deliberate "I saved them" action,
+  // so don't let a stray click-outside dismiss that screen accidentally.
+  const allowDismiss = state.step !== 'backupCodes';
+
+  return (
+    <Dialog
+      open={state.open}
+      onOpenChange={(open) => {
+        if (!open && allowDismiss) onClose();
+      }}
+    >
+      <DialogContent className="sm:max-w-md">
+        {state.mode === 'enable' && state.step === 'loading' && (
+          <div className="py-10 flex flex-col items-center gap-3 text-muted-foreground">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <p className="text-sm">Generating your setup code…</p>
+          </div>
+        )}
+
+        {state.mode === 'enable' && state.step === 'scan' && (
+          <>
+            <DialogHeader>
+              <DialogTitle>Set up two-factor authentication</DialogTitle>
+              <DialogDescription>
+                Scan this QR code with an authenticator app (Google
+                Authenticator, Authy, 1Password, etc.), then enter the
+                6-digit code it shows you.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex flex-col items-center gap-4 py-2">
+              {state.qrCode && (
+                <img
+                  src={state.qrCode}
+                  alt="Two-factor authentication QR code"
+                  className="h-48 w-48 rounded-lg border p-2 bg-white"
+                />
+              )}
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">
+                  Can't scan it? Enter this code manually:
+                </p>
+                <code className="text-xs bg-muted px-2 py-1 rounded break-all">
+                  {state.secret}
+                </code>
+              </div>
+
+              <div className="w-full flex flex-col items-center gap-2 pt-2">
+                <Label className="self-start">Enter the 6-digit code</Label>
+                <InputOTP
+                  maxLength={6}
+                  value={state.code}
+                  onChange={onCodeChange}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+                {state.error && (
+                  <p className="text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {state.error}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={onClose} disabled={state.isSubmitting}>
+                Cancel
+              </Button>
+              <Button
+                onClick={onConfirmCode}
+                disabled={state.code.length !== 6 || state.isSubmitting}
+                className="gap-2"
+              >
+                {state.isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                Verify & Enable
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+
+        {state.mode === 'enable' && state.step === 'backupCodes' && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                Two-factor authentication enabled
+              </DialogTitle>
+              <DialogDescription>
+                Save these one-time backup codes somewhere safe. Each can be
+                used once to sign in if you lose access to your
+                authenticator app. They won't be shown again.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid grid-cols-2 gap-2 py-2">
+              {state.backupCodes.map((c) => (
+                <code
+                  key={c}
+                  className="text-sm bg-muted px-2 py-1.5 rounded text-center"
+                >
+                  {c}
+                </code>
+              ))}
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() =>
+                  navigator.clipboard?.writeText(state.backupCodes.join('\n'))
+                }
+              >
+                <Download className="h-4 w-4" />
+                Copy codes
+              </Button>
+              <Button onClick={onClose}>I've saved these codes</Button>
+            </DialogFooter>
+          </>
+        )}
+
+        {state.mode === 'disable' && state.step === 'confirmDisable' && (
+          <>
+            <DialogHeader>
+              <DialogTitle>Disable two-factor authentication</DialogTitle>
+              <DialogDescription>
+                This will remove the extra layer of security from your
+                account. Enter your password to confirm.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-2 space-y-2">
+              <Label htmlFor="disable-2fa-password">Password</Label>
+              <Input
+                id="disable-2fa-password"
+                type="password"
+                value={state.disablePassword}
+                onChange={(e) => onPasswordChange(e.target.value)}
+                placeholder="Enter your current password"
+                autoFocus
+              />
+              {state.error && (
+                <p className="text-sm text-red-600 flex items-center gap-1">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {state.error}
+                </p>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={onClose} disabled={state.isSubmitting}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={onConfirmDisable}
+                disabled={!state.disablePassword || state.isSubmitting}
+                className="gap-2"
+              >
+                {state.isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                Disable 2FA
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
