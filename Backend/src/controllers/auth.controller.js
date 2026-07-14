@@ -21,6 +21,28 @@ const supabaseAdmin = supabaseUrl && supabaseServiceRoleKey
     })
   : null;
 
+// Fires the login-alert Supabase Edge Function. Deliberately fire-and-forget:
+// a slow/failed email provider must never delay or fail a login.
+const dispatchLoginAlert = (user, clientIp, userAgent) => {
+  if (!supabaseUrl || !supabaseServiceRoleKey) return;
+  if (user.login_alerts_enabled === false) return;
+
+  fetch(`${supabaseUrl}/functions/v1/login-alert`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${supabaseServiceRoleKey}`,
+    },
+    body: JSON.stringify({
+      userId: user.id,
+      email: user.email,
+      firstName: user.first_name,
+      ip: clientIp,
+      userAgent,
+    }),
+  }).catch((err) => console.error('Login alert dispatch failed:', err.message));
+};
+
 // Shared final step for a successful login (password-only, or password + 2FA code).
 // Issues tokens, records the session, and sends the standard login response shape.
 const completeLogin = async (user, clientIp, userAgent, res) => {
@@ -36,6 +58,8 @@ const completeLogin = async (user, clientIp, userAgent, res) => {
 
   await query('UPDATE users SET last_login = NOW(), last_login_ip = $1, last_activity = NOW() WHERE id = $2',
     [clientIp, user.id]);
+
+  dispatchLoginAlert(user, clientIp, userAgent);
 
   console.log('✅ LOGIN SUCCESSFUL for:', user.email);
 
@@ -86,7 +110,8 @@ exports.login = async (req, res) => {
                s.name as school_name,
                COALESCE(u.login_attempts, 0) as login_attempts,
                u.locked_until, COALESCE(u.email_verified, false) as email_verified,
-               COALESCE(u.two_factor_enabled, false) as two_factor_enabled
+               COALESCE(u.two_factor_enabled, false) as two_factor_enabled,
+               COALESCE(u.login_alerts_enabled, true) as login_alerts_enabled
         FROM users u
         LEFT JOIN school_admins sa ON sa.user_id = u.id
         LEFT JOIN schools s ON s.id = COALESCE(u.school_id, sa.school_id)
@@ -250,7 +275,8 @@ exports.verifyTwoFactorLogin = async (req, res) => {
       `SELECT u.id, u.email, u.role, u.status, u.first_name, u.last_name,
               COALESCE(u.school_id, sa.school_id) as school_id,
               s.name as school_name,
-              u.two_factor_secret, u.two_factor_backup_codes
+              u.two_factor_secret, u.two_factor_backup_codes,
+              COALESCE(u.login_alerts_enabled, true) as login_alerts_enabled
        FROM users u
        LEFT JOIN school_admins sa ON sa.user_id = u.id
        LEFT JOIN schools s ON s.id = COALESCE(u.school_id, sa.school_id)
@@ -422,7 +448,7 @@ const fetchUserFromSupabase = async (email) => {
 
   let { data, error } = await supabaseAdmin
     .from('users')
-    .select('id, email, password_hash, role, status, first_name, last_name, school_id, login_attempts, locked_until, email_verified')
+    .select('id, email, password_hash, role, status, first_name, last_name, school_id, login_attempts, locked_until, email_verified, login_alerts_enabled')
     .eq('email', email)
     .neq('status', 'deleted')
     .limit(1)
