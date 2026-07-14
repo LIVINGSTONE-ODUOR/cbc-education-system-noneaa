@@ -33,7 +33,19 @@ const formOptions = (method: string, form: FormData): RequestInit => ({
 });
 
 const handleResponse = async <T>(response: Response): Promise<T> => {
-  const data = await response.json();
+  let data: any;
+  try {
+    data = await response.json();
+  } catch {
+    // Server/proxy returned something that isn't JSON at all — usually a
+    // gateway timeout or "payload too large" page from the hosting
+    // platform, not our API. Give the user something readable.
+    throw new Error(
+      response.ok
+        ? 'Unexpected response from the server.'
+        : `Upload failed (${response.status}). The file may be too large, or the connection timed out.`
+    );
+  }
   if (!response.ok || !data.success) {
     const message =
       data.message ||
@@ -139,6 +151,66 @@ export interface CreateAssignmentPayload {
   max_grade?: number;
   attachment?: File | null;
 }
+
+export interface SignedUploadUrlResult {
+  signedUrl: string;
+  token: string;
+  path: string;
+  contentType: string;
+  attachment_url: string;
+  attachment_name: string;
+  attachment_type: AttachmentType;
+}
+
+// For video: ask the backend for a signed Supabase Storage URL, then PUT
+// the file there directly from the browser. This skips proxying the file
+// through our Node server entirely, which avoids the request-timeout /
+// "Request aborted" failures large files were hitting on slower uploads.
+export const getVideoUploadUrl = async (file: File): Promise<SignedUploadUrlResult> => {
+  const response = await fetch(`${API_URL}/api/v1/assignments/attachments/sign-upload`, {
+    ...jsonOptions('POST', { fileName: file.name, mimeType: file.type, fileSize: file.size }),
+  });
+  const result = await handleResponse<ApiResponse<SignedUploadUrlResult>>(response);
+  return result.data;
+};
+
+export const uploadVideoToSignedUrl = async (signed: SignedUploadUrlResult, file: File): Promise<void> => {
+  const putResponse = await fetch(signed.signedUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': signed.contentType },
+    body: file,
+  });
+  if (!putResponse.ok) {
+    throw new Error('Video upload failed. Please check your connection and try again.');
+  }
+};
+
+// Uploads a video directly to storage (if provided) and returns the create
+// payload's JSON body already carrying the resulting attachment fields —
+// used instead of the multipart path in createAssignment for video files.
+export const createAssignmentWithVideo = async (
+  payload: Omit<CreateAssignmentPayload, 'attachment'>,
+  video: File
+): Promise<ApiResponse<Assignment>> => {
+  const signed = await getVideoUploadUrl(video);
+  await uploadVideoToSignedUrl(signed, video);
+
+  const response = await fetch(
+    `${API_URL}/api/v1/assignments`,
+    jsonOptions('POST', {
+      class_id: payload.class_id,
+      learning_area_id: payload.learning_area_id,
+      title: payload.title,
+      description: payload.description,
+      due_date: payload.due_date,
+      max_grade: payload.max_grade,
+      attachment_url: signed.attachment_url,
+      attachment_name: signed.attachment_name,
+      attachment_type: signed.attachment_type,
+    })
+  );
+  return handleResponse(response);
+};
 
 export const createAssignment = async (
   payload: CreateAssignmentPayload
