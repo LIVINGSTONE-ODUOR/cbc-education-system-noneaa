@@ -125,6 +125,81 @@ const uploadAttachment = async (schoolId, file) => {
   };
 };
 
+// Only trust an attachment_url the client hands back if it actually points
+// at our own bucket — prevents a caller from pointing attachment_url at an
+// arbitrary external link via the JSON (non-multipart) creation path.
+const isOwnBucketUrl = (url) => typeof url === 'string' && url.includes(`/storage/v1/object/public/${ATTACHMENTS_BUCKET}/`);
+
+const ALLOWED_ATTACHMENT_TYPES = new Set(['pdf', 'word', 'video']);
+
+// Used when the client already uploaded the file directly to Supabase Storage
+// (see createAttachmentUploadUrl below) and is now just telling us the result.
+const resolvePreUploadedAttachment = (body) => {
+  const { attachment_url, attachment_name, attachment_type } = body || {};
+  if (!attachment_url) return null;
+  if (!isOwnBucketUrl(attachment_url) || !ALLOWED_ATTACHMENT_TYPES.has(attachment_type)) {
+    throw Object.assign(new Error('Invalid attachment reference'), { status: 400 });
+  }
+  return {
+    attachment_url,
+    attachment_name: attachment_name ? String(attachment_name).slice(0, 255) : null,
+    attachment_type,
+  };
+};
+
+// =============================================================================
+// 0. POST /api/v1/assignments/attachments/sign-upload
+//    Returns a short-lived signed URL the browser can PUT the file to
+//    directly — used for video, so large files don't have to be streamed
+//    through this Node process (which was hitting proxy/timeout aborts on
+//    slower connections). Body: { fileName, mimeType, fileSize }.
+// =============================================================================
+const createAttachmentUploadUrl = asyncHandler(async (req, res) => {
+  const { schoolId, role } = req.user;
+  if (!['teacher', 'school_admin', 'super_admin'].includes(role)) {
+    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+  }
+
+  const { fileName, mimeType, fileSize } = req.body;
+  if (!fileName || !mimeType || !fileSize) {
+    return res.status(400).json({ success: false, message: 'fileName, mimeType, and fileSize are required' });
+  }
+
+  const isVideo = VIDEO_MIMETYPES.has(mimeType);
+  if (!isVideo) {
+    // PDF/Word are small enough to keep going through the existing
+    // multipart route — this endpoint exists specifically for video.
+    return res.status(400).json({ success: false, message: 'This upload method currently supports video files only' });
+  }
+  if (Number(fileSize) > VIDEO_SIZE_LIMIT) {
+    return res.status(400).json({ success: false, message: 'Attachment exceeds the 300MB limit' });
+  }
+
+  const timestamp = Date.now();
+  const safeName = String(fileName).replace(/[^a-zA-Z0-9.\-_]/g, '_');
+  const filePath = `${schoolId}/${timestamp}-${safeName}`;
+
+  const { data, error } = await supabase.storage.from(ATTACHMENTS_BUCKET).createSignedUploadUrl(filePath);
+  if (error) {
+    return res.status(500).json({ success: false, message: `Failed to prepare upload: ${error.message}` });
+  }
+
+  const { data: publicUrlData } = supabase.storage.from(ATTACHMENTS_BUCKET).getPublicUrl(filePath);
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      signedUrl: data.signedUrl,
+      token: data.token,
+      path: filePath,
+      contentType: mimeType,
+      attachment_url: publicUrlData?.publicUrl || null,
+      attachment_name: fileName,
+      attachment_type: 'video',
+    },
+  });
+});
+
 // =============================================================================
 // 1. POST /api/v1/assignments
 //    Create an assignment. Teachers may only create for a class+subject
@@ -179,12 +254,14 @@ const createAssignment = asyncHandler(async (req, res) => {
   }
 
   let attachment = { attachment_url: null, attachment_name: null, attachment_type: null };
-  if (req.file) {
-    try {
+  try {
+    if (req.file) {
       attachment = await uploadAttachment(schoolId, req.file);
-    } catch (e) {
-      return res.status(e.status || 500).json({ success: false, message: e.message });
+    } else {
+      attachment = resolvePreUploadedAttachment(req.body) || attachment;
     }
+  } catch (e) {
+    return res.status(e.status || 500).json({ success: false, message: e.message });
   }
 
   const { data: created, error } = await supabase
@@ -754,6 +831,7 @@ const getLearnerAssignmentsDue = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  createAttachmentUploadUrl,
   createAssignment,
   listAssignments,
   getAssignment,
