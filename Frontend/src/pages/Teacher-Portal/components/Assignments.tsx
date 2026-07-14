@@ -37,6 +37,7 @@ import {
   CalendarClock,
   Save,
   Send,
+  PlayCircle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ClassSelectSkeleton, ListBlockSkeleton } from './skeletons';
@@ -107,6 +108,7 @@ const Assignments: React.FC = () => {
 
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(false);
+  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
 
   // Create form
   const [createOpen, setCreateOpen] = useState(false);
@@ -419,15 +421,26 @@ const Assignments: React.FC = () => {
                       <span className="flex items-center gap-1">
                         <CalendarClock className="h-3.5 w-3.5" /> Due {formatDueDate(a.due_date)}
                       </span>
-                      {a.attachment_url && (
-                        <a
-                          href={a.attachment_url}
-                          target="_blank"
-                          rel="noreferrer"
+                      {a.attachment_url && a.attachment_type === 'video' ? (
+                        <button
+                          type="button"
+                          onClick={() => setPlayingVideoId(playingVideoId === a.id ? null : a.id)}
                           className="flex items-center gap-1 text-primary hover:underline"
                         >
-                          <Paperclip className="h-3.5 w-3.5" /> {a.attachment_name || 'Attachment'}
-                        </a>
+                          <PlayCircle className="h-3.5 w-3.5" />
+                          {playingVideoId === a.id ? 'Hide video' : a.attachment_name || 'Play video'}
+                        </button>
+                      ) : (
+                        a.attachment_url && (
+                          <a
+                            href={a.attachment_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 text-primary hover:underline"
+                          >
+                            <Paperclip className="h-3.5 w-3.5" /> {a.attachment_name || 'Attachment'}
+                          </a>
+                        )
                       )}
                       <span className="flex items-center gap-1">
                         <Users className="h-3.5 w-3.5" />
@@ -435,6 +448,15 @@ const Assignments: React.FC = () => {
                         {a.submission_counts?.graded ?? 0} graded
                       </span>
                     </div>
+                    {playingVideoId === a.id && a.attachment_url && (
+                      <video
+                        src={a.attachment_url}
+                        controls
+                        className="mt-3 w-full max-w-md rounded-md border"
+                      >
+                        Your browser doesn't support inline video playback.
+                      </video>
+                    )}
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <Button size="sm" variant="outline" onClick={() => openSubmissions(a)}>
@@ -618,13 +640,18 @@ const Assignments: React.FC = () => {
               </div>
             </div>
             <div>
-              <Label htmlFor="assignment-attachment">Attach PDF or Word (optional)</Label>
+              <Label htmlFor="assignment-attachment">Attach PDF, Word, or video (optional)</Label>
               <Input
                 id="assignment-attachment"
                 type="file"
-                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                accept=".pdf,.doc,.docx,.mp4,.webm,.mov,.mkv,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,video/mp4,video/webm,video/quicktime,video/x-matroska"
                 onChange={(e) => setAttachment(e.target.files?.[0] || null)}
               />
+              {attachment && attachment.type.startsWith('video/') && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Video selected — larger files may take a while to upload.
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
