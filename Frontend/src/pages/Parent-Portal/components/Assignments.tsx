@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ClipboardList, AlertCircle, MessageSquareText } from 'lucide-react';
+import { ClipboardList, AlertCircle, MessageSquareText, PlayCircle, Paperclip } from 'lucide-react';
 import {
   getLearnerAssignmentsDue,
   LearnerDueAssignment,
@@ -35,6 +35,7 @@ const Assignments: React.FC<AssignmentsProps> = ({ learnerId, reloadKey, emptyMe
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<LearnerDueAssignment[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -94,8 +95,21 @@ const Assignments: React.FC<AssignmentsProps> = ({ learnerId, reloadKey, emptyMe
           <div className="space-y-3">
             {sorted.map((a) => {
               const isOverdue = a.is_overdue;
+              const isExpanded = expandedId === a.id;
               return (
-                <div key={a.id} className="rounded-lg border p-4">
+                <div
+                  key={a.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setExpandedId(isExpanded ? null : a.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setExpandedId(isExpanded ? null : a.id);
+                    }
+                  }}
+                  className="rounded-lg border p-4 cursor-pointer transition-colors hover:bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
                       <p className="font-medium">{a.title}</p>
@@ -122,6 +136,38 @@ const Assignments: React.FC<AssignmentsProps> = ({ learnerId, reloadKey, emptyMe
                       )}
                     </div>
                   </div>
+
+                  {isExpanded && (
+                    <div className="mt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
+                      {a.description && (
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{a.description}</p>
+                      )}
+
+                      {/* Assignment material: inline video player, or a link for PDF/Word */}
+                      {a.attachment_url && a.attachment_type === 'video' ? (
+                        <div>
+                          <p className="mb-2 flex items-center gap-1 text-sm font-medium text-primary">
+                            <PlayCircle className="h-4 w-4" />
+                            {a.attachment_name || 'Assignment video'}
+                          </p>
+                          <video src={a.attachment_url} controls className="w-full max-w-md rounded-md border">
+                            Your browser doesn't support inline video playback.
+                          </video>
+                        </div>
+                      ) : (
+                        a.attachment_url && (
+                          <a
+                            href={a.attachment_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 text-sm text-primary hover:underline"
+                          >
+                            <Paperclip className="h-4 w-4" /> {a.attachment_name || 'View attachment'}
+                          </a>
+                        )
+                      )}
+                    </div>
+                  )}
 
                   {/* Teacher feedback */}
                   {a.teacher_comment && (
