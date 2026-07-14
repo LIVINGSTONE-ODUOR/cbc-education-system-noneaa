@@ -8,6 +8,7 @@ const multer = require('multer');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const {
+  createAttachmentUploadUrl,
   createAssignment,
   listAssignments,
   getAssignment,
@@ -30,6 +31,14 @@ const attachmentUpload = multer({
 
 // All assignment routes require authentication
 router.use(authenticate);
+
+// POST   /api/v1/assignments/attachments/sign-upload
+//   Body (JSON): { fileName, mimeType, fileSize }
+//   Returns a signed Supabase Storage URL for the browser to PUT the video
+//   to directly, bypassing this server — avoids proxy/timeout aborts on
+//   large files over slow connections.
+//   Roles: teacher, school_admin, super_admin
+router.post('/attachments/sign-upload', createAttachmentUploadUrl);
 
 // ---------------------------------------------------------------------------
 // Collection routes
