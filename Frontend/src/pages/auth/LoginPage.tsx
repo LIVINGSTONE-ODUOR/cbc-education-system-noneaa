@@ -26,7 +26,7 @@ const DEFAULT_LOCKOUT_MINS = 3;
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
+  const { login, verifyTwoFactor, isLoading } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -40,6 +40,14 @@ export default function LoginPage() {
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [subdomainSchool, setSubdomainSchool] = useState<SubdomainSchool | null>(null);
   const [subdomainNotFound, setSubdomainNotFound] = useState(false);
+
+  // 2FA step — only ever entered when the backend tells us this specific
+  // account has 2FA enabled (login() returns requiresTwoFactor: true).
+  // Accounts without 2FA never see this; they go straight through.
+  const [twoFactorStep, setTwoFactorStep] = useState(false);
+  const [tempToken, setTempToken] = useState<string | null>(null);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpError, setOtpError] = useState<string | null>(null);
 
   // If the visitor is on {school}.noneaa.com, resolve and show which
   // school they're logging into instead of the generic login screen.
@@ -85,6 +93,30 @@ export default function LoginPage() {
     return `${m}:${String(s).padStart(2, '0')}`;
   };
 
+  const redirectAfterLogin = () => {
+    setLoginSuccess(true);
+    setFailedAttempts(0);
+    setTimeout(() => {
+      switch (userType) {
+        case 'super_admin':
+        case 'admin':
+          navigate('/school-admin/dashboard');
+          break;
+        case 'teacher':
+          navigate('/teacher/portal');
+          break;
+        case 'student':
+          navigate('/student/portal');
+          break;
+        case 'parent':
+          navigate('/parent/portal');
+          break;
+        default:
+          navigate('/school-admin/dashboard');
+      }
+    }, 2000);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (countdown > 0) return;
@@ -105,28 +137,20 @@ export default function LoginPage() {
 
     try {
       console.log('[LoginPage] Attempting login for:', formData.email, 'as', userType);
-      await login(formData.email, formData.password, userType);
-      setLoginSuccess(true);
-      setFailedAttempts(0);
-      setTimeout(() => {
-        switch (userType) {
-          case 'super_admin':
-          case 'admin':
-            navigate('/school-admin/dashboard');
-            break;
-          case 'teacher':
-            navigate('/teacher/portal');
-            break;
-          case 'student':
-            navigate('/student/portal');
-            break;
-          case 'parent':
-            navigate('/parent/portal');
-            break;
-          default:
-            navigate('/school-admin/dashboard');
-        }
-      }, 2000);
+      const result = await login(formData.email, formData.password, userType);
+
+      // Only accounts that have actually enabled 2FA in their settings
+      // will ever get requiresTwoFactor back — everyone else falls
+      // straight through to the normal redirect below.
+      if (result.requiresTwoFactor && result.tempToken) {
+        setTempToken(result.tempToken);
+        setTwoFactorStep(true);
+        setOtpCode('');
+        setOtpError(null);
+        return;
+      }
+
+      redirectAfterLogin();
     } catch (error: unknown) {
       if (error instanceof Error && (error as Error & { lockedUntil?: string }).lockedUntil) {
         const lockUntilDate = new Date((error as Error & { lockedUntil: string }).lockedUntil);
@@ -149,6 +173,19 @@ export default function LoginPage() {
           setSubmitError(errorMsg);
         }
       }
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tempToken || otpCode.length < 6) return;
+    setOtpError(null);
+
+    try {
+      await verifyTwoFactor(tempToken, otpCode);
+      redirectAfterLogin();
+    } catch (error: unknown) {
+      setOtpError(getErrorMessage(error, 'Invalid or expired code. Please try again.'));
     }
   };
 
@@ -285,6 +322,64 @@ export default function LoginPage() {
                 <p className="text-slate-500 mt-1 text-sm">Sign in to access your dashboard</p>
               </div>
 
+              {twoFactorStep && (
+                <form onSubmit={handleVerifyOtp} noValidate className="space-y-5">
+                  <div className="bg-blue-50 border border-blue-200 text-blue-700 text-sm p-3.5 rounded-xl">
+                    Enter the 6-digit code from your authenticator app to finish signing in.
+                  </div>
+
+                  {otpError && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 text-sm p-3.5 rounded-xl flex items-center gap-2">
+                      <span className="text-red-400">⚠</span>
+                      {otpError}
+                    </div>
+                  )}
+
+                  <div>
+                    <label htmlFor="otp" className="block text-sm font-medium text-slate-700 mb-1.5">
+                      Verification code
+                    </label>
+                    <input
+                      id="otp"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm bg-slate-50 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 tracking-[0.5em] text-center text-lg"
+                      placeholder="••••••"
+                      autoFocus
+                    />
+                    <p className="text-xs text-slate-400 mt-1.5">
+                      Lost access to your app? You can also enter one of your backup codes.
+                    </p>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading || otpCode.length < 6}
+                    className="w-full py-3 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Verifying…' : 'Verify & Sign in'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTwoFactorStep(false);
+                      setTempToken(null);
+                      setOtpCode('');
+                      setOtpError(null);
+                    }}
+                    className="w-full text-sm text-slate-500 hover:text-slate-700 transition-colors"
+                  >
+                    ← Back to sign in
+                  </button>
+                </form>
+              )}
+
+              {!twoFactorStep && (
               <form onSubmit={handleSubmit} noValidate className="space-y-5">
                 {/* Lockout countdown banner */}
                 {countdown > 0 && (
@@ -413,6 +508,7 @@ export default function LoginPage() {
                   )}
                 </button>
               </form>
+              )}
 
               {/* Bottom links */}
               <div className="mt-6 pt-6 border-t border-slate-100">
