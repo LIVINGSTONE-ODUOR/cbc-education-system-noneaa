@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const { body, query } = require('express-validator');
 const { authenticate, authorize, auditLog, securityHeaders } = require('../middleware/auth');
 const db = require('../config/database');
+const twoFactorController = require('../controllers/twoFactor.controller');
 
 const router = express.Router();
 
@@ -745,6 +746,17 @@ router.put('/me/security-settings', authenticate, async (req, res) => {
     return res.status(500).json({ success: false, message: 'Failed to update security settings' });
   }
 });
+
+// ==================== TWO-FACTOR AUTHENTICATION ====================
+
+// POST /api/users/me/2fa/setup - generate secret + QR code
+router.post('/me/2fa/setup', authenticate, twoFactorController.setupTwoFactor);
+
+// POST /api/users/me/2fa/verify - confirm setup with a code from the app
+router.post('/me/2fa/verify', authenticate, twoFactorController.verifyTwoFactor);
+
+// POST /api/users/me/2fa/disable - turn 2FA off (requires password)
+router.post('/me/2fa/disable', authenticate, twoFactorController.disableTwoFactor);
 
 // POST /api/users/me/trusted-device
 router.post('/me/trusted-device', authenticate, async (req, res) => {
