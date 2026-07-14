@@ -44,6 +44,7 @@ import { ClassSelectSkeleton, ListBlockSkeleton } from './skeletons';
 import { getMyClasses, type MyClassAssignment } from '@/lib/api/teacherApi';
 import {
   createAssignment,
+  createAssignmentWithVideo,
   getAssignments,
   deleteAssignment,
   getSubmissions,
@@ -227,15 +228,22 @@ const Assignments: React.FC = () => {
     }
     setCreating(true);
     try {
-      await createAssignment({
+      const basePayload = {
         class_id: selectedClass,
         learning_area_id: selectedSubject,
         title: title.trim(),
         description: description.trim() || undefined,
         due_date: new Date(dueDate).toISOString(),
         max_grade: Number(maxGrade || 100),
-        attachment,
-      });
+      };
+
+      if (attachment && attachment.type.startsWith('video/')) {
+        // Large files: upload straight to storage, then just tell the API
+        // where it landed, instead of streaming the video through Node.
+        await createAssignmentWithVideo(basePayload, attachment);
+      } else {
+        await createAssignment({ ...basePayload, attachment });
+      }
       toast({ title: 'Assignment created', description: `"${title.trim()}" was posted to the class.` });
       resetCreateForm();
       setCreateOpen(false);
