@@ -367,9 +367,13 @@ export type LearnerAssignmentStatus = 'not_submitted' | SubmissionStatus;
 export interface LearnerDueAssignment {
   id: string;
   title: string;
+  description: string | null;
   learning_area: AssignmentSubject | null;
   due_date: string;
   max_grade: number;
+  attachment_url: string | null;
+  attachment_name: string | null;
+  attachment_type: AttachmentType | null;
   submission_status: LearnerAssignmentStatus;
   grade: number | null;
   teacher_comment: string | null;
