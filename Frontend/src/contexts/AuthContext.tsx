@@ -53,6 +53,11 @@ const API_URL = getApiUrl();
 // TYPES
 // ======================================================
 
+interface LoginResult {
+  requiresTwoFactor?: boolean;
+  tempToken?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   schoolId: string | null;
@@ -65,7 +70,9 @@ interface AuthContextType {
     email: string,
     password: string,
     role?: string
-  ) => Promise<void>;
+  ) => Promise<LoginResult>;
+
+  verifyTwoFactor: (tempToken: string, code: string) => Promise<void>;
 
   logout: () => void;
 }
@@ -373,6 +380,82 @@ export function AuthProvider({
   // LOGIN
   // ======================================================
 
+  // Shared final step once the backend has confirmed a real login
+  // (either password-only, or password + a valid 2FA code). Builds the
+  // User object, persists tokens, and updates auth state.
+  const applyLoginResponse = (data: any, fallbackEmail: string) => {
+    const userData =
+      data.data?.user ||
+      data.user ||
+      data.data ||
+      {};
+
+    const token =
+      data.data?.tokens?.accessToken ||
+      data.data?.accessToken ||
+      data.token ||
+      '';
+
+    const refreshToken =
+      data.data?.tokens?.refreshToken ||
+      data.data?.refreshToken ||
+      data.refreshToken ||
+      '';
+
+    if (!userData.role) {
+      throw new Error(
+        'Login response is missing the account role. Please contact support.'
+      );
+    }
+
+    const user: User = {
+      id: userData.id || '1',
+
+      email: userData.email || fallbackEmail,
+
+      role: userData.role as UserRole,
+
+      firstName:
+        userData.firstName ||
+        userData.first_name ||
+        userData.name?.split(' ')[0] ||
+        'Admin',
+
+      lastName:
+        userData.lastName ||
+        userData.last_name ||
+        userData.name
+          ?.split(' ')
+          .slice(1)
+          .join(' ') ||
+        '',
+
+      schoolId:
+        userData.schoolId ||
+        userData.school_id ||
+        null,
+
+      schoolName:
+        userData.schoolName ||
+        userData.school_name ||
+        undefined,
+
+      isActive: true,
+
+      createdAt: new Date().toISOString(),
+
+      updatedAt: new Date().toISOString(),
+    };
+
+    saveTokens(token, refreshToken, user);
+
+    setUser(user);
+
+    startSkeletonTimer();
+
+    return user;
+  };
+
   const login = async (
     email: string,
     password: string,
@@ -458,94 +541,69 @@ export function AuthProvider({
         throw err;
       }
 
-      const userData =
-        data.data?.user ||
-        data.user ||
-        data.data ||
-        {};
-
-      const token =
-        data.data?.tokens?.accessToken ||
-        data.data?.accessToken ||
-        data.token ||
-        '';
-
-      const refreshToken =
-        data.data?.tokens?.refreshToken ||
-        data.data?.refreshToken ||
-        data.refreshToken ||
-        '';
-
-      // Previously this defaulted to the literal string 'admin' whenever
-      // the backend response didn't include userData.role. 'admin' isn't
-      // even one of the real roles the app checks against
-      // (school_admin / super_admin / teacher / parent / student) — so a
-      // missing role silently produced a user object that could slip
-      // past the AdminRoute/ProtectedRoute guards on the client while
-      // every backend permission check (which reads the *real* role from
-      // the DB on each request) correctly rejected it as "Insufficient
-      // permissions". Fail loudly instead of guessing.
-      if (!userData.role) {
-        throw new Error(
-          'Login response is missing the account role. Please contact support.'
-        );
+      // Password was correct, but this account has 2FA enabled — the
+      // backend has NOT issued real session tokens yet. Hand the
+      // tempToken back to the caller (LoginPage) so it can show the
+      // "enter your code" step instead of navigating anywhere.
+      if (data.requiresTwoFactor) {
+        console.log('[AuthContext] 2FA required for:', email);
+        return {
+          requiresTwoFactor: true,
+          tempToken: data.data?.tempToken as string,
+        };
       }
 
-      const user: User = {
-        id: userData.id || '1',
-
-        email: userData.email || email,
-
-        role: userData.role as UserRole,
-
-        firstName:
-          userData.firstName ||
-          userData.first_name ||
-          userData.name?.split(' ')[0] ||
-          'Admin',
-
-        lastName:
-          userData.lastName ||
-          userData.last_name ||
-          userData.name
-            ?.split(' ')
-            .slice(1)
-            .join(' ') ||
-          '',
-
-        schoolId:
-          userData.schoolId ||
-          userData.school_id ||
-          null,
-
-        schoolName:
-          userData.schoolName ||
-          userData.school_name ||
-          undefined,
-
-        isActive: true,
-
-        createdAt: new Date().toISOString(),
-
-        updatedAt: new Date().toISOString(),
-      };
-
-      saveTokens(token, refreshToken, user);
-
-      setUser(user);
-
-      startSkeletonTimer();
+      applyLoginResponse(data, email);
 
       console.log(
         '[AuthContext] Login successful for:',
         email
       );
+
+      return {};
     } catch (error) {
       console.error(
         '[AuthContext] Login error:',
         error
       );
 
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ======================================================
+  // VERIFY 2FA (LOGIN STEP 2)
+  // ======================================================
+
+  const verifyTwoFactor = async (tempToken: string, code: string) => {
+    setIsLoading(true);
+
+    try {
+      const verifyUrl = `${API_URL}/api/v1/login/2fa-verify`;
+
+      const response = await fetch(verifyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ tempToken, code }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message || 'Invalid or expired code. Please try again.'
+        );
+      }
+
+      applyLoginResponse(data, '');
+
+      console.log('[AuthContext] 2FA verification successful');
+    } catch (error) {
+      console.error('[AuthContext] 2FA verification error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -574,6 +632,7 @@ export function AuthProvider({
         showLoginSkeleton,
         isSkeletonFading,
         login,
+        verifyTwoFactor,
         logout,
       }}
     >
