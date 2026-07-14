@@ -3,13 +3,28 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { query, transaction } = require('./database');
 
-// JWT Configuration - Use a fixed secret for production to persist across restarts
-// IMPORTANT: Set JWT_SECRET in environment variables for production
-const JWT_SECRET = process.env.JWT_SECRET || 
-  (process.env.NODE_ENV === 'production' 
-    ? 'cbc-education-system-production-secret-key-2024' 
-    : crypto.randomBytes(64).toString('hex'));
-    
+// JWT Configuration
+// SECURITY: There is no hardcoded production fallback. A hardcoded secret
+// checked into source control means anyone who can read the repo can forge
+// a valid token for any user/role. In production, JWT_SECRET MUST be set
+// as a real environment variable — the app refuses to start without it.
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error(
+    'JWT_SECRET environment variable is not set. Refusing to start in production ' +
+    'without it — set a long random secret (e.g. `openssl rand -hex 64`) in your ' +
+    'deployment environment before starting the server.'
+  );
+}
+
+if (process.env.NODE_ENV !== 'production' && !process.env.JWT_SECRET) {
+  console.warn(
+    '⚠️  JWT_SECRET is not set — using a random secret for this process only. ' +
+    'Every restart invalidates existing tokens. Set JWT_SECRET in .env to avoid this.'
+  );
+}
+
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
+
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
 
