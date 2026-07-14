@@ -781,6 +781,7 @@ const getLearnerAssignmentsDue = asyncHandler(async (req, res) => {
     .from('assignments')
     .select(`
       id, title, description, due_date, max_grade,
+      attachment_url, attachment_name, attachment_type,
       learning_areas:learning_area_id ( id, name, code )
     `)
     .eq('class_id', enrollment.class_id)
@@ -816,9 +817,13 @@ const getLearnerAssignmentsDue = asyncHandler(async (req, res) => {
     return {
       id: a.id,
       title: a.title,
+      description: a.description,
       learning_area: a.learning_areas ? { id: a.learning_areas.id, name: a.learning_areas.name, code: a.learning_areas.code } : null,
       due_date: a.due_date,
       max_grade: a.max_grade,
+      attachment_url: a.attachment_url,
+      attachment_name: a.attachment_name,
+      attachment_type: a.attachment_type,
       submission_status: submission?.status || 'not_submitted',
       grade: submission?.grade ?? null,
       teacher_comment: submission?.teacher_comment ?? null,
