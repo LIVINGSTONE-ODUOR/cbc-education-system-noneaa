@@ -1,5 +1,5 @@
 const { query, transaction } = require('../config/database');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const { sendSchoolAdminWelcomeEmail } = require('../utils/email');
 
