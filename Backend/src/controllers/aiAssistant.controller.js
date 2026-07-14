@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const OpenAI = require('openai');
+const siteKnowledge = require('../services/siteKnowledge.service');
 // Supabase admin client is initialized in server-side layers (repos/services).
 
 
