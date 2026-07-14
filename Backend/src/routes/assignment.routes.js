@@ -19,11 +19,13 @@ const {
   getLearnerAssignmentsDue,
 } = require('../controllers/assignment.controller');
 
-// Attachment upload — PDF or Word, 15MB. Actual mimetype re-validated in the
-// controller since browsers can lie about file extensions.
+// Attachment upload — PDF, Word, or video. Multer's limit here is just the
+// outer ceiling (large enough for video); the controller enforces the real,
+// per-type limit (15MB docs / 300MB video) and re-validates mimetype, since
+// browsers can lie about file extensions.
 const attachmentUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 15 * 1024 * 1024 },
+  limits: { fileSize: 300 * 1024 * 1024 },
 });
 
 // All assignment routes require authentication
