@@ -299,3 +299,29 @@ export const updateNotificationPreferences = async (
   const response = await fetch(url, getFetchOptions('PUT', data));
   return handleResponse<{ data: NotificationPreferences }>(response).then((data) => data.data);
 };
+
+// ─── TWO-FACTOR AUTHENTICATION ─────────────────────────────────────────────
+
+export interface TwoFactorSetupData {
+  secret: string;
+  qrCode: string; // data:image/png;base64,... — render directly in an <img>
+  otpauthUrl: string;
+}
+
+export const setupTwoFactor = async (): Promise<TwoFactorSetupData> => {
+  const url = `${API_URL}/api/users/me/2fa/setup`;
+  const response = await fetch(url, getFetchOptions('POST'));
+  return handleResponse<{ data: TwoFactorSetupData }>(response).then((data) => data.data);
+};
+
+export const verifyTwoFactorSetup = async (code: string): Promise<{ backupCodes: string[] }> => {
+  const url = `${API_URL}/api/users/me/2fa/verify`;
+  const response = await fetch(url, getFetchOptions('POST', { code }));
+  return handleResponse<{ data: { backupCodes: string[] } }>(response).then((data) => data.data);
+};
+
+export const disableTwoFactor = async (password: string): Promise<void> => {
+  const url = `${API_URL}/api/users/me/2fa/disable`;
+  const response = await fetch(url, getFetchOptions('POST', { password }));
+  await handleResponse(response);
+};
