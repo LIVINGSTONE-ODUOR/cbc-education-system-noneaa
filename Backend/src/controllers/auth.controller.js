@@ -1,11 +1,15 @@
 const { query } = require('../config/database');
 const { createClient } = require('@supabase/supabase-js');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const { authenticator } = require('otplib');
 const {
   verifyPassword,
   generateTokens,
   incrementLoginAttempts,
   resetLoginAttempts,
-  isValidEmail
+  isValidEmail,
+  JWT_SECRET
 } = require('../config/auth');
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -16,6 +20,42 @@ const supabaseAdmin = supabaseUrl && supabaseServiceRoleKey
       auth: { autoRefreshToken: false, persistSession: false },
     })
   : null;
+
+// Shared final step for a successful login (password-only, or password + 2FA code).
+// Issues tokens, records the session, and sends the standard login response shape.
+const completeLogin = async (user, clientIp, userAgent, res) => {
+  const tokens = await generateTokens(user);
+
+  await query(`
+    INSERT INTO user_sessions (session_token, user_id, ip_address, user_agent, expires_at)
+    VALUES ($1, $2, $3, $4, NOW() + INTERVAL '30 days')
+    ON CONFLICT (session_token) 
+    DO UPDATE SET ip_address = $3, user_agent = $4, expires_at = NOW() + INTERVAL '30 days'`,
+    [tokens.refreshToken, user.id, clientIp, userAgent]
+  );
+
+  await query('UPDATE users SET last_login = NOW(), last_login_ip = $1, last_activity = NOW() WHERE id = $2',
+    [clientIp, user.id]);
+
+  console.log('✅ LOGIN SUCCESSFUL for:', user.email);
+
+  return res.json({
+    success: true,
+    message: 'Login successful.',
+    data: {
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        schoolId: user.school_id,
+        schoolName: user.school_name
+      },
+      tokens
+    }
+  });
+};
 
 // ==================== LOGIN ====================
 exports.login = async (req, res) => {
@@ -45,7 +85,8 @@ exports.login = async (req, res) => {
                COALESCE(u.school_id, sa.school_id) as school_id,
                s.name as school_name,
                COALESCE(u.login_attempts, 0) as login_attempts,
-               u.locked_until, COALESCE(u.email_verified, false) as email_verified
+               u.locked_until, COALESCE(u.email_verified, false) as email_verified,
+               COALESCE(u.two_factor_enabled, false) as two_factor_enabled
         FROM users u
         LEFT JOIN school_admins sa ON sa.user_id = u.id
         LEFT JOIN schools s ON s.id = COALESCE(u.school_id, sa.school_id)
@@ -125,40 +166,30 @@ exports.login = async (req, res) => {
 
     await resetLoginAttempts(user.id);
 
+    // ---- Two-Factor Authentication challenge ----
+    // Password is correct, but if the user has 2FA enabled we must not issue
+    // real session tokens yet. Instead issue a short-lived, single-purpose
+    // token that only proves "this person just entered the right password",
+    // and require a valid TOTP/backup code before completing login.
+    if (user.two_factor_enabled) {
+      const pendingToken = jwt.sign(
+        { userId: user.id, purpose: '2fa_pending' },
+        JWT_SECRET,
+        { expiresIn: '5m' }
+      );
+
+      console.log('🔐 2FA required for:', email);
+
+      return res.json({
+        success: true,
+        requiresTwoFactor: true,
+        message: 'Enter your two-factor authentication code to finish signing in.',
+        data: { tempToken: pendingToken }
+      });
+    }
+
     // Generate tokens + create session
-    const tokens = await generateTokens(user);
-
-    // Create or update session record
-    await query(`
-      INSERT INTO user_sessions (session_token, user_id, ip_address, user_agent, expires_at)
-      VALUES ($1, $2, $3, $4, NOW() + INTERVAL '30 days')
-      ON CONFLICT (session_token) 
-      DO UPDATE SET ip_address = $3, user_agent = $4, expires_at = NOW() + INTERVAL '30 days'`,
-      [tokens.refreshToken, user.id, clientIp, userAgent]
-    );
-
-    // Update user activity
-    await query('UPDATE users SET last_login = NOW(), last_login_ip = $1, last_activity = NOW() WHERE id = $2',
-      [clientIp, user.id]);
-
-    console.log('✅ LOGIN SUCCESSFUL for:', email);
-
-    return res.json({
-      success: true,
-      message: 'Login successful.',
-      data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-          firstName: user.first_name,
-          lastName: user.last_name,
-          schoolId: user.school_id,
-          schoolName: user.school_name
-        },
-        tokens
-      }
-    });
+    return await completeLogin(user, clientIp, userAgent, res);
 
   } catch (error) {
     // Surface the real underlying error for easier debugging.
@@ -190,6 +221,82 @@ exports.login = async (req, res) => {
       success: false,
       message: 'Internal server error.'
     });
+  }
+};
+
+// ==================== VERIFY 2FA CODE (LOGIN STEP 2) ====================
+exports.verifyTwoFactorLogin = async (req, res) => {
+  try {
+    const { tempToken, code } = req.body;
+    const clientIp = req.ip || req.connection?.remoteAddress || 'unknown';
+    const userAgent = req.get('User-Agent') || 'unknown';
+
+    if (!tempToken || !code) {
+      return res.status(400).json({ success: false, message: 'tempToken and code are required.' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(tempToken, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ success: false, message: 'This code has expired. Please log in again.' });
+    }
+
+    if (decoded.purpose !== '2fa_pending') {
+      return res.status(401).json({ success: false, message: 'Invalid verification session. Please log in again.' });
+    }
+
+    const userResult = await query(
+      `SELECT u.id, u.email, u.role, u.status, u.first_name, u.last_name,
+              COALESCE(u.school_id, sa.school_id) as school_id,
+              s.name as school_name,
+              u.two_factor_secret, u.two_factor_backup_codes
+       FROM users u
+       LEFT JOIN school_admins sa ON sa.user_id = u.id
+       LEFT JOIN schools s ON s.id = COALESCE(u.school_id, sa.school_id)
+       WHERE u.id = $1 AND u.status != 'deleted'
+       LIMIT 1`,
+      [decoded.userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+    }
+
+    const user = userResult.rows[0];
+    const normalizedCode = String(code).replace(/\s+/g, '');
+
+    // 1) Try it as a 6-digit TOTP code from the authenticator app
+    let verified = user.two_factor_secret
+      ? authenticator.check(normalizedCode, user.two_factor_secret)
+      : false;
+
+    // 2) Fall back to one-time backup codes
+    if (!verified) {
+      const backupCodes = Array.isArray(user.two_factor_backup_codes) ? user.two_factor_backup_codes : [];
+      for (let i = 0; i < backupCodes.length; i++) {
+        // eslint-disable-next-line no-await-in-loop
+        if (await bcrypt.compare(normalizedCode, backupCodes[i])) {
+          verified = true;
+          backupCodes.splice(i, 1); // backup codes are single-use
+          // eslint-disable-next-line no-await-in-loop
+          await query('UPDATE users SET two_factor_backup_codes = $1 WHERE id = $2', [JSON.stringify(backupCodes), user.id]);
+          break;
+        }
+      }
+    }
+
+    if (!verified) {
+      await incrementLoginAttempts(user.id);
+      return res.status(401).json({ success: false, message: 'Invalid or expired code.' });
+    }
+
+    await resetLoginAttempts(user.id);
+
+    return await completeLogin(user, clientIp, userAgent, res);
+  } catch (error) {
+    console.error('2FA verification error:', error);
+    return res.status(500).json({ success: false, message: 'Internal server error.' });
   }
 };
 
