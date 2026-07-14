@@ -71,17 +71,37 @@ const verifyTeacherAssignment = async (teacherId, classId, learningAreaId) => {
   return !!data;
 };
 
+// Video mimetypes teachers can upload (covers the common browser/mobile
+// export formats). Extend here if a school needs another codec/container.
+const VIDEO_MIMETYPES = new Set([
+  'video/mp4',
+  'video/webm',
+  'video/ogg',
+  'video/quicktime', // .mov
+  'video/x-matroska', // .mkv
+]);
+
+const DOC_SIZE_LIMIT = 15 * 1024 * 1024; // 15MB — PDF/Word
+const VIDEO_SIZE_LIMIT = 300 * 1024 * 1024; // 300MB — lecture/demo clips
+
 const uploadAttachment = async (schoolId, file) => {
   const isPdf = file.mimetype === 'application/pdf';
   const isWord =
     file.mimetype === 'application/msword' ||
     file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  const isVideo = VIDEO_MIMETYPES.has(file.mimetype);
 
-  if (!isPdf && !isWord) {
-    throw Object.assign(new Error('Only PDF or Word (.doc/.docx) attachments are allowed'), { status: 400 });
+  if (!isPdf && !isWord && !isVideo) {
+    throw Object.assign(
+      new Error('Only PDF, Word (.doc/.docx), or video (.mp4/.webm/.mov/.mkv) attachments are allowed'),
+      { status: 400 }
+    );
   }
-  if (file.size > 15 * 1024 * 1024) {
-    throw Object.assign(new Error('Attachment exceeds the 15MB limit'), { status: 400 });
+
+  const sizeLimit = isVideo ? VIDEO_SIZE_LIMIT : DOC_SIZE_LIMIT;
+  if (file.size > sizeLimit) {
+    const limitLabel = isVideo ? '300MB' : '15MB';
+    throw Object.assign(new Error(`Attachment exceeds the ${limitLabel} limit`), { status: 400 });
   }
 
   const timestamp = Date.now();
@@ -101,7 +121,7 @@ const uploadAttachment = async (schoolId, file) => {
   return {
     attachment_url: publicUrlData?.publicUrl || null,
     attachment_name: file.originalname,
-    attachment_type: isPdf ? 'pdf' : 'word',
+    attachment_type: isPdf ? 'pdf' : isWord ? 'word' : 'video',
   };
 };
 
