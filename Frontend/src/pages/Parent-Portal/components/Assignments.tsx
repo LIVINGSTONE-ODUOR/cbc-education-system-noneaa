@@ -1,13 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ClipboardList, AlertCircle, MessageSquareText, PlayCircle, Paperclip } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ClipboardList, AlertCircle, MessageSquareText, PlayCircle, Paperclip, Download, Loader2 } from 'lucide-react';
 import {
   getLearnerAssignmentsDue,
   LearnerDueAssignment,
   LearnerAssignmentStatus,
 } from '@/lib/api/assignmentApi';
+
+interface ViewerAttachment {
+  url: string;
+  name: string;
+  type: 'pdf' | 'word' | 'video' | null;
+}
 
 interface AssignmentsProps {
   learnerId: string;
@@ -36,6 +49,29 @@ const Assignments: React.FC<AssignmentsProps> = ({ learnerId, reloadKey, emptyMe
   const [error, setError] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<LearnerDueAssignment[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [viewerAttachment, setViewerAttachment] = useState<ViewerAttachment | null>(null);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async (attachment: ViewerAttachment) => {
+    try {
+      setDownloading(true);
+      const res = await fetch(attachment.url);
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = attachment.name || 'attachment';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      // Fall back to a plain navigation if the blob fetch fails (e.g. CORS)
+      window.location.href = attachment.url;
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +103,7 @@ const Assignments: React.FC<AssignmentsProps> = ({ learnerId, reloadKey, emptyMe
   );
 
   return (
+    <>
     <Card id="assignments-section">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -143,27 +180,39 @@ const Assignments: React.FC<AssignmentsProps> = ({ learnerId, reloadKey, emptyMe
                         <p className="text-sm text-muted-foreground whitespace-pre-wrap">{a.description}</p>
                       )}
 
-                      {/* Assignment material: inline video player, or a link for PDF/Word */}
+                      {/* Assignment material opens in the in-page viewer modal below,
+                          so the underlying storage URL is never exposed to the browser tab/address bar. */}
                       {a.attachment_url && a.attachment_type === 'video' ? (
-                        <div>
-                          <p className="mb-2 flex items-center gap-1 text-sm font-medium text-primary">
-                            <PlayCircle className="h-4 w-4" />
-                            {a.attachment_name || 'Assignment video'}
-                          </p>
-                          <video src={a.attachment_url} controls className="w-full max-w-md rounded-md border">
-                            Your browser doesn't support inline video playback.
-                          </video>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setViewerAttachment({
+                              url: a.attachment_url as string,
+                              name: a.attachment_name || 'Assignment video',
+                              type: a.attachment_type,
+                            })
+                          }
+                          className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                        >
+                          <PlayCircle className="h-4 w-4" />
+                          {a.attachment_name || 'Assignment video'}
+                        </button>
                       ) : (
                         a.attachment_url && (
-                          <a
-                            href={a.attachment_url}
-                            target="_blank"
-                            rel="noreferrer"
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewerAttachment({
+                                url: a.attachment_url as string,
+                                name: a.attachment_name || 'Assignment attachment',
+                                type: a.attachment_type,
+                              });
+                            }}
                             className="flex items-center gap-1 text-sm text-primary hover:underline"
                           >
                             <Paperclip className="h-4 w-4" /> {a.attachment_name || 'View attachment'}
-                          </a>
+                          </button>
                         )
                       )}
                     </div>
@@ -186,6 +235,62 @@ const Assignments: React.FC<AssignmentsProps> = ({ learnerId, reloadKey, emptyMe
         )}
       </CardContent>
     </Card>
+
+    <Dialog open={!!viewerAttachment} onOpenChange={(open) => !open && setViewerAttachment(null)}>
+      <DialogContent className="max-w-3xl w-[95vw] p-0 overflow-hidden">
+        <DialogHeader className="p-4 pb-2 border-b">
+          <div className="flex items-center justify-between gap-2 pr-6">
+            <DialogTitle className="truncate text-base">
+              {viewerAttachment?.name || 'Attachment'}
+            </DialogTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0 gap-1.5"
+              disabled={downloading}
+              onClick={() => viewerAttachment && handleDownload(viewerAttachment)}
+            >
+              {downloading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              Download
+            </Button>
+          </div>
+        </DialogHeader>
+
+        <div className="bg-muted/30 h-[75vh]">
+          {viewerAttachment?.type === 'video' ? (
+            <video
+              src={viewerAttachment.url}
+              controls
+              autoPlay
+              className="h-full w-full bg-black"
+            >
+              Your browser doesn't support inline video playback.
+            </video>
+          ) : viewerAttachment?.type === 'pdf' ? (
+            <iframe
+              src={viewerAttachment.url}
+              title={viewerAttachment.name}
+              className="h-full w-full border-0"
+            />
+          ) : (
+            // Word/other documents: render via Google's document viewer so it
+            // stays embedded on this page instead of opening a new tab.
+            viewerAttachment && (
+              <iframe
+                src={`https://docs.google.com/gview?url=${encodeURIComponent(viewerAttachment.url)}&embedded=true`}
+                title={viewerAttachment.name}
+                className="h-full w-full border-0"
+              />
+            )
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 
