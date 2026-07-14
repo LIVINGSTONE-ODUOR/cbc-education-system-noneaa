@@ -1211,8 +1211,18 @@ Key CBE information:
 - Core competencies include: Communication, Collaboration, Critical Thinking, Creativity, Citizenship, Digital Literacy, Learning to Learn, Self-Efficacy
 - Assessment is continuous and formative, focusing on competency development`;
 
+  // Pull a few relevant snippets straight from the real public website pages
+  // (see siteKnowledge.service.js) so questions like "what is your mission?"
+  // get answered with actual site copy instead of a guess. This is a plain
+  // in-memory keyword lookup — no extra network/AI calls, so it stays cheap.
+  const siteContext = siteKnowledge.buildContextBlock(latestUserMessage.content);
+  const systemMessages = [{ role: 'system', content: publicSystemPrompt }];
+  if (siteContext) {
+    systemMessages.push({ role: 'system', content: siteContext });
+  }
+
   const merged = messages.slice(-10); // Limit to last 10 messages for public users
-  const modelMessages = [{ role: 'system', content: publicSystemPrompt }, ...merged];
+  const modelMessages = [...systemMessages, ...merged];
   const promptText = modelMessages.map((item) => `${item.role}: ${item.content}`).join('\n');
 
   log('info', 'public_request_prepared', {
