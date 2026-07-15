@@ -442,6 +442,61 @@ exports.logout = async (req, res) => {
   }
 };
 
+// ==================== DEVICE / SESSION HISTORY ====================
+// Lists every non-expired session (device/browser) the logged-in user is
+// currently signed in on. The frontend sends its own refresh token via the
+// x-session-token header so we can flag "this device" server-side —
+// session_token itself is never echoed back in the response.
+exports.getMySessions = async (req, res) => {
+  try {
+    const currentToken = req.header('x-session-token') || req.query.currentSessionToken || null;
+
+    const result = await query(
+      `SELECT id, session_token, ip_address, user_agent, created_at, expires_at
+       FROM user_sessions
+       WHERE user_id = $1 AND expires_at > NOW()
+       ORDER BY created_at DESC`,
+      [req.user.id]
+    );
+
+    const sessions = result.rows.map((row) => ({
+      id: row.id,
+      ip_address: row.ip_address,
+      user_agent: row.user_agent,
+      created_at: row.created_at,
+      expires_at: row.expires_at,
+      is_current: Boolean(currentToken) && row.session_token === currentToken,
+    }));
+
+    return res.json({ success: true, data: { sessions } });
+  } catch (error) {
+    console.error('Get sessions error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to load session history.' });
+  }
+};
+
+// Signs a single device/session out remotely. Scoped to the caller's own
+// user_id so nobody can revoke someone else's session by guessing an id.
+exports.revokeSession = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await query(
+      'DELETE FROM user_sessions WHERE id = $1 AND user_id = $2 RETURNING id',
+      [id, req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Session not found.' });
+    }
+
+    return res.json({ success: true, message: 'Session signed out.' });
+  } catch (error) {
+    console.error('Revoke session error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to sign out session.' });
+  }
+};
+
 // Keep your existing fetchUserFromSupabase function
 const fetchUserFromSupabase = async (email) => {
   if (!supabaseAdmin) return null;
