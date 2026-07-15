@@ -51,6 +51,7 @@ import LearningHeatmap from './components/LearningHeatmap';
 import ExamRevisionPlanner from './components/ExamRevisionPlanner';
 import ExportToCalendar from './components/ExportToCalendar';
 import LostAndFound from './components/LostAndFound';
+import CampusMap from './components/CampusMap';
 import Messages from '../Parent-Portal/components/Messages';
 import Announcements from '../Parent-Portal/components/Announcements';
 import PerformanceTrends from '@/components/marks/PerformanceTrends';
@@ -325,6 +326,7 @@ const StudentPortal = () => {
                 <TabsTrigger value="groups">Study Groups</TabsTrigger>
                 <TabsTrigger value="notebook">Notebook</TabsTrigger>
                 <TabsTrigger value="lostfound">Lost &amp; Found</TabsTrigger>
+                <TabsTrigger value="campusmap">Campus Map</TabsTrigger>
                 <TabsTrigger value="settings">Account &amp; Settings</TabsTrigger>
               </TabsList>
 
@@ -666,6 +668,11 @@ const StudentPortal = () => {
               {/* Lost & Found Tab */}
               <TabsContent value="lostfound" className="space-y-6">
                 <LostAndFound />
+              </TabsContent>
+
+              {/* Campus Map Tab */}
+              <TabsContent value="campusmap" className="space-y-6">
+                <CampusMap />
               </TabsContent>
 
               {/* Account & Settings Tab */}
