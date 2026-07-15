@@ -31,6 +31,46 @@ const TRANSLATIONS: Record<string, Record<LanguageCode, string>> = {
   viewAttendance: { en: 'View Attendance', sw: 'Angalia Mahudhurio' },
   viewMarks: { en: 'View Marks', sw: 'Angalia Alama' },
   viewAssignments: { en: 'View Assignments', sw: 'Angalia Kazi za Nyumbani' },
+
+  // OfflineAccess.tsx
+  offlineAccess: { en: 'Offline Access', sw: 'Ufikiaji Nje ya Mtandao' },
+  offlineAccessDesc: {
+    en: 'Install the app and keep viewing your timetable and notes without internet.',
+    sw: 'Sakinisha programu ili uendelee kuona ratiba yako na maelezo yako bila intaneti.',
+  },
+  connectionStatus: { en: 'Connection status', sw: 'Hali ya Muunganisho' },
+  onlineSyncing: { en: 'Online — data is syncing normally.', sw: 'Mtandaoni — data inasawazishwa kawaida.' },
+  offlineLastSaved: {
+    en: "Offline — you're viewing your last saved data.",
+    sw: 'Nje ya mtandao — unaona data yako ya mwisho iliyohifadhiwa.',
+  },
+  online: { en: 'Online', sw: 'Mtandaoni' },
+  offline: { en: 'Offline', sw: 'Nje ya Mtandao' },
+  installAsApp: { en: 'Install as an app', sw: 'Sakinisha kama Programu' },
+  alreadyInstalled: { en: 'Already installed on this device.', sw: 'Tayari imesakinishwa kwenye kifaa hiki.' },
+  addToHomeScreenPrompt: {
+    en: 'Add NONEAA to your home screen for faster, offline-ready access.',
+    sw: 'Ongeza NONEAA kwenye skrini yako ya nyumbani kwa ufikiaji wa haraka, tayari kwa matumizi nje ya mtandao.',
+  },
+  openInChromeEdge: {
+    en: 'Open this site in Chrome or Edge to install it, or use "Add to Home Screen" on mobile.',
+    sw: 'Fungua tovuti hii kwa Chrome au Edge kuisakinisha, au tumia "Ongeza kwenye Skrini ya Nyumbani" kwenye simu.',
+  },
+  installed: { en: 'Installed', sw: 'Imesakinishwa' },
+  installApp: { en: 'Install App', sw: 'Sakinisha Programu' },
+  availableOfflineOnce: {
+    en: 'Available offline once loaded at least once:',
+    sw: 'Inapatikana nje ya mtandao mara ikisha pakiwa angalau mara moja:',
+  },
+  offlineTimetable: { en: 'Your class timetable', sw: 'Ratiba yako ya darasa' },
+  offlineNotebookNote: {
+    en: 'Personal notes and reminders (Digital Notebook — always saved on this device)',
+    sw: 'Maelezo binafsi na vikumbusho (Daftari la Kidijitali — huhifadhiwa kila mara kwenye kifaa hiki)',
+  },
+  offlineAppItself: {
+    en: "The app itself, so you're not staring at a browser error screen",
+    sw: 'Programu yenyewe, ili usiangalie skrini ya hitilafu ya kivinjari',
+  },
 };
 
 export type TranslationKey = keyof typeof TRANSLATIONS;
