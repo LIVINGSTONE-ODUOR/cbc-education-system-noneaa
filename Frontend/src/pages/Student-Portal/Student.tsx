@@ -238,30 +238,33 @@ const StudentPortal = () => {
     .toUpperCase();
 
   return (
-      <div className="container mx-auto px-4 py-8">
+    <div className="student-portal-theme min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8 md:py-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="col-span-1">
-            <Card className="mb-6">
-              <CardContent className="pt-6">
+            <Card className="mb-6 overflow-hidden border-border/60 shadow-sm">
+              <div className="h-16 bg-gradient-to-r from-primary to-primary/80" />
+              <CardContent className="pt-0">
                 {loadingLearner ? (
-                  <div className="flex flex-col items-center mb-6 gap-3">
-                    <Skeleton className="w-32 h-32 rounded-full" />
+                  <div className="flex flex-col items-center -mt-10 mb-6 gap-3">
+                    <Skeleton className="w-24 h-24 rounded-full" />
                     <Skeleton className="h-5 w-32" />
                     <Skeleton className="h-4 w-24" />
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center mb-6">
-                    <Avatar className="w-32 h-32 border-4 border-primary/30">
+                  <div className="flex flex-col items-center -mt-10 mb-6">
+                    <Avatar className="w-24 h-24 border-4 border-background shadow-md ring-2 ring-accent/40">
                       <AvatarImage src={learner?.photo_url || user?.avatarUrl || undefined} alt={displayName} className="object-cover" />
-                      <AvatarFallback className="text-2xl">{initials || 'S'}</AvatarFallback>
+                      <AvatarFallback className="text-2xl bg-primary text-primary-foreground">{initials || 'S'}</AvatarFallback>
                     </Avatar>
-                    <h2 className="text-xl font-bold mt-4">{displayName}</h2>
-                    <p className="text-muted-foreground">
+                    <p className="font-serif italic text-accent text-sm mt-3">Student Profile</p>
+                    <h2 className="text-xl font-bold mt-0.5 text-center">{displayName}</h2>
+                    <p className="text-muted-foreground text-sm">
                       {learner?.grade_level || '—'}{learner?.stream_name ? `, ${learner.stream_name}` : ''}
                     </p>
                     {learner?.admission_number && (
-                      <div className="bg-primary/10 text-primary text-sm px-3 py-1 rounded-full mt-2">
+                      <div className="bg-accent/10 text-accent text-sm font-medium px-3 py-1 rounded-full mt-2">
                         ID: {learner.admission_number}
                       </div>
                     )}
@@ -297,18 +300,18 @@ const StudentPortal = () => {
             </Card>
 
             {/* Quick actions */}
-            <Card>
+            <Card className="border-border/60 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-lg">Quick Actions</CardTitle>
+                <CardTitle className="text-lg font-serif italic text-accent font-normal">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('attendance')}>
+                <Button variant="outline" className="w-full justify-start rounded-xl hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('attendance')}>
                   <Calendar className="mr-2 h-4 w-4" /> View Attendance
                 </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('marks')}>
+                <Button variant="outline" className="w-full justify-start rounded-xl hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('marks')}>
                   <BookOpen className="mr-2 h-4 w-4" /> View Marks
                 </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('dashboard')}>
+                <Button variant="outline" className="w-full justify-start rounded-xl hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('dashboard')}>
                   <ClipboardList className="mr-2 h-4 w-4" /> View Assignments
                 </Button>
               </CardContent>
@@ -318,18 +321,18 @@ const StudentPortal = () => {
           {/* Main content */}
           <div className="col-span-1 md:col-span-3 space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-8 mb-8">
-                <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-                <TabsTrigger value="academics">Academics</TabsTrigger>
-                <TabsTrigger value="marks">Marks</TabsTrigger>
-                <TabsTrigger value="attendance">Attendance</TabsTrigger>
-                <TabsTrigger value="communication">Communication</TabsTrigger>
-                <TabsTrigger value="groups">Study Groups</TabsTrigger>
-                <TabsTrigger value="notebook">Notebook</TabsTrigger>
-                <TabsTrigger value="lostfound">Lost &amp; Found</TabsTrigger>
-                <TabsTrigger value="campusmap">Campus Map</TabsTrigger>
-                <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
-                <TabsTrigger value="settings">Account &amp; Settings</TabsTrigger>
+              <TabsList className="flex h-auto flex-wrap justify-start gap-1.5 rounded-2xl bg-muted/70 p-2 mb-8">
+                <TabsTrigger value="dashboard" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Dashboard</TabsTrigger>
+                <TabsTrigger value="academics" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Academics</TabsTrigger>
+                <TabsTrigger value="marks" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Marks</TabsTrigger>
+                <TabsTrigger value="attendance" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Attendance</TabsTrigger>
+                <TabsTrigger value="communication" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Communication</TabsTrigger>
+                <TabsTrigger value="groups" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Study Groups</TabsTrigger>
+                <TabsTrigger value="notebook" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Notebook</TabsTrigger>
+                <TabsTrigger value="lostfound" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Lost &amp; Found</TabsTrigger>
+                <TabsTrigger value="campusmap" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Campus Map</TabsTrigger>
+                <TabsTrigger value="portfolio" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Portfolio</TabsTrigger>
+                <TabsTrigger value="settings" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Account &amp; Settings</TabsTrigger>
               </TabsList>
 
               {/* Dashboard Tab */}
@@ -690,6 +693,7 @@ const StudentPortal = () => {
           </div>
         </div>
       </div>
+    </div>
   );
 };
 
