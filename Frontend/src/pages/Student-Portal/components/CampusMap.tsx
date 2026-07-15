@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin, Search, School, FlaskConical, BookOpen, Briefcase, LayoutGrid } from 'lucide-react';
 import { getCampusLocations, type CampusLocation, type CampusLocationCategory } from '@/lib/api/campusMapApi';
+import { useLanguage, type TranslationKey } from '@/contexts/LanguageContext';
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof Error && error.message) return error.message;
@@ -14,15 +15,16 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 
 type FilterCategory = 'all' | CampusLocationCategory;
 
-const CATEGORY_META: Record<CampusLocationCategory, { label: string; icon: React.ElementType }> = {
-  classroom: { label: 'Classroom', icon: School },
-  lab: { label: 'Lab', icon: FlaskConical },
-  library: { label: 'Library', icon: BookOpen },
-  office: { label: 'Office', icon: Briefcase },
-  other: { label: 'Other', icon: MapPin },
+const CATEGORY_META: Record<CampusLocationCategory, { labelKey: TranslationKey; icon: React.ElementType }> = {
+  classroom: { labelKey: 'categoryClassroom', icon: School },
+  lab: { labelKey: 'categoryLab', icon: FlaskConical },
+  library: { labelKey: 'categoryLibrary', icon: BookOpen },
+  office: { labelKey: 'categoryOffice', icon: Briefcase },
+  other: { labelKey: 'categoryOther', icon: MapPin },
 };
 
 const CampusMap: React.FC = () => {
+  const { t } = useLanguage();
   const [locations, setLocations] = useState<CampusLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,33 +50,33 @@ const CampusMap: React.FC = () => {
         });
         if (!cancelled) setLocations(res.data.locations || []);
       } catch (e) {
-        if (!cancelled) setError(getErrorMessage(e, 'Could not load the campus map.'));
+        if (!cancelled) setError(getErrorMessage(e, t('couldNotLoadCampusMap')));
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [category, debouncedSearch]);
+  }, [category, debouncedSearch, t]);
 
   // Group by building for a directory-style layout.
   const grouped = useMemo(() => {
     const groups = new Map<string, CampusLocation[]>();
     for (const loc of locations) {
-      const key = loc.building?.trim() || 'Unassigned area';
+      const key = loc.building?.trim() || t('unassignedArea');
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(loc);
     }
     return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [locations]);
+  }, [locations, t]);
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <LayoutGrid className="h-5 w-5 text-primary" />
-          Campus Map
+          {t('campusMap')}
         </CardTitle>
-        <CardDescription>Find classrooms, labs, the library, and offices around campus.</CardDescription>
+        <CardDescription>{t('campusMapDesc')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="relative">
@@ -82,7 +84,7 @@ const CampusMap: React.FC = () => {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by room name or number..."
+            placeholder={t('searchRoomPlaceholder')}
             className="pl-8"
           />
         </div>
@@ -93,7 +95,7 @@ const CampusMap: React.FC = () => {
             variant={category === 'all' ? 'default' : 'outline'}
             onClick={() => setCategory('all')}
           >
-            All
+            {t('allFilter')}
           </Button>
           {(Object.keys(CATEGORY_META) as CampusLocationCategory[]).map((cat) => (
             <Button
@@ -102,7 +104,7 @@ const CampusMap: React.FC = () => {
               variant={category === cat ? 'default' : 'outline'}
               onClick={() => setCategory(cat)}
             >
-              {CATEGORY_META[cat].label}
+              {t(CATEGORY_META[cat].labelKey)}
             </Button>
           ))}
         </div>
@@ -117,8 +119,8 @@ const CampusMap: React.FC = () => {
         ) : locations.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             {search || category !== 'all'
-              ? 'No locations match your search.'
-              : "Your school hasn't published a campus map yet. Check back later."}
+              ? t('noLocationsMatchSearch')
+              : t('noCampusMapYet')}
           </p>
         ) : (
           <div className="space-y-5">
@@ -139,11 +141,11 @@ const CampusMap: React.FC = () => {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-medium truncate">{loc.name}</p>
-                            <Badge variant="outline">{meta.label}</Badge>
+                            <Badge variant="outline">{t(meta.labelKey)}</Badge>
                           </div>
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
-                            {loc.floor && <span>Floor: {loc.floor}</span>}
-                            {loc.room_number && <span>Room: {loc.room_number}</span>}
+                            {loc.floor && <span>{t('floorLabel')} {loc.floor}</span>}
+                            {loc.room_number && <span>{t('roomLabel')} {loc.room_number}</span>}
                           </div>
                           {loc.description && (
                             <p className="text-sm text-muted-foreground mt-1">{loc.description}</p>
@@ -159,7 +161,7 @@ const CampusMap: React.FC = () => {
         )}
       </CardContent>
       <CardFooter>
-        <p className="text-xs text-muted-foreground">Maintained by your school's teachers and admins.</p>
+        <p className="text-xs text-muted-foreground">{t('maintainedByTeachers')}</p>
       </CardFooter>
     </Card>
   );
