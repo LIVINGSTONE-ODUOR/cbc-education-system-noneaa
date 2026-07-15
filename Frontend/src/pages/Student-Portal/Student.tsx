@@ -29,9 +29,13 @@ import { getAnnouncements, getSchoolEvents, SchoolEvent } from '@/lib/api/parent
 import Assignments from '../Parent-Portal/components/Assignments';
 import Attendance from '../Parent-Portal/components/Attendance';
 import Timetable from '../Parent-Portal/components/Timetable';
+import ReportCards from '../Parent-Portal/components/ReportCards';
 import SubjectsAndTeachers from './components/SubjectsAndTeachers';
 import SyllabusOutline from './components/SyllabusOutline';
 import ClassResources from './components/ClassResources';
+import TeacherComments from './components/TeacherComments';
+import GradeHistory from './components/GradeHistory';
+import PerformanceTrends from '@/components/marks/PerformanceTrends';
 
 const GRADE_STYLES: Record<PerformanceLevel, string> = {
   EE: 'text-green-600',
@@ -532,10 +536,33 @@ const StudentPortal = () => {
 
               {/* Marks Tab — real data from the backend, filterable by year/term/exam */}
               <TabsContent value="marks" className="space-y-6">
+                {/* CAT and exam results */}
                 <MarksPanel
                   fetchResults={(filters) => getMyResults(filters)}
                   emptyMessage="No marks have been recorded for you yet."
                 />
+
+                {/* Subject-wise performance charts + academic progress analytics
+                    (overall growth line, per-subject trend lines, term comparison,
+                    and the strongest/weakest-subject summary all live in this one
+                    component, since they're derived from the same trend data). */}
+                <PerformanceTrends
+                  learnerId={learner?.id || ''}
+                  emptyMessage="At least two exams are needed to show performance trends."
+                />
+
+                {/* Grade history */}
+                <GradeHistory exams={exams} emptyMessage="No exams have been recorded for you yet." />
+
+                {/* Report cards */}
+                <ReportCards
+                  fetchResults={(filters) => getMyResults(filters)}
+                  child={learner}
+                  emptyMessage="No report cards are available yet."
+                />
+
+                {/* Teacher comments */}
+                <TeacherComments learnerId={learner?.id || ''} emptyMessage="No teacher comments yet." />
               </TabsContent>
 
               {/* Attendance Tab — real records from the backend */}
