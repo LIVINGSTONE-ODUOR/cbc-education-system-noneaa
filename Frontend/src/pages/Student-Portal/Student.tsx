@@ -12,12 +12,16 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
-import { BookOpen, Calendar, ClipboardList, AlertCircle } from 'lucide-react';
+import { BookOpen, Calendar, ClipboardList, AlertCircle, CalendarCheck, TrendingUp, Megaphone, CalendarDays } from 'lucide-react';
 import MarksPanel from '@/components/marks/MarksPanel';
 import { getMyResults, ExamSummary, PerformanceLevel } from '@/lib/api/resultsApi';
 import { getLearners } from '@/lib/api/learnersApi';
 import { getClassById, ClassApiTeacherPayload } from '@/lib/api/classApi';
 import { useAuth } from '@/contexts/AuthContext';
+import { getLearnerAttendanceSummary } from '@/lib/api/attendanceApi';
+import { getLearnerAssignmentsDue } from '@/lib/api/assignmentApi';
+import { getLearnerUpcomingExams, LearnerUpcomingExam } from '@/lib/api/examApi';
+import { getAnnouncements, getSchoolEvents, SchoolEvent } from '@/lib/api/parentDashboardApi';
 // Reuse the Parent Portal's already-real, backend-backed components instead
 // of re-implementing assignments/attendance with fake data — the backend
 // resolves the caller's own learner record for both when the role is
@@ -84,6 +88,14 @@ const StudentPortal = () => {
   const [loadingResults, setLoadingResults] = useState(true);
   const [resultsError, setResultsError] = useState<string | null>(null);
 
+  // Dashboard quick-summary cards + calendar
+  const [attendanceRate, setAttendanceRate] = useState<number | null>(null);
+  const [pendingAssignments, setPendingAssignments] = useState<number | null>(null);
+  const [upcomingExams, setUpcomingExams] = useState<LearnerUpcomingExam[]>([]);
+  const [announcementsCount, setAnnouncementsCount] = useState<number | null>(null);
+  const [upcomingEvents, setUpcomingEvents] = useState<SchoolEvent[]>([]);
+  const [loadingSummary, setLoadingSummary] = useState(true);
+
   // Load the logged-in student's own learner profile.
   useEffect(() => {
     let cancelled = false;
@@ -140,7 +152,46 @@ const StudentPortal = () => {
     return () => { cancelled = true; };
   }, []);
 
+  // Load the quick-summary cards (attendance %, pending assignments,
+  // upcoming exams, announcements) and the events calendar. These reuse
+  // the same backend endpoints as the Parent Portal dashboard.
+  useEffect(() => {
+    if (!learner?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingSummary(true);
+        const [attendanceRes, dueRes, examsRes, announcementsRes, eventsRes] = await Promise.all([
+          getLearnerAttendanceSummary(learner.id).catch(() => null),
+          getLearnerAssignmentsDue(learner.id).catch(() => null),
+          getLearnerUpcomingExams(learner.id, 5).catch(() => null),
+          getAnnouncements(5).catch(() => null),
+          getSchoolEvents(5).catch(() => null),
+        ]);
+        if (cancelled) return;
+        setAttendanceRate(attendanceRes?.data?.summary?.attendance_rate ?? null);
+        setPendingAssignments(dueRes?.data?.total_due ?? null);
+        setUpcomingExams(examsRes?.data?.upcoming_exams || []);
+        setAnnouncementsCount(announcementsRes?.data?.announcements?.length ?? null);
+        setUpcomingEvents(eventsRes?.data?.events || []);
+      } finally {
+        if (!cancelled) setLoadingSummary(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [learner?.id]);
+
   const latestExam = exams[0] || null;
+
+  // Average score across the most recent exam's subjects, used for the
+  // "Average Grade" quick-summary card.
+  const averageScore = useMemo(() => {
+    if (!latestExam || latestExam.subjects.length === 0) return null;
+    const graded = latestExam.subjects.filter((s) => !s.is_absent);
+    if (graded.length === 0) return null;
+    const sum = graded.reduce((acc, s) => acc + (s.percentage || 0), 0);
+    return Math.round(sum / graded.length);
+  }, [latestExam]);
 
   const age = useMemo(() => calculateAge(learner?.date_of_birth || null), [learner]);
   const joined = useMemo(() => formatDate(learner?.admission_date || null), [learner]);
@@ -248,6 +299,103 @@ const StudentPortal = () => {
 
               {/* Dashboard Tab */}
               <TabsContent value="dashboard" className="space-y-6">
+                {/* Quick summary cards */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  <Card>
+                    <CardContent className="pt-6 text-center">
+                      <CalendarCheck className="h-5 w-5 mx-auto text-primary mb-1" />
+                      {loadingSummary ? (
+                        <Skeleton className="h-7 w-12 mx-auto" />
+                      ) : (
+                        <p className="text-2xl font-bold">{attendanceRate != null ? `${Math.round(attendanceRate)}%` : '—'}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">Attendance</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6 text-center">
+                      <TrendingUp className="h-5 w-5 mx-auto text-primary mb-1" />
+                      {loadingResults ? (
+                        <Skeleton className="h-7 w-12 mx-auto" />
+                      ) : (
+                        <p className="text-2xl font-bold">{averageScore != null ? `${averageScore}%` : '—'}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">Average Grade</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6 text-center">
+                      <ClipboardList className="h-5 w-5 mx-auto text-primary mb-1" />
+                      {loadingSummary ? (
+                        <Skeleton className="h-7 w-12 mx-auto" />
+                      ) : (
+                        <p className="text-2xl font-bold">{pendingAssignments ?? '—'}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">Pending Assignments</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6 text-center">
+                      <BookOpen className="h-5 w-5 mx-auto text-primary mb-1" />
+                      {loadingSummary ? (
+                        <Skeleton className="h-7 w-12 mx-auto" />
+                      ) : (
+                        <p className="text-2xl font-bold">{upcomingExams.length}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">Upcoming Exams</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6 text-center">
+                      <Megaphone className="h-5 w-5 mx-auto text-primary mb-1" />
+                      {loadingSummary ? (
+                        <Skeleton className="h-7 w-12 mx-auto" />
+                      ) : (
+                        <p className="text-2xl font-bold">{announcementsCount ?? '—'}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">Announcements</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Calendar — upcoming school events */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CalendarDays className="h-5 w-5 text-primary" />
+                      Upcoming Events
+                    </CardTitle>
+                    <CardDescription>School events, holidays, and activities coming up</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingSummary ? (
+                      <div className="space-y-2">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                      </div>
+                    ) : upcomingEvents.length === 0 ? (
+                      <p className="py-6 text-center text-sm text-muted-foreground">No upcoming events scheduled.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {upcomingEvents.map((e) => (
+                          <div key={e.id} className="flex items-center justify-between rounded-md border p-3 text-sm">
+                            <div>
+                              <p className="font-medium">{e.title}</p>
+                              {e.location && <p className="text-xs text-muted-foreground">{e.location}</p>}
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="font-medium">
+                                {new Date(e.event_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                              </p>
+                              {e.start_time && <p className="text-xs text-muted-foreground">{e.start_time.slice(0, 5)}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 {/* Subject Progress — most recent exam's per-subject scores */}
                 <Card>
                   <CardHeader>
