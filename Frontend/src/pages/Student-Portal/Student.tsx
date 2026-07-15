@@ -268,8 +268,8 @@ const StudentPortal = () => {
       <div className="w-full lg:h-full px-3 sm:px-4 lg:px-6 py-6 md:py-8 flex flex-col">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col lg:flex-row gap-4 items-start lg:items-stretch w-full flex-1 lg:min-h-0">
           {/* Left: collapsible sidebar navigation, styled like the school-admin sidebar */}
-          <div className={cn('order-1 w-full min-w-0 flex-shrink-0 transition-all duration-300 lg:h-full', sidebarCollapsed ? 'lg:w-20' : 'lg:w-64')}>
-            <div className="rounded-2xl bg-[#152C21] border border-[#2A4A3A] flex flex-col overflow-hidden lg:h-full">
+          <div className={cn('order-1 w-full min-w-0 flex-shrink-0 transition-all duration-300 lg:h-full lg:flex lg:flex-col', sidebarCollapsed ? 'lg:w-20' : 'lg:w-64')}>
+            <div className="rounded-2xl bg-[#152C21] border border-[#2A4A3A] flex flex-col overflow-hidden lg:flex-1 lg:min-h-0">
               {/* Header */}
               <div className="hidden lg:flex items-center justify-between gap-2 px-3 py-4 border-b border-[#2A4A3A]">
                 {!sidebarCollapsed && (
@@ -299,7 +299,7 @@ const StudentPortal = () => {
               </div>
 
               {/* Navigation */}
-              <nav className="flex flex-row lg:flex-col overflow-x-auto lg:overflow-visible gap-1 lg:gap-0 lg:space-y-1 py-2 lg:py-3 px-2 lg:flex-1">
+              <nav className="flex flex-row lg:flex-col overflow-x-auto lg:overflow-y-auto lg:overflow-x-hidden gap-1 lg:gap-0 lg:space-y-1 py-2 lg:py-3 px-2 lg:flex-1 lg:min-h-0">
                 {SIDEBAR_NAV_ITEMS.map(({ value, label, icon: Icon }) => {
                   const isActive = activeTab === value;
                   return (
@@ -358,7 +358,7 @@ const StudentPortal = () => {
 
             <Button
               variant={activeTab === 'settings' ? 'default' : 'outline'}
-              className={cn('w-full justify-center gap-2 rounded-xl h-11 shadow-sm mt-3', sidebarCollapsed && 'px-0')}
+              className={cn('w-full justify-center gap-2 rounded-xl h-11 shadow-sm mt-3 lg:flex-shrink-0', sidebarCollapsed && 'px-0')}
               onClick={() => setActiveTab('settings')}
               title={sidebarCollapsed ? 'Account & Settings' : undefined}
             >
