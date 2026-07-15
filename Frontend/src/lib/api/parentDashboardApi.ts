@@ -167,14 +167,20 @@ export interface AnnouncementsResponse {
 }
 
 /**
- * GET /api/v1/parent-dashboard/announcements?limit=10&category=general|fee_reminder
+ * GET /api/v1/parent-dashboard/announcements?limit=10&category=general|fee_reminder&learner_id=...
+ *
+ * `learnerId` should be the currently-selected child. It scopes the feed to
+ * that child's own school — required for parents whose children attend
+ * different schools, since "school-wide" only makes sense per-school.
  */
 export const getAnnouncements = async (
   limit = 10,
-  category?: 'general' | 'fee_reminder'
+  category?: 'general' | 'fee_reminder',
+  learnerId?: string
 ): Promise<ApiResponse<AnnouncementsResponse>> => {
   const params = new URLSearchParams({ limit: String(limit) });
   if (category) params.set('category', category);
+  if (learnerId) params.set('learner_id', learnerId);
   const url = `${API_URL}/api/v1/parent-dashboard/announcements?${params.toString()}`;
   const response = await fetch(url, getFetchOptions('GET'));
   return handleResponse<ApiResponse<AnnouncementsResponse>>(response);
@@ -250,14 +256,19 @@ export interface SchoolEventsResponse {
 }
 
 /**
- * GET /api/v1/parent-dashboard/events?limit=10&type=event|holiday|pta_meeting|term_start|term_end|sports|activity
+ * GET /api/v1/parent-dashboard/events?limit=10&type=...&learner_id=...
+ *
+ * `learnerId` should be the currently-selected child, so events are scoped
+ * to THAT child's school (parents can have children at different schools).
  */
 export const getSchoolEvents = async (
   limit = 10,
-  type?: 'event' | 'holiday' | 'pta_meeting' | 'term_start' | 'term_end' | 'sports' | 'activity'
+  type?: 'event' | 'holiday' | 'pta_meeting' | 'term_start' | 'term_end' | 'sports' | 'activity',
+  learnerId?: string
 ): Promise<ApiResponse<SchoolEventsResponse>> => {
   const params = new URLSearchParams({ limit: String(limit) });
   if (type) params.set('type', type);
+  if (learnerId) params.set('learner_id', learnerId);
   const url = `${API_URL}/api/v1/parent-dashboard/events?${params.toString()}`;
   const response = await fetch(url, getFetchOptions('GET'));
   return handleResponse<ApiResponse<SchoolEventsResponse>>(response);
