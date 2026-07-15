@@ -224,3 +224,50 @@
   .animate-success-pop  { animation: success-pop   0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
   .animate-success-check { animation: success-check 0.6s ease-out 0.3s both; stroke-dasharray: 100; }
 }
+
+/* ==========================================================================
+   Student Portal theme — scoped override, applied only via the
+   `.student-portal-theme` class on the Student Portal's root element
+   (Frontend/src/pages/Student-Portal/Student.tsx). Reuses the same CSS
+   variable names as the global theme in :root above, so every shadcn
+   component (Card, Button, Badge, Tabs, Input, Select, etc.) used anywhere
+   inside the Student Portal — including its existing sub-components —
+   automatically re-themes for free. No other portal (Teacher, Parent,
+   Admin) or the marketing site is affected, since none of them carry this
+   class.
+   Palette inspired by the NONEAA homepage: warm cream background, deep
+   forest-green primary (buttons, active tabs), and a gold accent for
+   highlights — echoing the site's "Leading School Management Platform"
+   script text.
+   ========================================================================== */
+.student-portal-theme {
+  --background: 40 33% 96%;
+  --foreground: 160 20% 14%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 160 20% 14%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 160 20% 14%;
+
+  --primary: 158 45% 17%;
+  --primary-foreground: 40 33% 97%;
+
+  --secondary: 40 24% 92%;
+  --secondary-foreground: 160 20% 14%;
+
+  --muted: 40 18% 93%;
+  --muted-foreground: 160 10% 42%;
+
+  --accent: 38 65% 45%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 72% 55%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 40 20% 86%;
+  --input: 40 20% 86%;
+  --ring: 158 45% 17%;
+
+  --radius: 1rem;
+}
