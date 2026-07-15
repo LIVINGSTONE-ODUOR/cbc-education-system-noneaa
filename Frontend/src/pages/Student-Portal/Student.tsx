@@ -271,7 +271,7 @@ const StudentPortal = () => {
           <div className={cn('order-1 w-full min-w-0 flex-shrink-0 transition-all duration-300', sidebarCollapsed ? 'lg:w-20' : 'lg:w-64')}>
             <div className="rounded-2xl bg-[#152C21] border border-[#2A4A3A] flex flex-col overflow-hidden sticky top-6">
               {/* Header */}
-              <div className="flex items-center justify-between gap-2 px-3 py-4 border-b border-[#2A4A3A]">
+              <div className="hidden lg:flex items-center justify-between gap-2 px-3 py-4 border-b border-[#2A4A3A]">
                 {!sidebarCollapsed && (
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0 ring-1 ring-amber-300/40">
@@ -299,7 +299,7 @@ const StudentPortal = () => {
               </div>
 
               {/* Navigation */}
-              <nav className="flex-1 py-3 px-2 space-y-1">
+              <nav className="flex flex-row lg:flex-col overflow-x-auto lg:overflow-visible gap-1 lg:gap-0 lg:space-y-1 py-2 lg:py-3 px-2 lg:flex-1">
                 {SIDEBAR_NAV_ITEMS.map(({ value, label, icon: Icon }) => {
                   const isActive = activeTab === value;
                   return (
@@ -307,24 +307,24 @@ const StudentPortal = () => {
                       key={value}
                       type="button"
                       onClick={() => setActiveTab(value)}
-                      title={sidebarCollapsed ? label : undefined}
+                      title={label}
                       className={cn(
-                        'w-full flex items-center gap-3 rounded-lg h-10 text-sm font-medium transition-all duration-200',
-                        sidebarCollapsed ? 'justify-center px-2' : 'px-3',
+                        'flex-shrink-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 rounded-lg h-10 text-sm font-medium transition-all duration-200 px-3',
+                        sidebarCollapsed && 'lg:justify-center lg:px-2',
                         isActive
-                          ? 'bg-gradient-to-r from-amber-500/20 to-transparent text-amber-300 border-r-2 border-amber-400 shadow-sm'
+                          ? 'bg-gradient-to-r from-amber-500/20 to-transparent text-amber-300 border-r-2 lg:border-r-2 border-amber-400 shadow-sm'
                           : 'text-emerald-100/80 hover:bg-white/5 hover:text-white'
                       )}
                     >
                       <Icon className={cn('w-5 h-5 flex-shrink-0', isActive && 'text-amber-300')} />
-                      {!sidebarCollapsed && <span className="truncate">{label}</span>}
+                      {!sidebarCollapsed && <span className="hidden lg:inline truncate">{label}</span>}
                     </button>
                   );
                 })}
               </nav>
 
               {/* User footer */}
-              <div className="flex-shrink-0 border-t border-[#2A4A3A] p-3">
+              <div className="hidden lg:block flex-shrink-0 border-t border-[#2A4A3A] p-3">
                 <div className={cn('flex items-center gap-2 mb-2', sidebarCollapsed && 'justify-center')}>
                   <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0">
                     <span className="text-xs font-bold text-white">{initials || 'S'}</span>
