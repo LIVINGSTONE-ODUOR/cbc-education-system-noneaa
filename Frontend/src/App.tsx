@@ -119,13 +119,18 @@ const queryClient = new QueryClient();
 function ProtectedRoute({
   children,
   requiredRole,
+  silent,
 }: {
   children: React.ReactNode;
   requiredRole?: string;
+  silent?: boolean;
 }) {
   const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
+    if (silent) {
+      return null;
+    }
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" text="Authenticating..." />
@@ -336,7 +341,7 @@ function AppRoutes() {
       <Route
         path="/student/portal"
         element={
-          <ProtectedRoute requiredRole="student">
+          <ProtectedRoute requiredRole="student" silent>
             <StudentPortal />
           </ProtectedRoute>
         }
@@ -344,7 +349,7 @@ function AppRoutes() {
       <Route
         path="/student/portal/:tab"
         element={
-          <ProtectedRoute requiredRole="student">
+          <ProtectedRoute requiredRole="student" silent>
             <StudentPortal />
           </ProtectedRoute>
         }
