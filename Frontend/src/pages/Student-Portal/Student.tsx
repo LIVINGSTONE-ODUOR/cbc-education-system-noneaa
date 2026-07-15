@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
-import { BookOpen, Calendar, ClipboardList, AlertCircle, CalendarCheck, TrendingUp, Megaphone, CalendarDays } from 'lucide-react';
+import { BookOpen, Calendar, ClipboardList, AlertCircle, CalendarCheck, TrendingUp, Megaphone, CalendarDays, Settings } from 'lucide-react';
 import MarksPanel from '@/components/marks/MarksPanel';
 import { getMyResults, ExamSummary, PerformanceLevel } from '@/lib/api/resultsApi';
 import { getLearners } from '@/lib/api/learnersApi';
@@ -239,32 +239,32 @@ const StudentPortal = () => {
 
   return (
     <div className="student-portal-theme min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 md:py-10">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="col-span-1">
-            <Card className="mb-6 overflow-hidden border-border/60 shadow-sm">
-              <div className="h-16 bg-gradient-to-r from-primary to-primary/80" />
-              <CardContent className="pt-0">
+      <div className="container mx-auto max-w-7xl px-2 sm:px-4 py-6 md:py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start w-full">
+          {/* Left: compact profile, pinned close to the edge */}
+          <div className="order-1 lg:order-1 lg:col-span-3 lg:-ml-2 space-y-3 min-w-0">
+            <Card className="overflow-hidden border-border/60 shadow-sm">
+              <div className="h-10 bg-gradient-to-r from-primary to-primary/80" />
+              <CardContent className="pt-0 px-3 pb-3">
                 {loadingLearner ? (
-                  <div className="flex flex-col items-center -mt-10 mb-6 gap-3">
-                    <Skeleton className="w-24 h-24 rounded-full" />
-                    <Skeleton className="h-5 w-32" />
+                  <div className="flex flex-col items-center -mt-7 mb-4 gap-2">
+                    <Skeleton className="w-14 h-14 rounded-full" />
                     <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-16" />
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center -mt-10 mb-6">
-                    <Avatar className="w-24 h-24 border-4 border-background shadow-md ring-2 ring-accent/40">
+                  <div className="flex flex-col items-center -mt-7 mb-3">
+                    <Avatar className="w-14 h-14 border-2 border-background shadow-md ring-2 ring-accent/40">
                       <AvatarImage src={learner?.photo_url || user?.avatarUrl || undefined} alt={displayName} className="object-cover" />
-                      <AvatarFallback className="text-2xl bg-primary text-primary-foreground">{initials || 'S'}</AvatarFallback>
+                      <AvatarFallback className="text-sm bg-primary text-primary-foreground">{initials || 'S'}</AvatarFallback>
                     </Avatar>
-                    <p className="font-serif italic text-accent text-sm mt-3">Student Profile</p>
-                    <h2 className="text-xl font-bold mt-0.5 text-center">{displayName}</h2>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="font-serif italic text-accent text-[11px] mt-2">Student Profile</p>
+                    <h2 className="text-sm font-bold mt-0.5 text-center leading-tight break-words">{displayName}</h2>
+                    <p className="text-muted-foreground text-xs">
                       {learner?.grade_level || '—'}{learner?.stream_name ? `, ${learner.stream_name}` : ''}
                     </p>
                     {learner?.admission_number && (
-                      <div className="bg-accent/10 text-accent text-sm font-medium px-3 py-1 rounded-full mt-2">
+                      <div className="bg-accent/10 text-accent text-[11px] font-medium px-2 py-0.5 rounded-full mt-1.5">
                         ID: {learner.admission_number}
                       </div>
                     )}
@@ -272,25 +272,25 @@ const StudentPortal = () => {
                 )}
 
                 {learnerError ? (
-                  <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-                    <AlertCircle className="h-4 w-4" />
+                  <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-2 text-xs text-destructive">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                     {learnerError}
                   </div>
                 ) : (
-                  <div className="space-y-1 border-t pt-4">
-                    <div className="flex justify-between py-1">
+                  <div className="space-y-0.5 border-t pt-3 text-xs">
+                    <div className="flex justify-between gap-2 py-0.5">
                       <span className="text-muted-foreground">School:</span>
-                      <span className="font-medium">{user?.schoolName || '—'}</span>
+                      <span className="font-medium text-right truncate">{user?.schoolName || '—'}</span>
                     </div>
-                    <div className="flex justify-between py-1">
+                    <div className="flex justify-between gap-2 py-0.5">
                       <span className="text-muted-foreground">Class Teacher:</span>
-                      <span className="font-medium">{classTeacherName || '—'}</span>
+                      <span className="font-medium text-right truncate">{classTeacherName || '—'}</span>
                     </div>
-                    <div className="flex justify-between py-1">
+                    <div className="flex justify-between gap-2 py-0.5">
                       <span className="text-muted-foreground">Age:</span>
                       <span className="font-medium">{age != null ? `${age} years` : '—'}</span>
                     </div>
-                    <div className="flex justify-between py-1">
+                    <div className="flex justify-between gap-2 py-0.5">
                       <span className="text-muted-foreground">Joined:</span>
                       <span className="font-medium">{joined || '—'}</span>
                     </div>
@@ -301,40 +301,52 @@ const StudentPortal = () => {
 
             {/* Quick actions */}
             <Card className="border-border/60 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg font-serif italic text-accent font-normal">Quick Actions</CardTitle>
+              <CardHeader className="py-3 px-3">
+                <CardTitle className="text-sm font-serif italic text-accent font-normal">Quick Actions</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-start rounded-xl hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('attendance')}>
-                  <Calendar className="mr-2 h-4 w-4" /> View Attendance
+              <CardContent className="space-y-1.5 px-3 pb-3">
+                <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('attendance')}>
+                  <Calendar className="mr-2 h-3.5 w-3.5" /> View Attendance
                 </Button>
-                <Button variant="outline" className="w-full justify-start rounded-xl hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('marks')}>
-                  <BookOpen className="mr-2 h-4 w-4" /> View Marks
+                <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('marks')}>
+                  <BookOpen className="mr-2 h-3.5 w-3.5" /> View Marks
                 </Button>
-                <Button variant="outline" className="w-full justify-start rounded-xl hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('dashboard')}>
-                  <ClipboardList className="mr-2 h-4 w-4" /> View Assignments
+                <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('dashboard')}>
+                  <ClipboardList className="mr-2 h-3.5 w-3.5" /> View Assignments
                 </Button>
               </CardContent>
             </Card>
           </div>
 
-          {/* Main content */}
-          <div className="col-span-1 md:col-span-3 space-y-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="flex h-auto flex-wrap justify-start gap-1.5 rounded-2xl bg-muted/70 p-2 mb-8">
-                <TabsTrigger value="dashboard" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Dashboard</TabsTrigger>
-                <TabsTrigger value="academics" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Academics</TabsTrigger>
-                <TabsTrigger value="marks" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Marks</TabsTrigger>
-                <TabsTrigger value="attendance" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Attendance</TabsTrigger>
-                <TabsTrigger value="communication" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Communication</TabsTrigger>
-                <TabsTrigger value="groups" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Study Groups</TabsTrigger>
-                <TabsTrigger value="notebook" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Notebook</TabsTrigger>
-                <TabsTrigger value="lostfound" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Lost &amp; Found</TabsTrigger>
-                <TabsTrigger value="campusmap" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Campus Map</TabsTrigger>
-                <TabsTrigger value="portfolio" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Portfolio</TabsTrigger>
-                <TabsTrigger value="settings" className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Account &amp; Settings</TabsTrigger>
-              </TabsList>
+          {/* Right: credits (small, top), account & settings icon, vertical tab nav */}
+          <div className="order-2 lg:order-3 lg:col-span-3 space-y-3 min-w-0">
+            <div className="origin-top scale-[0.85] -mb-3 -mr-2">
+              <CreditsPointsSystem learnerId={learner?.id || ''} />
+            </div>
+            <Button
+              variant={activeTab === 'settings' ? 'default' : 'outline'}
+              className="w-full justify-center gap-2 rounded-xl h-11 shadow-sm"
+              onClick={() => setActiveTab('settings')}
+            >
+              <Settings className="h-5 w-5 shrink-0" />
+              <span className="text-sm font-medium">Account &amp; Settings</span>
+            </Button>
+            <TabsList className="flex flex-col h-auto w-full items-stretch gap-1 rounded-2xl bg-muted/70 p-2">
+              <TabsTrigger value="dashboard" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Dashboard</TabsTrigger>
+              <TabsTrigger value="academics" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Academics</TabsTrigger>
+              <TabsTrigger value="marks" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Marks</TabsTrigger>
+              <TabsTrigger value="attendance" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Attendance</TabsTrigger>
+              <TabsTrigger value="communication" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Communication</TabsTrigger>
+              <TabsTrigger value="groups" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Study Groups</TabsTrigger>
+              <TabsTrigger value="notebook" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Notebook</TabsTrigger>
+              <TabsTrigger value="lostfound" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Lost &amp; Found</TabsTrigger>
+              <TabsTrigger value="campusmap" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Campus Map</TabsTrigger>
+              <TabsTrigger value="portfolio" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Portfolio</TabsTrigger>
+            </TabsList>
+          </div>
 
+          {/* Middle: active tab's content */}
+          <div className="order-3 lg:order-2 lg:col-span-6 space-y-6 min-w-0">
               {/* Dashboard Tab */}
               <TabsContent value="dashboard" className="space-y-6">
                 {/* Quick summary cards */}
@@ -397,11 +409,10 @@ const StudentPortal = () => {
                 </div>
 
                 {/* Study streak, exam countdown, class rank movement, and points */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <StudyStreakTracker learnerId={learner?.id || ''} />
                   <ExamCountdownTimer exams={upcomingExams} loading={loadingSummary} />
                   <ClassRankMovement exams={exams} loading={loadingResults} />
-                  <CreditsPointsSystem learnerId={learner?.id || ''} />
                 </div>
 
                 {/* Exam revision planner — auto-built study schedule ahead of the next exam */}
@@ -689,9 +700,8 @@ const StudentPortal = () => {
               <TabsContent value="settings" className="space-y-6">
                 <StudentSettings />
               </TabsContent>
-            </Tabs>
           </div>
-        </div>
+        </Tabs>
       </div>
     </div>
   );
