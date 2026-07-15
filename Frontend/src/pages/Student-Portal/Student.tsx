@@ -24,6 +24,7 @@ import { getMyResults, ExamSummary, PerformanceLevel } from '@/lib/api/resultsAp
 import { getLearners } from '@/lib/api/learnersApi';
 import { getClassById, ClassApiTeacherPayload } from '@/lib/api/classApi';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { getLearnerAttendanceSummary } from '@/lib/api/attendanceApi';
 import { getLearnerAssignmentsDue } from '@/lib/api/assignmentApi';
 import { getLearnerUpcomingExams, LearnerUpcomingExam } from '@/lib/api/examApi';
@@ -109,20 +110,21 @@ const formatDate = (value: string | null): string | null => {
 };
 
 const SIDEBAR_NAV_ITEMS = [
-  { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { value: 'academics', label: 'Academics', icon: GraduationCap },
-  { value: 'marks', label: 'Marks', icon: BookOpen },
-  { value: 'attendance', label: 'Attendance', icon: CalendarCheck },
-  { value: 'communication', label: 'Communication', icon: MessageSquare },
-  { value: 'groups', label: 'Study Groups', icon: Users },
-  { value: 'notebook', label: 'Notebook', icon: NotebookPen },
-  { value: 'lostfound', label: 'Lost & Found', icon: PackageSearch },
-  { value: 'campusmap', label: 'Campus Map', icon: MapPin },
-  { value: 'portfolio', label: 'Portfolio', icon: Briefcase },
+  { value: 'dashboard', label: 'Dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
+  { value: 'academics', label: 'Academics', labelKey: 'academics', icon: GraduationCap },
+  { value: 'marks', label: 'Marks', labelKey: 'marks', icon: BookOpen },
+  { value: 'attendance', label: 'Attendance', labelKey: 'attendance', icon: CalendarCheck },
+  { value: 'communication', label: 'Communication', labelKey: 'communication', icon: MessageSquare },
+  { value: 'groups', label: 'Study Groups', labelKey: 'studyGroups', icon: Users },
+  { value: 'notebook', label: 'Notebook', labelKey: 'notebook', icon: NotebookPen },
+  { value: 'lostfound', label: 'Lost & Found', labelKey: 'lostFound', icon: PackageSearch },
+  { value: 'campusmap', label: 'Campus Map', labelKey: 'campusMap', icon: MapPin },
+  { value: 'portfolio', label: 'Portfolio', labelKey: 'portfolio', icon: Briefcase },
 ];
 
 const StudentPortal = () => {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { tab: tabParam } = useParams();
   const VALID_TABS = [...SIDEBAR_NAV_ITEMS.map((item) => item.value), 'settings'];
@@ -331,7 +333,10 @@ const StudentPortal = () => {
 
               {/* Mobile-only: current section label, since the icon strip has no room for text labels */}
               <div className="lg:hidden px-3 pb-2 -mt-1 text-xs font-medium text-amber-300 truncate">
-                {SIDEBAR_NAV_ITEMS.find((item) => item.value === activeTab)?.label}
+                {(() => {
+                  const item = SIDEBAR_NAV_ITEMS.find((i) => i.value === activeTab);
+                  return item ? t(item.labelKey, item.label) : null;
+                })()}
               </div>
 
               {/* User footer */}
@@ -356,7 +361,7 @@ const StudentPortal = () => {
                   )}
                 >
                   <LogOut className="w-4 h-4 flex-shrink-0" />
-                  {!sidebarCollapsed && <span>Sign out</span>}
+                  {!sidebarCollapsed && <span>{t('signOut')}</span>}
                 </button>
               </div>
             </div>
@@ -368,7 +373,7 @@ const StudentPortal = () => {
               title={sidebarCollapsed ? 'Account & Settings' : undefined}
             >
               <Settings className="h-5 w-5 shrink-0" />
-              {!sidebarCollapsed && <span className="text-sm font-medium">Account &amp; Settings</span>}
+              {!sidebarCollapsed && <span className="text-sm font-medium">{t('accountSettings')}</span>}
             </Button>
           </div>
 
