@@ -241,8 +241,28 @@ const StudentPortal = () => {
     <div className="student-portal-theme min-h-screen bg-background">
       <div className="container mx-auto max-w-7xl px-2 sm:px-4 py-6 md:py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start w-full">
-          {/* Left: compact profile, pinned close to the edge */}
-          <div className="order-1 lg:order-1 lg:col-span-3 lg:-ml-2 space-y-3 min-w-0">
+          {/* Left: quick actions only */}
+          <div className="order-1 lg:order-1 lg:col-span-3 space-y-3 min-w-0">
+            <Card className="border-border/60 shadow-sm">
+              <CardHeader className="py-3 px-3">
+                <CardTitle className="text-sm font-serif italic text-accent font-normal">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1.5 px-3 pb-3">
+                <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('attendance')}>
+                  <Calendar className="mr-2 h-3.5 w-3.5" /> View Attendance
+                </Button>
+                <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('marks')}>
+                  <BookOpen className="mr-2 h-3.5 w-3.5" /> View Marks
+                </Button>
+                <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('dashboard')}>
+                  <ClipboardList className="mr-2 h-3.5 w-3.5" /> View Assignments
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right: profile card, credits (small), vertical tab nav, then Account & Settings pinned last */}
+          <div className="order-2 lg:order-3 lg:col-span-3 space-y-3 min-w-0">
             <Card className="overflow-hidden border-border/60 shadow-sm">
               <div className="h-10 bg-gradient-to-r from-primary to-primary/80" />
               <CardContent className="pt-0 px-3 pb-3">
@@ -299,38 +319,10 @@ const StudentPortal = () => {
               </CardContent>
             </Card>
 
-            {/* Quick actions */}
-            <Card className="border-border/60 shadow-sm">
-              <CardHeader className="py-3 px-3">
-                <CardTitle className="text-sm font-serif italic text-accent font-normal">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-1.5 px-3 pb-3">
-                <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('attendance')}>
-                  <Calendar className="mr-2 h-3.5 w-3.5" /> View Attendance
-                </Button>
-                <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('marks')}>
-                  <BookOpen className="mr-2 h-3.5 w-3.5" /> View Marks
-                </Button>
-                <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('dashboard')}>
-                  <ClipboardList className="mr-2 h-3.5 w-3.5" /> View Assignments
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right: credits (small, top), account & settings icon, vertical tab nav */}
-          <div className="order-2 lg:order-3 lg:col-span-3 space-y-3 min-w-0">
             <div className="origin-top scale-[0.85] -mb-3 -mr-2">
               <CreditsPointsSystem learnerId={learner?.id || ''} />
             </div>
-            <Button
-              variant={activeTab === 'settings' ? 'default' : 'outline'}
-              className="w-full justify-center gap-2 rounded-xl h-11 shadow-sm"
-              onClick={() => setActiveTab('settings')}
-            >
-              <Settings className="h-5 w-5 shrink-0" />
-              <span className="text-sm font-medium">Account &amp; Settings</span>
-            </Button>
+
             <TabsList className="flex flex-col h-auto w-full items-stretch gap-1 rounded-2xl bg-muted/70 p-2">
               <TabsTrigger value="dashboard" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Dashboard</TabsTrigger>
               <TabsTrigger value="academics" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Academics</TabsTrigger>
@@ -343,6 +335,15 @@ const StudentPortal = () => {
               <TabsTrigger value="campusmap" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Campus Map</TabsTrigger>
               <TabsTrigger value="portfolio" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Portfolio</TabsTrigger>
             </TabsList>
+
+            <Button
+              variant={activeTab === 'settings' ? 'default' : 'outline'}
+              className="w-full justify-center gap-2 rounded-xl h-11 shadow-sm"
+              onClick={() => setActiveTab('settings')}
+            >
+              <Settings className="h-5 w-5 shrink-0" />
+              <span className="text-sm font-medium">Account &amp; Settings</span>
+            </Button>
           </div>
 
           {/* Middle: active tab's content */}
@@ -350,7 +351,7 @@ const StudentPortal = () => {
               {/* Dashboard Tab */}
               <TabsContent value="dashboard" className="space-y-6">
                 {/* Quick summary cards */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
                   <Card>
                     <CardContent className="pt-6 text-center">
                       <CalendarCheck className="h-5 w-5 mx-auto text-primary mb-1" />
@@ -409,7 +410,7 @@ const StudentPortal = () => {
                 </div>
 
                 {/* Study streak, exam countdown, class rank movement, and points */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                   <StudyStreakTracker learnerId={learner?.id || ''} />
                   <ExamCountdownTimer exams={upcomingExams} loading={loadingSummary} />
                   <ClassRankMovement exams={exams} loading={loadingResults} />
