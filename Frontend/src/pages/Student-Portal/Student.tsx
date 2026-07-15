@@ -49,6 +49,7 @@ import PeerStudyGroups from './components/PeerStudyGroups';
 import RecommendedResources from './components/RecommendedResources';
 import LearningHeatmap from './components/LearningHeatmap';
 import ExamRevisionPlanner from './components/ExamRevisionPlanner';
+import ExportToCalendar from './components/ExportToCalendar';
 import Messages from '../Parent-Portal/components/Messages';
 import Announcements from '../Parent-Portal/components/Announcements';
 import PerformanceTrends from '@/components/marks/PerformanceTrends';
@@ -400,6 +401,14 @@ const StudentPortal = () => {
                   upcomingExams={upcomingExams}
                   loading={loadingSummary}
                   emptyMessage="No upcoming exams are scheduled yet — a revision plan will appear once one is."
+                />
+
+                {/* Export to calendar — .ics download + one-click Google Calendar links */}
+                <ExportToCalendar
+                  learnerId={learner?.id || ''}
+                  upcomingExams={upcomingExams}
+                  upcomingEvents={upcomingEvents}
+                  loading={loadingSummary}
                 />
 
                 {/* Calendar — upcoming school events */}
