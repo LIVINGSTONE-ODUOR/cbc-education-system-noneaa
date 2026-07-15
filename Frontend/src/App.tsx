@@ -341,6 +341,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/student/portal/:tab"
+        element={
+          <ProtectedRoute requiredRole="student">
+            <StudentPortal />
+          </ProtectedRoute>
+        }
+      />
 
       {/* ── Parent Routes (Standalone Portal) ── */}
       <Route
