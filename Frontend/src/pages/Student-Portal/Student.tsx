@@ -40,6 +40,7 @@ import LeaveRequests from './components/LeaveRequests';
 import StudentAssignments from './components/StudentAssignments';
 import AssignmentReminders from './components/AssignmentReminders';
 import StudentSettings from './components/StudentSettings';
+import StudyStreakTracker from './components/StudyStreakTracker';
 import Messages from '../Parent-Portal/components/Messages';
 import Announcements from '../Parent-Portal/components/Announcements';
 import PerformanceTrends from '@/components/marks/PerformanceTrends';
@@ -374,6 +375,9 @@ const StudentPortal = () => {
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* Study streak — consecutive school days attended */}
+                <StudyStreakTracker learnerId={learner?.id || ''} />
 
                 {/* Calendar — upcoming school events */}
                 <Card>
