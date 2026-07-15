@@ -247,8 +247,9 @@ const StudentPortal = () => {
   // Average score across the most recent exam's subjects, used for the
   // "Average Grade" quick-summary card.
   const averageScore = useMemo(() => {
-    if (!latestExam || latestExam.subjects.length === 0) return null;
-    const graded = latestExam.subjects.filter((s) => !s.is_absent);
+    const subjects = latestExam?.subjects || [];
+    if (subjects.length === 0) return null;
+    const graded = subjects.filter((s) => !s.is_absent);
     if (graded.length === 0) return null;
     const sum = graded.reduce((acc, s) => acc + (s.percentage || 0), 0);
     return Math.round(sum / graded.length);
@@ -599,13 +600,13 @@ const StudentPortal = () => {
                         <AlertCircle className="h-4 w-4" />
                         {resultsError}
                       </div>
-                    ) : !latestExam || latestExam.subjects.length === 0 ? (
+                    ) : !latestExam || (latestExam.subjects || []).length === 0 ? (
                       <p className="py-8 text-center text-sm text-muted-foreground">
                         No exam results have been recorded for you yet.
                       </p>
                     ) : (
                       <div className="space-y-4">
-                        {latestExam.subjects.map((s, index) => (
+                        {(latestExam.subjects || []).map((s, index) => (
                           <div key={index} className="space-y-2">
                             <div className="flex justify-between">
                               <span className="font-medium">{s.learning_area?.name || 'Subject'}</span>
@@ -676,7 +677,7 @@ const StudentPortal = () => {
                         <AlertCircle className="h-4 w-4" />
                         {resultsError}
                       </div>
-                    ) : !latestExam || latestExam.subjects.length === 0 ? (
+                    ) : !latestExam || (latestExam.subjects || []).length === 0 ? (
                       <p className="py-8 text-center text-sm text-muted-foreground">
                         No exam results have been recorded for you yet.
                       </p>
@@ -691,7 +692,7 @@ const StudentPortal = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {latestExam.subjects.map((s, index) => (
+                          {(latestExam.subjects || []).map((s, index) => (
                             <TableRow key={index}>
                               <TableCell className="font-medium">{s.learning_area?.name || 'Subject'}</TableCell>
                               <TableCell>{s.is_absent ? 'Absent' : `${s.marks_obtained}/${s.max_marks}`}</TableCell>
