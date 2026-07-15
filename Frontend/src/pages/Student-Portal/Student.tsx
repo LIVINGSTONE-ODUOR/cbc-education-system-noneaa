@@ -46,6 +46,7 @@ import ClassRankMovement from './components/ClassRankMovement';
 import CreditsPointsSystem from './components/CreditsPointsSystem';
 import DigitalNotebook from './components/DigitalNotebook';
 import PeerStudyGroups from './components/PeerStudyGroups';
+import RecommendedResources from './components/RecommendedResources';
 import Messages from '../Parent-Portal/components/Messages';
 import Announcements from '../Parent-Portal/components/Announcements';
 import PerformanceTrends from '@/components/marks/PerformanceTrends';
@@ -479,6 +480,10 @@ const StudentPortal = () => {
                     )}
                   </CardContent>
                 </Card>
+
+                {/* Recommended resources — personalized suggestions derived
+                    from weak subjects in the learner's exam history */}
+                <RecommendedResources exams={exams} emptyMessage="No exam results yet — recommendations will appear once your marks are recorded." />
 
                 {/* Assignments — real due/submitted assignments from the backend */}
                 <Assignments learnerId={learner?.id || ''} emptyMessage="No assignments have been posted yet." />
