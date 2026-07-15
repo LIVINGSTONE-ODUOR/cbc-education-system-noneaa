@@ -75,6 +75,11 @@ export default {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
         display: ["Inter", "system-ui", "sans-serif"],
+        // Already loaded in index.html — reused here for the Student
+        // Portal's gold italic accent text, echoing the homepage's script
+        // styling, without adding any new font requests.
+        serif: ["EB Garamond", "Georgia", "serif"],
+        script: ["Petit Formal Script", "cursive"],
       },
       keyframes: {
         "accordion-down": {
