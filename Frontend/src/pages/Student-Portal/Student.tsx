@@ -308,6 +308,7 @@ const StudentPortal = () => {
                       type="button"
                       onClick={() => setActiveTab(value)}
                       title={label}
+                      aria-label={label}
                       className={cn(
                         'flex-shrink-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 rounded-lg h-10 text-sm font-medium transition-all duration-200 px-3',
                         sidebarCollapsed && 'lg:justify-center lg:px-2',
@@ -322,6 +323,11 @@ const StudentPortal = () => {
                   );
                 })}
               </nav>
+
+              {/* Mobile-only: current section label, since the icon strip has no room for text labels */}
+              <div className="lg:hidden px-3 pb-2 -mt-1 text-xs font-medium text-amber-300 truncate">
+                {SIDEBAR_NAV_ITEMS.find((item) => item.value === activeTab)?.label}
+              </div>
 
               {/* User footer */}
               <div className="hidden lg:block flex-shrink-0 border-t border-[#2A4A3A] p-3">
