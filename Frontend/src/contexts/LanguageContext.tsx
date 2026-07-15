@@ -281,6 +281,98 @@ const TRANSLATIONS: Record<string, Record<LanguageCode, string>> = {
   streakMsgBuilding: { en: "You're building momentum.", sw: 'Unajenga kasi.' },
   streakMsgConsistent: { en: "Great consistency — don't break it now.", sw: 'Uthabiti mzuri — usiukatize sasa.' },
   streakMsgOutstanding: { en: "Outstanding streak — you're on fire!", sw: 'Mfuatano wa kipekee — umewaka moto!' },
+
+  // CampusMap.tsx (missing keys)
+  couldNotLoadCampusMap: { en: 'Could not load the campus map right now.', sw: 'Imeshindwa kupakia ramani ya shule kwa sasa.' },
+  unassignedArea: { en: 'Other areas', sw: 'Maeneo Mengine' },
+  campusMapDesc: { en: 'Find classrooms, labs, and offices around the school', sw: 'Tafuta madarasa, maabara, na ofisi shuleni' },
+  searchRoomPlaceholder: { en: 'Search by room or building...', sw: 'Tafuta kwa chumba au jengo...' },
+  noLocationsMatchSearch: { en: 'No locations match your search.', sw: 'Hakuna eneo linalolingana na utafutaji wako.' },
+  noCampusMapYet: { en: 'The campus map has not been set up yet.', sw: 'Ramani ya shule bado haijawekwa.' },
+  floorLabel: { en: 'Floor', sw: 'Ghorofa' },
+  roomLabel: { en: 'Room', sw: 'Chumba' },
+  maintainedByTeachers: { en: 'Maintained by school staff.', sw: 'Inasimamiwa na wafanyakazi wa shule.' },
+
+  // DigitalNotebook.tsx (missing keys)
+  untitledNote: { en: 'Untitled note', sw: 'Daftari lisilo na Jina' },
+  digitalNotebook: { en: 'Digital Notebook', sw: 'Daftari la Kidijitali' },
+  digitalNotebookDesc: { en: 'Personal notes and reminders, saved on this device', sw: 'Maelezo binafsi na vikumbusho, vilivyohifadhiwa kwenye kifaa hiki' },
+  newNoteButton: { en: 'New note', sw: 'Daftari Jipya' },
+  editNoteTitle: { en: 'Edit note', sw: 'Hariri Daftari' },
+  titleLabel: { en: 'Title', sw: 'Kichwa' },
+  titlePlaceholder: { en: 'e.g. Chemistry revision', sw: 'k.m. Marudio ya Kemia' },
+  noteLabel: { en: 'Note', sw: 'Daftari' },
+  notePlaceholder: { en: 'Write your note here...', sw: 'Andika daftari lako hapa...' },
+  reminderDateOptional: { en: 'Reminder date (optional)', sw: 'Tarehe ya Kikumbusho (si lazima)' },
+  cancelButton: { en: 'Cancel', sw: 'Ghairi' },
+  saveChangesButton: { en: 'Save changes', sw: 'Hifadhi Mabadiliko' },
+  addNoteButton: { en: 'Add note', sw: 'Ongeza Daftari' },
+  noNotesYet: { en: "You don't have any notes yet.", sw: 'Huna daftari lolote bado.' },
+  dueWord: { en: 'Due', sw: 'Inatakiwa' },
+  upcomingReminders: { en: 'Upcoming reminders', sw: 'Vikumbusho Vinavyokuja' },
+  notesWord: { en: 'Notes', sw: 'Madaftari' },
+  notesSavedOnDevice: { en: 'note(s) saved on this device', sw: 'daftari zilizohifadhiwa kwenye kifaa hiki' },
+
+  // ExamCountdownTimer.tsx (missing keys)
+  examUnderway: { en: '{exam} is underway', sw: '{exam} inaendelea sasa' },
+  examBeginsToday: { en: '{exam} begins today', sw: '{exam} inaanza leo' },
+  examBeginsTomorrow: { en: '{exam} begins tomorrow', sw: '{exam} inaanza kesho' },
+  examBeginsInDays: { en: '{exam} begins in {n} days', sw: '{exam} inaanza baada ya siku {n}' },
+  examCountdown: { en: 'Exam Countdown', sw: 'Muda Uliobaki wa Mtihani' },
+  examCountdownDesc: { en: 'Time remaining until your next exam', sw: 'Muda uliobaki hadi mtihani wako unaofuata' },
+  loadingWord: { en: 'Loading...', sw: 'Inapakia...' },
+  noExamsScheduledYet: { en: 'No upcoming exams are scheduled yet.', sw: 'Hakuna mtihani unaokuja uliopangwa bado.' },
+  daysLeftWord: { en: 'days left', sw: 'siku zilizobaki' },
+  startsWord: { en: 'starts', sw: 'inaanza' },
+  alsoComingUp: { en: 'Also coming up', sw: 'Pia Inakuja' },
+  daysWord: { en: 'days', sw: 'siku' },
+
+  // ExamRevisionPlanner.tsx (missing keys)
+  examRevisionPlanner: { en: 'Exam Revision Planner', sw: 'Mpangilio wa Marudio ya Mtihani' },
+  revisionScheduleFor: { en: 'Revision schedule for {exam}', sw: 'Ratiba ya marudio kwa ajili ya {exam}' },
+  revisionScheduleGeneric: { en: 'Revision schedule', sw: 'Ratiba ya Marudio' },
+  noUpcomingExamsPlan: {
+    en: 'No upcoming exams are scheduled yet — a revision plan will appear once one is.',
+    sw: 'Hakuna mtihani unaokuja uliopangwa bado — mpango wa marudio utaonekana mara mtihani utakapopangwa.',
+  },
+  notEnoughHistoryForPlan: {
+    en: 'Not enough exam history yet to build a personalized revision plan.',
+    sw: 'Bado hakuna historia ya kutosha ya mtihani kuunda mpango binafsi wa marudio.',
+  },
+  examTodayGoodLuck: { en: '{exam} is today — good luck!', sw: '{exam} ni leo — bahati njema!' },
+  daysUntilExamLabel: { en: '{n} days until {exam}. ', sw: 'Siku {n} kabla ya {exam}. ' },
+  showingFirstDays: { en: 'Showing the first {n} days.', sw: 'Inaonyesha siku {n} za kwanza.' },
+  revisionDaysPlanned: { en: 'revision days planned', sw: 'siku za marudio zilizopangwa' },
+  restLightReview: { en: 'Rest / light review', sw: 'Pumzika / Marudio Mepesi' },
+  revisionPlannerFooter: {
+    en: 'Plan covers the next {n} days and is weighted toward your weaker subjects.',
+    sw: 'Mpango unahusisha siku {n} zijazo na umeegemea zaidi kwenye masomo yako dhaifu.',
+  },
+
+  // ExportToCalendar.tsx (missing keys)
+  assignmentDuePrefix: { en: '{title} due', sw: '{title} inatakiwa' },
+  subjectPrefix: { en: 'Subject: {name}', sw: 'Somo: {name}' },
+  failedToLoadDeadlines: { en: 'Failed to load upcoming deadlines', sw: 'Imeshindwa kupakia muda wa mwisho unaokuja' },
+  examPrefix: { en: 'Exam: {name}', sw: 'Mtihani: {name}' },
+  timePrefix: { en: 'Time: {time}', sw: 'Muda: {time}' },
+  exportToCalendar: { en: 'Export to Calendar', sw: 'Hamisha kwenye Kalenda' },
+  exportToCalendarDesc: { en: 'Exams, assignments, and events, ready for your calendar app', sw: 'Mitihani, kazi, na matukio, tayari kwa programu yako ya kalenda' },
+  nothingUpcomingToExport: { en: 'Nothing upcoming to export right now.', sw: 'Hakuna kinachokuja cha kuhamisha kwa sasa.' },
+  upcomingItemsCount: { en: 'upcoming items', sw: 'matukio yanayokuja' },
+  exportAllIcs: { en: 'Export all (.ics)', sw: 'Hamisha Zote (.ics)' },
+  googleCalendarButton: { en: 'Google Calendar', sw: 'Kalenda ya Google' },
+  exportToCalendarFooter: { en: 'Download .ics files to import into any calendar app.', sw: 'Pakua faili za .ics kuziweka kwenye programu yoyote ya kalenda.' },
+
+  // GradeHistory.tsx (missing keys)
+  gradeHistory: { en: 'Grade History', sw: 'Historia ya Alama' },
+  gradeHistoryDesc: { en: 'Your exam results over time', sw: 'Matokeo yako ya mtihani kwa muda' },
+  noExamsRecordedYet: { en: 'No exams have been recorded for you yet.', sw: 'Hakuna mtihani uliorekodiwa kwa ajili yako bado.' },
+  examColumn: { en: 'Exam', sw: 'Mtihani' },
+  termColumn: { en: 'Term', sw: 'Muhula' },
+  dateColumn: { en: 'Date', sw: 'Tarehe' },
+  averageColumn: { en: 'Average', sw: 'Wastani' },
+  overallGradeColumn: { en: 'Overall Grade', sw: 'Daraja la Jumla' },
+  classPositionColumn: { en: 'Class Position', sw: 'Nafasi Darasani' },
 };
 
 export type TranslationKey = keyof typeof TRANSLATIONS;
