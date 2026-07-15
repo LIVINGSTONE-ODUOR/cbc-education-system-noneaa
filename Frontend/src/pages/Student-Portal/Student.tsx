@@ -48,6 +48,7 @@ import DigitalNotebook from './components/DigitalNotebook';
 import PeerStudyGroups from './components/PeerStudyGroups';
 import RecommendedResources from './components/RecommendedResources';
 import LearningHeatmap from './components/LearningHeatmap';
+import ExamRevisionPlanner from './components/ExamRevisionPlanner';
 import Messages from '../Parent-Portal/components/Messages';
 import Announcements from '../Parent-Portal/components/Announcements';
 import PerformanceTrends from '@/components/marks/PerformanceTrends';
@@ -392,6 +393,14 @@ const StudentPortal = () => {
                   <ClassRankMovement exams={exams} loading={loadingResults} />
                   <CreditsPointsSystem learnerId={learner?.id || ''} />
                 </div>
+
+                {/* Exam revision planner — auto-built study schedule ahead of the next exam */}
+                <ExamRevisionPlanner
+                  exams={exams}
+                  upcomingExams={upcomingExams}
+                  loading={loadingSummary}
+                  emptyMessage="No upcoming exams are scheduled yet — a revision plan will appear once one is."
+                />
 
                 {/* Calendar — upcoming school events */}
                 <Card>
