@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { NotebookPen, Bell, Trash2, Pencil, Plus, X } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Note {
   id: string;
@@ -42,6 +43,7 @@ const saveNotes = (userId: string, notes: Note[]) => {
 const todayKey = () => new Date().toISOString().slice(0, 10);
 
 const DigitalNotebook: React.FC<DigitalNotebookProps> = ({ userId }) => {
+  const { t } = useLanguage();
   const [notes, setNotes] = useState<Note[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -75,14 +77,14 @@ const DigitalNotebook: React.FC<DigitalNotebookProps> = ({ userId }) => {
       persist(
         notes.map((n) =>
           n.id === editingId
-            ? { ...n, title: title.trim() || 'Untitled note', body, reminderDate: reminderDate || null, updatedAt: now }
+            ? { ...n, title: title.trim() || t('untitledNote'), body, reminderDate: reminderDate || null, updatedAt: now }
             : n
         )
       );
     } else {
       const note: Note = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        title: title.trim() || 'Untitled note',
+        title: title.trim() || t('untitledNote'),
         body,
         reminderDate: reminderDate || null,
         createdAt: now,
@@ -150,13 +152,13 @@ const DigitalNotebook: React.FC<DigitalNotebookProps> = ({ userId }) => {
         <div>
           <CardTitle className="flex items-center gap-2">
             <NotebookPen className="h-5 w-5 text-primary" />
-            Digital Notebook
+            {t('digitalNotebook')}
           </CardTitle>
-          <CardDescription>Personal notes and reminders — saved on this device.</CardDescription>
+          <CardDescription>{t('digitalNotebookDesc')}</CardDescription>
         </div>
         {!showForm && (
           <Button size="sm" onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4 mr-1" /> New note
+            <Plus className="h-4 w-4 mr-1" /> {t('newNoteButton')}
           </Button>
         )}
       </CardHeader>
@@ -164,38 +166,38 @@ const DigitalNotebook: React.FC<DigitalNotebookProps> = ({ userId }) => {
         {showForm && (
           <div className="rounded-md border p-3 space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">{editingId ? 'Edit note' : 'New note'}</p>
+              <p className="text-sm font-medium">{editingId ? t('editNoteTitle') : t('newNoteButton')}</p>
               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={resetForm}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
             <div className="space-y-1">
-              <Label htmlFor="note-title">Title</Label>
-              <Input id="note-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Revise Chemistry chapter 4" />
+              <Label htmlFor="note-title">{t('titleLabel')}</Label>
+              <Input id="note-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('titlePlaceholder')} />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="note-body">Note</Label>
-              <Textarea id="note-body" value={body} onChange={(e) => setBody(e.target.value)} rows={3} placeholder="Write your note here..." />
+              <Label htmlFor="note-body">{t('noteLabel')}</Label>
+              <Textarea id="note-body" value={body} onChange={(e) => setBody(e.target.value)} rows={3} placeholder={t('notePlaceholder')} />
             </div>
             <div className="space-y-1 max-w-[200px]">
-              <Label htmlFor="note-reminder">Reminder date (optional)</Label>
+              <Label htmlFor="note-reminder">{t('reminderDateOptional')}</Label>
               <Input id="note-reminder" type="date" value={reminderDate} onChange={(e) => setReminderDate(e.target.value)} />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={resetForm}>Cancel</Button>
-              <Button onClick={handleSave}>{editingId ? 'Save changes' : 'Add note'}</Button>
+              <Button variant="outline" onClick={resetForm}>{t('cancelButton')}</Button>
+              <Button onClick={handleSave}>{editingId ? t('saveChangesButton') : t('addNoteButton')}</Button>
             </div>
           </div>
         )}
 
         {dueReminders.length === 0 && upcomingReminders.length === 0 && plainNotes.length === 0 && !showForm ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">No notes yet — add one to get started.</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">{t('noNotesYet')}</p>
         ) : (
           <div className="space-y-4">
             {dueReminders.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-medium text-amber-600 flex items-center gap-1">
-                  <Bell className="h-3.5 w-3.5" /> Due
+                  <Bell className="h-3.5 w-3.5" /> {t('dueWord')}
                 </p>
                 {dueReminders.map((n) => (
                   <NoteCard key={n.id} note={n} overdue />
@@ -204,7 +206,7 @@ const DigitalNotebook: React.FC<DigitalNotebookProps> = ({ userId }) => {
             )}
             {upcomingReminders.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">Upcoming reminders</p>
+                <p className="text-xs font-medium text-muted-foreground">{t('upcomingReminders')}</p>
                 {upcomingReminders.map((n) => (
                   <NoteCard key={n.id} note={n} />
                 ))}
@@ -212,7 +214,7 @@ const DigitalNotebook: React.FC<DigitalNotebookProps> = ({ userId }) => {
             )}
             {plainNotes.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">Notes</p>
+                <p className="text-xs font-medium text-muted-foreground">{t('notesWord')}</p>
                 {plainNotes.map((n) => (
                   <NoteCard key={n.id} note={n} />
                 ))}
@@ -224,7 +226,7 @@ const DigitalNotebook: React.FC<DigitalNotebookProps> = ({ userId }) => {
       {notes.length > 0 && (
         <CardFooter>
           <p className="text-xs text-muted-foreground">
-            {notes.length} note{notes.length === 1 ? '' : 's'} saved on this device only.
+            {notes.length} {t('notesSavedOnDevice')}
           </p>
         </CardFooter>
       )}
