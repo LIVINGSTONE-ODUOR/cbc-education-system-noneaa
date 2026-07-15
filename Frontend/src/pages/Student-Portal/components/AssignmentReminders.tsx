@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, BellRing } from 'lucide-react';
 import { getLearnerAssignmentsDue, LearnerDueAssignment } from '@/lib/api/assignmentApi';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AssignmentRemindersProps {
   learnerId: string;
@@ -19,6 +20,7 @@ const DUE_SOON_DAYS = 3;
 // Assignments list already loads, and re-fetches independently here so it
 // can be dropped in anywhere on the page.
 const AssignmentReminders: React.FC<AssignmentRemindersProps> = ({ learnerId }) => {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<LearnerDueAssignment[]>([]);
@@ -38,7 +40,7 @@ const AssignmentReminders: React.FC<AssignmentRemindersProps> = ({ learnerId }) 
         const res = await getLearnerAssignmentsDue(learnerId);
         if (!cancelled) setAssignments(res.data.assignments || []);
       } catch (err: any) {
-        if (!cancelled) setError(err.message || 'Failed to load reminders');
+        if (!cancelled) setError(err.message || t('failedToLoadReminders', 'Failed to load reminders'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -65,9 +67,9 @@ const AssignmentReminders: React.FC<AssignmentRemindersProps> = ({ learnerId }) 
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BellRing className="h-5 w-5 text-primary" />
-          Reminders
+          {t('reminders', 'Reminders')}
         </CardTitle>
-        <CardDescription>Assignments due soon or overdue</CardDescription>
+        <CardDescription>{t('remindersDesc', 'Assignments due soon or overdue')}</CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -82,7 +84,7 @@ const AssignmentReminders: React.FC<AssignmentRemindersProps> = ({ learnerId }) 
           </div>
         ) : reminders.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            You're all caught up — nothing due in the next {DUE_SOON_DAYS} days.
+            {t('allCaughtUpPrefix', "You're all caught up — nothing due in the next")} {DUE_SOON_DAYS} {t('days', 'days')}.
           </p>
         ) : (
           <div className="space-y-2">
@@ -90,17 +92,17 @@ const AssignmentReminders: React.FC<AssignmentRemindersProps> = ({ learnerId }) 
               <div key={a.id} className="flex items-center justify-between rounded-md border p-3 text-sm">
                 <div>
                   <p className="font-medium">{a.title}</p>
-                  <p className="text-muted-foreground">{a.learning_area?.name || 'General'}</p>
+                  <p className="text-muted-foreground">{a.learning_area?.name || t('generalSubject', 'General')}</p>
                 </div>
                 <Badge
                   variant="outline"
                   className={a.is_overdue ? 'bg-red-100 text-red-700 border-red-200' : 'bg-amber-100 text-amber-700 border-amber-200'}
                 >
                   {a.is_overdue
-                    ? 'Overdue'
+                    ? t('overdue', 'Overdue')
                     : a.daysLeft <= 0
-                      ? 'Due today'
-                      : `Due in ${a.daysLeft} day${a.daysLeft === 1 ? '' : 's'}`}
+                      ? t('dueToday', 'Due today')
+                      : `${t('dueInPrefix', 'Due in')} ${a.daysLeft} ${a.daysLeft === 1 ? t('day', 'day') : t('days', 'days')}`}
                 </Badge>
               </div>
             ))}
