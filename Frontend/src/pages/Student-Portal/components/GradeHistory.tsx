@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { History } from 'lucide-react';
 import type { ExamSummary, PerformanceLevel } from '@/lib/api/resultsApi';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface GradeHistoryProps {
   /** Reuses the exams already loaded for the dashboard/academics cards — no extra fetch. */
@@ -22,6 +23,7 @@ const gradeBadgeClass = (grade?: PerformanceLevel | null) =>
   (grade && GRADE_STYLES[grade]) || 'bg-muted text-muted-foreground';
 
 const GradeHistory: React.FC<GradeHistoryProps> = ({ exams, emptyMessage }) => {
+  const { t } = useLanguage();
   // Oldest first, so the table reads chronologically like a history log.
   const sorted = useMemo(
     () =>
@@ -38,31 +40,31 @@ const GradeHistory: React.FC<GradeHistoryProps> = ({ exams, emptyMessage }) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <History className="h-5 w-5 text-primary" />
-          Grade History
+          {t('gradeHistory')}
         </CardTitle>
-        <CardDescription>Your overall grade across every recorded exam</CardDescription>
+        <CardDescription>{t('gradeHistoryDesc')}</CardDescription>
       </CardHeader>
       <CardContent>
         {sorted.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            {emptyMessage || 'No exams have been recorded for you yet.'}
+            {emptyMessage || t('noExamsRecordedYet')}
           </p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Exam</TableHead>
-                <TableHead>Term</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Average</TableHead>
-                <TableHead>Overall Grade</TableHead>
-                <TableHead>Class Position</TableHead>
+                <TableHead>{t('examColumn')}</TableHead>
+                <TableHead>{t('termColumn')}</TableHead>
+                <TableHead>{t('dateColumn')}</TableHead>
+                <TableHead>{t('averageColumn')}</TableHead>
+                <TableHead>{t('overallGradeColumn')}</TableHead>
+                <TableHead>{t('classPositionColumn')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sorted.map((e) => (
                 <TableRow key={e.exam_id}>
-                  <TableCell className="font-medium">{e.exam?.exam_name || 'Exam'}</TableCell>
+                  <TableCell className="font-medium">{e.exam?.exam_name || t('examFallback')}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {e.exam?.academic_years ? `${e.exam.academic_years.name} ${e.exam.academic_years.year}` : '—'}
                   </TableCell>
