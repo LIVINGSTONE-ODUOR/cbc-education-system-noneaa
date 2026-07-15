@@ -7,6 +7,7 @@ import { CalendarPlus, Download, AlertCircle } from 'lucide-react';
 import { getLearnerAssignmentsDue } from '@/lib/api/assignmentApi';
 import type { LearnerUpcomingExam } from '@/lib/api/examApi';
 import type { SchoolEvent } from '@/lib/api/parentDashboardApi';
+import { useLanguage, type TranslationKey } from '@/contexts/LanguageContext';
 
 interface ExportToCalendarProps {
   learnerId: string;
@@ -35,10 +36,10 @@ const TYPE_BADGE: Record<CalendarItemType, string> = {
   event: 'bg-purple-100 text-purple-700 border-purple-200',
 };
 
-const TYPE_LABEL: Record<CalendarItemType, string> = {
-  exam: 'Exam',
-  assignment: 'Assignment',
-  event: 'School Event',
+const TYPE_LABEL_KEY: Record<CalendarItemType, TranslationKey> = {
+  exam: 'examTypeBadge',
+  assignment: 'assignmentTypeBadge',
+  event: 'eventTypeBadge',
 };
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -108,6 +109,7 @@ const formatDate = (isoDate: string) =>
   new Date(`${isoDate}T00:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 
 const ExportToCalendar: React.FC<ExportToCalendarProps> = ({ learnerId, upcomingExams, upcomingEvents, loading }) => {
+  const { t } = useLanguage();
   const [assignmentsLoading, setAssignmentsLoading] = useState(true);
   const [assignmentsError, setAssignmentsError] = useState<string | null>(null);
   const [assignmentItems, setAssignmentItems] = useState<CalendarItem[]>([]);
@@ -129,13 +131,13 @@ const ExportToCalendar: React.FC<ExportToCalendarProps> = ({ learnerId, upcoming
           .map((a) => ({
             id: `assignment-${a.id}`,
             type: 'assignment' as const,
-            title: `Assignment due: ${a.title}`,
+            title: t('assignmentDuePrefix').replace('{title}', a.title),
             date: a.due_date.slice(0, 10),
-            description: a.learning_area?.name ? `Subject: ${a.learning_area.name}` : undefined,
+            description: a.learning_area?.name ? t('subjectPrefix').replace('{name}', a.learning_area.name) : undefined,
           }));
         setAssignmentItems(items);
       } catch (err: any) {
-        if (!cancelled) setAssignmentsError(err.message || 'Failed to load assignment deadlines');
+        if (!cancelled) setAssignmentsError(err.message || t('failedToLoadDeadlines'));
       } finally {
         if (!cancelled) setAssignmentsLoading(false);
       }
@@ -143,13 +145,13 @@ const ExportToCalendar: React.FC<ExportToCalendarProps> = ({ learnerId, upcoming
     return () => {
       cancelled = true;
     };
-  }, [learnerId]);
+  }, [learnerId, t]);
 
   const items = useMemo<CalendarItem[]>(() => {
     const examItems: CalendarItem[] = upcomingExams.map((e) => ({
       id: `exam-${e.id}`,
       type: 'exam',
-      title: `Exam: ${e.exam_name}`,
+      title: t('examPrefix').replace('{name}', e.exam_name),
       date: e.start_date.slice(0, 10),
       description: e.term ? `${e.exam_type} — ${e.term.name} ${e.term.year}` : e.exam_type,
     }));
@@ -159,12 +161,12 @@ const ExportToCalendar: React.FC<ExportToCalendarProps> = ({ learnerId, upcoming
       type: 'event',
       title: e.title,
       date: e.event_date.slice(0, 10),
-      description: [e.start_time ? `Time: ${e.start_time.slice(0, 5)}` : null, e.description].filter(Boolean).join(' — ') || undefined,
+      description: [e.start_time ? t('timePrefix').replace('{time}', e.start_time.slice(0, 5)) : null, e.description].filter(Boolean).join(' — ') || undefined,
       location: e.location,
     }));
 
     return [...examItems, ...assignmentItems, ...eventItems].sort((a, b) => a.date.localeCompare(b.date));
-  }, [upcomingExams, upcomingEvents, assignmentItems]);
+  }, [upcomingExams, upcomingEvents, assignmentItems, t]);
 
   const isLoading = loading || assignmentsLoading;
 
@@ -173,9 +175,9 @@ const ExportToCalendar: React.FC<ExportToCalendarProps> = ({ learnerId, upcoming
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CalendarPlus className="h-5 w-5 text-primary" />
-          Export to Calendar
+          {t('exportToCalendar')}
         </CardTitle>
-        <CardDescription>Sync your exams, assignment deadlines, and school events with Google or Apple Calendar</CardDescription>
+        <CardDescription>{t('exportToCalendarDesc')}</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -191,14 +193,14 @@ const ExportToCalendar: React.FC<ExportToCalendarProps> = ({ learnerId, upcoming
           </div>
         ) : items.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            Nothing upcoming to export yet — exams, deadlines, and events will show up here as they're scheduled.
+            {t('nothingUpcomingToExport')}
           </p>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <span className="text-sm text-muted-foreground">{items.length} upcoming item{items.length === 1 ? '' : 's'}</span>
+              <span className="text-sm text-muted-foreground">{items.length} {t('upcomingItemsCount')}</span>
               <Button size="sm" variant="outline" onClick={() => downloadICS('noneaa-calendar.ics', items)}>
-                <Download className="h-4 w-4 mr-1.5" /> Export all (.ics)
+                <Download className="h-4 w-4 mr-1.5" /> {t('exportAllIcs')}
               </Button>
             </div>
 
@@ -208,7 +210,7 @@ const ExportToCalendar: React.FC<ExportToCalendarProps> = ({ learnerId, upcoming
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium truncate">{item.title}</p>
-                      <Badge variant="outline" className={TYPE_BADGE[item.type]}>{TYPE_LABEL[item.type]}</Badge>
+                      <Badge variant="outline" className={TYPE_BADGE[item.type]}>{t(TYPE_LABEL_KEY[item.type])}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {formatDate(item.date)}
@@ -218,7 +220,7 @@ const ExportToCalendar: React.FC<ExportToCalendarProps> = ({ learnerId, upcoming
                   <div className="flex items-center gap-2 shrink-0">
                     <Button variant="ghost" size="sm" asChild>
                       <a href={googleCalendarUrl(item)} target="_blank" rel="noopener noreferrer">
-                        Google Calendar
+                        {t('googleCalendarButton')}
                       </a>
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => downloadICS(`${item.type}-${item.id}.ics`, [item])}>
@@ -230,8 +232,7 @@ const ExportToCalendar: React.FC<ExportToCalendarProps> = ({ learnerId, upcoming
             </div>
 
             <p className="text-xs text-muted-foreground">
-              The .ics file works with Apple Calendar, Outlook, and Google Calendar (Settings → Import). "Google Calendar"
-              adds a single item directly with one click.
+              {t('exportToCalendarFooter')}
             </p>
           </div>
         )}
