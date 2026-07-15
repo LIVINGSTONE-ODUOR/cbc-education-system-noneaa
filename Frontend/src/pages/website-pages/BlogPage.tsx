@@ -64,7 +64,7 @@ export default function BlogPage() {
             transition={{ delay: 0.1 }}
             className="text-xl text-emerald-100/80 mb-8 max-w-2xl mx-auto"
           >
-            Insights, updates, and guides on competency-based education and school management technology.
+            Insights, updates, and guides on competency based education and school management technology.
           </motion.p>
 
           {/* Search */}
