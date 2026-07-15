@@ -264,12 +264,12 @@ const StudentPortal = () => {
     .toUpperCase();
 
   return (
-    <div className="student-portal-theme min-h-screen bg-background">
-      <div className="w-full px-3 sm:px-4 lg:px-6 py-6 md:py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col lg:flex-row gap-4 items-start w-full">
+    <div className="student-portal-theme lg:h-screen lg:overflow-hidden bg-background">
+      <div className="w-full lg:h-full px-3 sm:px-4 lg:px-6 py-6 md:py-8 flex flex-col">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col lg:flex-row gap-4 items-start lg:items-stretch w-full flex-1 lg:min-h-0">
           {/* Left: collapsible sidebar navigation, styled like the school-admin sidebar */}
-          <div className={cn('order-1 w-full min-w-0 flex-shrink-0 transition-all duration-300', sidebarCollapsed ? 'lg:w-20' : 'lg:w-64')}>
-            <div className="rounded-2xl bg-[#152C21] border border-[#2A4A3A] flex flex-col overflow-hidden sticky top-6">
+          <div className={cn('order-1 w-full min-w-0 flex-shrink-0 transition-all duration-300 lg:h-full', sidebarCollapsed ? 'lg:w-20' : 'lg:w-64')}>
+            <div className="rounded-2xl bg-[#152C21] border border-[#2A4A3A] flex flex-col overflow-hidden lg:h-full">
               {/* Header */}
               <div className="hidden lg:flex items-center justify-between gap-2 px-3 py-4 border-b border-[#2A4A3A]">
                 {!sidebarCollapsed && (
@@ -362,7 +362,7 @@ const StudentPortal = () => {
           </div>
 
           {/* Right: profile card, quick actions, credits (small) */}
-          <div className="order-2 lg:order-3 w-full lg:w-72 flex-shrink-0 space-y-3 min-w-0 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
+          <div className="order-2 lg:order-3 w-full lg:w-72 flex-shrink-0 space-y-3 min-w-0 lg:h-full lg:overflow-y-auto">
             <Card className="overflow-hidden border-border/60 shadow-sm">
               <div className="h-10 bg-gradient-to-r from-primary to-primary/80" />
               <CardContent className="pt-0 px-3 pb-3">
@@ -440,7 +440,7 @@ const StudentPortal = () => {
           </div>
 
           {/* Middle: active tab's content */}
-          <div className="order-3 lg:order-2 flex-1 w-full space-y-6 min-w-0">
+          <div className="order-3 lg:order-2 flex-1 w-full space-y-6 min-w-0 lg:h-full lg:overflow-y-auto">
               {/* Dashboard Tab */}
               <TabsContent value="dashboard" className="space-y-6">
                 {/* Quick summary cards */}
