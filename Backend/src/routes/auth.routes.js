@@ -75,6 +75,19 @@ router.post('/v1/logout',
   authController.logout
 );
 
+// Device / session history — list the caller's active sessions
+router.get('/v1/sessions',
+  authenticate,
+  authController.getMySessions
+);
+
+// Sign a single device/session out remotely
+router.delete('/v1/sessions/:id',
+  authenticate,
+  auditLog('REVOKE_SESSION'),
+  authController.revokeSession
+);
+
 // Refresh token endpoint
 router.post('/v1/refresh-token',
   [
