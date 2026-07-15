@@ -271,3 +271,44 @@
 
   --radius: 1rem;
 }
+
+/* Dark-mode override for the Student Portal. `.student-portal-theme` above
+   hardcodes its own light-mode variable values directly on the portal's
+   root element, which — being the same specificity as the global `.dark`
+   rule and declared later — was winning over `.dark` every time, so the
+   Dark/Light toggle in Account & Settings flipped the `dark` class on
+   <html> but the portal never visually changed. This descendant selector
+   (`.dark .student-portal-theme`) has higher specificity than either rule
+   alone, so it correctly overrides the light values once dark mode is on,
+   while keeping the same forest-green/gold brand identity, just on dark
+   neutral surfaces (mirroring the approach used in the global .dark block
+   above: desaturate the surfaces, keep primary/accent hues intact). */
+.dark .student-portal-theme {
+  --background: 0 0% 5%;
+  --foreground: 0 0% 95%;
+
+  --card: 0 0% 8%;
+  --card-foreground: 0 0% 95%;
+
+  --popover: 0 0% 8%;
+  --popover-foreground: 0 0% 95%;
+
+  --primary: 158 40% 34%;
+  --primary-foreground: 40 33% 97%;
+
+  --secondary: 0 0% 14%;
+  --secondary-foreground: 0 0% 95%;
+
+  --muted: 0 0% 14%;
+  --muted-foreground: 0 0% 65%;
+
+  --accent: 38 65% 50%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 0 0% 16%;
+  --input: 0 0% 16%;
+  --ring: 158 40% 45%;
+}
