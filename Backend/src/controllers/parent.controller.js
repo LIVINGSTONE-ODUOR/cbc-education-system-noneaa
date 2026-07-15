@@ -962,13 +962,29 @@ const getMyChildren = asyncHandler(async (req, res) => {
     .from('learners')
     .select(`
       id, first_name, last_name, middle_name, admission_number,
-      gender, date_of_birth, is_active
+      gender, date_of_birth, is_active, school_id
     `)
     .in('id', learnerIds);
 
   if (learnersErr) {
     console.error('[getMyChildren] learners query failed:', learnersErr);
     return res.status(500).json({ success: false, message: 'Failed to load learner details', error: learnersErr.message });
+  }
+
+  // A parent's children can be enrolled at DIFFERENT schools. Every school
+  // scoped lookup below (attendance, exam summaries) must use each child's
+  // OWN school_id, never `parent.school_id` (which is just the school the
+  // parent's own account happens to be tied to). We also surface the
+  // school name per child so the UI can show which school each child
+  // belongs to when switching between them.
+  const schoolIds = [...new Set((learners || []).map((l) => l.school_id).filter(Boolean))];
+  let schoolsById = new Map();
+  if (schoolIds.length) {
+    const { data: schools } = await supabase
+      .from('schools')
+      .select('id, name')
+      .in('id', schoolIds);
+    schoolsById = new Map((schools || []).map((s) => [s.id, s.name]));
   }
 
   // Current class (grade_level/stream_name) per child via learner_enrollments → classes
@@ -994,7 +1010,6 @@ const getMyChildren = asyncHandler(async (req, res) => {
   const { data: attendanceRows, error: attendanceErr } = await supabase
     .from('attendance_records')
     .select('learner_id, attendance_date, status, arrival_time, remarks')
-    .eq('school_id', parent.school_id)
     .in('learner_id', learnerIds)
     .order('attendance_date', { ascending: false })
     .limit(200);
@@ -1032,7 +1047,9 @@ const getMyChildren = asyncHandler(async (req, res) => {
       let examHistory = [];
       try {
         // Every exam this learner has results for, most recent first.
-        examHistory = (await buildLearnerSummaries(parent.school_id, learner.id)) || [];
+        // Uses THIS learner's own school, not parent.school_id, since a
+        // parent's children can be enrolled at different schools.
+        examHistory = (await buildLearnerSummaries(learner.school_id, learner.id)) || [];
       } catch (e) {
         console.error(`[getMyChildren] exam summary failed for learner ${learner.id}:`, e.message);
         examHistory = [];
@@ -1040,6 +1057,8 @@ const getMyChildren = asyncHandler(async (req, res) => {
 
       return {
         ...learner,
+        school_id: learner.school_id || null,
+        school_name: schoolsById.get(learner.school_id) || null,
         grade_level: enrollment?.classes?.grade_level || null,
         stream_name: enrollment?.classes?.stream_name || null,
         class_id: enrollment?.class_id || null,
