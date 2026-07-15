@@ -41,6 +41,7 @@ import StudentAssignments from './components/StudentAssignments';
 import AssignmentReminders from './components/AssignmentReminders';
 import StudentSettings from './components/StudentSettings';
 import StudyStreakTracker from './components/StudyStreakTracker';
+import ExamCountdownTimer from './components/ExamCountdownTimer';
 import Messages from '../Parent-Portal/components/Messages';
 import Announcements from '../Parent-Portal/components/Announcements';
 import PerformanceTrends from '@/components/marks/PerformanceTrends';
@@ -377,7 +378,10 @@ const StudentPortal = () => {
                 </div>
 
                 {/* Study streak — consecutive school days attended */}
-                <StudyStreakTracker learnerId={learner?.id || ''} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <StudyStreakTracker learnerId={learner?.id || ''} />
+                  <ExamCountdownTimer exams={upcomingExams} loading={loadingSummary} />
+                </div>
 
                 {/* Calendar — upcoming school events */}
                 <Card>
