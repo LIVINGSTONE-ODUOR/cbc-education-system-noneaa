@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SchoolSettingsProvider } from "@/contexts/SchoolSettingsContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { getHostContext } from "@/utils/hostRouting";
 
 import AIAssistant from "@/components/ai-assistant/AIAssistant";
@@ -442,6 +443,7 @@ const App = () => (
       <AuthProvider>
         <BlogProvider>
           <SchoolSettingsProvider>
+            <LanguageProvider>
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -459,6 +461,7 @@ const App = () => (
                 )}
               </BrowserRouter>
             </TooltipProvider>
+            </LanguageProvider>
           </SchoolSettingsProvider>
         </BlogProvider>
       </AuthProvider>
