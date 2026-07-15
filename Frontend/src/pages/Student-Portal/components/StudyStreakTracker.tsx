@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Flame, Trophy } from 'lucide-react';
 import { getLearnerAttendanceSummary, type AttendanceApiRecord } from '@/lib/api/attendanceApi';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface StudyStreakTrackerProps {
   learnerId: string;
@@ -49,6 +50,7 @@ const computeStreaks = (records: AttendanceApiRecord[]) => {
 };
 
 const StudyStreakTracker: React.FC<StudyStreakTrackerProps> = ({ learnerId }) => {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [streak, setStreak] = useState<{ current: number; best: number; last7: (AttendanceApiRecord & { dateKey: string })[] }>({
@@ -68,7 +70,7 @@ const StudyStreakTracker: React.FC<StudyStreakTrackerProps> = ({ learnerId }) =>
         if (cancelled) return;
         setStreak(computeStreaks(res.data.all_records || []));
       } catch {
-        if (!cancelled) setError('Could not load your streak right now.');
+        if (!cancelled) setError(t('couldNotLoadStreak', 'Could not load your streak right now.'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -79,11 +81,11 @@ const StudyStreakTracker: React.FC<StudyStreakTrackerProps> = ({ learnerId }) =>
   }, [learnerId]);
 
   const streakMessage = (days: number) => {
-    if (days === 0) return "Show up tomorrow to start a new streak.";
-    if (days === 1) return "Nice start — keep it going tomorrow.";
-    if (days < 5) return "You're building momentum.";
-    if (days < 10) return "Great consistency — don't break it now.";
-    return "Outstanding streak — you're on fire!";
+    if (days === 0) return t('streakMsgZero', 'Show up tomorrow to start a new streak.');
+    if (days === 1) return t('streakMsgOne', 'Nice start — keep it going tomorrow.');
+    if (days < 5) return t('streakMsgBuilding', "You're building momentum.");
+    if (days < 10) return t('streakMsgConsistent', "Great consistency — don't break it now.");
+    return t('streakMsgOutstanding', "Outstanding streak — you're on fire!");
   };
 
   return (
@@ -91,9 +93,9 @@ const StudyStreakTracker: React.FC<StudyStreakTrackerProps> = ({ learnerId }) =>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Flame className="h-5 w-5 text-orange-500" />
-          Study Streak
+          {t('studyStreak', 'Study Streak')}
         </CardTitle>
-        <CardDescription>Consecutive school days you've shown up and engaged.</CardDescription>
+        <CardDescription>{t('studyStreakDesc', "Consecutive school days you've shown up and engaged.")}</CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -108,12 +110,15 @@ const StudyStreakTracker: React.FC<StudyStreakTrackerProps> = ({ learnerId }) =>
             <div className="flex items-center gap-6">
               <div className="text-center">
                 <p className="text-4xl font-bold text-orange-500 leading-none">{streak.current}</p>
-                <p className="text-xs text-muted-foreground mt-1">day{streak.current === 1 ? '' : 's'} in a row</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {streak.current === 1 ? t('day', 'day') : t('days', 'days')} {t('inARow', 'in a row')}
+                </p>
               </div>
               <div className="flex-1 space-y-1">
                 <p className="text-sm font-medium">{streakMessage(streak.current)}</p>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Trophy className="h-3.5 w-3.5" /> Best streak: {streak.best} day{streak.best === 1 ? '' : 's'}
+                  <Trophy className="h-3.5 w-3.5" /> {t('bestStreakPrefix', 'Best streak:')} {streak.best}{' '}
+                  {streak.best === 1 ? t('day', 'day') : t('days', 'days')}
                 </p>
               </div>
             </div>
