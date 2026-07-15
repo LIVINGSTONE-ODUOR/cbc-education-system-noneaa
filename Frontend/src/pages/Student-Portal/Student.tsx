@@ -39,6 +39,8 @@ import AttendanceInsights from './components/AttendanceInsights';
 import LeaveRequests from './components/LeaveRequests';
 import StudentAssignments from './components/StudentAssignments';
 import AssignmentReminders from './components/AssignmentReminders';
+import Messages from '../Parent-Portal/components/Messages';
+import Announcements from '../Parent-Portal/components/Announcements';
 import PerformanceTrends from '@/components/marks/PerformanceTrends';
 
 const GRADE_STYLES: Record<PerformanceLevel, string> = {
@@ -302,11 +304,12 @@ const StudentPortal = () => {
           {/* Main content */}
           <div className="col-span-1 md:col-span-3 space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-4 mb-8">
+              <TabsList className="grid grid-cols-5 mb-8">
                 <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                 <TabsTrigger value="academics">Academics</TabsTrigger>
                 <TabsTrigger value="marks">Marks</TabsTrigger>
                 <TabsTrigger value="attendance">Attendance</TabsTrigger>
+                <TabsTrigger value="communication">Communication</TabsTrigger>
               </TabsList>
 
               {/* Dashboard Tab */}
@@ -583,6 +586,24 @@ const StudentPortal = () => {
 
                 {/* Leave requests */}
                 <LeaveRequests />
+              </TabsContent>
+
+              {/* Communication Tab — real data from the backend, same
+                  messaging/announcements system the Parent Portal uses.
+                  Messages and Announcements aren't learner-scoped by role,
+                  so they work unchanged for a student account: the backend
+                  only special-cases the 'parent' role for the
+                  parent-link check, everyone else (student included)
+                  already passes through, same as Timetable/TeacherComments
+                  elsewhere in this file. */}
+              <TabsContent value="communication" className="space-y-6">
+                {user?.id && (
+                  <Messages
+                    learnerId={learner?.id || ''}
+                    currentUserId={user.id}
+                  />
+                )}
+                <Announcements />
               </TabsContent>
             </Tabs>
           </div>
