@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, BarChart3 } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
@@ -51,6 +52,7 @@ const monthlyStatsFrom = (records: AttendanceApiRecord[]) => {
 };
 
 const AttendanceInsights: React.FC<AttendanceInsightsProps> = ({ learnerId, emptyMessage }) => {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [records, setRecords] = useState<AttendanceApiRecord[]>([]);
@@ -68,7 +70,7 @@ const AttendanceInsights: React.FC<AttendanceInsightsProps> = ({ learnerId, empt
         const res = await getLearnerAttendanceSummary(learnerId);
         if (!cancelled) setRecords(res.data.all_records || []);
       } catch (err: any) {
-        if (!cancelled) setError(err.message || 'Failed to load attendance statistics');
+        if (!cancelled) setError(err.message || t('failedToLoadAttendanceStats', 'Failed to load attendance statistics'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -87,9 +89,9 @@ const AttendanceInsights: React.FC<AttendanceInsightsProps> = ({ learnerId, empt
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
-            Monthly Attendance Statistics
+            {t('monthlyAttendanceStats', 'Monthly Attendance Statistics')}
           </CardTitle>
-          <CardDescription>Present, late, absent, and excused days by month</CardDescription>
+          <CardDescription>{t('monthlyAttendanceStatsDesc', 'Present, late, absent, and excused days by month')}</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -101,7 +103,7 @@ const AttendanceInsights: React.FC<AttendanceInsightsProps> = ({ learnerId, empt
             </div>
           ) : monthly.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              {emptyMessage || 'No attendance records yet this term.'}
+              {emptyMessage || t('noAttendanceRecordsTerm', 'No attendance records yet this term.')}
             </p>
           ) : (
             <ResponsiveContainer width="100%" height={280}>
@@ -110,10 +112,10 @@ const AttendanceInsights: React.FC<AttendanceInsightsProps> = ({ learnerId, empt
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="present" stackId="a" fill="#22c55e" name="Present" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="late" stackId="a" fill="#f59e0b" name="Late" />
-                <Bar dataKey="excused" stackId="a" fill="#3b82f6" name="Excused" />
-                <Bar dataKey="absent" stackId="a" fill="#ef4444" name="Absent" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="present" stackId="a" fill="#22c55e" name={t('present', 'Present')} radius={[0, 0, 0, 0]} />
+                <Bar dataKey="late" stackId="a" fill="#f59e0b" name={t('late', 'Late')} />
+                <Bar dataKey="excused" stackId="a" fill="#3b82f6" name={t('excused', 'Excused')} />
+                <Bar dataKey="absent" stackId="a" fill="#ef4444" name={t('absent', 'Absent')} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -123,15 +125,15 @@ const AttendanceInsights: React.FC<AttendanceInsightsProps> = ({ learnerId, empt
       {/* Attendance trends */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Attendance Trends</CardTitle>
-          <CardDescription>Attendance rate by month, in order</CardDescription>
+          <CardTitle className="text-base">{t('attendanceTrends', 'Attendance Trends')}</CardTitle>
+          <CardDescription>{t('attendanceTrendsDesc', 'Attendance rate by month, in order')}</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
             <Skeleton className="h-56 w-full" />
           ) : error ? null : monthly.length < 2 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              At least two months of records are needed to show a trend.
+              {t('attendanceTrendMinMonths', 'At least two months of records are needed to show a trend.')}
             </p>
           ) : (
             <ResponsiveContainer width="100%" height={240}>
@@ -139,7 +141,7 @@ const AttendanceInsights: React.FC<AttendanceInsightsProps> = ({ learnerId, empt
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(v: number) => [`${v}%`, 'Attendance rate']} />
+                <Tooltip formatter={(v: number) => [`${v}%`, t('attendanceRate', 'Attendance rate')]} />
                 <Line type="monotone" dataKey="rate" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
