@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CalendarOff } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // NOTE: There's no leave-request system in the backend yet — no table,
 // controller, or route for submitting/tracking leave (only day-by-day
@@ -11,18 +12,20 @@ import { CalendarOff } from 'lucide-react';
 // pattern used in AttendanceInsights.tsx in this folder.
 
 const LeaveRequests: React.FC = () => {
+  const { t } = useLanguage();
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CalendarOff className="h-5 w-5 text-primary" />
-          Leave Requests
+          {t('leaveRequests', 'Leave Requests')}
         </CardTitle>
-        <CardDescription>Request and track time off from school</CardDescription>
+        <CardDescription>{t('leaveRequestsDesc', 'Request and track time off from school')}</CardDescription>
       </CardHeader>
       <CardContent>
         <p className="py-8 text-center text-sm text-muted-foreground">
-          Leave requests aren't available yet. Contact your class teacher or the school office directly for now.
+          {t('leaveRequestsNotAvailable', "Leave requests aren't available yet. Contact your class teacher or the school office directly for now.")}
         </p>
       </CardContent>
     </Card>
