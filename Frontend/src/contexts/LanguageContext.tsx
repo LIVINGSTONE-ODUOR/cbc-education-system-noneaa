@@ -259,6 +259,28 @@ const TRANSLATIONS: Record<string, Record<LanguageCode, string>> = {
   couldNotMarkResolved: { en: 'Could not mark this as resolved.', sw: 'Imeshindwa kuweka hii kama imetatuliwa.' },
   couldNotDeletePost: { en: 'Could not delete this post.', sw: 'Imeshindwa kufuta chapisho hili.' },
   deleteConfirm: { en: 'Delete this post?', sw: 'Futa chapisho hili?' },
+
+  // TeacherComments.tsx
+  teacherComments: { en: 'Teacher Comments', sw: 'Maoni ya Walimu' },
+  teacherCommentsDesc: { en: 'Feedback your teachers have left for you', sw: 'Maoni ambayo walimu wako wamekuachia' },
+  failedToLoadTeacherComments: { en: 'Failed to load teacher comments', sw: 'Imeshindwa kupakia maoni ya walimu' },
+  noTeacherCommentsYet: { en: 'No teacher comments yet.', sw: 'Hakuna maoni ya walimu bado.' },
+  teacherFallback: { en: 'Teacher', sw: 'Mwalimu' },
+
+  // StudyStreakTracker.tsx
+  studyStreak: { en: 'Study Streak', sw: 'Mfuatano wa Masomo' },
+  studyStreakDesc: {
+    en: "Consecutive school days you've shown up and engaged.",
+    sw: 'Siku mfululizo za shule ulizohudhuria na kushiriki.',
+  },
+  couldNotLoadStreak: { en: 'Could not load your streak right now.', sw: 'Imeshindwa kupakia mfuatano wako kwa sasa.' },
+  inARow: { en: 'in a row', sw: 'mfululizo' },
+  bestStreakPrefix: { en: 'Best streak:', sw: 'Mfuatano Bora:' },
+  streakMsgZero: { en: 'Show up tomorrow to start a new streak.', sw: 'Hudhuria kesho kuanza mfuatano mpya.' },
+  streakMsgOne: { en: 'Nice start — keep it going tomorrow.', sw: 'Mwanzo mzuri — endelea kesho.' },
+  streakMsgBuilding: { en: "You're building momentum.", sw: 'Unajenga kasi.' },
+  streakMsgConsistent: { en: "Great consistency — don't break it now.", sw: 'Uthabiti mzuri — usiukatize sasa.' },
+  streakMsgOutstanding: { en: "Outstanding streak — you're on fire!", sw: 'Mfuatano wa kipekee — umewaka moto!' },
 };
 
 export type TranslationKey = keyof typeof TRANSLATIONS;
