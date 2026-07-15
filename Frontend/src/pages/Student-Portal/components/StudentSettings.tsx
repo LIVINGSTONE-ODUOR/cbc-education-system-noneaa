@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { KeyRound, UserRound, BellRing, SunMoon, Languages } from 'lucide-react';
 import DeviceSessionHistory from './DeviceSessionHistory';
 import OfflineAccess from './OfflineAccess';
+import { useLanguage, type LanguageCode } from '@/contexts/LanguageContext';
 import {
   getProfile,
   updatePersonalInfo,
@@ -46,7 +47,6 @@ const PREF_ROWS: { key: keyof NotificationPreferences; label: string; descriptio
 ];
 
 const THEME_KEY = 'theme-mode';
-const LANGUAGE_KEY = 'app-language';
 
 const LANGUAGE_OPTIONS = [
   { value: 'en', label: 'English' },
@@ -88,11 +88,8 @@ const StudentSettings: React.FC = () => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
-  // Language
-  const [language, setLanguage] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'en';
-    return localStorage.getItem(LANGUAGE_KEY) || 'en';
-  });
+  // Language (shared app-wide via LanguageContext)
+  const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => {
     (async () => {
@@ -175,8 +172,7 @@ const StudentSettings: React.FC = () => {
   };
 
   const handleLanguageChange = (value: string) => {
-    setLanguage(value);
-    localStorage.setItem(LANGUAGE_KEY, value);
+    setLanguage(value as LanguageCode);
   };
 
   if (loading) {
@@ -333,27 +329,27 @@ const StudentSettings: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <Languages className="h-5 w-5 text-primary" /> Language Settings
+            <Languages className="h-5 w-5 text-primary" /> {t('languageSettings')}
           </CardTitle>
-          <CardDescription>Choose your preferred display language.</CardDescription>
+          <CardDescription>{t('languageSettingsDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-1 max-w-xs">
-            <Label htmlFor="language">Language</Label>
+            <Label htmlFor="language">{t('language')}</Label>
             <Select value={language} onValueChange={handleLanguageChange}>
               <SelectTrigger id="language">
-                <SelectValue placeholder="Select a language" />
+                <SelectValue placeholder={t('language')} />
               </SelectTrigger>
               <SelectContent>
                 {LANGUAGE_OPTIONS.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
+                    {t(opt.value === 'en' ? 'english' : 'kiswahili')}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground pt-1">
-              Your preference is saved on this device.
+              {t('preferenceSaved')}
             </p>
           </div>
         </CardContent>
