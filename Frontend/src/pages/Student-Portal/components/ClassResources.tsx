@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { FileText, FolderOpen } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // NOTE: The backend has no endpoints yet for teacher-uploaded learning
 // materials/notes or class resources (PDFs, videos, links) — only
@@ -13,19 +14,21 @@ import { FileText, FolderOpen } from 'lucide-react';
 // SyllabusOutline.tsx in this folder.
 
 const ClassResources: React.FC = () => {
+  const { t } = useLanguage();
+
   return (
     <>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            Learning Materials &amp; Notes
+            {t('learningMaterialsNotes', 'Learning Materials & Notes')}
           </CardTitle>
-          <CardDescription>Notes and study material shared by your teachers</CardDescription>
+          <CardDescription>{t('learningMaterialsNotesDesc', 'Notes and study material shared by your teachers')}</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="py-8 text-center text-sm text-muted-foreground">
-            Your teachers haven't published any learning materials or notes yet. Check back later.
+            {t('noLearningMaterialsYet', "Your teachers haven't published any learning materials or notes yet. Check back later.")}
           </p>
         </CardContent>
       </Card>
@@ -34,13 +37,13 @@ const ClassResources: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FolderOpen className="h-5 w-5 text-primary" />
-            Class Resources
+            {t('classResources', 'Class Resources')}
           </CardTitle>
-          <CardDescription>PDFs, videos, and links shared for your class</CardDescription>
+          <CardDescription>{t('classResourcesDesc', 'PDFs, videos, and links shared for your class')}</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="py-8 text-center text-sm text-muted-foreground">
-            No class resources have been shared yet. Anything your teachers add will show up here.
+            {t('noClassResourcesYet', 'No class resources have been shared yet. Anything your teachers add will show up here.')}
           </p>
         </CardContent>
       </Card>
