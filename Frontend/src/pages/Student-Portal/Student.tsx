@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import {
   Table,
   TableBody,
@@ -12,7 +14,11 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
-import { BookOpen, Calendar, ClipboardList, AlertCircle, CalendarCheck, TrendingUp, Megaphone, CalendarDays, Settings } from 'lucide-react';
+import {
+  BookOpen, Calendar, ClipboardList, AlertCircle, CalendarCheck, TrendingUp, Megaphone,
+  CalendarDays, Settings, LayoutDashboard, GraduationCap, MessageSquare, Users,
+  NotebookPen, PackageSearch, MapPin, Briefcase, ChevronLeft, ChevronRight, LogOut,
+} from 'lucide-react';
 import MarksPanel from '@/components/marks/MarksPanel';
 import { getMyResults, ExamSummary, PerformanceLevel } from '@/lib/api/resultsApi';
 import { getLearners } from '@/lib/api/learnersApi';
@@ -102,9 +108,29 @@ const formatDate = (value: string | null): string | null => {
   return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 };
 
+const SIDEBAR_NAV_ITEMS = [
+  { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { value: 'academics', label: 'Academics', icon: GraduationCap },
+  { value: 'marks', label: 'Marks', icon: BookOpen },
+  { value: 'attendance', label: 'Attendance', icon: CalendarCheck },
+  { value: 'communication', label: 'Communication', icon: MessageSquare },
+  { value: 'groups', label: 'Study Groups', icon: Users },
+  { value: 'notebook', label: 'Notebook', icon: NotebookPen },
+  { value: 'lostfound', label: 'Lost & Found', icon: PackageSearch },
+  { value: 'campusmap', label: 'Campus Map', icon: MapPin },
+  { value: 'portfolio', label: 'Portfolio', icon: Briefcase },
+];
+
 const StudentPortal = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const [learner, setLearner] = useState<StudentLearner | null>(null);
   const [loadingLearner, setLoadingLearner] = useState(true);
@@ -240,29 +266,93 @@ const StudentPortal = () => {
   return (
     <div className="student-portal-theme min-h-screen bg-background">
       <div className="container mx-auto max-w-7xl px-2 sm:px-4 py-6 md:py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start w-full">
-          {/* Left: quick actions only */}
-          <div className="order-1 lg:order-1 lg:col-span-3 space-y-3 min-w-0">
-            <Card className="border-border/60 shadow-sm">
-              <CardHeader className="py-3 px-3">
-                <CardTitle className="text-sm font-serif italic text-accent font-normal">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-1.5 px-3 pb-3">
-                <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('attendance')}>
-                  <Calendar className="mr-2 h-3.5 w-3.5" /> View Attendance
-                </Button>
-                <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('marks')}>
-                  <BookOpen className="mr-2 h-3.5 w-3.5" /> View Marks
-                </Button>
-                <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('dashboard')}>
-                  <ClipboardList className="mr-2 h-3.5 w-3.5" /> View Assignments
-                </Button>
-              </CardContent>
-            </Card>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col lg:flex-row gap-4 items-start w-full">
+          {/* Left: collapsible sidebar navigation, styled like the school-admin sidebar */}
+          <div className={cn('order-1 w-full min-w-0 flex-shrink-0 transition-all duration-300', sidebarCollapsed ? 'lg:w-20' : 'lg:w-64')}>
+            <div className="rounded-2xl bg-[#152C21] border border-[#2A4A3A] flex flex-col overflow-hidden sticky top-6">
+              {/* Header */}
+              <div className="flex items-center justify-between gap-2 px-3 py-4 border-b border-[#2A4A3A]">
+                {!sidebarCollapsed && (
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0 ring-1 ring-amber-300/40">
+                      <GraduationCap className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm text-white truncate">{user?.schoolName || 'School'}</p>
+                      <p className="text-xs text-emerald-200/60 truncate">Student Portal</p>
+                    </div>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setSidebarCollapsed((prev) => !prev)}
+                  className="p-2 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0"
+                  aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                  title={sidebarCollapsed ? 'Expand' : 'Collapse'}
+                >
+                  {sidebarCollapsed ? (
+                    <ChevronRight className="w-4 h-4 text-emerald-200/70" />
+                  ) : (
+                    <ChevronLeft className="w-4 h-4 text-emerald-200/70" />
+                  )}
+                </button>
+              </div>
+
+              {/* Navigation */}
+              <nav className="flex-1 py-3 px-2 space-y-1">
+                {SIDEBAR_NAV_ITEMS.map(({ value, label, icon: Icon }) => {
+                  const isActive = activeTab === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setActiveTab(value)}
+                      title={sidebarCollapsed ? label : undefined}
+                      className={cn(
+                        'w-full flex items-center gap-3 rounded-lg h-10 text-sm font-medium transition-all duration-200',
+                        sidebarCollapsed ? 'justify-center px-2' : 'px-3',
+                        isActive
+                          ? 'bg-gradient-to-r from-amber-500/20 to-transparent text-amber-300 border-r-2 border-amber-400 shadow-sm'
+                          : 'text-emerald-100/80 hover:bg-white/5 hover:text-white'
+                      )}
+                    >
+                      <Icon className={cn('w-5 h-5 flex-shrink-0', isActive && 'text-amber-300')} />
+                      {!sidebarCollapsed && <span className="truncate">{label}</span>}
+                    </button>
+                  );
+                })}
+              </nav>
+
+              {/* User footer */}
+              <div className="flex-shrink-0 border-t border-[#2A4A3A] p-3">
+                <div className={cn('flex items-center gap-2 mb-2', sidebarCollapsed && 'justify-center')}>
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-white">{initials || 'S'}</span>
+                  </div>
+                  {!sidebarCollapsed && (
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{displayName || 'Student'}</p>
+                      <p className="text-xs text-emerald-200/60 truncate">student</p>
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className={cn(
+                    'w-full flex items-center gap-2 rounded-lg h-9 text-sm text-red-300 hover:bg-white/5 transition-colors',
+                    sidebarCollapsed ? 'justify-center' : 'px-3'
+                  )}
+                >
+                  <LogOut className="w-4 h-4 flex-shrink-0" />
+                  {!sidebarCollapsed && <span>Sign out</span>}
+                </button>
+              </div>
+            </div>
           </div>
 
-          {/* Right: profile card, credits (small), vertical tab nav, then Account & Settings pinned last */}
-          <div className="order-2 lg:order-3 lg:col-span-3 space-y-3 min-w-0">
+          {/* Right: profile card, quick actions, credits (small), then Account & Settings pinned last */}
+          <div className="order-2 lg:order-3 w-full lg:w-72 flex-shrink-0 space-y-3 min-w-0">
             <Card className="overflow-hidden border-border/60 shadow-sm">
               <div className="h-10 bg-gradient-to-r from-primary to-primary/80" />
               <CardContent className="pt-0 px-3 pb-3">
@@ -319,22 +409,26 @@ const StudentPortal = () => {
               </CardContent>
             </Card>
 
+            <Card className="border-border/60 shadow-sm">
+              <CardHeader className="py-3 px-3">
+                <CardTitle className="text-sm font-serif italic text-accent font-normal">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1.5 px-3 pb-3">
+                <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('attendance')}>
+                  <Calendar className="mr-2 h-3.5 w-3.5" /> View Attendance
+                </Button>
+                <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('marks')}>
+                  <BookOpen className="mr-2 h-3.5 w-3.5" /> View Marks
+                </Button>
+                <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('dashboard')}>
+                  <ClipboardList className="mr-2 h-3.5 w-3.5" /> View Assignments
+                </Button>
+              </CardContent>
+            </Card>
+
             <div className="origin-top scale-[0.85] -mb-3 -mr-2">
               <CreditsPointsSystem learnerId={learner?.id || ''} />
             </div>
-
-            <TabsList className="flex flex-col h-auto w-full items-stretch gap-1 rounded-2xl bg-muted/70 p-2">
-              <TabsTrigger value="dashboard" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Dashboard</TabsTrigger>
-              <TabsTrigger value="academics" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Academics</TabsTrigger>
-              <TabsTrigger value="marks" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Marks</TabsTrigger>
-              <TabsTrigger value="attendance" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Attendance</TabsTrigger>
-              <TabsTrigger value="communication" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Communication</TabsTrigger>
-              <TabsTrigger value="groups" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Study Groups</TabsTrigger>
-              <TabsTrigger value="notebook" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Notebook</TabsTrigger>
-              <TabsTrigger value="lostfound" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Lost &amp; Found</TabsTrigger>
-              <TabsTrigger value="campusmap" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Campus Map</TabsTrigger>
-              <TabsTrigger value="portfolio" className="w-full justify-start rounded-xl px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">Portfolio</TabsTrigger>
-            </TabsList>
 
             <Button
               variant={activeTab === 'settings' ? 'default' : 'outline'}
@@ -347,7 +441,7 @@ const StudentPortal = () => {
           </div>
 
           {/* Middle: active tab's content */}
-          <div className="order-3 lg:order-2 lg:col-span-6 space-y-6 min-w-0">
+          <div className="order-3 lg:order-2 flex-1 w-full space-y-6 min-w-0">
               {/* Dashboard Tab */}
               <TabsContent value="dashboard" className="space-y-6">
                 {/* Quick summary cards */}
