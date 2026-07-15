@@ -39,6 +39,7 @@ import AttendanceInsights from './components/AttendanceInsights';
 import LeaveRequests from './components/LeaveRequests';
 import StudentAssignments from './components/StudentAssignments';
 import AssignmentReminders from './components/AssignmentReminders';
+import StudentSettings from './components/StudentSettings';
 import Messages from '../Parent-Portal/components/Messages';
 import Announcements from '../Parent-Portal/components/Announcements';
 import PerformanceTrends from '@/components/marks/PerformanceTrends';
@@ -304,12 +305,13 @@ const StudentPortal = () => {
           {/* Main content */}
           <div className="col-span-1 md:col-span-3 space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-5 mb-8">
+              <TabsList className="grid grid-cols-6 mb-8">
                 <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                 <TabsTrigger value="academics">Academics</TabsTrigger>
                 <TabsTrigger value="marks">Marks</TabsTrigger>
                 <TabsTrigger value="attendance">Attendance</TabsTrigger>
                 <TabsTrigger value="communication">Communication</TabsTrigger>
+                <TabsTrigger value="settings">Account &amp; Settings</TabsTrigger>
               </TabsList>
 
               {/* Dashboard Tab */}
@@ -604,6 +606,11 @@ const StudentPortal = () => {
                   />
                 )}
                 <Announcements />
+              </TabsContent>
+
+              {/* Account & Settings Tab */}
+              <TabsContent value="settings" className="space-y-6">
+                <StudentSettings />
               </TabsContent>
             </Tabs>
           </div>
