@@ -17,6 +17,7 @@ import {
   Send,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { getStatusHomePath } from '@/utils/hostRouting';
 import { toast } from '@/components/ui/sonner';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -169,7 +170,7 @@ export default function ReportIncidentPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate('/status')}
+                onClick={() => navigate(getStatusHomePath())}
                 className="gap-2 text-muted-foreground hover:text-foreground"
               >
                 <ArrowLeft size={16} />
@@ -192,7 +193,7 @@ export default function ReportIncidentPage() {
                       Thank you for reporting this incident. Our team will review it and take appropriate action.
                     </p>
                     <div className="flex gap-3 justify-center pt-2">
-                      <Button onClick={() => navigate('/status')} variant="outline" className="gap-2">
+                      <Button onClick={() => navigate(getStatusHomePath())} variant="outline" className="gap-2">
                         <ArrowLeft size={16} />
                         Back to Status
                       </Button>
@@ -352,7 +353,7 @@ export default function ReportIncidentPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => navigate('/status')}
+                    onClick={() => navigate(getStatusHomePath())}
                   >
                     Cancel
                   </Button>
