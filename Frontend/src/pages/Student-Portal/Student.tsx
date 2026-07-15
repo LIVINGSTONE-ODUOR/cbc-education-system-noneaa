@@ -45,6 +45,7 @@ import ExamCountdownTimer from './components/ExamCountdownTimer';
 import ClassRankMovement from './components/ClassRankMovement';
 import CreditsPointsSystem from './components/CreditsPointsSystem';
 import DigitalNotebook from './components/DigitalNotebook';
+import PeerStudyGroups from './components/PeerStudyGroups';
 import Messages from '../Parent-Portal/components/Messages';
 import Announcements from '../Parent-Portal/components/Announcements';
 import PerformanceTrends from '@/components/marks/PerformanceTrends';
@@ -310,12 +311,13 @@ const StudentPortal = () => {
           {/* Main content */}
           <div className="col-span-1 md:col-span-3 space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-7 mb-8">
+              <TabsList className="grid grid-cols-8 mb-8">
                 <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                 <TabsTrigger value="academics">Academics</TabsTrigger>
                 <TabsTrigger value="marks">Marks</TabsTrigger>
                 <TabsTrigger value="attendance">Attendance</TabsTrigger>
                 <TabsTrigger value="communication">Communication</TabsTrigger>
+                <TabsTrigger value="groups">Study Groups</TabsTrigger>
                 <TabsTrigger value="notebook">Notebook</TabsTrigger>
                 <TabsTrigger value="settings">Account &amp; Settings</TabsTrigger>
               </TabsList>
@@ -620,6 +622,11 @@ const StudentPortal = () => {
                   />
                 )}
                 <Announcements />
+              </TabsContent>
+
+              {/* Peer Study Groups Tab */}
+              <TabsContent value="groups" className="space-y-6">
+                <PeerStudyGroups />
               </TabsContent>
 
               {/* Digital Notebook Tab */}
