@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
   Table,
@@ -124,7 +124,12 @@ const SIDEBAR_NAV_ITEMS = [
 const StudentPortal = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const { tab: tabParam } = useParams();
+  const VALID_TABS = [...SIDEBAR_NAV_ITEMS.map((item) => item.value), 'settings'];
+  const activeTab = tabParam && VALID_TABS.includes(tabParam) ? tabParam : 'dashboard';
+  const setActiveTab = (value: string) => {
+    navigate(value === 'dashboard' ? '/student/portal' : `/student/portal/${value}`);
+  };
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleLogout = () => {
