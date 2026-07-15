@@ -362,7 +362,7 @@ const StudentPortal = () => {
           </div>
 
           {/* Right: profile card, quick actions, credits (small) */}
-          <div className="order-2 lg:order-3 w-full lg:w-72 flex-shrink-0 space-y-3 min-w-0">
+          <div className="order-2 lg:order-3 w-full lg:w-72 flex-shrink-0 space-y-3 min-w-0 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
             <Card className="overflow-hidden border-border/60 shadow-sm">
               <div className="h-10 bg-gradient-to-r from-primary to-primary/80" />
               <CardContent className="pt-0 px-3 pb-3">
