@@ -15,6 +15,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { KeyRound, UserRound, BellRing, SunMoon, Languages } from 'lucide-react';
 import DeviceSessionHistory from './DeviceSessionHistory';
+import OfflineAccess from './OfflineAccess';
 import {
   getProfile,
   updatePersonalInfo,
@@ -324,6 +325,9 @@ const StudentSettings: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Offline access / PWA install */}
+      <OfflineAccess />
 
       {/* Language settings */}
       <Card>
