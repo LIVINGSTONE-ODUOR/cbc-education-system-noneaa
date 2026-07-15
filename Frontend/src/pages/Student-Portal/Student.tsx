@@ -47,6 +47,7 @@ import CreditsPointsSystem from './components/CreditsPointsSystem';
 import DigitalNotebook from './components/DigitalNotebook';
 import PeerStudyGroups from './components/PeerStudyGroups';
 import RecommendedResources from './components/RecommendedResources';
+import LearningHeatmap from './components/LearningHeatmap';
 import Messages from '../Parent-Portal/components/Messages';
 import Announcements from '../Parent-Portal/components/Announcements';
 import PerformanceTrends from '@/components/marks/PerformanceTrends';
@@ -583,6 +584,9 @@ const StudentPortal = () => {
                   learnerId={learner?.id || ''}
                   emptyMessage="At least two exams are needed to show performance trends."
                 />
+
+                {/* Learning heatmap — visual grid of strong/weak topics across exams */}
+                <LearningHeatmap exams={exams} emptyMessage="No exam results yet — the heatmap will appear once your marks are recorded." />
 
                 {/* Grade history */}
                 <GradeHistory exams={exams} emptyMessage="No exams have been recorded for you yet." />
