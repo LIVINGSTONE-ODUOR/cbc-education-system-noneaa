@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CalendarClock } from 'lucide-react';
 import type { LearnerUpcomingExam } from '@/lib/api/examApi';
+import { useLanguage, type TranslationKey } from '@/contexts/LanguageContext';
 
 interface ExamCountdownTimerProps {
   exams: LearnerUpcomingExam[];
@@ -18,15 +19,16 @@ const daysUntil = (isoDate: string): number => {
   return Math.round((target.getTime() - today.getTime()) / MS_PER_DAY);
 };
 
-const formatCountdown = (exam: LearnerUpcomingExam): string => {
+const formatCountdown = (exam: LearnerUpcomingExam, t: (key: TranslationKey) => string): string => {
   const days = daysUntil(exam.start_date);
-  if (days < 0) return `${exam.exam_name} is underway.`;
-  if (days === 0) return `${exam.exam_name} begins today.`;
-  if (days === 1) return `${exam.exam_name} begins tomorrow.`;
-  return `${exam.exam_name} begins in ${days} days.`;
+  if (days < 0) return t('examUnderway').replace('{exam}', exam.exam_name);
+  if (days === 0) return t('examBeginsToday').replace('{exam}', exam.exam_name);
+  if (days === 1) return t('examBeginsTomorrow').replace('{exam}', exam.exam_name);
+  return t('examBeginsInDays').replace('{exam}', exam.exam_name).replace('{n}', String(days));
 };
 
 const ExamCountdownTimer: React.FC<ExamCountdownTimerProps> = ({ exams, loading }) => {
+  const { t } = useLanguage();
   // Exams are already filtered to "upcoming" by the backend; just make sure
   // the soonest one is first, in case the API order ever changes.
   const sorted = useMemo(
@@ -41,15 +43,15 @@ const ExamCountdownTimer: React.FC<ExamCountdownTimerProps> = ({ exams, loading 
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CalendarClock className="h-5 w-5 text-primary" />
-          Exam Countdown
+          {t('examCountdown')}
         </CardTitle>
-        <CardDescription>Time left until your next exam.</CardDescription>
+        <CardDescription>{t('examCountdownDesc')}</CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">{t('loadingWord')}</p>
         ) : !next ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">No exams scheduled yet.</p>
+          <p className="py-4 text-center text-sm text-muted-foreground">{t('noExamsScheduledYet')}</p>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center gap-6">
@@ -58,14 +60,14 @@ const ExamCountdownTimer: React.FC<ExamCountdownTimerProps> = ({ exams, loading 
                   {Math.max(daysUntil(next.start_date), 0)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  day{Math.max(daysUntil(next.start_date), 0) === 1 ? '' : 's'} left
+                  {t('daysLeftWord')}
                 </p>
               </div>
               <div>
-                <p className="text-sm font-medium">{formatCountdown(next)}</p>
+                <p className="text-sm font-medium">{formatCountdown(next, t)}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {next.exam_type}
-                  {next.term ? ` · ${next.term.name} ${next.term.year}` : ''} · starts{' '}
+                  {next.term ? ` · ${next.term.name} ${next.term.year}` : ''} · {t('startsWord')}{' '}
                   {new Date(next.start_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                 </p>
               </div>
@@ -73,12 +75,12 @@ const ExamCountdownTimer: React.FC<ExamCountdownTimerProps> = ({ exams, loading 
 
             {following.length > 0 && (
               <div className="space-y-2 pt-2 border-t">
-                <p className="text-xs font-medium text-muted-foreground">Also coming up</p>
+                <p className="text-xs font-medium text-muted-foreground">{t('alsoComingUp')}</p>
                 {following.map((e) => (
                   <div key={e.id} className="flex items-center justify-between text-sm">
                     <span>{e.exam_name}</span>
                     <span className="text-muted-foreground">
-                      {Math.max(daysUntil(e.start_date), 0)} day{Math.max(daysUntil(e.start_date), 0) === 1 ? '' : 's'}
+                      {Math.max(daysUntil(e.start_date), 0)} {t('daysWord')}
                     </span>
                   </div>
                 ))}
