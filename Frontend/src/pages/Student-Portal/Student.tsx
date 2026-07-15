@@ -37,6 +37,8 @@ import TeacherComments from './components/TeacherComments';
 import GradeHistory from './components/GradeHistory';
 import AttendanceInsights from './components/AttendanceInsights';
 import LeaveRequests from './components/LeaveRequests';
+import StudentAssignments from './components/StudentAssignments';
+import AssignmentReminders from './components/AssignmentReminders';
 import PerformanceTrends from '@/components/marks/PerformanceTrends';
 
 const GRADE_STYLES: Record<PerformanceLevel, string> = {
@@ -475,8 +477,11 @@ const StudentPortal = () => {
                 {/* Syllabus and course outline */}
                 <SyllabusOutline gradeLevel={learner?.grade_level || null} />
 
-                {/* Homework and assignments */}
-                <Assignments learnerId={learner?.id || ''} emptyMessage="No homework or assignments have been posted yet." />
+                {/* Homework and assignments, with real file-upload submission */}
+                <StudentAssignments learnerId={learner?.id || ''} emptyMessage="No homework or assignments have been posted yet." />
+
+                {/* Reminder notifications — due-soon / overdue, derived from due dates */}
+                <AssignmentReminders learnerId={learner?.id || ''} />
 
                 <Card>
                   <CardHeader>
