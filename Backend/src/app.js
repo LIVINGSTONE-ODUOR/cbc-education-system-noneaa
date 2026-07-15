@@ -191,6 +191,7 @@ app.use('/api/v1/results', require('./routes/results.routes'));
 app.use('/api/v1/assignments', require('./routes/assignment.routes'));
 app.use('/api/v1/study-groups', require('./routes/studyGroup.routes'));
 app.use('/api/v1/lost-found', require('./routes/lostFound.routes'));
+app.use('/api/v1/campus-locations', require('./routes/campusLocation.routes'));
 
 app.use('/api/v1/register', require('./routes/register.routes'));
 
