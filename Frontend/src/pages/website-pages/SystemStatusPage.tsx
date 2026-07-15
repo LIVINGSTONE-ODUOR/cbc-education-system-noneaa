@@ -22,6 +22,7 @@ import {
   CircleDot,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { getReportIncidentPath } from '@/utils/hostRouting';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -225,7 +226,7 @@ export default function SystemStatusPage() {
     try {
       const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
       const { data, error } = await supabase
-        .from('incident_reports')
+        .from('public_incident_reports') // safe view — see create_incident_reports_table.sql
         .select('id, title, description, severity, affected_service, status, created_at, updated_at')
         .gte('created_at', ninetyDaysAgo)
         .order('created_at', { ascending: false })
@@ -355,7 +356,7 @@ export default function SystemStatusPage() {
                 <RefreshCw size={14} />
                 Refresh
               </Button>
-              <Button size="sm" variant="destructive" onClick={() => navigate('/status/report-incident')} className="gap-2">
+              <Button size="sm" variant="destructive" onClick={() => navigate(getReportIncidentPath())} className="gap-2">
                 <Flag size={14} />
                 Report Incident
               </Button>
@@ -427,7 +428,7 @@ export default function SystemStatusPage() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Past Incidents</h2>
-                <Button size="sm" variant="ghost" onClick={() => navigate('/status/report-incident')} className="gap-2 text-xs h-7">
+                <Button size="sm" variant="ghost" onClick={() => navigate(getReportIncidentPath())} className="gap-2 text-xs h-7">
                   <Flag size={12} />
                   Report an issue
                 </Button>
