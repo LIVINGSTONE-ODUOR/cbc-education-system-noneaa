@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarRange, AlertCircle } from 'lucide-react';
 import type { ExamSummary } from '@/lib/api/resultsApi';
 import type { LearnerUpcomingExam } from '@/lib/api/examApi';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ExamRevisionPlannerProps {
   /** Past results — reused to weight the plan toward weaker subjects. */
@@ -38,7 +39,7 @@ const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDat
 const subjectWeightsFrom = (exams: ExamSummary[]): SubjectWeight[] => {
   const totals: Record<string, { sum: number; count: number }> = {};
   exams.forEach((exam) => {
-    (exam.subjects || []).forEach((s) => {
+    exam.subjects.forEach((s) => {
       if (s.is_absent || !s.learning_area?.name) return;
       const name = s.learning_area.name;
       if (!totals[name]) totals[name] = { sum: 0, count: 0 };
@@ -111,6 +112,7 @@ const buildPlan = (weights: SubjectWeight[], examDate: Date): PlanDay[] => {
 const formatDay = (d: Date) => d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 
 const ExamRevisionPlanner: React.FC<ExamRevisionPlannerProps> = ({ exams, upcomingExams, loading, emptyMessage }) => {
+  const { t } = useLanguage();
   const nextExam = useMemo(
     () => [...upcomingExams].sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())[0] || null,
     [upcomingExams]
@@ -135,12 +137,12 @@ const ExamRevisionPlanner: React.FC<ExamRevisionPlannerProps> = ({ exams, upcomi
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CalendarRange className="h-5 w-5 text-primary" />
-          Exam Revision Planner
+          {t('examRevisionPlanner')}
         </CardTitle>
         <CardDescription>
           {nextExam
-            ? `A study schedule leading up to ${nextExam.exam_name}, weighted toward your weaker subjects`
-            : 'A study schedule automatically built ahead of your next exam'}
+            ? t('revisionScheduleFor').replace('{exam}', nextExam.exam_name)
+            : t('revisionScheduleGeneric')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -152,26 +154,25 @@ const ExamRevisionPlanner: React.FC<ExamRevisionPlannerProps> = ({ exams, upcomi
           </div>
         ) : !nextExam ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            {emptyMessage || 'No upcoming exams are scheduled yet — a revision plan will appear once one is.'}
+            {emptyMessage || t('noUpcomingExamsPlan')}
           </p>
         ) : weights.length === 0 ? (
           <div className="flex items-center gap-2 rounded-md border border-amber-300/50 bg-amber-50 p-4 text-sm text-amber-800">
             <AlertCircle className="h-4 w-4 shrink-0" />
-            Not enough exam history yet to weight a plan toward your weaker subjects. Once at least one exam's
-            marks are recorded, the planner will prioritize the topics that need the most attention.
+            {t('notEnoughHistoryForPlan')}
           </div>
         ) : daysUntilExam !== null && daysUntilExam <= 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            {nextExam.exam_name} is today or already underway — good luck!
+            {t('examTodayGoodLuck').replace('{exam}', nextExam.exam_name)}
           </p>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="text-sm text-muted-foreground">
-                {daysUntilExam} day{daysUntilExam === 1 ? '' : 's'} until {nextExam.exam_name}
-                {daysUntilExam! > MAX_PLAN_DAYS ? ` — showing the first ${MAX_PLAN_DAYS} days` : ''}
+                {t('daysUntilExamLabel').replace('{n}', String(daysUntilExam)).replace('{exam}', nextExam.exam_name)}
+                {daysUntilExam! > MAX_PLAN_DAYS ? t('showingFirstDays').replace('{n}', String(MAX_PLAN_DAYS)) : ''}
               </span>
-              <Badge variant="outline">{plan.length} revision day{plan.length === 1 ? '' : 's'} planned</Badge>
+              <Badge variant="outline">{plan.length} {t('revisionDaysPlanned')}</Badge>
             </div>
 
             <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
@@ -180,7 +181,7 @@ const ExamRevisionPlanner: React.FC<ExamRevisionPlannerProps> = ({ exams, upcomi
                   <span className="font-medium w-32 shrink-0">{formatDay(day.date)}</span>
                   <div className="flex flex-wrap gap-1.5 justify-end flex-1">
                     {day.subjects.length === 0 ? (
-                      <span className="text-muted-foreground text-xs">Rest / light review</span>
+                      <span className="text-muted-foreground text-xs">{t('restLightReview')}</span>
                     ) : (
                       day.subjects.map((s) => (
                         <Badge key={s} variant="secondary" className="font-normal">
@@ -194,8 +195,7 @@ const ExamRevisionPlanner: React.FC<ExamRevisionPlannerProps> = ({ exams, upcomi
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Weaker subjects (by average score across your recorded exams) appear more often. Two focus subjects
-              per day, capped at {MAX_PLAN_DAYS} days out.
+              {t('revisionPlannerFooter').replace('{n}', String(MAX_PLAN_DAYS))}
             </p>
           </div>
         )}
