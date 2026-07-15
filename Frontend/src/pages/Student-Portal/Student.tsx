@@ -35,6 +35,8 @@ import SyllabusOutline from './components/SyllabusOutline';
 import ClassResources from './components/ClassResources';
 import TeacherComments from './components/TeacherComments';
 import GradeHistory from './components/GradeHistory';
+import AttendanceInsights from './components/AttendanceInsights';
+import LeaveRequests from './components/LeaveRequests';
 import PerformanceTrends from '@/components/marks/PerformanceTrends';
 
 const GRADE_STYLES: Record<PerformanceLevel, string> = {
@@ -567,7 +569,15 @@ const StudentPortal = () => {
 
               {/* Attendance Tab — real records from the backend */}
               <TabsContent value="attendance" className="space-y-6">
+                {/* Daily attendance records, late arrivals, calendar, and
+                    absence reasons — all in this one existing component. */}
                 <Attendance learnerId={learner?.id || ''} emptyMessage="No attendance records yet this term." />
+
+                {/* Monthly attendance statistics + attendance trends */}
+                <AttendanceInsights learnerId={learner?.id || ''} emptyMessage="No attendance records yet this term." />
+
+                {/* Leave requests */}
+                <LeaveRequests />
               </TabsContent>
             </Tabs>
           </div>
