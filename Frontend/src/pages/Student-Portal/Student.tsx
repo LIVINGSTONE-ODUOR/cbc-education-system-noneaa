@@ -265,7 +265,7 @@ const StudentPortal = () => {
 
   return (
     <div className="student-portal-theme min-h-screen bg-background">
-      <div className="container mx-auto max-w-7xl px-2 sm:px-4 py-6 md:py-8">
+      <div className="w-full px-3 sm:px-4 lg:px-6 py-6 md:py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col lg:flex-row gap-4 items-start w-full">
           {/* Left: collapsible sidebar navigation, styled like the school-admin sidebar */}
           <div className={cn('order-1 w-full min-w-0 flex-shrink-0 transition-all duration-300', sidebarCollapsed ? 'lg:w-20' : 'lg:w-64')}>
@@ -349,9 +349,19 @@ const StudentPortal = () => {
                 </button>
               </div>
             </div>
+
+            <Button
+              variant={activeTab === 'settings' ? 'default' : 'outline'}
+              className={cn('w-full justify-center gap-2 rounded-xl h-11 shadow-sm mt-3', sidebarCollapsed && 'px-0')}
+              onClick={() => setActiveTab('settings')}
+              title={sidebarCollapsed ? 'Account & Settings' : undefined}
+            >
+              <Settings className="h-5 w-5 shrink-0" />
+              {!sidebarCollapsed && <span className="text-sm font-medium">Account &amp; Settings</span>}
+            </Button>
           </div>
 
-          {/* Right: profile card, quick actions, credits (small), then Account & Settings pinned last */}
+          {/* Right: profile card, quick actions, credits (small) */}
           <div className="order-2 lg:order-3 w-full lg:w-72 flex-shrink-0 space-y-3 min-w-0">
             <Card className="overflow-hidden border-border/60 shadow-sm">
               <div className="h-10 bg-gradient-to-r from-primary to-primary/80" />
@@ -429,15 +439,6 @@ const StudentPortal = () => {
             <div className="origin-top scale-[0.85] -mb-3 -mr-2">
               <CreditsPointsSystem learnerId={learner?.id || ''} />
             </div>
-
-            <Button
-              variant={activeTab === 'settings' ? 'default' : 'outline'}
-              className="w-full justify-center gap-2 rounded-xl h-11 shadow-sm"
-              onClick={() => setActiveTab('settings')}
-            >
-              <Settings className="h-5 w-5 shrink-0" />
-              <span className="text-sm font-medium">Account &amp; Settings</span>
-            </Button>
           </div>
 
           {/* Middle: active tab's content */}
