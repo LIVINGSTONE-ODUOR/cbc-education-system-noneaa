@@ -216,11 +216,22 @@ function RootRoute() {
 // of hostname — so clicking "Log in" inside the status page's own Header
 // would render the login page right there on status.noneaa.com. This catches
 // that and bounces the visitor to the real path on the main domain instead.
+// A reserved subdomain's own page can have a small number of sub-paths that
+// should also render in place rather than bounce to the main domain — e.g.
+// status.noneaa.com/report-incident. Keep this minimal; most reserved pages
+// have none.
+const RESERVED_SUBPATHS: Partial<Record<ReturnType<typeof getHostContext>['page'] & string, string[]>> = {
+  status: ['/report-incident'],
+};
+
 function ReservedSubdomainGate({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const host = getHostContext();
   const isRoot = location.pathname === "/" || location.pathname === "";
-  const shouldRedirect = host.type === "reserved" && !isRoot;
+  const isAllowedSubpath =
+    host.type === "reserved" &&
+    (RESERVED_SUBPATHS[host.page]?.includes(location.pathname) ?? false);
+  const shouldRedirect = host.type === "reserved" && !isRoot && !isAllowedSubpath;
 
   useEffect(() => {
     if (shouldRedirect) {
@@ -241,6 +252,18 @@ function ReservedSubdomainGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// ─── Report Incident Route (hostname-aware) ────────────────────────────────
+// "/report-incident" only makes sense on status.noneaa.com, where it's the
+// status page's own sub-route (see RESERVED_SUBPATHS above). Anywhere else
+// the path is meaningless, so send visitors home instead of rendering it.
+function StatusReportIncidentRoute() {
+  const host = getHostContext();
+  if (host.type === "reserved" && host.page === "status") {
+    return <ReportIncidentPage />;
+  }
+  return <Navigate to="/" replace />;
+}
+
 // ─── App Routes ───────────────────────────────────────────────────────────────
 function AppRoutes() {
   return (
@@ -248,6 +271,7 @@ function AppRoutes() {
       {/* ── Public Routes ── */}
       <Route path="/explore" element={<HomePage />} />
       <Route path="/" element={<RootRoute />} />
+      <Route path="/report-incident" element={<StatusReportIncidentRoute />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/resources" element={<EducationalResourcesPage />} />
       <Route path="/analytics" element={<NoneaaPlatformPage />} />
