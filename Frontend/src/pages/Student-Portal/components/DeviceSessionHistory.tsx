@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Laptop, Smartphone, Tablet, Monitor, AlertCircle } from 'lucide-react';
+import { Laptop, Smartphone, Tablet, Monitor, AlertCircle, ChevronDown } from 'lucide-react';
 import { getMySessions, revokeSession, type UserSession } from '@/lib/api/sessionsApi';
 
 // Lightweight user-agent parsing — good enough to show "Chrome on Windows"
@@ -39,8 +39,10 @@ const formatDateTime = (iso: string) =>
   new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 
 const DeviceSessionHistory: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [sessions, setSessions] = useState<UserSession[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<string | null>(null);
 
@@ -54,12 +56,17 @@ const DeviceSessionHistory: React.FC = () => {
       setError(err.message || 'Failed to load your session history');
     } finally {
       setLoading(false);
+      setHasLoaded(true);
     }
   };
 
+  // Lazy-load: only hit the sessions endpoint the first time the card is
+  // expanded, instead of on every settings page visit.
   useEffect(() => {
-    load();
-  }, []);
+    if (isOpen && !hasLoaded) {
+      load();
+    }
+  }, [isOpen, hasLoaded]);
 
   const handleRevoke = async (id: string) => {
     setRevokingId(id);
@@ -75,12 +82,25 @@ const DeviceSessionHistory: React.FC = () => {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Laptop className="h-5 w-5 text-primary" /> Device &amp; Session History
-        </CardTitle>
-        <CardDescription>Everywhere your account is currently signed in.</CardDescription>
-      </CardHeader>
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-expanded={isOpen}
+        className="w-full text-left"
+      >
+        <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+          <div>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Laptop className="h-5 w-5 text-primary" /> Device &amp; Session History
+            </CardTitle>
+            <CardDescription>Everywhere your account is currently signed in.</CardDescription>
+          </div>
+          <ChevronDown
+            className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          />
+        </CardHeader>
+      </button>
+      {isOpen && (
       <CardContent className="space-y-3">
         {loading ? (
           <div className="space-y-2">
@@ -134,6 +154,7 @@ const DeviceSessionHistory: React.FC = () => {
           Don't recognize a device? Sign it out here, then change your password above.
         </p>
       </CardContent>
+      )}
     </Card>
   );
 };
