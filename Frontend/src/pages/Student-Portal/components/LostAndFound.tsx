@@ -15,6 +15,7 @@ import {
   deleteLostFoundItem,
   type LostFoundItem,
 } from '@/lib/api/lostFoundApi';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof Error && error.message) return error.message;
@@ -24,6 +25,7 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 type FilterType = 'all' | 'lost' | 'found';
 
 const LostAndFound: React.FC = () => {
+  const { t } = useLanguage();
   const [items, setItems] = useState<LostFoundItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,7 @@ const LostAndFound: React.FC = () => {
       });
       setItems(res.data.items || []);
     } catch (e) {
-      setError(getErrorMessage(e, 'Could not load the Lost & Found board.'));
+      setError(getErrorMessage(e, t('couldNotLoadLostFound', 'Could not load the Lost & Found board.')));
     } finally {
       setLoading(false);
     }
@@ -84,7 +86,7 @@ const LostAndFound: React.FC = () => {
       setShowForm(false);
       await refresh();
     } catch (e) {
-      alert(getErrorMessage(e, 'Could not post to the Lost & Found board.'));
+      alert(getErrorMessage(e, t('couldNotPostBoard', 'Could not post to the Lost & Found board.')));
     } finally {
       setPosting(false);
     }
@@ -96,20 +98,20 @@ const LostAndFound: React.FC = () => {
       await resolveLostFoundItem(id);
       await refresh();
     } catch (e) {
-      alert(getErrorMessage(e, 'Could not mark this as resolved.'));
+      alert(getErrorMessage(e, t('couldNotMarkResolved', 'Could not mark this as resolved.')));
     } finally {
       setBusyId(null);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this post?')) return;
+    if (!confirm(t('deleteConfirm', 'Delete this post?'))) return;
     setBusyId(id);
     try {
       await deleteLostFoundItem(id);
       await refresh();
     } catch (e) {
-      alert(getErrorMessage(e, 'Could not delete this post.'));
+      alert(getErrorMessage(e, t('couldNotDeletePost', 'Could not delete this post.')));
     } finally {
       setBusyId(null);
     }
@@ -121,13 +123,13 @@ const LostAndFound: React.FC = () => {
         <div>
           <CardTitle className="flex items-center gap-2">
             <Search className="h-5 w-5 text-primary" />
-            Lost &amp; Found
+            {t('lostAndFound', 'Lost & Found')}
           </CardTitle>
-          <CardDescription>Lost something on campus, or found something? Post it here.</CardDescription>
+          <CardDescription>{t('lostAndFoundDesc', 'Lost something on campus, or found something? Post it here.')}</CardDescription>
         </div>
         {!showForm && (
           <Button size="sm" onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4 mr-1" /> New post
+            <Plus className="h-4 w-4 mr-1" /> {t('newPost', 'New post')}
           </Button>
         )}
       </CardHeader>
@@ -135,72 +137,72 @@ const LostAndFound: React.FC = () => {
         {showForm && (
           <div className="rounded-md border p-3 space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">New Lost &amp; Found post</p>
+              <p className="text-sm font-medium">{t('newLostFoundPost', 'New Lost & Found post')}</p>
               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowForm(false)}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
 
             <div className="space-y-1">
-              <Label>I...</Label>
+              <Label>{t('iLabel', 'I...')}</Label>
               <Select value={itemType} onValueChange={(v) => setItemType(v as 'lost' | 'found')}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="lost">Lost an item</SelectItem>
-                  <SelectItem value="found">Found an item</SelectItem>
+                  <SelectItem value="lost">{t('lostAnItem', 'Lost an item')}</SelectItem>
+                  <SelectItem value="found">{t('foundAnItem', 'Found an item')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="lf-title">Item</Label>
+              <Label htmlFor="lf-title">{t('itemLabel', 'Item')}</Label>
               <Input
                 id="lf-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Blue water bottle"
+                placeholder={t('itemPlaceholder', 'e.g. Blue water bottle')}
               />
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="lf-description">Description</Label>
+              <Label htmlFor="lf-description">{t('descriptionLabel', 'Description')}</Label>
               <Textarea
                 id="lf-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={2}
-                placeholder="Any details that help identify it"
+                placeholder={t('descriptionPlaceholder', 'Any details that help identify it')}
               />
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="lf-location">
-                {itemType === 'lost' ? 'Last seen where?' : 'Where did you find it?'}
+                {itemType === 'lost' ? t('lastSeenWhere', 'Last seen where?') : t('whereFoundIt', 'Where did you find it?')}
               </Label>
               <Input
                 id="lf-location"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g. Library, 2nd floor"
+                placeholder={t('locationPlaceholder', 'e.g. Library, 2nd floor')}
               />
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="lf-contact">How should people reach you?</Label>
+              <Label htmlFor="lf-contact">{t('howReachYou', 'How should people reach you?')}</Label>
               <Input
                 id="lf-contact"
                 value={contactInfo}
                 onChange={(e) => setContactInfo(e.target.value)}
-                placeholder="e.g. Ask for John in 9B, or an email"
+                placeholder={t('contactPlaceholder', 'e.g. Ask for John in 9B, or an email')}
               />
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setShowForm(false)}>{t('cancel', 'Cancel')}</Button>
               <Button onClick={handlePost} disabled={posting || !title.trim()}>
-                {posting ? 'Posting...' : 'Post'}
+                {posting ? t('postingEllipsis', 'Posting...') : t('postButton', 'Post')}
               </Button>
             </div>
           </div>
@@ -214,7 +216,7 @@ const LostAndFound: React.FC = () => {
               variant={filter === f ? 'default' : 'outline'}
               onClick={() => setFilter(f)}
             >
-              {f === 'all' ? 'All' : f === 'lost' ? 'Lost' : 'Found'}
+              {f === 'all' ? t('allFilter', 'All') : f === 'lost' ? t('lostFilter', 'Lost') : t('foundFilter', 'Found')}
             </Button>
           ))}
           <Button
@@ -222,7 +224,7 @@ const LostAndFound: React.FC = () => {
             variant={showResolved ? 'default' : 'outline'}
             onClick={() => setShowResolved((v) => !v)}
           >
-            {showResolved ? 'Showing resolved' : 'Show resolved'}
+            {showResolved ? t('showingResolved', 'Showing resolved') : t('showResolvedBtn', 'Show resolved')}
           </Button>
         </div>
 
@@ -235,7 +237,7 @@ const LostAndFound: React.FC = () => {
           <p className="text-sm text-muted-foreground">{error}</p>
         ) : items.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            Nothing posted yet. Lost or found something? Be the first to post.
+            {t('nothingPostedYet', 'Nothing posted yet. Lost or found something? Be the first to post.')}
           </p>
         ) : (
           <div className="space-y-2">
@@ -245,9 +247,9 @@ const LostAndFound: React.FC = () => {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant={item.item_type === 'lost' ? 'destructive' : 'default'}>
-                        {item.item_type === 'lost' ? 'Lost' : 'Found'}
+                        {item.item_type === 'lost' ? t('lostFilter', 'Lost') : t('foundFilter', 'Found')}
                       </Badge>
-                      {item.status === 'resolved' && <Badge variant="outline">Resolved</Badge>}
+                      {item.status === 'resolved' && <Badge variant="outline">{t('resolved', 'Resolved')}</Badge>}
                       <p className="text-sm font-medium truncate">{item.title}</p>
                     </div>
                     {item.description && (
@@ -259,10 +261,10 @@ const LostAndFound: React.FC = () => {
                           <MapPin className="h-3 w-3" /> {item.location}
                         </span>
                       )}
-                      {item.contact_info && <span>Contact: {item.contact_info}</span>}
+                      {item.contact_info && <span>{t('contactLabel', 'Contact')}: {item.contact_info}</span>}
                       {item.reporter && (
                         <span>
-                          Posted by {item.reporter.first_name} {item.reporter.last_name}
+                          {t('postedByPrefix', 'Posted by')} {item.reporter.first_name} {item.reporter.last_name}
                         </span>
                       )}
                       <span>{new Date(item.created_at).toLocaleDateString()}</span>
@@ -274,7 +276,7 @@ const LostAndFound: React.FC = () => {
                         size="icon"
                         variant="ghost"
                         className="h-7 w-7"
-                        title="Mark resolved"
+                        title={t('markResolvedTitle', 'Mark resolved')}
                         disabled={busyId === item.id}
                         onClick={() => handleResolve(item.id)}
                       >
@@ -284,7 +286,7 @@ const LostAndFound: React.FC = () => {
                         size="icon"
                         variant="ghost"
                         className="h-7 w-7"
-                        title="Delete"
+                        title={t('deleteTitle', 'Delete')}
                         disabled={busyId === item.id}
                         onClick={() => handleDelete(item.id)}
                       >
@@ -299,7 +301,7 @@ const LostAndFound: React.FC = () => {
         )}
       </CardContent>
       <CardFooter>
-        <p className="text-xs text-muted-foreground">Visible to everyone at your school. Resolve or delete only your own posts.</p>
+        <p className="text-xs text-muted-foreground">{t('visibleFooter', 'Visible to everyone at your school. Resolve or delete only your own posts.')}</p>
       </CardFooter>
     </Card>
   );
