@@ -189,6 +189,7 @@ app.use('/api/v1/promotions', require('./routes/promotion.routes'));
 app.use('/api/v1/attendance', require('./routes/attendance.routes'));
 app.use('/api/v1/results', require('./routes/results.routes'));
 app.use('/api/v1/assignments', require('./routes/assignment.routes'));
+app.use('/api/v1/study-groups', require('./routes/studyGroup.routes'));
 
 app.use('/api/v1/register', require('./routes/register.routes'));
 
