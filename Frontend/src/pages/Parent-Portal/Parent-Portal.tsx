@@ -95,6 +95,11 @@ interface Child {
   stream_name: string | null;
   relationship: string | null;
   is_primary_guardian: boolean;
+  // A parent's children can attend different schools — every school-scoped
+  // fetch for the selected child (academic year, fee payment info, events,
+  // announcements) must use THIS, not the parent's own account school.
+  school_id: string | null;
+  school_name: string | null;
 }
 
 
@@ -264,14 +269,18 @@ const ParentPortal = () => {
     return () => { cancelled = true; };
   }, [selectedChildId]);
 
-  // Resolve the current academic year once schoolId is known — fee
-  // structures are scoped to a year, and we only want the active one.
+  const selectedChildSchoolId = children.find(c => c.id === selectedChildId)?.school_id;
+
+  // Resolve the current academic year for the SELECTED CHILD's school —
+  // not the parent account's own school_id. A parent's children can be
+  // enrolled at different schools, each running its own academic year, so
+  // this must re-resolve every time the selected child changes.
   useEffect(() => {
-    if (!user?.schoolId) return;
+    if (!selectedChildSchoolId) return;
     let cancelled = false;
     (async () => {
       try {
-        const terms = await getAcademicTerms(user.schoolId!);
+        const terms = await getAcademicTerms(selectedChildSchoolId);
         if (cancelled) return;
         const current = terms.find(t => t.is_current) || terms[0];
         if (current) setCurrentAcademicYearId(current.id);
@@ -281,15 +290,16 @@ const ParentPortal = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, [user?.schoolId]);
+  }, [selectedChildSchoolId]);
 
-  // School-wide, optional — how to pay fees (accounts, paybill, etc.).
+  // How to pay fees (accounts, paybill, etc.) — also scoped to the
+  // selected child's own school.
   useEffect(() => {
-    if (!user?.schoolId) return;
+    if (!selectedChildSchoolId) return;
     let cancelled = false;
     (async () => {
       try {
-        const res = await getSchoolById(user.schoolId!);
+        const res = await getSchoolById(selectedChildSchoolId);
         if (cancelled) return;
         const instructions = (res as any).data?.fee_payment_instructions;
         if (instructions) setFeePaymentInstructions(instructions);
@@ -299,7 +309,7 @@ const ParentPortal = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, [user?.schoolId]);
+  }, [selectedChildSchoolId]);
 
   // Whenever the selected child (and their grade) is known, pull the
   // fee structure that applies to that grade for the current year.
@@ -350,15 +360,17 @@ const ParentPortal = () => {
     return () => { cancelled = true; };
   }, []);
 
-  // Announcements are scoped server-side to school-wide + the parent's own
-  // children's classes — also load once.
+  // Announcements are scoped server-side to the SELECTED CHILD's school
+  // (school-wide + that child's own classes). Passing learner_id is what
+  // lets a parent with children at different schools see the right feed
+  // for whichever child is currently selected; re-fetch on every switch.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         setLoadingAnnouncements(true);
         setAnnouncementsError(null);
-        const res = await getAnnouncements(10);
+        const res = await getAnnouncements(10, undefined, selectedChildId || undefined);
         if (cancelled) return;
         setAnnouncements(res.data.announcements);
       } catch (err: any) {
@@ -368,7 +380,7 @@ const ParentPortal = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [selectedChildId]);
 
   // Whenever the selected child changes, pull their recent teacher comments.
   useEffect(() => {
@@ -416,14 +428,15 @@ const ParentPortal = () => {
     return () => { cancelled = true; };
   }, [selectedChildId]);
 
-  // School events don't depend on which child is selected — load once.
+  // School events are scoped to the SELECTED CHILD's school — re-fetch
+  // whenever the parent switches between children at different schools.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         setLoadingEvents(true);
         setEventsError(null);
-        const res = await getSchoolEvents(10);
+        const res = await getSchoolEvents(10, undefined, selectedChildId || undefined);
         if (cancelled) return;
         setSchoolEvents(res.data.events);
       } catch (err: any) {
@@ -433,7 +446,7 @@ const ParentPortal = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [selectedChildId]);
 
   // Whenever the selected child changes, pull their full profile (photo,
   // DOB, class teacher, medical info, emergency contacts).
@@ -688,6 +701,7 @@ const ParentPortal = () => {
                         {children.map((child) => (
                           <SelectItem key={child.id} value={child.id} className="text-xs">
                             {child.first_name} {child.last_name}
+                            {child.school_name ? ` · ${child.school_name}` : ''}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -786,6 +800,7 @@ const ParentPortal = () => {
                         {selectedChild.grade_level}
                         {selectedChild.stream_name ? ` • ${selectedChild.stream_name}` : ''}
                         {' • Adm. No. '}{selectedChild.admission_number}
+                        {selectedChild.school_name ? ` • ${selectedChild.school_name}` : ''}
                       </p>
                     </div>
                     {latestExam && (
