@@ -436,9 +436,7 @@ const StudentPortal = () => {
               </CardContent>
             </Card>
 
-            <div className="origin-top scale-[0.85] -mb-3 -mr-2">
-              <CreditsPointsSystem learnerId={learner?.id || ''} />
-            </div>
+            <CreditsPointsSystem learnerId={learner?.id || ''} />
           </div>
 
           {/* Middle: active tab's content */}
