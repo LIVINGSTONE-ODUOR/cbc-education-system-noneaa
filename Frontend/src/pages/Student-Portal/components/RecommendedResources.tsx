@@ -99,7 +99,7 @@ const weakSubjectsFrom = (exams: ExamSummary[], threshold = 65, max = 3): Subjec
   const totals: Record<string, { sum: number; count: number }> = {};
 
   exams.forEach((exam) => {
-    exam.subjects.forEach((s) => {
+    (exam.subjects || []).forEach((s) => {
       if (s.is_absent || !s.learning_area?.name) return;
       const name = s.learning_area.name;
       if (!totals[name]) totals[name] = { sum: 0, count: 0 };
