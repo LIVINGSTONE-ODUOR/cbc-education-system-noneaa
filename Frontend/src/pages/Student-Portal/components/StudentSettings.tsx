@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { KeyRound, UserRound, BellRing, SunMoon, Languages } from 'lucide-react';
+import DeviceSessionHistory from './DeviceSessionHistory';
 import {
   getProfile,
   updatePersonalInfo,
@@ -274,6 +275,9 @@ const StudentSettings: React.FC = () => {
           </Button>
         </CardFooter>
       </Card>
+
+      {/* Device / session history */}
+      <DeviceSessionHistory />
 
       {/* Notification preferences */}
       <Card>
