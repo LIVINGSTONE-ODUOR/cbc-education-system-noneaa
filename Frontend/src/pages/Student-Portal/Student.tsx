@@ -28,6 +28,10 @@ import { getAnnouncements, getSchoolEvents, SchoolEvent } from '@/lib/api/parent
 // 'student', so the same components work here unchanged.
 import Assignments from '../Parent-Portal/components/Assignments';
 import Attendance from '../Parent-Portal/components/Attendance';
+import Timetable from '../Parent-Portal/components/Timetable';
+import SubjectsAndTeachers from './components/SubjectsAndTeachers';
+import SyllabusOutline from './components/SyllabusOutline';
+import ClassResources from './components/ClassResources';
 
 const GRADE_STYLES: Record<PerformanceLevel, string> = {
   EE: 'text-green-600',
@@ -453,6 +457,21 @@ const StudentPortal = () => {
 
               {/* Academics Tab */}
               <TabsContent value="academics" className="space-y-6">
+                {/* Subjects and teachers */}
+                <SubjectsAndTeachers classId={learner?.class_id || null} learnerId={learner?.id || ''} />
+
+                {/* Timetable */}
+                <Timetable learnerId={learner?.id || ''} />
+
+                {/* Learning materials and notes / Class resources */}
+                <ClassResources />
+
+                {/* Syllabus and course outline */}
+                <SyllabusOutline gradeLevel={learner?.grade_level || null} />
+
+                {/* Homework and assignments */}
+                <Assignments learnerId={learner?.id || ''} emptyMessage="No homework or assignments have been posted yet." />
+
                 <Card>
                   <CardHeader>
                     <CardTitle>Academic Performance</CardTitle>
