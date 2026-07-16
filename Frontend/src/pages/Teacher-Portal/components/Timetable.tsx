@@ -10,9 +10,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Bell, MapPin, CalendarDays, CalendarRange } from 'lucide-react';
+import { Bell, MapPin, CalendarDays, CalendarRange, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getMyTimetable, type MyTimetableSlot } from '@/lib/api/teacherApi';
+import { getPrintHeader, type PrintHeader } from '@/lib/api/timetableApi';
 import { TableBodySkeleton } from './skeletons';
 
 const getErrorMessage = (error: unknown, fallback: string) => {
@@ -51,6 +52,19 @@ const Timetable: React.FC = () => {
   const [timetable, setTimetable] = useState<Record<string, MyTimetableSlot[]>>({});
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<ViewMode>('today');
+  const [printHeader, setPrintHeader] = useState<PrintHeader | null>(null);
+
+  const handlePrint = async () => {
+    if (!printHeader) {
+      try {
+        const res = await getPrintHeader();
+        setPrintHeader(res.data);
+      } catch {
+        // Print still works without the header — just falls back silently.
+      }
+    }
+    setTimeout(() => window.print(), 50);
+  };
 
   // Ticks every 30s so the "current lesson" highlight and the "starts in
   // X min" reminder banner stay accurate without requiring a page refresh.
@@ -117,9 +131,18 @@ const Timetable: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Print-only header — shown only when printing */}
+      <div className="hidden print:block text-center mb-4">
+        <h1 className="text-xl font-bold uppercase">{printHeader?.school_name}</h1>
+        <p className="text-sm">
+          {printHeader?.term_name || 'Term'} — {printHeader?.academic_year_name || 'Academic Year'}
+        </p>
+        <h2 className="text-base font-semibold mt-1">Teacher Timetable</h2>
+      </div>
+
       {/* Lesson reminder banner — only appears within 15 minutes of the next lesson */}
       {showReminder && nextLesson && (
-        <div className="flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900">
+        <div className="no-print flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900">
           <Bell className="h-5 w-5 shrink-0 animate-pulse" />
           <div className="text-sm">
             <span className="font-semibold">
@@ -146,7 +169,7 @@ const Timetable: React.FC = () => {
                 : 'Your full weekly schedule'}
             </CardDescription>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 no-print">
             <Button
               size="sm"
               variant={view === 'today' ? 'default' : 'outline'}
@@ -160,6 +183,9 @@ const Timetable: React.FC = () => {
               onClick={() => setView('weekly')}
             >
               <CalendarRange className="mr-2 h-4 w-4" /> Weekly
+            </Button>
+            <Button size="sm" variant="outline" onClick={handlePrint}>
+              <Printer className="mr-2 h-4 w-4" /> Print
             </Button>
           </div>
         </CardHeader>
@@ -279,10 +305,22 @@ const Timetable: React.FC = () => {
             </div>
           )}
         </CardContent>
-        <CardFooter className="text-xs text-muted-foreground">
-          Reminders appear automatically when your next lesson starts within 15 minutes.
+        <CardFooter className="text-xs text-muted-foreground no-print">
+          Reminders appear automatically when your next lesson starts within 15 minutes. Switch to "Weekly" before printing for the full schedule.
         </CardFooter>
       </Card>
+
+      {/* Print Styles */}
+      <style>{`
+        @media print {
+          body { background: white; font-size: 11pt; }
+          .no-print { display: none !important; }
+          @page { margin: 1.2cm; }
+          table { page-break-inside: auto; }
+          tr { page-break-inside: avoid; page-break-after: auto; }
+          thead { display: table-header-group; }
+        }
+      `}</style>
     </div>
   );
 };
