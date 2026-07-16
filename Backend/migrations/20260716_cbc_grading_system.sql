@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS subject_grading_config (
   scheme_id       UUID REFERENCES grading_schemes(id) ON DELETE SET NULL,
   class_id        UUID REFERENCES classes(id) ON DELETE CASCADE,
   academic_year_id UUID REFERENCES academic_years(id) ON DELETE CASCADE,
-  term_id         UUID REFERENCES academic_terms(id) ON DELETE CASCADE,
+  term_id         INTEGER REFERENCES academic_terms(id) ON DELETE CASCADE,
   max_score       NUMERIC(5,2) DEFAULT 100,
   pass_score      NUMERIC(5,2) DEFAULT 25,
   created_at      TIMESTAMPTZ DEFAULT NOW(),
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS competency_assessments (
   class_id          UUID REFERENCES classes(id) ON DELETE CASCADE,
   learning_area_id  UUID REFERENCES learning_areas(id) ON DELETE CASCADE,
   competency_area_id UUID REFERENCES competency_areas(id) ON DELETE CASCADE,
-  academic_term_id  UUID REFERENCES academic_terms(id) ON DELETE CASCADE,
+  academic_term_id  INTEGER REFERENCES academic_terms(id) ON DELETE CASCADE,
   academic_year_id  UUID REFERENCES academic_years(id) ON DELETE CASCADE,
   score             NUMERIC(5,2) NOT NULL,
   max_score         NUMERIC(5,2) DEFAULT 100,
@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS subject_assessments (
   learner_id        UUID REFERENCES learners(id) ON DELETE CASCADE,
   class_id          UUID REFERENCES classes(id) ON DELETE CASCADE,
   learning_area_id  UUID REFERENCES learning_areas(id) ON DELETE CASCADE,
-  academic_term_id  UUID REFERENCES academic_terms(id) ON DELETE CASCADE,
+  academic_term_id  INTEGER REFERENCES academic_terms(id) ON DELETE CASCADE,
   academic_year_id  UUID REFERENCES academic_years(id) ON DELETE CASCADE,
   total_score       NUMERIC(5,2) NOT NULL DEFAULT 0,
   max_score         NUMERIC(5,2) DEFAULT 100,
@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS report_cards (
   school_id         UUID REFERENCES schools(id) ON DELETE CASCADE,
   learner_id        UUID REFERENCES learners(id) ON DELETE CASCADE,
   class_id          UUID REFERENCES classes(id) ON DELETE CASCADE,
-  academic_term_id  UUID REFERENCES academic_terms(id) ON DELETE CASCADE,
+  academic_term_id  INTEGER REFERENCES academic_terms(id) ON DELETE CASCADE,
   academic_year_id  UUID REFERENCES academic_years(id) ON DELETE CASCADE,
   total_score       NUMERIC(6,2) DEFAULT 0,
   average_score     NUMERIC(5,2) DEFAULT 0,
@@ -186,7 +186,7 @@ CREATE TABLE IF NOT EXISTS promotion_decisions (
   learner_id        UUID REFERENCES learners(id) ON DELETE CASCADE,
   from_class_id     UUID REFERENCES classes(id) ON DELETE SET NULL,
   to_class_id       UUID REFERENCES classes(id) ON DELETE SET NULL,
-  academic_term_id  UUID REFERENCES academic_terms(id) ON DELETE CASCADE,
+  academic_term_id  INTEGER REFERENCES academic_terms(id) ON DELETE CASCADE,
   academic_year_id  UUID REFERENCES academic_years(id) ON DELETE CASCADE,
   decision          VARCHAR(50) NOT NULL,       -- promoted, retained, transferred, graduated
   remarks           TEXT,
@@ -199,7 +199,7 @@ CREATE TABLE IF NOT EXISTS promotion_decisions (
 -- INDEXES
 -- =============================================================================
 CREATE INDEX IF NOT EXISTS idx_comp_assess_learner ON competency_assessments(learner_id);
-CREATE INDEX IF NOT EXISTS idx_comp_assess_subject ON competency_assessments(subject_id);
+CREATE INDEX IF NOT EXISTS idx_comp_assess_subject ON competency_assessments(learning_area_id);
 CREATE INDEX IF NOT EXISTS idx_comp_assess_term ON competency_assessments(academic_term_id);
 CREATE INDEX IF NOT EXISTS idx_subject_assess_learner ON subject_assessments(learner_id);
 CREATE INDEX IF NOT EXISTS idx_subject_assess_term ON subject_assessments(academic_term_id);
@@ -213,8 +213,11 @@ CREATE INDEX IF NOT EXISTS idx_promotion_decisions_learner ON promotion_decision
 -- =============================================================================
 -- DEFAULT CBC GRADING SCHEME (inserted per school)
 -- =============================================================================
--- This is handled by the API when a school is created or when an admin
--- explicitly creates their first grading scheme.
+-- Seeded explicitly in schoolRegistration.controller.js (registerSchoolAdmin,
+-- Step 9c) right after the school is created, using the same BE/ME/AE/EE
+-- scale as the gradingCache.js lazy-create fallback. school_admins can then
+-- rename/edit it or add additional schemes via the grading scheme endpoints
+-- (POST/PUT /api/v1/grading/schemes).
 
 -- =============================================================================
 -- PERMISSIONS
