@@ -27,6 +27,8 @@ import {
   Percent,
   LineChart,
   FileBarChart,
+  Megaphone,
+  MessageSquare,
   LucideIcon,
 } from 'lucide-react';
 
@@ -310,6 +312,27 @@ export const menuSections: NavigationMenu = [
         icon: TrendingUp,
         href: '/school-admin/promotions',
         description: 'Manage student promotions and graduations',
+      },
+    ],
+  },
+
+  {
+    title: 'COMMUNICATION',
+    description: 'Broadcast announcements and manage messages',
+    items: [
+      {
+        id: 'announcements',
+        label: 'Announcements',
+        icon: Megaphone,
+        href: '/school-admin/announcements',
+        description: 'Broadcast announcements to the whole school or a class',
+      },
+      {
+        id: 'messages',
+        label: 'Messages',
+        icon: MessageSquare,
+        href: '/school-admin/messages',
+        description: 'Read and reply to messages from students, teachers, and parents',
       },
     ],
   },
