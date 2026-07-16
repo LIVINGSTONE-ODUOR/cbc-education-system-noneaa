@@ -1,22 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Inbox, Send, MailOpen } from 'lucide-react';
+import { Inbox, Send, MailOpen, Search, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  getMessages,
-  markMessageRead,
-  sendMessage,
+  getContacts,
+  searchContacts,
   getConversation,
-  DashboardMessage,
+  sendMessage,
+  MessageContact,
   ConversationMessage,
-} from '@/lib/api/parentDashboardApi';
-
-const POLL_MS = 15000;
+  AdminContactsResponse,
+} from '@/lib/api/messagesApi';
 
 function timeAgo(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -28,77 +28,87 @@ function timeAgo(iso: string): string {
   return new Date(iso).toLocaleDateString();
 }
 
-const ROLE_LABEL: Record<string, string> = {
-  parent: 'Parent',
-  student: 'Student',
-  teacher: 'Teacher',
-  school_admin: 'Admin',
-};
-
 export default function MessagesInboxPage() {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<DashboardMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selected, setSelected] = useState<DashboardMessage | null>(null);
+
+  const [loadingContacts, setLoadingContacts] = useState(true);
+  const [contactsError, setContactsError] = useState<string | null>(null);
+  const [data, setData] = useState<AdminContactsResponse>({ teachers: [], searchResults: [], contacts: [] });
+
+  const [search, setSearch] = useState('');
+  const [searching, setSearching] = useState(false);
+
+  const [selected, setSelected] = useState<MessageContact | null>(null);
+  const [loadingThread, setLoadingThread] = useState(false);
   const [thread, setThread] = useState<ConversationMessage[]>([]);
   const [reply, setReply] = useState('');
   const [isSending, setIsSending] = useState(false);
   const threadEndRef = useRef<HTMLDivElement>(null);
 
-  const loadInbox = useCallback(async () => {
+  const loadContacts = useCallback(async () => {
     try {
-      const { data } = await getMessages(100);
-      setMessages(data.messages);
+      setLoadingContacts(true);
+      setContactsError(null);
+      const res = await getContacts<AdminContactsResponse>();
+      setData((prev) => ({ ...res, searchResults: prev.searchResults }));
     } catch (err) {
-      console.error('Failed to load messages:', err);
+      setContactsError(err instanceof Error ? err.message : 'Failed to load contacts');
     } finally {
-      setIsLoading(false);
+      setLoadingContacts(false);
     }
   }, []);
 
   useEffect(() => {
-    loadInbox();
-    const interval = setInterval(loadInbox, POLL_MS);
-    return () => clearInterval(interval);
-  }, [loadInbox]);
+    loadContacts();
+  }, [loadContacts]);
 
-  const openThread = useCallback(
-    async (msg: DashboardMessage) => {
-      setSelected(msg);
-      if (!msg.sender || !msg.learner) {
-        setThread([]);
-        return;
-      }
+  // Debounced search for parents/students to start a new conversation with.
+  useEffect(() => {
+    if (search.trim().length < 2) {
+      setData((prev) => ({ ...prev, searchResults: [] }));
+      return;
+    }
+    setSearching(true);
+    const handle = setTimeout(async () => {
       try {
-        const { data } = await getConversation(msg.sender.id, msg.learner.id);
-        setThread(data.messages);
-        if (!msg.is_read) {
-          await markMessageRead(msg.id);
-          setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, is_read: true } : m)));
-        }
-      } catch (err) {
-        console.error('Failed to load conversation:', err);
-        toast.error('Could not load this conversation');
+        const res = await searchContacts(search.trim());
+        setData((prev) => ({ ...prev, searchResults: res.searchResults }));
+      } catch {
+        // non-fatal — search is best-effort
+      } finally {
+        setSearching(false);
       }
-    },
-    []
-  );
+    }, 350);
+    return () => clearTimeout(handle);
+  }, [search]);
+
+  const openThread = useCallback(async (contact: MessageContact) => {
+    setSelected(contact);
+    setLoadingThread(true);
+    try {
+      const res = await getConversation(contact.user_id);
+      setThread(res.messages || []);
+      // Refresh contacts in the background so unread badges/preview stay current.
+      loadContacts();
+    } catch (err) {
+      console.error('Failed to load conversation:', err);
+      toast.error('Could not load this conversation');
+    } finally {
+      setLoadingThread(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     threadEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [thread]);
 
   const handleReply = async () => {
-    if (!reply.trim() || !selected?.sender || !selected.learner) return;
+    if (!reply.trim() || !selected) return;
     setIsSending(true);
     try {
-      const { data: sent } = await sendMessage({
-        recipient_user_id: selected.sender.id,
-        learner_id: selected.learner.id,
-        subject: selected.subject || undefined,
-        body: reply.trim(),
-      });
-      setThread((prev) => [...prev, { ...sent, sender_user_id: user?.id || '' }]);
+      const sent = await sendMessage({ recipient_user_id: selected.user_id, body: reply.trim() });
+      setThread((prev) => [...prev, sent]);
       setReply('');
     } catch (err) {
       console.error('Failed to send reply:', err);
@@ -108,7 +118,9 @@ export default function MessagesInboxPage() {
     }
   };
 
-  const unreadCount = messages.filter((m) => !m.is_read).length;
+  const unreadCount = data.contacts.reduce((sum, c) => sum + (c.unread_count || 0), 0);
+  const showingSearch = search.trim().length >= 2;
+  const listItems: MessageContact[] = showingSearch ? data.searchResults : data.contacts;
 
   return (
     <div className="space-y-6">
@@ -121,46 +133,52 @@ export default function MessagesInboxPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4">
         <Card className="overflow-hidden">
-          <div className="p-4 border-b flex items-center justify-between">
-            <span className="flex items-center gap-2 font-medium">
-              <Inbox className="h-4 w-4" /> Inbox
-            </span>
-            {unreadCount > 0 && <Badge>{unreadCount} unread</Badge>}
+          <div className="p-4 border-b space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 font-medium">
+                <Inbox className="h-4 w-4" /> Inbox
+              </span>
+              {unreadCount > 0 && <Badge>{unreadCount} unread</Badge>}
+            </div>
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search parents or students to message..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8"
+              />
+            </div>
           </div>
           <ScrollArea className="h-[60vh]">
-            {isLoading ? (
+            {loadingContacts ? (
               <p className="text-sm text-muted-foreground p-4 text-center">Loading...</p>
-            ) : messages.length === 0 ? (
-              <p className="text-sm text-muted-foreground p-4 text-center">No messages yet.</p>
+            ) : contactsError ? (
+              <p className="text-sm text-destructive p-4 text-center">{contactsError}</p>
+            ) : showingSearch && searching ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground p-4">
+                <Loader2 className="h-4 w-4 animate-spin" /> Searching...
+              </div>
+            ) : listItems.length === 0 ? (
+              <p className="text-sm text-muted-foreground p-4 text-center">
+                {showingSearch ? 'No matching parents or students.' : 'No messages yet.'}
+              </p>
             ) : (
-              messages.map((m) => (
+              listItems.map((c) => (
                 <button
-                  key={m.id}
-                  onClick={() => openThread(m)}
+                  key={c.user_id}
+                  onClick={() => openThread(c)}
                   className={`w-full text-left p-4 border-b hover:bg-accent transition-colors ${
-                    selected?.id === m.id ? 'bg-accent' : ''
+                    selected?.user_id === c.user_id ? 'bg-accent' : ''
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium truncate">
-                      {m.sender ? `${m.sender.first_name} ${m.sender.last_name}` : 'Unknown sender'}
-                    </span>
-                    {!m.is_read && <span className="h-2 w-2 rounded-full bg-primary shrink-0" />}
+                    <span className="font-medium truncate">{c.name}</span>
+                    {c.unread_count > 0 && <span className="h-2 w-2 rounded-full bg-primary shrink-0" />}
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {m.sender && (
-                      <Badge variant="outline" className="text-[10px]">
-                        {ROLE_LABEL[m.sender.role] || m.sender.role}
-                      </Badge>
-                    )}
-                    {m.learner && (
-                      <span className="text-xs text-muted-foreground truncate">
-                        re: {m.learner.first_name} {m.learner.last_name}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground truncate mt-1">{m.body}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{timeAgo(m.created_at)}</p>
+                  <Badge variant="outline" className="text-[10px] mt-0.5">{c.role_label}</Badge>
+                  {c.last_message && <p className="text-sm text-muted-foreground truncate mt-1">{c.last_message}</p>}
+                  {c.last_message_at && <p className="text-xs text-muted-foreground mt-1">{timeAgo(c.last_message_at)}</p>}
                 </button>
               ))
             )}
@@ -172,32 +190,38 @@ export default function MessagesInboxPage() {
             <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm p-10 text-center">
               <div>
                 <MailOpen className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                Select a message to read the full conversation.
+                Select a conversation, or search above to message a parent or student.
               </div>
             </div>
           ) : (
             <>
               <div className="p-4 border-b">
-                <p className="font-medium">
-                  {selected.sender ? `${selected.sender.first_name} ${selected.sender.last_name}` : 'Unknown sender'}
-                </p>
-                {selected.subject && <p className="text-sm text-muted-foreground">{selected.subject}</p>}
+                <p className="font-medium">{selected.name}</p>
+                <p className="text-sm text-muted-foreground">{selected.role_label}</p>
               </div>
               <ScrollArea className="flex-1 h-[42vh] p-4">
                 <div className="space-y-3">
-                  {thread.map((t) => (
-                    <div
-                      key={t.id}
-                      className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                        t.sender_user_id === user?.id
-                          ? 'ml-auto bg-primary text-primary-foreground'
-                          : 'bg-muted'
-                      }`}
-                    >
-                      <p>{t.body}</p>
-                      <p className="text-[10px] opacity-70 mt-1">{timeAgo(t.created_at)}</p>
+                  {loadingThread ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Loading...
                     </div>
-                  ))}
+                  ) : thread.length === 0 ? (
+                    <p className="text-center text-sm text-muted-foreground">No messages yet. Say hello!</p>
+                  ) : (
+                    thread.map((t) => (
+                      <div
+                        key={t.id}
+                        className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+                          t.sender_user_id === user?.id
+                            ? 'ml-auto bg-primary text-primary-foreground'
+                            : 'bg-muted'
+                        }`}
+                      >
+                        <p>{t.body}</p>
+                        <p className="text-[10px] opacity-70 mt-1">{timeAgo(t.created_at)}</p>
+                      </div>
+                    ))
+                  )}
                   <div ref={threadEndRef} />
                 </div>
               </ScrollArea>
@@ -216,7 +240,7 @@ export default function MessagesInboxPage() {
                   }}
                 />
                 <Button onClick={handleReply} disabled={isSending || !reply.trim()} size="icon" className="shrink-0">
-                  <Send className="h-4 w-4" />
+                  {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </Button>
               </div>
             </>
