@@ -56,19 +56,22 @@ const overlaps = (aStart, aEnd, bStart, bEnd) => aStart < bEnd && bStart < aEnd;
 
 // ---------------------------------------------------------------------------
 // Helper: find every active slot for the school/year that conflicts with
-// the given day/time — either because it's the same class, or because it's
-// the same teacher (regardless of class). Excludes `excludeId` so updates
-// can compare against everything except themselves.
+// the given day/time — because it's the same class, the same teacher
+// (regardless of class), or — when a room was given — the same room
+// (regardless of class/teacher). Excludes `excludeId` so updates can
+// compare against everything except themselves.
 // ---------------------------------------------------------------------------
-const findConflicts = async ({ schoolId, academicYearId, day, startTime, endTime, classId, teacherId, excludeId }) => {
+const SELECT_WITH_RELATIONS = `
+  id, day, start_time, end_time, room, class_id, teacher_id,
+  class:class_id ( id, grade_level, stream_name ),
+  teacher:teacher_id ( id, user_id, users:user_id ( first_name, last_name ) ),
+  learning_area:learning_area_id ( id, name, code )
+`;
+
+const findConflicts = async ({ schoolId, academicYearId, day, startTime, endTime, classId, teacherId, room, excludeId }) => {
   let query = supabase
     .from('timetable_slots')
-    .select(`
-      id, day, start_time, end_time, class_id, teacher_id,
-      class:class_id ( id, grade_level, stream_name ),
-      teacher:teacher_id ( id, user_id, users:user_id ( first_name, last_name ) ),
-      learning_area:learning_area_id ( id, name, code )
-    `)
+    .select(SELECT_WITH_RELATIONS)
     .eq('school_id', schoolId)
     .eq('academic_year_id', academicYearId)
     .eq('day', day)
@@ -90,7 +93,39 @@ const findConflicts = async ({ schoolId, academicYearId, day, startTime, endTime
     if (slot.teacher_id === teacherId) teacherConflicts.push(slot);
   });
 
-  return { classConflicts, teacherConflicts };
+  // Room clash check runs as its own query — a booked room conflicts
+  // regardless of which class or teacher is using it, so it can't ride on
+  // the class_id/teacher_id `.or()` filter above. Only runs when a room
+  // was actually specified; blank rooms never clash with each other.
+  const roomConflicts = [];
+  const trimmedRoom = typeof room === 'string' ? room.trim() : '';
+  if (trimmedRoom) {
+    let roomQuery = supabase
+      .from('timetable_slots')
+      .select(SELECT_WITH_RELATIONS)
+      .eq('school_id', schoolId)
+      .eq('academic_year_id', academicYearId)
+      .eq('day', day)
+      .eq('is_active', true)
+      .is('deleted_at', null)
+      .ilike('room', trimmedRoom);
+
+    if (excludeId) roomQuery = roomQuery.neq('id', excludeId);
+
+    const { data: roomCandidates, error: roomError } = await roomQuery;
+    if (roomError) throw roomError;
+
+    (roomCandidates || []).forEach((slot) => {
+      if (!overlaps(startTime, endTime, slot.start_time, slot.end_time)) return;
+      // Don't double-report a slot that's already flagged as a class or
+      // teacher conflict — the room clash is a distinct, additional case
+      // (different class + different teacher, same room, same time).
+      if (slot.class_id === classId || slot.teacher_id === teacherId) return;
+      roomConflicts.push(slot);
+    });
+  }
+
+  return { classConflicts, teacherConflicts, roomConflicts };
 };
 
 const formatConflict = (slot) => ({
@@ -98,6 +133,7 @@ const formatConflict = (slot) => ({
   day: slot.day,
   start_time: slot.start_time,
   end_time: slot.end_time,
+  room: slot.room || null,
   class: slot.class ? `${slot.class.grade_level}${slot.class.stream_name ? ' ' + slot.class.stream_name : ''}` : null,
   teacher: slot.teacher?.users ? `${slot.teacher.users.first_name} ${slot.teacher.users.last_name}` : null,
   learning_area: slot.learning_area?.name || null,
@@ -518,15 +554,16 @@ const createSlot = asyncHandler(async (req, res) => {
   const conflictsByDay = {};
   for (const d of days) {
     const dayLower = String(d).toLowerCase();
-    const { classConflicts, teacherConflicts } = await findConflicts({
+    const { classConflicts, teacherConflicts, roomConflicts } = await findConflicts({
       schoolId, academicYearId: yearId, day: dayLower,
       startTime: start_time, endTime: end_time,
-      classId: class_id, teacherId: teacher_id,
+      classId: class_id, teacherId: teacher_id, room,
     });
-    if (classConflicts.length || teacherConflicts.length) {
+    if (classConflicts.length || teacherConflicts.length || roomConflicts.length) {
       conflictsByDay[dayLower] = {
         class_conflicts: classConflicts.map(formatConflict),
         teacher_conflicts: teacherConflicts.map(formatConflict),
+        room_conflicts: roomConflicts.map(formatConflict),
       };
     }
   }
@@ -541,6 +578,10 @@ const createSlot = asyncHandler(async (req, res) => {
       if (c.teacher_conflicts.length) {
         const tc = c.teacher_conflicts[0];
         messages.push(`${d}: this teacher is already teaching ${tc.learning_area || 'another lesson'} in ${tc.class || 'another class'} at ${tc.start_time}–${tc.end_time}`);
+      }
+      if (c.room_conflicts.length) {
+        const rc = c.room_conflicts[0];
+        messages.push(`${d}: room ${rc.room} is already booked for ${rc.learning_area || 'another lesson'} (${rc.class || 'another class'}) at ${rc.start_time}–${rc.end_time}`);
       }
     });
     return respond(res, 409, false, `Timetable conflict: ${messages.join('; ')}`, { conflicts: conflictsByDay });
@@ -610,6 +651,7 @@ const updateSlot = asyncHandler(async (req, res) => {
   const nextEnd = end_time || existing.end_time;
   const nextTeacher = teacher_id || existing.teacher_id;
   const nextClass = existing.class_id; // class is not changeable on an existing slot
+  const nextRoom = room !== undefined ? room : existing.room;
 
   if (day && !DAYS.includes(nextDay)) {
     return respond(res, 400, false, `Invalid day: ${day}. Must be one of ${DAYS.join(', ')}.`);
@@ -621,7 +663,7 @@ const updateSlot = asyncHandler(async (req, res) => {
   if (typeof is_active === 'boolean' && is_active === false) {
     // Deactivating never conflicts with anything.
   } else {
-    const { classConflicts, teacherConflicts } = await findConflicts({
+    const { classConflicts, teacherConflicts, roomConflicts } = await findConflicts({
       schoolId,
       academicYearId: existing.academic_year_id,
       day: nextDay,
@@ -629,6 +671,7 @@ const updateSlot = asyncHandler(async (req, res) => {
       endTime: nextEnd,
       classId: nextClass,
       teacherId: nextTeacher,
+      room: nextRoom,
       excludeId: id,
     });
 
@@ -639,6 +682,10 @@ const updateSlot = asyncHandler(async (req, res) => {
     if (teacherConflicts.length) {
       const tc = formatConflict(teacherConflicts[0]);
       return respond(res, 409, false, `Timetable conflict: this teacher is already teaching ${tc.learning_area || 'another lesson'} in ${tc.class || 'another class'} at ${tc.start_time}–${tc.end_time} on ${nextDay}`, { conflicts: teacherConflicts.map(formatConflict) });
+    }
+    if (roomConflicts.length) {
+      const rc = formatConflict(roomConflicts[0]);
+      return respond(res, 409, false, `Timetable conflict: room ${rc.room} is already booked for ${rc.learning_area || 'another lesson'} (${rc.class || 'another class'}) at ${rc.start_time}–${rc.end_time} on ${nextDay}`, { conflicts: roomConflicts.map(formatConflict) });
     }
   }
 
