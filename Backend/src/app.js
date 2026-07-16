@@ -187,6 +187,7 @@ app.use('/api/v1/live-chat', require('./routes/liveChat.routes'));
 app.use('/api/v1/messages', require('./routes/message.routes'));
 app.use('/api/v1/grading', require('./routes/grading.routes'));
 app.use('/api/v1/performance', require('./routes/performance.routes'));
+app.use('/api/v1/timetable', require('./routes/timetable.routes'));
 
 
 app.use('/api/v1/website-owner', require('./routes/websiteOwner.routes'));
