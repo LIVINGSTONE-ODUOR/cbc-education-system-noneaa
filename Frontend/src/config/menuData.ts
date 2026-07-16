@@ -23,6 +23,10 @@ import {
   Receipt,
   Banknote,
   UserCircle,
+  CalendarClock,
+  Percent,
+  LineChart,
+  FileBarChart,
   LucideIcon,
 } from 'lucide-react';
 
@@ -208,11 +212,48 @@ export const menuSections: NavigationMenu = [
         ],
       },
       {
+        id: 'timetable',
+        label: 'Timetable Setup',
+        icon: CalendarClock,
+        href: '/school-admin/timetable',
+        description: 'Build and manage the school class timetable',
+      },
+      {
         id: 'marks-entry',
         label: 'Marks Entry',
         icon: ClipboardList,
         href: '/school-admin/marks-entry',
         description: 'Enter, edit, and delete learner exam marks',
+      },
+      {
+        id: 'grading',
+        label: 'Grading System',
+        icon: Percent,
+        href: '/school-admin/grading/schemes',
+        description: 'Configure grading schemes and view report cards',
+        submenu: [
+          {
+            id: 'grading-schemes',
+            label: 'Grading Schemes',
+            href: '/school-admin/grading/schemes',
+            icon: Percent,
+            description: 'Set up grade boundaries and scoring rules',
+          },
+          {
+            id: 'grading-analytics',
+            label: 'Grading Analytics',
+            href: '/school-admin/grading/analytics',
+            icon: LineChart,
+            description: 'Analyze grade distributions and trends',
+          },
+          {
+            id: 'grading-reports',
+            label: 'Report Cards',
+            href: '/school-admin/grading/reports',
+            icon: FileBarChart,
+            description: 'View and generate student report cards',
+          },
+        ],
       },
       {
         id: 'results',
