@@ -1,0 +1,424 @@
+// =============================================================================
+// timetable.controller.js
+// School Timetable — admin builder for weekly class schedules
+//
+// Table:   timetable_slots (see migrations/20260715_ensure_timetable_slots.sql)
+// Pattern: matches class.controller.js & teacher.controller.js
+// Auth:    Bearer JWT → req.user.schoolId / req.user.role
+//
+// Business rules enforced on every create/update:
+//   1. A class cannot have two slots that overlap on the same day
+//      (covers "two subjects can't be learnt at the same time in one
+//      stream", since a stream IS a class here).
+//   2. A teacher cannot be double-booked — no two slots for the same
+//      teacher may overlap on the same day, even across different classes.
+//   3. start_time must be before end_time, and day must be a school day
+//      (monday–friday).
+// =============================================================================
+
+const { createClient } = require('@supabase/supabase-js');
+const asyncHandler = require('express-async-handler');
+const logger = require('../utils/logger');
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+
+const respond = (res, status, success, message, data = null, errors = null) => {
+  const payload = { success, message };
+  if (data !== null) payload.data = data;
+  if (errors) payload.errors = errors;
+  return res.status(status).json(payload);
+};
+
+// ---------------------------------------------------------------------------
+// Helper: resolve the current academic year for a school when the caller
+// didn't pass one explicitly.
+// ---------------------------------------------------------------------------
+const getCurrentAcademicYear = async (schoolId) => {
+  const { data } = await supabase
+    .from('academic_years')
+    .select('id, name')
+    .eq('school_id', schoolId)
+    .eq('is_current', true)
+    .maybeSingle();
+  return data;
+};
+
+// ---------------------------------------------------------------------------
+// Helper: do two [start, end) time ranges overlap?
+// Times are 'HH:MM' or 'HH:MM:SS' strings — safe to compare lexically.
+// ---------------------------------------------------------------------------
+const overlaps = (aStart, aEnd, bStart, bEnd) => aStart < bEnd && bStart < aEnd;
+
+// ---------------------------------------------------------------------------
+// Helper: find every active slot for the school/year that conflicts with
+// the given day/time — either because it's the same class, or because it's
+// the same teacher (regardless of class). Excludes `excludeId` so updates
+// can compare against everything except themselves.
+// ---------------------------------------------------------------------------
+const findConflicts = async ({ schoolId, academicYearId, day, startTime, endTime, classId, teacherId, excludeId }) => {
+  let query = supabase
+    .from('timetable_slots')
+    .select(`
+      id, day, start_time, end_time, class_id, teacher_id,
+      class:class_id ( id, grade_level, stream_name ),
+      teacher:teacher_id ( id, user_id, users:user_id ( first_name, last_name ) ),
+      learning_area:learning_area_id ( id, name, code )
+    `)
+    .eq('school_id', schoolId)
+    .eq('academic_year_id', academicYearId)
+    .eq('day', day)
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .or(`class_id.eq.${classId},teacher_id.eq.${teacherId}`);
+
+  if (excludeId) query = query.neq('id', excludeId);
+
+  const { data: candidates, error } = await query;
+  if (error) throw error;
+
+  const classConflicts = [];
+  const teacherConflicts = [];
+
+  (candidates || []).forEach((slot) => {
+    if (!overlaps(startTime, endTime, slot.start_time, slot.end_time)) return;
+    if (slot.class_id === classId) classConflicts.push(slot);
+    if (slot.teacher_id === teacherId) teacherConflicts.push(slot);
+  });
+
+  return { classConflicts, teacherConflicts };
+};
+
+const formatConflict = (slot) => ({
+  id: slot.id,
+  day: slot.day,
+  start_time: slot.start_time,
+  end_time: slot.end_time,
+  class: slot.class ? `${slot.class.grade_level}${slot.class.stream_name ? ' ' + slot.class.stream_name : ''}` : null,
+  teacher: slot.teacher?.users ? `${slot.teacher.users.first_name} ${slot.teacher.users.last_name}` : null,
+  learning_area: slot.learning_area?.name || null,
+});
+
+// =============================================================================
+// GET /api/v1/timetable
+//   Query: class_id* | academic_year_id | term_id
+//   Weekly grid for one class: { monday: [...], tuesday: [...], ... }
+// =============================================================================
+const getTimetable = asyncHandler(async (req, res) => {
+  const { schoolId } = req.user;
+  const { class_id, academic_year_id, term_id } = req.query;
+
+  if (!class_id) {
+    return respond(res, 400, false, 'class_id is required');
+  }
+
+  const { data: classRow } = await supabase
+    .from('classes')
+    .select('id, grade_level, stream_name')
+    .eq('id', class_id)
+    .eq('school_id', schoolId)
+    .maybeSingle();
+
+  if (!classRow) {
+    return respond(res, 404, false, 'Class not found');
+  }
+
+  let yearId = academic_year_id;
+  if (!yearId) {
+    const current = await getCurrentAcademicYear(schoolId);
+    if (current) yearId = current.id;
+  }
+  if (!yearId) {
+    return respond(res, 404, false, 'No current academic year found. Pass academic_year_id explicitly.');
+  }
+
+  let query = supabase
+    .from('timetable_slots')
+    .select(`
+      id, day, period_number, start_time, end_time, room, term_id,
+      class_id, teacher_id, learning_area_id,
+      teacher:teacher_id ( id, user_id, users:user_id ( first_name, last_name ) ),
+      learning_area:learning_area_id ( id, name, code )
+    `)
+    .eq('school_id', schoolId)
+    .eq('class_id', class_id)
+    .eq('academic_year_id', yearId)
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .order('day')
+    .order('start_time');
+
+  if (term_id) query = query.eq('term_id', term_id);
+
+  const { data: slots, error } = await query;
+  if (error) {
+    logger.error('Failed to fetch timetable', { error: error.message });
+    return respond(res, 500, false, 'Failed to fetch timetable', null, error.message);
+  }
+
+  const timetable = {};
+  DAYS.forEach((day) => { timetable[day] = []; });
+  (slots || []).forEach((slot) => {
+    if (timetable[slot.day]) timetable[slot.day].push(slot);
+  });
+
+  return respond(res, 200, true, 'Timetable fetched', {
+    class: classRow,
+    academic_year_id: yearId,
+    timetable,
+    total_slots: slots?.length || 0,
+  });
+});
+
+// =============================================================================
+// POST /api/v1/timetable
+//   Body: { class_id*, learning_area_id*, teacher_id*, day*, start_time*,
+//            end_time*, academic_year_id, term_id, room, period_number }
+//   `day` may also be an array of days to create the same lesson across
+//   several days of the week in one call (e.g. Maths every weekday 8-9AM).
+// =============================================================================
+const createSlot = asyncHandler(async (req, res) => {
+  const { schoolId, id: userId } = req.user;
+  const {
+    class_id, learning_area_id, teacher_id,
+    day, start_time, end_time,
+    academic_year_id, term_id, room, period_number,
+  } = req.body;
+
+  const missing = ['class_id', 'learning_area_id', 'teacher_id', 'day', 'start_time', 'end_time']
+    .filter((f) => !req.body[f]);
+  if (missing.length) {
+    return respond(res, 400, false, `Missing required field(s): ${missing.join(', ')}`);
+  }
+
+  const days = Array.isArray(day) ? day : [day];
+  const invalidDays = days.filter((d) => !DAYS.includes(String(d).toLowerCase()));
+  if (invalidDays.length) {
+    return respond(res, 400, false, `Invalid day(s): ${invalidDays.join(', ')}. Must be one of ${DAYS.join(', ')}.`);
+  }
+  if (start_time >= end_time) {
+    return respond(res, 400, false, 'start_time must be before end_time');
+  }
+
+  // Verify class, learning area, and teacher all belong to this school.
+  const [{ data: classRow }, { data: learningAreaRow }, { data: teacherRow }] = await Promise.all([
+    supabase.from('classes').select('id, grade_level, stream_name').eq('id', class_id).eq('school_id', schoolId).maybeSingle(),
+    supabase.from('learning_areas').select('id, name, class_ids, grade_levels').eq('id', learning_area_id).maybeSingle(),
+    supabase.from('teachers').select('id, user_id').eq('id', teacher_id).eq('school_id', schoolId).maybeSingle(),
+  ]);
+
+  if (!classRow) return respond(res, 404, false, 'Class not found');
+  if (!learningAreaRow) return respond(res, 404, false, 'Learning area not found');
+  if (!teacherRow) return respond(res, 404, false, 'Teacher not found');
+
+  let yearId = academic_year_id;
+  if (!yearId) {
+    const current = await getCurrentAcademicYear(schoolId);
+    if (current) yearId = current.id;
+  }
+  if (!yearId) {
+    return respond(res, 404, false, 'No current academic year found. Pass academic_year_id explicitly.');
+  }
+
+  // Run conflict checks for every requested day before inserting anything,
+  // so a multi-day request either fully succeeds or fully fails.
+  const conflictsByDay = {};
+  for (const d of days) {
+    const dayLower = String(d).toLowerCase();
+    const { classConflicts, teacherConflicts } = await findConflicts({
+      schoolId, academicYearId: yearId, day: dayLower,
+      startTime: start_time, endTime: end_time,
+      classId: class_id, teacherId: teacher_id,
+    });
+    if (classConflicts.length || teacherConflicts.length) {
+      conflictsByDay[dayLower] = {
+        class_conflicts: classConflicts.map(formatConflict),
+        teacher_conflicts: teacherConflicts.map(formatConflict),
+      };
+    }
+  }
+
+  if (Object.keys(conflictsByDay).length) {
+    const messages = [];
+    Object.entries(conflictsByDay).forEach(([d, c]) => {
+      if (c.class_conflicts.length) {
+        const cc = c.class_conflicts[0];
+        messages.push(`${d}: this class already has ${cc.learning_area || 'a lesson'} booked ${cc.start_time}–${cc.end_time}`);
+      }
+      if (c.teacher_conflicts.length) {
+        const tc = c.teacher_conflicts[0];
+        messages.push(`${d}: this teacher is already teaching ${tc.learning_area || 'another lesson'} in ${tc.class || 'another class'} at ${tc.start_time}–${tc.end_time}`);
+      }
+    });
+    return respond(res, 409, false, `Timetable conflict: ${messages.join('; ')}`, { conflicts: conflictsByDay });
+  }
+
+  const now = new Date().toISOString();
+  const rows = days.map((d) => ({
+    school_id: schoolId,
+    academic_year_id: yearId,
+    term_id: term_id || null,
+    class_id,
+    learning_area_id,
+    teacher_id,
+    day: String(d).toLowerCase(),
+    period_number: period_number || null,
+    start_time,
+    end_time,
+    room: room || null,
+    is_active: true,
+    created_by: userId || null,
+    created_at: now,
+    updated_at: now,
+  }));
+
+  const { data: inserted, error } = await supabase
+    .from('timetable_slots')
+    .insert(rows)
+    .select(`
+      id, day, period_number, start_time, end_time, room, class_id, teacher_id, learning_area_id,
+      teacher:teacher_id ( id, user_id, users:user_id ( first_name, last_name ) ),
+      learning_area:learning_area_id ( id, name, code )
+    `);
+
+  if (error) {
+    logger.error('Failed to create timetable slot(s)', { error: error.message });
+    return respond(res, 500, false, 'Failed to create timetable slot(s)', null, error.message);
+  }
+
+  return respond(res, 201, true, 'Timetable slot(s) created', { slots: inserted });
+});
+
+// =============================================================================
+// PUT /api/v1/timetable/:id
+//   Body (any of): { day, start_time, end_time, teacher_id, learning_area_id,
+//                      room, period_number, is_active }
+//   Re-runs the same conflict checks against everything except itself.
+// =============================================================================
+const updateSlot = asyncHandler(async (req, res) => {
+  const { schoolId } = req.user;
+  const { id } = req.params;
+  const { day, start_time, end_time, teacher_id, learning_area_id, room, period_number, is_active } = req.body;
+
+  const { data: existing } = await supabase
+    .from('timetable_slots')
+    .select('*')
+    .eq('id', id)
+    .eq('school_id', schoolId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (!existing) {
+    return respond(res, 404, false, 'Timetable slot not found');
+  }
+
+  const nextDay = day ? String(day).toLowerCase() : existing.day;
+  const nextStart = start_time || existing.start_time;
+  const nextEnd = end_time || existing.end_time;
+  const nextTeacher = teacher_id || existing.teacher_id;
+  const nextClass = existing.class_id; // class is not changeable on an existing slot
+
+  if (day && !DAYS.includes(nextDay)) {
+    return respond(res, 400, false, `Invalid day: ${day}. Must be one of ${DAYS.join(', ')}.`);
+  }
+  if (nextStart >= nextEnd) {
+    return respond(res, 400, false, 'start_time must be before end_time');
+  }
+
+  if (typeof is_active === 'boolean' && is_active === false) {
+    // Deactivating never conflicts with anything.
+  } else {
+    const { classConflicts, teacherConflicts } = await findConflicts({
+      schoolId,
+      academicYearId: existing.academic_year_id,
+      day: nextDay,
+      startTime: nextStart,
+      endTime: nextEnd,
+      classId: nextClass,
+      teacherId: nextTeacher,
+      excludeId: id,
+    });
+
+    if (classConflicts.length) {
+      const cc = formatConflict(classConflicts[0]);
+      return respond(res, 409, false, `Timetable conflict: this class already has ${cc.learning_area || 'a lesson'} booked ${cc.start_time}–${cc.end_time} on ${nextDay}`, { conflicts: classConflicts.map(formatConflict) });
+    }
+    if (teacherConflicts.length) {
+      const tc = formatConflict(teacherConflicts[0]);
+      return respond(res, 409, false, `Timetable conflict: this teacher is already teaching ${tc.learning_area || 'another lesson'} in ${tc.class || 'another class'} at ${tc.start_time}–${tc.end_time} on ${nextDay}`, { conflicts: teacherConflicts.map(formatConflict) });
+    }
+  }
+
+  const updates = { updated_at: new Date().toISOString() };
+  if (day) updates.day = nextDay;
+  if (start_time) updates.start_time = start_time;
+  if (end_time) updates.end_time = end_time;
+  if (teacher_id) updates.teacher_id = teacher_id;
+  if (learning_area_id) updates.learning_area_id = learning_area_id;
+  if (room !== undefined) updates.room = room;
+  if (period_number !== undefined) updates.period_number = period_number;
+  if (typeof is_active === 'boolean') updates.is_active = is_active;
+
+  const { data: updated, error } = await supabase
+    .from('timetable_slots')
+    .update(updates)
+    .eq('id', id)
+    .select(`
+      id, day, period_number, start_time, end_time, room, class_id, teacher_id, learning_area_id, is_active,
+      teacher:teacher_id ( id, user_id, users:user_id ( first_name, last_name ) ),
+      learning_area:learning_area_id ( id, name, code )
+    `)
+    .single();
+
+  if (error) {
+    logger.error('Failed to update timetable slot', { error: error.message });
+    return respond(res, 500, false, 'Failed to update timetable slot', null, error.message);
+  }
+
+  return respond(res, 200, true, 'Timetable slot updated', { slot: updated });
+});
+
+// =============================================================================
+// DELETE /api/v1/timetable/:id
+//   Soft-delete: sets deleted_at + is_active = false.
+// =============================================================================
+const deleteSlot = asyncHandler(async (req, res) => {
+  const { schoolId } = req.user;
+  const { id } = req.params;
+
+  const { data: existing } = await supabase
+    .from('timetable_slots')
+    .select('id')
+    .eq('id', id)
+    .eq('school_id', schoolId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (!existing) {
+    return respond(res, 404, false, 'Timetable slot not found');
+  }
+
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from('timetable_slots')
+    .update({ is_active: false, deleted_at: now, updated_at: now })
+    .eq('id', id);
+
+  if (error) {
+    logger.error('Failed to delete timetable slot', { error: error.message });
+    return respond(res, 500, false, 'Failed to delete timetable slot', null, error.message);
+  }
+
+  return respond(res, 200, true, 'Timetable slot deleted');
+});
+
+module.exports = {
+  getTimetable,
+  createSlot,
+  updateSlot,
+  deleteSlot,
+};
