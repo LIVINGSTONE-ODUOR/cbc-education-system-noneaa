@@ -184,6 +184,7 @@ app.use('/api/v1/fee-structures', require('./routes/feeStructure.routes'));
 app.use('/api/v1/ai', require('./routes/ai.routes'));
 app.use('/api/v1/ai-assistant', require('./routes/aiAssistant.routes'));
 app.use('/api/v1/live-chat', require('./routes/liveChat.routes'));
+app.use('/api/v1/messages', require('./routes/message.routes'));
 app.use('/api/v1/grading', require('./routes/grading.routes'));
 app.use('/api/v1/performance', require('./routes/performance.routes'));
 
