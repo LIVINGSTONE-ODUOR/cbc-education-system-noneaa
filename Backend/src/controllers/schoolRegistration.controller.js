@@ -449,7 +449,57 @@ const registerSchoolAdmin = async (req, res) => {
       logger.error('[registerSchoolAdmin] Default academic year seed failed:', academicYearError);
     }
 
-    // ── Step 9b: Send welcome email (login URL + email + temp password) ──
+    // ── Step 9b: Seed a default, editable CBC grading scheme ──
+    // Without this, grading_schemes stays empty until either a school_admin
+    // manually creates one in Grading Management, or a teacher happens to
+    // save the very first assessment (which lazily creates one via
+    // gradingCache.getScheme). That's a confusing first-run experience —
+    // the admin's Grading Management page looks empty/broken in the
+    // meantime. Seed the standard 4-level CBC scale here instead, using the
+    // same values as the gradingCache.js fallback so both paths agree.
+    // The school_admin can rename it, edit the level cut-offs, add more
+    // schemes, or clone it via the existing grading scheme endpoints
+    // (POST/PUT /api/v1/grading/schemes, /levels) — this only sets the
+    // starting point, not a locked-in default.
+
+    const { data: defaultScheme, error: schemeError } = await supabaseAdmin
+      .from('grading_schemes')
+      .insert({
+        school_id:   school.id,
+        name:        'CBC Standard',
+        description: 'Default CBC Competency-Based grading scheme',
+        is_default:  true,
+        is_active:   true,
+        created_by:  authUserId,
+      })
+      .select()
+      .single();
+
+    if (schemeError) {
+      // Don't fail registration over this — a school_admin can still create
+      // a scheme manually via Grading Management, or one will be lazily
+      // created on first assessment save.
+      logger.error('[registerSchoolAdmin] Default grading scheme seed failed:', schemeError);
+    } else {
+      const DEFAULT_GRADING_LEVELS = [
+        { code: 'BE', name: 'Below Expectation',    min_score: 0,  max_score: 24,  color: '#EF4444', sort_order: 1, is_pass: false },
+        { code: 'ME', name: 'Meeting Expectation',  min_score: 25, max_score: 49,  color: '#F59E0B', sort_order: 2, is_pass: true },
+        { code: 'AE', name: 'Above Expectation',    min_score: 50, max_score: 74,  color: '#3B82F6', sort_order: 3, is_pass: true },
+        { code: 'EE', name: 'Exceeding Expectation', min_score: 75, max_score: 100, color: '#10B981', sort_order: 4, is_pass: true },
+      ];
+
+      const { error: levelsError } = await supabaseAdmin
+        .from('grading_levels')
+        .insert(
+          DEFAULT_GRADING_LEVELS.map((lvl) => ({ ...lvl, scheme_id: defaultScheme.id }))
+        );
+
+      if (levelsError) {
+        logger.error('[registerSchoolAdmin] Default grading levels seed failed:', levelsError);
+      }
+    }
+
+    // ── Step 9c: Send welcome email (login URL + email + temp password) ──
     // Fire-and-forget-ish: don't fail registration if the email fails to send,
     // just log it so support can manually resend if needed.
 
