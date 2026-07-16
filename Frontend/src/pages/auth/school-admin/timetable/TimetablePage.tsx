@@ -37,7 +37,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { CalendarClock, Loader2, Plus, Pencil, Trash2, AlertTriangle, School, Settings, Printer, Users } from 'lucide-react';
+import { CalendarClock, Loader2, Plus, Pencil, Trash2, AlertTriangle, School, Settings, Printer, Users, Copy } from 'lucide-react';
 
 import { getClasses, getClassLearningAreas, ClassApiItem, ClassLearningArea } from '@/lib/api/classApi';
 import { getTeachers } from '@/lib/api/teacherApi';
@@ -51,6 +51,7 @@ import {
   getSchoolTimetable,
   getTeacherLoadReport,
   getTimetablePeriods,
+  copyTimetable,
   SchoolTimetableResponse,
   TeacherLoad,
   TeacherDayStatus,
@@ -61,6 +62,7 @@ import {
   WeekDay,
   WEEK_DAYS,
   TimetablePeriodsResponse,
+  CopyTimetableResponse,
 } from '@/lib/api/timetableApi';
 
 interface TeacherOption {
@@ -218,6 +220,63 @@ export default function TimetablePage() {
   const [loadReportOpen, setLoadReportOpen] = useState(false);
   const [loadReportLoading, setLoadReportLoading] = useState(false);
   const [teacherLoad, setTeacherLoad] = useState<TeacherLoad[]>([]);
+
+  // ── Copy Timetable: bulk-duplicate a term/year's lessons into another
+  // term/year, so the admin only tweaks what's different instead of
+  // rebuilding the whole grid every term ───────────────────────────────
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [copying, setCopying] = useState(false);
+  const [copySourceYearId, setCopySourceYearId] = useState<string>('');
+  const [copySourceTermId, setCopySourceTermId] = useState<string>('');
+  const [copyTargetYearId, setCopyTargetYearId] = useState<string>('');
+  const [copyTargetTermId, setCopyTargetTermId] = useState<string>('');
+  const [copyOnlySelectedClass, setCopyOnlySelectedClass] = useState(false);
+  const [copyOverwrite, setCopyOverwrite] = useState(false);
+  const [copyResult, setCopyResult] = useState<CopyTimetableResponse | null>(null);
+
+  const openCopyDialog = () => {
+    setCopySourceYearId(currentYear?.id || '');
+    setCopySourceTermId(currentTerm?.id || '');
+    setCopyTargetYearId('');
+    setCopyTargetTermId('');
+    setCopyOnlySelectedClass(false);
+    setCopyOverwrite(false);
+    setCopyResult(null);
+    setCopyDialogOpen(true);
+  };
+
+  const handleCopy = async () => {
+    if (!copyTargetYearId) {
+      toast.error('Choose a target academic year to copy into.');
+      return;
+    }
+    setCopying(true);
+    setCopyResult(null);
+    try {
+      const res = await copyTimetable({
+        source_academic_year_id: copySourceYearId || undefined,
+        source_term_id: copySourceTermId || undefined,
+        target_academic_year_id: copyTargetYearId,
+        target_term_id: copyTargetTermId || undefined,
+        class_ids: copyOnlySelectedClass && selectedClassId ? [selectedClassId] : undefined,
+        overwrite: copyOverwrite,
+      });
+      setCopyResult(res.data);
+      if (res.data.skipped_count === 0) {
+        toast.success(`Copied ${res.data.copied} lesson(s).`);
+      } else {
+        toast.warning(`Copied ${res.data.copied} of ${res.data.total_source} lesson(s) — ${res.data.skipped_count} skipped due to conflicts.`);
+      }
+      // If the target period is what's currently on screen, refresh the grid.
+      if (selectedClassId && copyTargetYearId === currentYear?.id) {
+        await loadClassData(selectedClassId);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to copy the timetable');
+    } finally {
+      setCopying(false);
+    }
+  };
 
   const openLoadReport = async () => {
     setLoadReportOpen(true);
@@ -448,6 +507,10 @@ export default function TimetablePage() {
           <Button variant="outline" onClick={openSettingsDialog}>
             <Settings className="h-4 w-4 mr-2" />
             Timetable Setup
+          </Button>
+          <Button variant="outline" onClick={openCopyDialog}>
+            <Copy className="h-4 w-4 mr-2" />
+            Copy Timetable
           </Button>
           <Button variant="outline" onClick={openLoadReport}>
             <Users className="h-4 w-4 mr-2" />
@@ -832,6 +895,145 @@ export default function TimetablePage() {
             <Button onClick={handlePrint} disabled={printing}>
               {printing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Print
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Copy Timetable: bulk-duplicate a term/year into another ──────
+           so the admin only tweaks what's different instead of rebuilding
+           the whole grid every term. */}
+      <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Copy Timetable</DialogTitle>
+            <DialogDescription>
+              Copy every lesson from one term/year into another. Existing lessons in the target period are left
+              untouched unless you choose to overwrite them.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>From — Year</Label>
+                <Select value={copySourceYearId} onValueChange={setCopySourceYearId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Current year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {periods.academic_years.map((y) => (
+                      <SelectItem key={y.id} value={y.id}>
+                        {y.name}{y.is_current ? ' (current)' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>From — Term</Label>
+                <Select value={copySourceTermId} onValueChange={setCopySourceTermId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Current term" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {periods.academic_terms.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}{t.is_current ? ' (current)' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>To — Year</Label>
+                <Select value={copyTargetYearId} onValueChange={setCopyTargetYearId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {periods.academic_years.map((y) => (
+                      <SelectItem key={y.id} value={y.id}>
+                        {y.name}{y.is_current ? ' (current)' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>To — Term</Label>
+                <Select value={copyTargetTermId} onValueChange={setCopyTargetTermId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="No specific term" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {periods.academic_terms.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}{t.is_current ? ' (current)' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2 rounded-md border p-3">
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={copyOnlySelectedClass}
+                  onCheckedChange={(checked) => setCopyOnlySelectedClass(checked === true)}
+                  disabled={!selectedClassId}
+                />
+                Only copy {selectedClass ? `${selectedClass.grade_level}${selectedClass.stream_name ? ' ' + selectedClass.stream_name : ''}` : 'the selected class'} (leave unchecked to copy every class)
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={copyOverwrite}
+                  onCheckedChange={(checked) => setCopyOverwrite(checked === true)}
+                />
+                Overwrite existing lessons for the copied class(es) in the target period
+              </label>
+              {!copyOverwrite && (
+                <p className="text-xs text-muted-foreground">
+                  Without overwrite, any source lesson that clashes with something already in the target
+                  (same class, teacher, or room) is skipped rather than replaced — you'll see exactly what
+                  was skipped and why.
+                </p>
+              )}
+            </div>
+
+            {copyResult && (
+              <div className="rounded-md border p-3 space-y-2">
+                <p className="text-sm font-medium">
+                  Copied {copyResult.copied} of {copyResult.total_source} lesson(s) across {copyResult.classes_copied} class(es).
+                </p>
+                {copyResult.skipped_count > 0 && (
+                  <div className="max-h-40 overflow-y-auto space-y-1.5 text-xs">
+                    {copyResult.skipped.map((s, i) => (
+                      <div key={i} className="flex items-start gap-1.5 text-muted-foreground">
+                        <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0 text-destructive" />
+                        <span>
+                          <span className="font-medium text-foreground">{s.class || 'Class'}</span>
+                          {' — '}{s.learning_area || 'Lesson'} on {s.day} ({s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}): {s.reason}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCopyDialogOpen(false)} disabled={copying}>
+              Close
+            </Button>
+            <Button onClick={handleCopy} disabled={copying || !copyTargetYearId}>
+              {copying && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Copy
             </Button>
           </DialogFooter>
         </DialogContent>
