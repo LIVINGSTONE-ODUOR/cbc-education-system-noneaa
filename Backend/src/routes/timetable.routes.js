@@ -9,6 +9,7 @@ const { authenticate, authorize, securityHeaders } = require('../middleware/auth
 const {
   getTimetable,
   createSlot,
+  copyTimetable,
   updateSlot,
   deleteSlot,
   getDaySettings,
@@ -57,6 +58,12 @@ router.get('/periods', getTimetablePeriods);
 // GET /api/v1/timetable?class_id=&academic_year_id=&term_id=
 //   Weekly grid for one class. Any authenticated role in the school can read.
 router.get('/', getTimetable);
+
+// POST /api/v1/timetable/copy
+//   Body: { source_academic_year_id, source_term_id, target_academic_year_id*,
+//            target_term_id, class_ids, overwrite }
+//   Bulk-copies lessons from one term/year into another. Admin/super_admin only.
+router.post('/copy', authorize('school_admin', 'super_admin'), copyTimetable);
 
 // POST /api/v1/timetable
 //   Create one (or several, via day: []) timetable slot(s).
