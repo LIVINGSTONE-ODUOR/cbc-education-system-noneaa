@@ -320,6 +320,120 @@ const getPrintHeader = asyncHandler(async (req, res) => {
 });
 
 // =============================================================================
+// GET /api/v1/timetable/teacher-load?academic_year_id=&term_id=
+//   Per-teacher, per-day lesson counts against that day's configured lesson
+//   cap (Timetable Setup). Flags days a teacher has no lessons at all
+//   ("free"), days they're booked beyond the day's lesson cap
+//   ("overloaded"), and how many free periods remain otherwise. Powers the
+//   admin's Teacher Clash / Free-Period report.
+// =============================================================================
+const getTeacherLoadReport = asyncHandler(async (req, res) => {
+  const { schoolId } = req.user;
+  const { academic_year_id, term_id } = req.query;
+
+  let yearId = academic_year_id;
+  if (!yearId) {
+    const current = await getCurrentAcademicYear(schoolId);
+    if (current) yearId = current.id;
+  }
+  if (!yearId) {
+    return respond(res, 404, false, 'No current academic year found. Pass academic_year_id explicitly.');
+  }
+
+  const { data: settingsRows } = await supabase
+    .from('timetable_day_settings')
+    .select('day, lessons_count')
+    .eq('school_id', schoolId)
+    .eq('academic_year_id', yearId);
+  const limitByDay = {};
+  DAYS.forEach((d) => { limitByDay[d] = 8; });
+  (settingsRows || []).forEach((r) => { limitByDay[r.day] = r.lessons_count; });
+
+  const { data: teachers, error: teachersError } = await supabase
+    .from('teachers')
+    .select('id, user_id, users:user_id ( first_name, last_name )')
+    .eq('school_id', schoolId)
+    .eq('is_active', true)
+    .is('deleted_at', null);
+  if (teachersError) {
+    logger.error('Failed to fetch teachers for load report', { error: teachersError.message });
+    return respond(res, 500, false, 'Failed to fetch teachers', null, teachersError.message);
+  }
+
+  let slotsQuery = supabase
+    .from('timetable_slots')
+    .select(`
+      id, day, start_time, end_time, teacher_id,
+      class:class_id ( id, grade_level, stream_name ),
+      learning_area:learning_area_id ( id, name )
+    `)
+    .eq('school_id', schoolId)
+    .eq('academic_year_id', yearId)
+    .eq('is_active', true)
+    .is('deleted_at', null);
+  if (term_id) slotsQuery = slotsQuery.eq('term_id', term_id);
+
+  const { data: slots, error: slotsError } = await slotsQuery;
+  if (slotsError) {
+    logger.error('Failed to fetch slots for teacher load report', { error: slotsError.message });
+    return respond(res, 500, false, 'Failed to fetch timetable', null, slotsError.message);
+  }
+
+  const byTeacher = {};
+  (slots || []).forEach((slot) => {
+    if (!slot.teacher_id) return;
+    if (!byTeacher[slot.teacher_id]) byTeacher[slot.teacher_id] = {};
+    if (!byTeacher[slot.teacher_id][slot.day]) byTeacher[slot.teacher_id][slot.day] = [];
+    byTeacher[slot.teacher_id][slot.day].push(slot);
+  });
+
+  const report = (teachers || []).map((t) => {
+    const name = t.users ? `${t.users.first_name} ${t.users.last_name}` : 'Unnamed teacher';
+
+    const days = DAYS.map((day) => {
+      const daySlots = (byTeacher[t.id]?.[day] || [])
+        .slice()
+        .sort((a, b) => a.start_time.localeCompare(b.start_time));
+      const limit = limitByDay[day];
+      const lessonsCount = daySlots.length;
+
+      let status = 'balanced';
+      if (lessonsCount === 0) status = 'free';
+      else if (lessonsCount > limit) status = 'overloaded';
+      else if (lessonsCount <= Math.ceil(limit / 2)) status = 'light';
+
+      return {
+        day,
+        lessons_count: lessonsCount,
+        limit,
+        free_periods: Math.max(0, limit - lessonsCount),
+        status,
+        lessons: daySlots.map((s) => ({
+          id: s.id,
+          start_time: s.start_time,
+          end_time: s.end_time,
+          class: s.class ? `${s.class.grade_level}${s.class.stream_name ? ' ' + s.class.stream_name : ''}` : null,
+          learning_area: s.learning_area?.name || null,
+        })),
+      };
+    });
+
+    return {
+      teacher_id: t.id,
+      name,
+      weekly_total: days.reduce((sum, d) => sum + d.lessons_count, 0),
+      days_unassigned: days.filter((d) => d.lessons_count === 0).length,
+      days_overloaded: days.filter((d) => d.status === 'overloaded').length,
+      days,
+    };
+  });
+
+  report.sort((a, b) => a.name.localeCompare(b.name));
+
+  return respond(res, 200, true, 'Teacher load report fetched', { academic_year_id: yearId, teachers: report });
+});
+
+// =============================================================================
 // POST /api/v1/timetable
 //   Body: { class_id*, learning_area_id*, teacher_id*, day*, start_time*,
 //            end_time*, academic_year_id, term_id, room, period_number }
@@ -691,4 +805,5 @@ module.exports = {
   updateDaySettings,
   getSchoolTimetable,
   getPrintHeader,
+  getTeacherLoadReport,
 };
