@@ -113,6 +113,9 @@ import { BlogProvider } from "@/contexts/BlogContext";
 
 import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
 
+// Timetable Page (was orphaned - never routed)
+import TimetablePage from "@/pages/auth/school-admin/timetable/TimetablePage";
+
 // Grading System Pages
 import GradingManagement from "@/components/grading/GradingManagement";
 import TeacherAssessmentEntry from "@/components/grading/TeacherAssessmentEntry";
@@ -471,6 +474,9 @@ function AppRoutes() {
                 <Route path="fee-management" element={<FeeManagement onBack={() => window.history.back()} />} />
                 <Route path="assessments" element={<Assessments />} />
                 <Route path="staff-attendance" element={<AdminAttendance />} />
+
+                {/* ── Timetable (was orphaned - component existed but had no route) ── */}
+                <Route path="timetable" element={<TimetablePage />} />
 
                 {/* ── Grading System ── */}
                 <Route path="grading/schemes" element={<GradingManagement />} />
