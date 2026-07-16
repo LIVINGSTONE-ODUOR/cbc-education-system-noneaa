@@ -175,6 +175,151 @@ const getTimetable = asyncHandler(async (req, res) => {
 });
 
 // =============================================================================
+// GET /api/v1/timetable/school-wide?academic_year_id=&term_id=
+//   Every class's weekly grid in one response, for the admin's "Print
+//   Timetable" button — full school name, term, and academic year, plus
+//   every lesson/class/teacher-per-subject so the printout is self-contained.
+// =============================================================================
+const getSchoolTimetable = asyncHandler(async (req, res) => {
+  const { schoolId } = req.user;
+  const { academic_year_id, term_id } = req.query;
+
+  const { data: school } = await supabase
+    .from('schools')
+    .select('name, address')
+    .eq('id', schoolId)
+    .maybeSingle();
+
+  let yearId = academic_year_id;
+  let yearRow = null;
+  if (yearId) {
+    const { data } = await supabase.from('academic_years').select('id, name').eq('id', yearId).maybeSingle();
+    yearRow = data;
+  } else {
+    yearRow = await getCurrentAcademicYear(schoolId);
+    if (yearRow) yearId = yearRow.id;
+  }
+  if (!yearId) {
+    return respond(res, 404, false, 'No current academic year found. Pass academic_year_id explicitly.');
+  }
+
+  let termRow = null;
+  if (term_id) {
+    const { data } = await supabase.from('academic_terms').select('id, name').eq('id', term_id).maybeSingle();
+    termRow = data;
+  } else {
+    const { data } = await supabase
+      .from('academic_terms')
+      .select('id, name')
+      .eq('school_id', schoolId)
+      .eq('is_current', true)
+      .maybeSingle();
+    termRow = data;
+  }
+
+  const { data: classes, error: classesError } = await supabase
+    .from('classes')
+    .select('id, grade_level, stream_name')
+    .eq('school_id', schoolId)
+    .eq('is_active', true)
+    .order('grade_level')
+    .order('stream_name');
+  if (classesError) {
+    logger.error('Failed to fetch classes for school timetable', { error: classesError.message });
+    return respond(res, 500, false, 'Failed to fetch classes', null, classesError.message);
+  }
+
+  let slotsQuery = supabase
+    .from('timetable_slots')
+    .select(`
+      id, day, start_time, end_time, room, class_id,
+      teacher:teacher_id ( id, user_id, users:user_id ( first_name, last_name ) ),
+      learning_area:learning_area_id ( id, name, code )
+    `)
+    .eq('school_id', schoolId)
+    .eq('academic_year_id', yearId)
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .order('day')
+    .order('start_time');
+  if (term_id) slotsQuery = slotsQuery.eq('term_id', term_id);
+
+  const { data: slots, error: slotsError } = await slotsQuery;
+  if (slotsError) {
+    logger.error('Failed to fetch school-wide timetable', { error: slotsError.message });
+    return respond(res, 500, false, 'Failed to fetch timetable', null, slotsError.message);
+  }
+
+  const emptyByDay = () => DAYS.reduce((acc, d) => ({ ...acc, [d]: [] }), {});
+  const slotsByClass = {};
+  (slots || []).forEach((slot) => {
+    if (!slotsByClass[slot.class_id]) slotsByClass[slot.class_id] = emptyByDay();
+    if (slotsByClass[slot.class_id][slot.day]) slotsByClass[slot.class_id][slot.day].push(slot);
+  });
+
+  const classes_timetable = (classes || []).map((c) => ({
+    id: c.id,
+    grade_level: c.grade_level,
+    stream_name: c.stream_name,
+    timetable: slotsByClass[c.id] || emptyByDay(),
+  }));
+
+  return respond(res, 200, true, 'School-wide timetable fetched', {
+    school: school || null,
+    academic_year: yearRow ? { id: yearRow.id, name: yearRow.name } : { id: yearId, name: null },
+    term: termRow || null,
+    classes: classes_timetable,
+  });
+});
+
+// =============================================================================
+// GET /api/v1/timetable/print-header?academic_year_id=&term_id=
+//   Lightweight school name / term / academic year lookup shared by the
+//   print buttons in the Teacher, Parent, and Student portals (their own
+//   timetable data comes from getMyTimetable / getLearnerTimetable — this
+//   just fills in the printout's header). Any authenticated school user.
+// =============================================================================
+const getPrintHeader = asyncHandler(async (req, res) => {
+  const { schoolId } = req.user;
+  const { academic_year_id, term_id } = req.query;
+
+  const { data: school } = await supabase
+    .from('schools')
+    .select('name, address')
+    .eq('id', schoolId)
+    .maybeSingle();
+
+  let yearRow = null;
+  if (academic_year_id) {
+    const { data } = await supabase.from('academic_years').select('id, name').eq('id', academic_year_id).maybeSingle();
+    yearRow = data;
+  } else {
+    yearRow = await getCurrentAcademicYear(schoolId);
+  }
+
+  let termRow = null;
+  if (term_id) {
+    const { data } = await supabase.from('academic_terms').select('id, name').eq('id', term_id).maybeSingle();
+    termRow = data;
+  } else {
+    const { data } = await supabase
+      .from('academic_terms')
+      .select('id, name')
+      .eq('school_id', schoolId)
+      .eq('is_current', true)
+      .maybeSingle();
+    termRow = data;
+  }
+
+  return respond(res, 200, true, 'Print header fetched', {
+    school_name: school?.name || null,
+    school_address: school?.address || null,
+    academic_year_name: yearRow?.name || null,
+    term_name: termRow?.name || null,
+  });
+});
+
+// =============================================================================
 // POST /api/v1/timetable
 //   Body: { class_id*, learning_area_id*, teacher_id*, day*, start_time*,
 //            end_time*, academic_year_id, term_id, room, period_number }
@@ -544,4 +689,6 @@ module.exports = {
   deleteSlot,
   getDaySettings,
   updateDaySettings,
+  getSchoolTimetable,
+  getPrintHeader,
 };
