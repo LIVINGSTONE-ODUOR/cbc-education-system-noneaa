@@ -12,12 +12,12 @@ import {
   RefreshCw, School, UserCheck, CalendarDays, Building2,
   Plus, Activity, Target,
   UserPlus, Award, Bell, ChevronRight, Zap, BarChart3,
-  Sparkles, TrendingUp, Layers
+  Sparkles, TrendingUp, Layers, PieChart as PieChartIcon, LineChart as LineChartIcon
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  AreaChart, Area, Legend,
+  AreaChart, Area, Legend, LineChart, Line,
 } from 'recharts';
 import { motion } from 'framer-motion';
 
@@ -81,6 +81,26 @@ interface EnrollmentByGrade {
   students: number;
 }
 
+interface GenderDistribution {
+  gender: string;
+  count: number;
+}
+
+interface SubjectPerformance {
+  learning_area_id: string;
+  subject_name: string;
+  average_percentage: number;
+  learner_count: number;
+}
+
+interface TermTrend {
+  academic_term_id: number;
+  term_name: string | null;
+  start_date: string | null;
+  average_score: number;
+  learner_count: number;
+}
+
 interface LearnerPerformance {
   learner_id: string;
   first_name: string;
@@ -100,6 +120,14 @@ interface LearnerPerformance {
 
 const GRADE_COLORS: Record<string, string> = {
   EE: '#10B981', AE: '#3B82F6', ME: '#F59E0B', BE: '#EF4444',
+};
+
+const GENDER_COLORS: Record<string, string> = {
+  male: '#3B82F6', female: '#EC4899',
+};
+
+const GENDER_LABELS: Record<string, string> = {
+  male: 'Male', female: 'Female',
 };
 
 const GRADE_BG: Record<string, string> = {
@@ -197,6 +225,9 @@ const SchoolDashboard = () => {
   const [classPerformance, setClassPerformance] = useState<ClassPerformance[]>([]);
   const [attendanceTrend, setAttendanceTrend] = useState<AttendanceTrendPoint[]>([]);
   const [enrollmentByGrade, setEnrollmentByGrade] = useState<EnrollmentByGrade[]>([]);
+  const [genderDistribution, setGenderDistribution] = useState<GenderDistribution[]>([]);
+  const [subjectPerformance, setSubjectPerformance] = useState<SubjectPerformance[]>([]);
+  const [termTrend, setTermTrend] = useState<TermTrend[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [greeting, setGreeting] = useState(getGreeting());
 
@@ -220,7 +251,7 @@ const SchoolDashboard = () => {
       const schoolId = user.schoolId;
 
       // Fetch all dashboard data in parallel
-      const [statsData, activitiesData, gradeDistData, topData, bottomData, classPerfData, attendanceTrendData, enrollmentData] = await Promise.all([
+      const [statsData, activitiesData, gradeDistData, topData, bottomData, classPerfData, attendanceTrendData, enrollmentData, genderData, subjectPerfData, termTrendData] = await Promise.all([
         apiFetch<SchoolStats>(`/api/v1/dashboard/stats?school_id=${schoolId}`),
         apiFetch<ActivityItem[]>(`/api/v1/dashboard/activities?school_id=${schoolId}&limit=8`).catch(() => []),
         apiFetch<GradeDistribution[]>(`/api/v1/dashboard/analytics/grade-distribution?school_id=${schoolId}`).catch(() => []),
@@ -229,6 +260,9 @@ const SchoolDashboard = () => {
         apiFetch<ClassPerformance[]>(`/api/v1/dashboard/analytics/class-performance?school_id=${schoolId}`).catch(() => []),
         apiFetch<AttendanceTrendPoint[]>(`/api/v1/dashboard/analytics/attendance-trend?school_id=${schoolId}&days=14`).catch(() => []),
         apiFetch<EnrollmentByGrade[]>(`/api/v1/dashboard/analytics/enrollment-by-grade?school_id=${schoolId}`).catch(() => []),
+        apiFetch<GenderDistribution[]>(`/api/v1/dashboard/analytics/gender-distribution?school_id=${schoolId}`).catch(() => []),
+        apiFetch<SubjectPerformance[]>(`/api/v1/dashboard/analytics/subject-performance?school_id=${schoolId}`).catch(() => []),
+        apiFetch<TermTrend[]>(`/api/v1/dashboard/analytics/term-trend?school_id=${schoolId}`).catch(() => []),
       ]);
 
       setStats(statsData);
@@ -239,6 +273,9 @@ const SchoolDashboard = () => {
       setClassPerformance(classPerfData);
       setAttendanceTrend(attendanceTrendData);
       setEnrollmentByGrade(enrollmentData);
+      setGenderDistribution(genderData);
+      setSubjectPerformance(subjectPerfData);
+      setTermTrend(termTrendData);
       setLastUpdated(new Date());
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to load dashboard';
@@ -787,6 +824,180 @@ const SchoolDashboard = () => {
               <div className="flex flex-col items-center justify-center h-[240px] text-muted-foreground">
                 <TrendingUp className="w-10 h-10 mb-2 opacity-30" />
                 <p className="text-sm">No attendance records in the last 14 days</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Subject-wise Performance + Gender Distribution */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Subject-wise Performance */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5 }}
+          className="lg:col-span-2"
+        >
+          <Card className="h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-violet-500" />
+                Subject-wise Performance
+              </CardTitle>
+              <CardDescription>Average score by learning area, all terms</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {subjectPerformance.some((s) => s.learner_count > 0) ? (
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={subjectPerformance} margin={{ top: 10, right: 10, left: 0, bottom: 60 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis
+                      dataKey="subject_name"
+                      tick={{ fontSize: 11 }}
+                      interval={0}
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                    />
+                    <YAxis tick={{ fontSize: 12 }} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                    <Tooltip
+                      contentStyle={{
+                        background: 'hsl(var(--popover))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                      }}
+                      formatter={(value: number, name: string, props) => [
+                        `${Number(value).toFixed(1)}% avg · ${props.payload.learner_count} learners`,
+                        'Score',
+                      ]}
+                    />
+                    <Bar dataKey="average_percentage" fill="#8B5CF6" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[280px] text-muted-foreground">
+                  <BookOpen className="w-10 h-10 mb-2 opacity-30" />
+                  <p className="text-sm">No subject assessments recorded yet</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Gender Distribution */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.55 }}
+        >
+          <Card className="h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <PieChartIcon className="w-5 h-5 text-pink-500" />
+                Gender Distribution
+              </CardTitle>
+              <CardDescription>Active learners</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {genderDistribution.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie
+                        data={genderDistribution}
+                        cx="50%" cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={3}
+                        dataKey="count"
+                        nameKey="gender"
+                      >
+                        {genderDistribution.map((entry) => (
+                          <Cell key={entry.gender} fill={GENDER_COLORS[entry.gender] || '#6B7280'} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          background: 'hsl(var(--popover))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                        }}
+                        formatter={(value: number, name: string) => [`${value} learners`, GENDER_LABELS[name] || name]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex flex-wrap justify-center gap-3 mt-2">
+                    {genderDistribution.map((d) => (
+                      <div key={d.gender} className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: GENDER_COLORS[d.gender] || '#6B7280' }} />
+                        <span className="text-xs text-muted-foreground">
+                          {GENDER_LABELS[d.gender] || d.gender} ({d.count})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[240px] text-muted-foreground">
+                  <PieChartIcon className="w-10 h-10 mb-2 opacity-30" />
+                  <p className="text-sm">No learner data yet</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Term-over-Term Performance Trend */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+      >
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <LineChartIcon className="w-5 h-5 text-emerald-500" />
+              Term-over-Term Performance
+            </CardTitle>
+            <CardDescription>School-wide average score across finalized terms</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {termTrend.filter((t) => t.learner_count > 0).length > 1 ? (
+              <ResponsiveContainer width="100%" height={240}>
+                <LineChart data={termTrend} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="term_name" tick={{ fontSize: 12 }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} tickFormatter={(v) => `${v}%`} />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'hsl(var(--popover))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                    }}
+                    formatter={(value: number, name: string, props) => [
+                      `${Number(value).toFixed(1)}% avg · ${props.payload.learner_count} learners`,
+                      'Score',
+                    ]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="average_score"
+                    stroke="#10B981"
+                    strokeWidth={2.5}
+                    dot={{ r: 4, fill: '#10B981' }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-[240px] text-muted-foreground">
+                <LineChartIcon className="w-10 h-10 mb-2 opacity-30" />
+                <p className="text-sm">Need at least two finalized terms to show a trend</p>
               </div>
             )}
           </CardContent>
