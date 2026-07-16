@@ -37,7 +37,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { CalendarClock, Loader2, Plus, Pencil, Trash2, AlertTriangle, School, Settings } from 'lucide-react';
+import { CalendarClock, Loader2, Plus, Pencil, Trash2, AlertTriangle, School, Settings, Printer } from 'lucide-react';
 
 import { getClasses, getClassLearningAreas, ClassApiItem, ClassLearningArea } from '@/lib/api/classApi';
 import { getTeachers } from '@/lib/api/teacherApi';
@@ -48,6 +48,8 @@ import {
   deleteTimetableSlot,
   getDaySettings,
   updateDaySettings,
+  getSchoolTimetable,
+  SchoolTimetableResponse,
   TimetableConflictError,
   TimetableGrid,
   TimetableSlot,
@@ -157,6 +159,24 @@ export default function TimetablePage() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const [deleteTarget, setDeleteTarget] = useState<TimetableSlot | null>(null);
+
+  // ── Print: full school timetable (all classes, all lessons, teachers) ───
+  const [printData, setPrintData] = useState<SchoolTimetableResponse | null>(null);
+  const [printing, setPrinting] = useState(false);
+
+  const handlePrint = async () => {
+    setPrinting(true);
+    try {
+      const res = await getSchoolTimetable();
+      setPrintData(res.data);
+      // Wait a tick so the print-only markup is in the DOM before printing.
+      setTimeout(() => window.print(), 50);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load the timetable for printing');
+    } finally {
+      setPrinting(false);
+    }
+  };
 
   const selectedClass = useMemo(
     () => classes.find((c) => c.id === selectedClassId) || null,
@@ -329,7 +349,7 @@ export default function TimetablePage() {
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 no-print">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <CalendarClock className="h-6 w-6 text-primary" />
@@ -339,10 +359,14 @@ export default function TimetablePage() {
             Assign teachers to learning areas per class, and schedule the days and times each lesson runs.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 no-print">
           <Button variant="outline" onClick={openSettingsDialog}>
             <Settings className="h-4 w-4 mr-2" />
             Timetable Setup
+          </Button>
+          <Button variant="outline" onClick={handlePrint} disabled={printing}>
+            {printing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
+            Print Timetable
           </Button>
           <Button onClick={openAddDialog} disabled={!selectedClassId || loadingClasses}>
             <Plus className="h-4 w-4 mr-2" />
@@ -351,7 +375,7 @@ export default function TimetablePage() {
         </div>
       </div>
 
-      <Card>
+      <Card className="no-print">
         <CardHeader className="pb-4">
           <CardTitle className="text-base">Select Class</CardTitle>
           <CardDescription>The timetable grid below shows lessons for the class you pick here.</CardDescription>
@@ -377,7 +401,7 @@ export default function TimetablePage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="no-print">
         <CardHeader className="pb-4">
           <CardTitle className="text-base">
             Weekly Grid{selectedClass ? ` — ${selectedClass.grade_level}${selectedClass.stream_name ? ' ' + selectedClass.stream_name : ''}` : ''}
@@ -645,6 +669,74 @@ export default function TimetablePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── Print-only: full school timetable — every class, every lesson,
+           teacher assigned per subject per class ──────────────────────── */}
+      {printData && (
+        <div className="hidden print:block">
+          <div className="text-center mb-4">
+            <h1 className="text-xl font-bold uppercase">{printData.school?.name}</h1>
+            <p className="text-sm">
+              {printData.term?.name || 'Term'} — {printData.academic_year?.name || 'Academic Year'}
+            </p>
+            <h2 className="text-base font-semibold mt-1">School Timetable</h2>
+          </div>
+
+          {printData.classes.map((cls) => (
+            <div key={cls.id} className="mb-6 break-inside-avoid">
+              <h3 className="font-semibold text-sm mb-1 bg-muted px-2 py-1">
+                {cls.grade_level}{cls.stream_name ? ` ${cls.stream_name}` : ''}
+              </h3>
+              <table className="w-full text-xs border-collapse border">
+                <thead>
+                  <tr>
+                    {WEEK_DAYS.map(({ value, label }) => (
+                      <th key={value} className="border p-1 text-left align-top">{label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    {WEEK_DAYS.map(({ value }) => (
+                      <td key={value} className="border p-1 align-top">
+                        {(cls.timetable[value] || [])
+                          .slice()
+                          .sort((a, b) => a.start_time.localeCompare(b.start_time))
+                          .map((slot) => (
+                            <div key={slot.id} className="mb-1.5 pb-1.5 border-b last:border-b-0 last:mb-0 last:pb-0">
+                              <div className="font-medium">
+                                {slot.start_time.slice(0, 5)}–{slot.end_time.slice(0, 5)} {slot.learning_area?.name || 'Lesson'}
+                              </div>
+                              <div className="text-muted-foreground">
+                                {teacherName(slot)}{slot.room ? ` • ${slot.room}` : ''}
+                              </div>
+                            </div>
+                          ))}
+                        {(cls.timetable[value] || []).length === 0 && (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Print Styles */}
+      <style>{`
+        @media print {
+          body { background: white; font-size: 11pt; }
+          .no-print { display: none !important; }
+          @page { margin: 1.2cm; }
+          table { page-break-inside: auto; }
+          tr { page-break-inside: avoid; page-break-after: auto; }
+          thead { display: table-header-group; }
+          .break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+        }
+      `}</style>
     </div>
   );
 }
