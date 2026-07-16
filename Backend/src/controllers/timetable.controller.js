@@ -624,6 +624,231 @@ const createSlot = asyncHandler(async (req, res) => {
 });
 
 // =============================================================================
+// POST /api/v1/timetable/copy
+//   Body: { source_academic_year_id, source_term_id, target_academic_year_id*,
+//            target_term_id, class_ids, overwrite }
+//   Bulk-copies every active lesson from one term/year into another so the
+//   admin doesn't have to rebuild the whole grid from scratch each term —
+//   only tweak what's different. `class_ids` limits the copy to specific
+//   classes (defaults to every class that has lessons in the source
+//   period). `overwrite` (default false) clears each copied class's
+//   existing lessons in the target period first; otherwise a source lesson
+//   that would conflict with something already in the target is skipped
+//   (not overwritten) and reported back.
+// =============================================================================
+const copyTimetable = asyncHandler(async (req, res) => {
+  const { schoolId, id: userId } = req.user;
+  const {
+    source_academic_year_id, source_term_id,
+    target_academic_year_id, target_term_id,
+    class_ids, overwrite,
+  } = req.body;
+
+  if (!target_academic_year_id) {
+    return respond(res, 400, false, 'target_academic_year_id is required');
+  }
+
+  let sourceYearId = source_academic_year_id;
+  if (!sourceYearId) {
+    const current = await getCurrentAcademicYear(schoolId);
+    if (current) sourceYearId = current.id;
+  }
+  if (!sourceYearId) {
+    return respond(res, 404, false, 'No current academic year found. Pass source_academic_year_id explicitly.');
+  }
+
+  if (sourceYearId === target_academic_year_id && (source_term_id || null) === (target_term_id || null)) {
+    return respond(res, 400, false, 'Source and target must be a different term or academic year.');
+  }
+
+  // ── Pull every active lesson in the source period (optionally limited
+  //    to specific classes) ────────────────────────────────────────────
+  let sourceQuery = supabase
+    .from('timetable_slots')
+    .select(`
+      day, period_number, start_time, end_time, room, class_id, teacher_id, learning_area_id,
+      class:class_id ( id, grade_level, stream_name ),
+      teacher:teacher_id ( id, user_id, users:user_id ( first_name, last_name ) ),
+      learning_area:learning_area_id ( id, name )
+    `)
+    .eq('school_id', schoolId)
+    .eq('academic_year_id', sourceYearId)
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .order('day')
+    .order('start_time');
+  if (source_term_id) sourceQuery = sourceQuery.eq('term_id', source_term_id);
+  if (Array.isArray(class_ids) && class_ids.length) sourceQuery = sourceQuery.in('class_id', class_ids);
+
+  const { data: sourceSlots, error: sourceError } = await sourceQuery;
+  if (sourceError) {
+    logger.error('Failed to fetch source timetable for copy', { error: sourceError.message });
+    return respond(res, 500, false, 'Failed to fetch the source timetable', null, sourceError.message);
+  }
+  if (!sourceSlots || !sourceSlots.length) {
+    return respond(res, 404, false, 'No timetable lessons found for the source term/year (with the given class filter, if any).');
+  }
+
+  const copiedClassIds = [...new Set(sourceSlots.map((s) => s.class_id))];
+
+  // ── Optionally clear out whatever the copied classes already have in
+  //    the target period, before inserting the copies ──────────────────
+  if (overwrite === true) {
+    let clearQuery = supabase
+      .from('timetable_slots')
+      .update({ is_active: false, deleted_at: new Date().toISOString() })
+      .eq('school_id', schoolId)
+      .eq('academic_year_id', target_academic_year_id)
+      .eq('is_active', true)
+      .is('deleted_at', null)
+      .in('class_id', copiedClassIds);
+    if (target_term_id) clearQuery = clearQuery.eq('term_id', target_term_id);
+    const { error: clearError } = await clearQuery;
+    if (clearError) {
+      logger.error('Failed to clear target timetable before copy', { error: clearError.message });
+      return respond(res, 500, false, 'Failed to clear the target timetable before copying', null, clearError.message);
+    }
+  }
+
+  // ── Load whatever's still active in the target period (across the
+  //    whole school, not just the copied classes — a teacher or room
+  //    already booked by an untouched class still counts as a conflict)
+  //    and the target's per-day lesson caps, so conflicts and full days
+  //    can be checked in memory instead of one query per source lesson. ──
+  let targetQuery = supabase
+    .from('timetable_slots')
+    .select('id, day, start_time, end_time, room, class_id, teacher_id')
+    .eq('school_id', schoolId)
+    .eq('academic_year_id', target_academic_year_id)
+    .eq('is_active', true)
+    .is('deleted_at', null);
+  if (target_term_id) targetQuery = targetQuery.eq('term_id', target_term_id);
+
+  const [{ data: targetSlots, error: targetError }, { data: settingsRows }] = await Promise.all([
+    targetQuery,
+    supabase
+      .from('timetable_day_settings')
+      .select('day, lessons_count')
+      .eq('school_id', schoolId)
+      .eq('academic_year_id', target_academic_year_id),
+  ]);
+  if (targetError) {
+    logger.error('Failed to fetch target timetable for copy', { error: targetError.message });
+    return respond(res, 500, false, 'Failed to fetch the target timetable', null, targetError.message);
+  }
+
+  const limitByDay = {};
+  DAYS.forEach((d) => { limitByDay[d] = 8; });
+  (settingsRows || []).forEach((r) => { limitByDay[r.day] = r.lessons_count; });
+
+  // In-memory working copy of the target grid — updated as each source
+  // lesson is accepted, so later lessons are checked against earlier ones
+  // copied in this same batch too (e.g. Maths repeated every weekday).
+  const working = (targetSlots || []).map((s) => ({ ...s }));
+  const classDayCount = {};
+  working.forEach((s) => {
+    const key = `${s.class_id}|${s.day}`;
+    classDayCount[key] = (classDayCount[key] || 0) + 1;
+  });
+
+  const describeSourceSlot = (s) => ({
+    class: s.class ? `${s.class.grade_level}${s.class.stream_name ? ' ' + s.class.stream_name : ''}` : null,
+    teacher: s.teacher?.users ? `${s.teacher.users.first_name} ${s.teacher.users.last_name}` : null,
+    learning_area: s.learning_area?.name || null,
+    day: s.day,
+    start_time: s.start_time,
+    end_time: s.end_time,
+    room: s.room || null,
+  });
+
+  const toInsert = [];
+  const skipped = [];
+  const now = new Date().toISOString();
+
+  sourceSlots.forEach((s) => {
+    const info = describeSourceSlot(s);
+    const dayKey = `${s.class_id}|${s.day}`;
+    const limit = limitByDay[s.day] ?? 8;
+
+    if ((classDayCount[dayKey] || 0) >= limit) {
+      skipped.push({ ...info, reason: `${s.day} is already full for this class in the target period (limit ${limit}).` });
+      return;
+    }
+
+    const sameDay = working.filter((w) => w.day === s.day);
+    const classConflict = sameDay.find((w) => w.class_id === s.class_id && overlaps(s.start_time, s.end_time, w.start_time, w.end_time));
+    if (classConflict) {
+      skipped.push({ ...info, reason: 'This class already has a lesson at that time in the target period.' });
+      return;
+    }
+    const teacherConflict = sameDay.find((w) => w.teacher_id === s.teacher_id && overlaps(s.start_time, s.end_time, w.start_time, w.end_time));
+    if (teacherConflict) {
+      skipped.push({ ...info, reason: 'This teacher is already booked at that time in the target period.' });
+      return;
+    }
+    const trimmedRoom = typeof s.room === 'string' ? s.room.trim() : '';
+    if (trimmedRoom) {
+      const roomConflict = sameDay.find(
+        (w) => w.room && w.room.trim().toLowerCase() === trimmedRoom.toLowerCase()
+          && w.class_id !== s.class_id && w.teacher_id !== s.teacher_id
+          && overlaps(s.start_time, s.end_time, w.start_time, w.end_time)
+      );
+      if (roomConflict) {
+        skipped.push({ ...info, reason: `Room ${s.room} is already booked at that time in the target period.` });
+        return;
+      }
+    }
+
+    const newRow = {
+      school_id: schoolId,
+      academic_year_id: target_academic_year_id,
+      term_id: target_term_id || null,
+      class_id: s.class_id,
+      learning_area_id: s.learning_area_id,
+      teacher_id: s.teacher_id,
+      day: s.day,
+      period_number: s.period_number || null,
+      start_time: s.start_time,
+      end_time: s.end_time,
+      room: s.room || null,
+      is_active: true,
+      created_by: userId || null,
+      created_at: now,
+      updated_at: now,
+    };
+    toInsert.push(newRow);
+
+    // Reflect this lesson in the in-memory grid immediately so subsequent
+    // source lessons see it too.
+    working.push({ day: s.day, start_time: s.start_time, end_time: s.end_time, room: s.room, class_id: s.class_id, teacher_id: s.teacher_id });
+    classDayCount[dayKey] = (classDayCount[dayKey] || 0) + 1;
+  });
+
+  let inserted = [];
+  if (toInsert.length) {
+    const { data, error: insertError } = await supabase
+      .from('timetable_slots')
+      .insert(toInsert)
+      .select('id');
+    if (insertError) {
+      logger.error('Failed to insert copied timetable slots', { error: insertError.message });
+      return respond(res, 500, false, 'Failed to copy the timetable', null, insertError.message);
+    }
+    inserted = data || [];
+  }
+
+  return respond(res, 200, true, `Copied ${inserted.length} of ${sourceSlots.length} lesson(s)${skipped.length ? `; ${skipped.length} skipped due to conflicts` : ''}`, {
+    total_source: sourceSlots.length,
+    copied: inserted.length,
+    skipped_count: skipped.length,
+    skipped,
+    target_academic_year_id,
+    target_term_id: target_term_id || null,
+    classes_copied: copiedClassIds.length,
+  });
+});
+
+// =============================================================================
 // PUT /api/v1/timetable/:id
 //   Body (any of): { day, start_time, end_time, teacher_id, learning_area_id,
 //                      room, period_number, is_active }
@@ -892,6 +1117,7 @@ const getTimetablePeriods = asyncHandler(async (req, res) => {
 module.exports = {
   getTimetable,
   createSlot,
+  copyTimetable,
   updateSlot,
   deleteSlot,
   getDaySettings,
