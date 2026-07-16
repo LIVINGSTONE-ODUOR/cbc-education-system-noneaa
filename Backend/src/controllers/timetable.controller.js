@@ -470,6 +470,139 @@ const getTeacherLoadReport = asyncHandler(async (req, res) => {
 });
 
 // =============================================================================
+// GET /api/v1/timetable/curriculum-sync?academic_year_id=&term_id=
+//   Read-only cross-check: for every class, resolves its assigned subject
+//   list (same rule as class.controller.js -> getClassLearningAreas —
+//   explicit class_learning_areas rows first, else the grade_levels/
+//   class_ids fallback on learning_areas) and compares it against which
+//   learning_area_ids actually have timetable_slots for that class. Flags
+//   any subject a class is supposed to take but has zero lessons scheduled,
+//   the failure mode where a subject quietly never gets taught. Does not
+//   change any data. Admin/super_admin only.
+// =============================================================================
+const getCurriculumSyncReport = asyncHandler(async (req, res) => {
+  const { schoolId } = req.user;
+  const { academic_year_id, term_id } = req.query;
+
+  let yearId = academic_year_id;
+  if (!yearId) {
+    const current = await getCurrentAcademicYear(schoolId);
+    if (current) yearId = current.id;
+  }
+  if (!yearId) {
+    return respond(res, 404, false, 'No current academic year found. Pass academic_year_id explicitly.');
+  }
+
+  const { data: classes, error: classesError } = await supabase
+    .from('classes')
+    .select('id, grade_level, stream_name')
+    .eq('school_id', schoolId)
+    .eq('is_active', true)
+    .order('grade_level')
+    .order('stream_name');
+  if (classesError) {
+    logger.error('Failed to fetch classes for curriculum sync report', { error: classesError.message });
+    return respond(res, 500, false, 'Failed to fetch classes', null, classesError.message);
+  }
+
+  // Every learning area visible to this school — used both to resolve the
+  // grade-default fallback and to look up names for explicitly-assigned ids.
+  const { data: allLearningAreas, error: laError } = await supabase
+    .from('learning_areas')
+    .select('id, name, code, grade_levels, class_ids, is_active')
+    .is('deleted_at', null)
+    .eq('is_active', true)
+    .or(`school_id.is.null,school_id.eq.${schoolId}`);
+  if (laError) {
+    logger.error('Failed to fetch learning areas for curriculum sync report', { error: laError.message });
+    return respond(res, 500, false, 'Failed to fetch learning areas', null, laError.message);
+  }
+  const laById = {};
+  (allLearningAreas || []).forEach((la) => { laById[la.id] = la; });
+
+  // Explicit "this class takes these subjects" rows, school-wide in one query.
+  const { data: explicitRows, error: explicitErr } = await supabase
+    .from('class_learning_areas')
+    .select('class_id, learning_area_id')
+    .eq('school_id', schoolId);
+  if (explicitErr) {
+    logger.error('Failed to fetch class_learning_areas for curriculum sync report', { error: explicitErr.message });
+    return respond(res, 500, false, 'Failed to fetch class subject assignments', null, explicitErr.message);
+  }
+  const explicitByClass = {};
+  (explicitRows || []).forEach((r) => {
+    if (!explicitByClass[r.class_id]) explicitByClass[r.class_id] = [];
+    explicitByClass[r.class_id].push(r.learning_area_id);
+  });
+
+  // Which learning areas actually have timetable time, per class.
+  let slotsQuery = supabase
+    .from('timetable_slots')
+    .select('class_id, learning_area_id')
+    .eq('school_id', schoolId)
+    .eq('academic_year_id', yearId)
+    .eq('is_active', true)
+    .is('deleted_at', null);
+  if (term_id) slotsQuery = slotsQuery.eq('term_id', term_id);
+
+  const { data: slots, error: slotsError } = await slotsQuery;
+  if (slotsError) {
+    logger.error('Failed to fetch timetable slots for curriculum sync report', { error: slotsError.message });
+    return respond(res, 500, false, 'Failed to fetch timetable', null, slotsError.message);
+  }
+  const scheduledByClass = {};
+  (slots || []).forEach((s) => {
+    if (!s.learning_area_id) return;
+    if (!scheduledByClass[s.class_id]) scheduledByClass[s.class_id] = new Set();
+    scheduledByClass[s.class_id].add(s.learning_area_id);
+  });
+
+  const report = (classes || []).map((c) => {
+    const explicitIds = explicitByClass[c.id] || [];
+    let assigned;
+    let source;
+    if (explicitIds.length > 0) {
+      assigned = explicitIds.map((laId) => laById[laId]).filter(Boolean);
+      source = 'class_assignment';
+    } else {
+      assigned = (allLearningAreas || []).filter((la) => {
+        const gradeOk = !la.grade_levels || la.grade_levels.length === 0 || la.grade_levels.includes(c.grade_level);
+        const classOk = !la.class_ids || la.class_ids.length === 0 || la.class_ids.includes(c.id);
+        return gradeOk && classOk;
+      });
+      source = 'grade_default';
+    }
+
+    const scheduled = scheduledByClass[c.id] || new Set();
+    const missing = assigned.filter((la) => !scheduled.has(la.id));
+
+    return {
+      class_id: c.id,
+      class_name: `${c.grade_level}${c.stream_name ? ' ' + c.stream_name : ''}`,
+      source,
+      assigned_count: assigned.length,
+      missing_count: missing.length,
+      missing_subjects: missing.map((la) => ({ id: la.id, name: la.name, code: la.code })),
+    };
+  });
+
+  report.sort((a, b) => b.missing_count - a.missing_count || a.class_name.localeCompare(b.class_name));
+
+  const summary = {
+    classes_checked: report.length,
+    classes_with_gaps: report.filter((r) => r.missing_count > 0).length,
+    total_gaps: report.reduce((sum, r) => sum + r.missing_count, 0),
+  };
+
+  return respond(res, 200, true, 'Curriculum \u2194 timetable sync report fetched', {
+    academic_year_id: yearId,
+    term_id: term_id || null,
+    summary,
+    classes: report,
+  });
+});
+
+// =============================================================================
 // POST /api/v1/timetable
 //   Body: { class_id*, learning_area_id*, teacher_id*, day*, start_time*,
 //            end_time*, academic_year_id, term_id, room, period_number }
@@ -1125,5 +1258,6 @@ module.exports = {
   getSchoolTimetable,
   getPrintHeader,
   getTeacherLoadReport,
+  getCurriculumSyncReport,
   getTimetablePeriods,
 };
