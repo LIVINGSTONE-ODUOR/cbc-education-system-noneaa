@@ -843,6 +843,52 @@ const updateDaySettings = asyncHandler(async (req, res) => {
   return respond(res, 200, true, 'Timetable day settings updated', { academic_year_id: yearId, settings: saved });
 });
 
+// =============================================================================
+// GET /api/v1/timetable/periods
+//   Lightweight list of academic years and terms for this school — powers
+//   the Year/Term picker on the Print and Timetable Setup screens (e.g.
+//   "print last term's timetable" or "plan next term's lesson counts"
+//   without disturbing the current term's settings). Years and terms are
+//   returned as two independent flat lists, the same way this controller
+//   already resolves them separately in getSchoolTimetable/getPrintHeader —
+//   there's no assumed academic_year_id link on academic_terms.
+// =============================================================================
+const getTimetablePeriods = asyncHandler(async (req, res) => {
+  const { schoolId } = req.user;
+
+  const [{ data: years, error: yearsError }, { data: terms, error: termsError }] = await Promise.all([
+    supabase
+      .from('academic_years')
+      .select('id, name, is_current')
+      .eq('school_id', schoolId)
+      .eq('is_active', true)
+      .is('deleted_at', null)
+      .order('is_current', { ascending: false })
+      .order('name', { ascending: false }),
+    supabase
+      .from('academic_terms')
+      .select('id, name, is_current')
+      .eq('school_id', schoolId)
+      .eq('is_active', true)
+      .order('is_current', { ascending: false })
+      .order('name', { ascending: true }),
+  ]);
+
+  if (yearsError) {
+    logger.error('Failed to fetch academic years for timetable picker', { error: yearsError.message });
+    return respond(res, 500, false, 'Failed to fetch academic years', null, yearsError.message);
+  }
+  if (termsError) {
+    logger.error('Failed to fetch academic terms for timetable picker', { error: termsError.message });
+    return respond(res, 500, false, 'Failed to fetch academic terms', null, termsError.message);
+  }
+
+  return respond(res, 200, true, 'Timetable periods fetched', {
+    academic_years: years || [],
+    academic_terms: terms || [],
+  });
+});
+
 module.exports = {
   getTimetable,
   createSlot,
@@ -853,4 +899,5 @@ module.exports = {
   getSchoolTimetable,
   getPrintHeader,
   getTeacherLoadReport,
+  getTimetablePeriods,
 };
