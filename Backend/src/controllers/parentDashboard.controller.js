@@ -387,9 +387,8 @@ const getAnnouncements = asyncHandler(async (req, res) => {
 
   let query = supabase
     .from('announcements')
-    .select('id, title, body, class_id, category, created_at, classes:class_id (id, grade_level, stream_name)')
+    .select('id, title, body, class_id, category, is_active, created_at, created_by, classes:class_id (id, grade_level, stream_name)')
     .in('school_id', schoolIds)
-    .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -397,12 +396,25 @@ const getAnnouncements = asyncHandler(async (req, res) => {
     query = query.eq('category', category);
   }
 
-  // School-wide (class_id is null) OR targeted at one of this parent's
-  // children's classes.
-  const orFilter = classIds.length > 0
-    ? `class_id.is.null,class_id.in.(${classIds.join(',')})`
-    : 'class_id.is.null';
-  query = query.or(orFilter);
+  const isStaff = ['teacher', 'school_admin', 'super_admin'].includes(role);
+
+  if (isStaff) {
+    // Staff review everything they've broadcast for their school, active or
+    // not, regardless of class targeting — unlike the parent-facing feed
+    // below, which only ever shows what's currently visible to a family.
+    // (Pass ?active=true to narrow to live announcements only.)
+    if (req.query.active === 'true') {
+      query = query.eq('is_active', true);
+    }
+  } else {
+    query = query.eq('is_active', true);
+    // School-wide (class_id is null) OR targeted at one of this parent's
+    // children's classes.
+    const orFilter = classIds.length > 0
+      ? `class_id.is.null,class_id.in.(${classIds.join(',')})`
+      : 'class_id.is.null';
+    query = query.or(orFilter);
+  }
 
   const { data: announcements, error } = await query;
 
@@ -411,6 +423,91 @@ const getAnnouncements = asyncHandler(async (req, res) => {
   }
 
   return res.json({ success: true, message: 'Announcements fetched successfully', data: { announcements: announcements || [] } });
+});
+
+// POST /api/v1/parent-dashboard/announcements
+// Body: { title, body, class_id?, category? }
+// Broadcasts a new announcement to the whole school (class_id omitted) or
+// one class (class_id set). Staff only.
+const createAnnouncement = asyncHandler(async (req, res) => {
+  const { id: userId, role } = req.user;
+
+  if (!['teacher', 'school_admin', 'super_admin'].includes(role)) {
+    return res.status(403).json({ success: false, message: 'Not authorized to broadcast announcements' });
+  }
+
+  const { title, body, class_id: classId, category } = req.body;
+  if (!title?.trim() || !body?.trim()) {
+    return res.status(400).json({ success: false, message: 'title and body are required' });
+  }
+
+  const schoolId = getSchoolId(req);
+  if (!schoolId) {
+    return res.status(400).json({ success: false, message: 'No school associated with this account' });
+  }
+
+  // If targeting a single class, confirm it actually belongs to this school
+  // before writing the row.
+  if (classId) {
+    const { data: classRow } = await supabase
+      .from('classes')
+      .select('id')
+      .eq('id', classId)
+      .eq('school_id', schoolId)
+      .maybeSingle();
+    if (!classRow) {
+      return res.status(400).json({ success: false, message: 'Invalid class_id for this school' });
+    }
+  }
+
+  const { data: created, error } = await supabase
+    .from('announcements')
+    .insert({
+      school_id: schoolId,
+      class_id: classId || null,
+      title: title.trim(),
+      body: body.trim(),
+      category: category || 'general',
+      created_by: userId,
+      is_active: true,
+    })
+    .select('id, title, body, class_id, category, is_active, created_at, created_by')
+    .single();
+
+  if (error) {
+    return res.status(500).json({ success: false, message: 'Failed to create announcement', error: error.message });
+  }
+
+  return res.status(201).json({ success: true, message: 'Announcement broadcast', data: created });
+});
+
+// PUT /api/v1/parent-dashboard/announcements/:id/deactivate
+// Pulls a previously-broadcast announcement without deleting its history.
+const deactivateAnnouncement = asyncHandler(async (req, res) => {
+  const { role } = req.user;
+  const { id } = req.params;
+
+  if (!['teacher', 'school_admin', 'super_admin'].includes(role)) {
+    return res.status(403).json({ success: false, message: 'Not authorized to manage announcements' });
+  }
+
+  const schoolId = getSchoolId(req);
+  const { data, error } = await supabase
+    .from('announcements')
+    .update({ is_active: false })
+    .eq('id', id)
+    .eq('school_id', schoolId)
+    .select('id')
+    .maybeSingle();
+
+  if (error) {
+    return res.status(500).json({ success: false, message: 'Failed to deactivate announcement', error: error.message });
+  }
+  if (!data) {
+    return res.status(404).json({ success: false, message: 'Announcement not found' });
+  }
+
+  return res.json({ success: true, message: 'Announcement deactivated', data: {} });
 });
 
 // -----------------------------------------------------------------------
@@ -647,6 +744,8 @@ module.exports = {
   sendMessage,
   getConversation,
   getAnnouncements,
+  createAnnouncement,
+  deactivateAnnouncement,
   getTeacherComments,
   getTimetable,
   getSchoolEvents,
