@@ -196,7 +196,7 @@ app.use('/api/users', require('./routes/users.routes'));
 // ==================== HEALTH CHECK ====================
 app.get('/health', (req, res) => {
   res.status(200).json({
-    status: 'OK',
+    status: 'ok',
     timestamp: new Date().toISOString(),
     environment: isProduction ? 'production' : 'development',
   });

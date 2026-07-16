@@ -58,6 +58,23 @@ export function isExternalReservedUrl(url: string): boolean {
   return url.startsWith('http://') || url.startsWith('https://');
 }
 
+/** Path to the status page's own root. "/" on status.noneaa.com (it already
+ *  IS the status page there), "/status" everywhere else. Use this for any
+ *  "back to status" navigation from within the status pages. */
+export function getStatusHomePath(): string {
+  const host = getHostContext();
+  return host.type === 'reserved' && host.page === 'status' ? '/' : '/status';
+}
+
+/** Path to the report-incident page. "/report-incident" on status.noneaa.com,
+ *  "/status/report-incident" everywhere else. Use this instead of a hardcoded
+ *  path so the link stays on the current host instead of bouncing through
+ *  ReservedSubdomainGate to the main domain. */
+export function getReportIncidentPath(): string {
+  const host = getHostContext();
+  return host.type === 'reserved' && host.page === 'status' ? '/report-incident' : '/status/report-incident';
+}
+
 export type HostContext =
   | { type: 'reserved'; page: ReservedPage; subdomain: null }
   | { type: 'school'; page: null; subdomain: string }

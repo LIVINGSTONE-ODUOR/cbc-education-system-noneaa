@@ -128,16 +128,33 @@ export default function SystemStatusPage() {
     const apiStart = Date.now();
     try {
       const res = await fetch(`${apiBase}/health`, { signal: AbortSignal.timeout(8000) });
-      const json = await res.json() as { status?: string; uptime?: number };
       const latency = Date.now() - apiStart;
-      const uptimeMins = json.uptime ? Math.floor(json.uptime / 60) : null;
-      updateService('api', {
-        status: res.ok && json.status === 'ok' ? 'operational' : 'degraded',
-        latency,
-        detail: uptimeMins !== null
-          ? `Uptime ${uptimeMins.toLocaleString()} min · ${latency} ms`
-          : `Response: ${latency} ms`,
-      });
+      let json: { status?: string; uptime?: number } | null = null;
+      try {
+        json = await res.json();
+      } catch {
+        // Response wasn't valid JSON — treat as degraded (server responded, but not as expected),
+        // not a full outage like a network failure would be.
+        json = null;
+      }
+
+      if (json === null) {
+        updateService('api', {
+          status: res.ok ? 'degraded' : 'outage',
+          latency,
+          detail: `Unexpected response format (HTTP ${res.status})`,
+        });
+      } else {
+        const uptimeMins = json.uptime ? Math.floor(json.uptime / 60) : null;
+        const isOk = res.ok && String(json.status).toLowerCase() === 'ok';
+        updateService('api', {
+          status: isOk ? 'operational' : 'degraded',
+          latency,
+          detail: uptimeMins !== null
+            ? `Uptime ${uptimeMins.toLocaleString()} min · ${latency} ms`
+            : `Response: ${latency} ms`,
+        });
+      }
     } catch {
       updateService('api', {
         status: 'outage',

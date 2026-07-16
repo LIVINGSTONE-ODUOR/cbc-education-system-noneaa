@@ -6,11 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from '@/lib/utils';
 import {
   User, BookOpen, Loader2, AlertCircle, CalendarCheck, Wallet, ClipboardList,
   FileText, MessageSquare, Megaphone, MessageCircle, Clock, PartyPopper,
   HeartPulse, Phone, GraduationCap, Cake, LayoutDashboard, CalendarClock,
-  Settings as SettingsIcon, LogOut, Download,
+  Settings as SettingsIcon, LogOut, Download, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { getMyChildren } from '@/lib/api/parentsApi';
 import { getLearnerResults, ExamSummary } from '@/lib/api/resultsApi';
@@ -94,12 +95,18 @@ interface Child {
   stream_name: string | null;
   relationship: string | null;
   is_primary_guardian: boolean;
+  // A parent's children can attend different schools — every school-scoped
+  // fetch for the selected child (academic year, fee payment info, events,
+  // announcements) must use THIS, not the parent's own account school.
+  school_id: string | null;
+  school_name: string | null;
 }
 
 
 const ParentPortal = () => {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [children, setChildren] = useState<Child[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string>('');
   const [loadingChildren, setLoadingChildren] = useState(true);
@@ -262,14 +269,18 @@ const ParentPortal = () => {
     return () => { cancelled = true; };
   }, [selectedChildId]);
 
-  // Resolve the current academic year once schoolId is known — fee
-  // structures are scoped to a year, and we only want the active one.
+  const selectedChildSchoolId = children.find(c => c.id === selectedChildId)?.school_id;
+
+  // Resolve the current academic year for the SELECTED CHILD's school —
+  // not the parent account's own school_id. A parent's children can be
+  // enrolled at different schools, each running its own academic year, so
+  // this must re-resolve every time the selected child changes.
   useEffect(() => {
-    if (!user?.schoolId) return;
+    if (!selectedChildSchoolId) return;
     let cancelled = false;
     (async () => {
       try {
-        const terms = await getAcademicTerms(user.schoolId!);
+        const terms = await getAcademicTerms(selectedChildSchoolId);
         if (cancelled) return;
         const current = terms.find(t => t.is_current) || terms[0];
         if (current) setCurrentAcademicYearId(current.id);
@@ -279,15 +290,16 @@ const ParentPortal = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, [user?.schoolId]);
+  }, [selectedChildSchoolId]);
 
-  // School-wide, optional — how to pay fees (accounts, paybill, etc.).
+  // How to pay fees (accounts, paybill, etc.) — also scoped to the
+  // selected child's own school.
   useEffect(() => {
-    if (!user?.schoolId) return;
+    if (!selectedChildSchoolId) return;
     let cancelled = false;
     (async () => {
       try {
-        const res = await getSchoolById(user.schoolId!);
+        const res = await getSchoolById(selectedChildSchoolId);
         if (cancelled) return;
         const instructions = (res as any).data?.fee_payment_instructions;
         if (instructions) setFeePaymentInstructions(instructions);
@@ -297,7 +309,7 @@ const ParentPortal = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, [user?.schoolId]);
+  }, [selectedChildSchoolId]);
 
   // Whenever the selected child (and their grade) is known, pull the
   // fee structure that applies to that grade for the current year.
@@ -348,15 +360,17 @@ const ParentPortal = () => {
     return () => { cancelled = true; };
   }, []);
 
-  // Announcements are scoped server-side to school-wide + the parent's own
-  // children's classes — also load once.
+  // Announcements are scoped server-side to the SELECTED CHILD's school
+  // (school-wide + that child's own classes). Passing learner_id is what
+  // lets a parent with children at different schools see the right feed
+  // for whichever child is currently selected; re-fetch on every switch.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         setLoadingAnnouncements(true);
         setAnnouncementsError(null);
-        const res = await getAnnouncements(10);
+        const res = await getAnnouncements(10, undefined, selectedChildId || undefined);
         if (cancelled) return;
         setAnnouncements(res.data.announcements);
       } catch (err: any) {
@@ -366,7 +380,7 @@ const ParentPortal = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [selectedChildId]);
 
   // Whenever the selected child changes, pull their recent teacher comments.
   useEffect(() => {
@@ -414,14 +428,15 @@ const ParentPortal = () => {
     return () => { cancelled = true; };
   }, [selectedChildId]);
 
-  // School events don't depend on which child is selected — load once.
+  // School events are scoped to the SELECTED CHILD's school — re-fetch
+  // whenever the parent switches between children at different schools.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         setLoadingEvents(true);
         setEventsError(null);
-        const res = await getSchoolEvents(10);
+        const res = await getSchoolEvents(10, undefined, selectedChildId || undefined);
         if (cancelled) return;
         setSchoolEvents(res.data.events);
       } catch (err: any) {
@@ -431,7 +446,7 @@ const ParentPortal = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [selectedChildId]);
 
   // Whenever the selected child changes, pull their full profile (photo,
   // DOB, class teacher, medical info, emergency contacts).
@@ -600,127 +615,150 @@ const ParentPortal = () => {
     return 'text-red-600';
   };
 
+  const parentDisplayName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+  const parentInitials = `${user?.firstName?.[0] || 'P'}${user?.lastName?.[0] || ''}`.toUpperCase();
+
   return (
-    <div className="min-h-screen bg-muted/30">
-      {/* Top bar */}
-      <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="container mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <GraduationCap className="h-4 w-4 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-sm font-bold leading-tight truncate">Parent Portal</h1>
-              <p className="text-[11px] text-muted-foreground truncate">
-                {loadingChildren ? (
-                  <Skeleton className="h-2.5 w-20 inline-block align-middle" />
-                ) : children.length > 1
-                  ? `${children.length} children linked`
-                  : 'Welcome back'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            {!loadingChildren && children.length > 0 && (
-              <Select value={selectedChildId} onValueChange={setSelectedChildId}>
-                <SelectTrigger className="h-8 text-xs w-[130px] sm:w-[180px]">
-                  <SelectValue placeholder="Select a child" />
-                </SelectTrigger>
-                <SelectContent>
-                  {children.map((child) => (
-                    <SelectItem key={child.id} value={child.id} className="text-xs">
-                      {child.first_name} {child.last_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            <Avatar className="h-8 w-8 border shrink-0">
-              <AvatarImage src={user?.avatarUrl} alt={user?.firstName || 'You'} />
-              <AvatarFallback className="text-[11px] bg-primary/10 text-primary font-semibold">
-                {(user?.firstName?.[0] || 'P')}{(user?.lastName?.[0] || '')}
-              </AvatarFallback>
-            </Avatar>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors duration-150"
-              onClick={logout}
-              title="Sign out"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Mobile horizontal nav — scrolls sideways so every section fits on small screens */}
-        <nav className="md:hidden overflow-x-auto border-t">
-          <div className="flex gap-1.5 px-3 py-2 min-w-max">
-            {NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.key;
-              return (
+    <div className="student-portal-theme lg:h-screen lg:overflow-hidden bg-background">
+      <div className="w-full lg:h-full px-3 sm:px-4 lg:px-6 py-6 md:py-8 flex flex-col">
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-stretch w-full flex-1 lg:min-h-0">
+          {/* Left: collapsible dark-green sidebar navigation, same style as the Student Portal */}
+          <div className={cn('order-1 w-full min-w-0 flex-shrink-0 transition-all duration-300 lg:h-full lg:flex lg:flex-col', sidebarCollapsed ? 'lg:w-20' : 'lg:w-64')}>
+            <div className="rounded-2xl bg-[#152C21] border border-[#2A4A3A] flex flex-col overflow-hidden lg:flex-1 lg:min-h-0">
+              {/* Header */}
+              <div className="hidden lg:flex items-center justify-between gap-2 px-3 py-4 border-b border-[#2A4A3A]">
+                {!sidebarCollapsed && (
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0 ring-1 ring-amber-300/40">
+                      <GraduationCap className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm text-white truncate">{user?.schoolName || 'School'}</p>
+                      <p className="text-xs text-emerald-200/60 truncate">Parent Portal</p>
+                    </div>
+                  </div>
+                )}
                 <button
-                  key={item.key}
                   type="button"
-                  onClick={() => setActiveTab(item.key)}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors duration-150 ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/70'
-                  }`}
+                  onClick={() => setSidebarCollapsed((prev) => !prev)}
+                  className="p-2 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0"
+                  aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                  title={sidebarCollapsed ? 'Expand' : 'Collapse'}
                 >
-                  <Icon className="h-3.5 w-3.5" />
-                  {item.label}
-                  {item.key === 'messages' && unreadCount > 0 && (
-                    <span className="ml-0.5 rounded-full bg-red-500 text-white text-[10px] leading-none px-1.5 py-0.5">
-                      {unreadCount}
-                    </span>
+                  {sidebarCollapsed ? (
+                    <ChevronRight className="w-4 h-4 text-emerald-200/70" />
+                  ) : (
+                    <ChevronLeft className="w-4 h-4 text-emerald-200/70" />
                   )}
                 </button>
-              );
-            })}
-          </div>
-        </nav>
-      </header>
+              </div>
 
-      <div className="container mx-auto px-4 py-5">
-        <div className="flex gap-6">
-          {/* Desktop sidebar */}
-          <aside className="hidden md:block w-56 shrink-0">
-            <nav className="sticky top-20 space-y-1">
-              {NAV_ITEMS.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.key;
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => setActiveTab(item.key)}
-                    className={`w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 ${
-                      isActive
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-foreground/80 hover:bg-secondary'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{item.label}</span>
-                    {item.key === 'messages' && unreadCount > 0 && (
-                      <span className="ml-auto rounded-full bg-red-500 text-white text-[10px] leading-none px-1.5 py-1">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          </aside>
+              {/* Navigation */}
+              <nav className="flex flex-row lg:flex-col overflow-x-auto lg:overflow-y-auto lg:overflow-x-hidden gap-1 lg:gap-0 lg:space-y-1 py-2 lg:py-3 px-2 lg:flex-1 lg:min-h-0">
+                {NAV_ITEMS.map(({ key, label, icon: Icon }) => {
+                  const isActive = activeTab === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setActiveTab(key)}
+                      title={label}
+                      aria-label={label}
+                      className={cn(
+                        'relative flex-shrink-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 rounded-lg h-10 text-sm font-medium transition-all duration-200 px-3',
+                        sidebarCollapsed && 'lg:justify-center lg:px-2',
+                        isActive
+                          ? 'bg-gradient-to-r from-amber-500/20 to-transparent text-amber-300 border-r-2 lg:border-r-2 border-amber-400 shadow-sm'
+                          : 'text-emerald-100/80 hover:bg-white/5 hover:text-white'
+                      )}
+                    >
+                      <Icon className={cn('w-5 h-5 flex-shrink-0', isActive && 'text-amber-300')} />
+                      {!sidebarCollapsed && <span className="hidden lg:inline truncate">{label}</span>}
+                      {key === 'messages' && unreadCount > 0 && !sidebarCollapsed && (
+                        <span className="hidden lg:inline-flex ml-auto rounded-full bg-red-500 text-white text-[10px] leading-none px-1.5 py-1">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
+
+              {/* Mobile-only: current section label */}
+              <div className="lg:hidden px-3 pb-2 -mt-1 text-xs font-medium text-amber-300 truncate">
+                {NAV_ITEMS.find((i) => i.key === activeTab)?.label}
+              </div>
+
+              {/* Child selector — parent-specific, sits above the user footer */}
+              {!loadingChildren && children.length > 0 && (
+                <div className={cn('hidden lg:block flex-shrink-0 px-3 pt-2', sidebarCollapsed && 'px-2')}>
+                  {!sidebarCollapsed ? (
+                    <Select value={selectedChildId} onValueChange={setSelectedChildId}>
+                      <SelectTrigger className="h-9 text-xs bg-white/5 border-[#2A4A3A] text-white">
+                        <SelectValue placeholder="Select a child" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {children.map((child) => (
+                          <SelectItem key={child.id} value={child.id} className="text-xs">
+                            {child.first_name} {child.last_name}
+                            {child.school_name ? ` · ${child.school_name}` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="w-9 h-9 mx-auto rounded-lg bg-white/5 border border-[#2A4A3A] flex items-center justify-center" title="Select a child">
+                      <User className="w-4 h-4 text-emerald-200/70" />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* User footer */}
+              <div className="hidden lg:block flex-shrink-0 border-t border-[#2A4A3A] p-3 mt-2">
+                <div className={cn('flex items-center gap-2 mb-2', sidebarCollapsed && 'justify-center')}>
+                  <Avatar className="w-9 h-9 flex-shrink-0 rounded-lg">
+                    <AvatarImage src={user?.avatarUrl} alt={parentDisplayName || 'You'} className="object-cover" />
+                    <AvatarFallback className="rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 text-xs font-bold text-white">
+                      {parentInitials || 'P'}
+                    </AvatarFallback>
+                  </Avatar>
+                  {!sidebarCollapsed && (
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{parentDisplayName || 'Parent'}</p>
+                      <p className="text-xs text-emerald-200/60 truncate">
+                        {loadingChildren ? 'Loading…' : children.length > 1 ? `${children.length} children linked` : 'parent'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className={cn(
+                    'w-full flex items-center gap-2 rounded-lg h-9 text-sm text-red-300 hover:bg-white/5 transition-colors',
+                    sidebarCollapsed ? 'justify-center' : 'px-3'
+                  )}
+                >
+                  <LogOut className="w-4 h-4 flex-shrink-0" />
+                  {!sidebarCollapsed && <span>Sign out</span>}
+                </button>
+              </div>
+            </div>
+
+            <Button
+              variant={activeTab === 'settings' ? 'default' : 'outline'}
+              className={cn('w-full justify-center gap-2 rounded-xl h-11 shadow-sm mt-3 lg:flex-shrink-0', sidebarCollapsed && 'px-0')}
+              onClick={() => setActiveTab('settings')}
+              title={sidebarCollapsed ? 'Account & Settings' : undefined}
+            >
+              <SettingsIcon className="h-5 w-5 shrink-0" />
+              {!sidebarCollapsed && <span className="text-sm font-medium">Account & Settings</span>}
+            </Button>
+          </div>
 
           {/* Main content */}
-          <main className="flex-1 min-w-0 space-y-5">
+          <main className="order-2 flex-1 min-w-0 space-y-5 lg:h-full lg:overflow-y-auto">
             {error && (
               <Card className="border-red-200">
                 <CardContent className="p-4 flex items-center gap-2 text-sm text-red-600">
@@ -762,6 +800,7 @@ const ParentPortal = () => {
                         {selectedChild.grade_level}
                         {selectedChild.stream_name ? ` • ${selectedChild.stream_name}` : ''}
                         {' • Adm. No. '}{selectedChild.admission_number}
+                        {selectedChild.school_name ? ` • ${selectedChild.school_name}` : ''}
                       </p>
                     </div>
                     {latestExam && (

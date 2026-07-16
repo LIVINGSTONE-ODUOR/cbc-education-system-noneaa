@@ -5,13 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Laptop, Smartphone, Tablet, Monitor, AlertCircle, ChevronDown } from 'lucide-react';
 import { getMySessions, revokeSession, type UserSession } from '@/lib/api/sessionsApi';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // Lightweight user-agent parsing — good enough to show "Chrome on Windows"
 // / "Safari on iPhone" without pulling in a whole UA-parser dependency for
 // one settings card. Falls back to "Unknown device" for anything it can't
 // confidently classify rather than guessing.
-const parseUserAgent = (ua: string | null): { device: string; label: string; icon: React.ElementType } => {
-  if (!ua) return { device: 'unknown', label: 'Unknown device', icon: Monitor };
+const parseUserAgent = (ua: string | null, unknownDeviceLabel: string): { device: string; label: string; icon: React.ElementType } => {
+  if (!ua) return { device: 'unknown', label: unknownDeviceLabel, icon: Monitor };
 
   const isTablet = /iPad|Tablet/i.test(ua);
   const isMobile = !isTablet && /Mobi|iPhone|Android/i.test(ua);
@@ -39,6 +40,7 @@ const formatDateTime = (iso: string) =>
   new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 
 const DeviceSessionHistory: React.FC = () => {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [sessions, setSessions] = useState<UserSession[]>([]);
@@ -53,7 +55,7 @@ const DeviceSessionHistory: React.FC = () => {
       const res = await getMySessions();
       setSessions(res.data.sessions || []);
     } catch (err: any) {
-      setError(err.message || 'Failed to load your session history');
+      setError(err.message || t('failedToLoadSessions', 'Failed to load your session history'));
     } finally {
       setLoading(false);
       setHasLoaded(true);
@@ -74,7 +76,7 @@ const DeviceSessionHistory: React.FC = () => {
       await revokeSession(id);
       setSessions((prev) => prev.filter((s) => s.id !== id));
     } catch (err: any) {
-      setError(err.message || 'Failed to sign out that device');
+      setError(err.message || t('failedToSignOutDevice', 'Failed to sign out that device'));
     } finally {
       setRevokingId(null);
     }
@@ -91,9 +93,9 @@ const DeviceSessionHistory: React.FC = () => {
         <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
           <div>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Laptop className="h-5 w-5 text-primary" /> Device &amp; Session History
+              <Laptop className="h-5 w-5 text-primary" /> {t('deviceSessionHistory', 'Device & Session History')}
             </CardTitle>
-            <CardDescription>Everywhere your account is currently signed in.</CardDescription>
+            <CardDescription>{t('deviceSessionHistoryDesc', 'Everywhere your account is currently signed in.')}</CardDescription>
           </div>
           <ChevronDown
             className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`}
@@ -113,10 +115,10 @@ const DeviceSessionHistory: React.FC = () => {
             {error}
           </div>
         ) : sessions.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">No active sessions found.</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">{t('noActiveSessions', 'No active sessions found.')}</p>
         ) : (
           sessions.map((session) => {
-            const { label, icon: Icon } = parseUserAgent(session.user_agent);
+            const { label, icon: Icon } = parseUserAgent(session.user_agent, t('unknownDevice', 'Unknown device'));
             return (
               <div
                 key={session.id}
@@ -128,11 +130,11 @@ const DeviceSessionHistory: React.FC = () => {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-medium truncate">{label}</p>
                       {session.is_current && (
-                        <Badge variant="secondary" className="font-normal">This device</Badge>
+                        <Badge variant="secondary" className="font-normal">{t('thisDevice', 'This device')}</Badge>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {session.ip_address || 'Unknown IP'} · Signed in {formatDateTime(session.created_at)}
+                      {session.ip_address || t('unknownIp', 'Unknown IP')} · {t('signedInAt', 'Signed in')} {formatDateTime(session.created_at)}
                     </p>
                   </div>
                 </div>
@@ -143,7 +145,7 @@ const DeviceSessionHistory: React.FC = () => {
                     onClick={() => handleRevoke(session.id)}
                     disabled={revokingId === session.id}
                   >
-                    {revokingId === session.id ? 'Signing out...' : 'Sign Out'}
+                    {revokingId === session.id ? t('signingOutEllipsis', 'Signing out...') : t('signOutButton', 'Sign Out')}
                   </Button>
                 )}
               </div>
@@ -151,7 +153,7 @@ const DeviceSessionHistory: React.FC = () => {
           })
         )}
         <p className="text-xs text-muted-foreground pt-1">
-          Don't recognize a device? Sign it out here, then change your password above.
+          {t('dontRecognizeDevice', "Don't recognize a device? Sign it out here, then change your password above.")}
         </p>
       </CardContent>
       )}

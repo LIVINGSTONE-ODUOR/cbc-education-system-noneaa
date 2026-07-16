@@ -50,6 +50,41 @@ const verifyParentLink = async (userId, learnerId) => {
   return !!link;
 };
 
+// Returns the school_id a learner actually belongs to. Needed because a
+// parent's own school_id (from their JWT / parents row) is only the school
+// where their account was created — it is NOT reliable once a parent has
+// children enrolled at more than one school. Every school-scoped lookup for
+// a specific child must resolve the school from THAT learner, never from
+// req.user.
+const getLearnerSchoolId = async (learnerId) => {
+  const { data } = await supabase
+    .from('learners')
+    .select('school_id')
+    .eq('id', learnerId)
+    .maybeSingle();
+  return data?.school_id || null;
+};
+
+// Returns the school_id(s) every child linked to this parent belongs to
+// (deduped). Used to build a cross-school feed when no specific learner is
+// selected (e.g. the parent hasn't picked a child yet).
+const getParentSchoolIds = async (parentId) => {
+  const { data: links } = await supabase
+    .from('learner_parents')
+    .select('learner_id')
+    .eq('parent_id', parentId);
+
+  const learnerIds = (links || []).map((l) => l.learner_id).filter(Boolean);
+  if (learnerIds.length === 0) return [];
+
+  const { data: learners } = await supabase
+    .from('learners')
+    .select('school_id')
+    .in('id', learnerIds);
+
+  return [...new Set((learners || []).map((l) => l.school_id).filter(Boolean))];
+};
+
 // Returns the class_id a learner is currently enrolled in, or null.
 const getLearnerClassId = async (learnerId) => {
   const { data } = await supabase
@@ -152,13 +187,16 @@ const markMessageRead = asyncHandler(async (req, res) => {
 // Everyone the parent can message about this child: the class teacher,
 // any subject teachers assigned to their class, and the school's principal.
 const getMessageContacts = asyncHandler(async (req, res) => {
-  const schoolId = getSchoolId(req);
   const { id: userId, role } = req.user;
   const { learnerId } = req.params;
 
   if (role === 'parent' && !(await verifyParentLink(userId, learnerId))) {
     return res.status(403).json({ success: false, message: "Not authorized to view this learner's contacts" });
   }
+
+  // Resolve from the learner being viewed, not req.user — a parent with
+  // children at more than one school must see THAT child's principal.
+  const schoolId = (await getLearnerSchoolId(learnerId)) || getSchoolId(req);
 
   const classId = await getLearnerClassId(learnerId);
   const byUserId = new Map();
@@ -221,7 +259,6 @@ const getMessageContacts = asyncHandler(async (req, res) => {
 // Body: { recipient_user_id, learner_id, subject?, body }
 // Sends a new message or a reply within an existing conversation.
 const sendMessage = asyncHandler(async (req, res) => {
-  const schoolId = getSchoolId(req);
   const { id: userId, role } = req.user;
   const { recipient_user_id, learner_id, subject, body } = req.body;
 
@@ -233,7 +270,11 @@ const sendMessage = asyncHandler(async (req, res) => {
     return res.status(403).json({ success: false, message: 'Not authorized to message about this learner' });
   }
 
-  // Recipient must be a staff member (teacher or school_admin/principal) at the same school.
+  // Recipient must be a staff member (teacher or school_admin/principal) at
+  // THIS learner's school — resolved from the learner, not the sender's own
+  // account school, since a parent's children may attend different schools.
+  const schoolId = (await getLearnerSchoolId(learner_id)) || getSchoolId(req);
+
   const { data: recipient } = await supabase
     .from('users')
     .select('id, role, school_id')
@@ -315,18 +356,39 @@ const getConversation = asyncHandler(async (req, res) => {
 // School-wide announcements plus any targeted at the parent's children's
 // classes.
 const getAnnouncements = asyncHandler(async (req, res) => {
-  const schoolId = getSchoolId(req);
-  const { id: userId } = req.user;
+  const { id: userId, role } = req.user;
   const limit = parseInt(req.query.limit) || 10;
-  const { category } = req.query; // optional: 'general' | 'fee_reminder'
+  const { category, learner_id: learnerId } = req.query; // optional: 'general' | 'fee_reminder', and the currently-selected child
+
+  if (role === 'parent' && learnerId && !(await verifyParentLink(userId, learnerId))) {
+    return res.status(403).json({ success: false, message: "Not authorized to view this learner's announcements" });
+  }
 
   const parentRow = await getParentForUser(userId);
   const classIds = parentRow ? await getParentChildrenClassIds(parentRow.id) : [];
 
+  // A child was picked in the UI → scope to THAT child's school only (this
+  // is what makes "different schools, same login" work). Otherwise fall
+  // back to every school the parent's children attend, or the caller's own
+  // account school for non-parent roles (teacher/school_admin/super_admin).
+  let schoolIds;
+  if (learnerId) {
+    const learnerSchoolId = await getLearnerSchoolId(learnerId);
+    schoolIds = learnerSchoolId ? [learnerSchoolId] : [];
+  } else if (parentRow) {
+    schoolIds = await getParentSchoolIds(parentRow.id);
+  } else {
+    schoolIds = [];
+  }
+  if (schoolIds.length === 0) {
+    const fallback = getSchoolId(req);
+    schoolIds = fallback ? [fallback] : [];
+  }
+
   let query = supabase
     .from('announcements')
     .select('id, title, body, class_id, category, created_at, classes:class_id (id, grade_level, stream_name)')
-    .eq('school_id', schoolId)
+    .in('school_id', schoolIds)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -427,15 +489,32 @@ const getTimetable = asyncHandler(async (req, res) => {
 // GET /api/v1/parent-dashboard/events?limit=10
 // Upcoming events only (event_date >= today), soonest first.
 const getSchoolEvents = asyncHandler(async (req, res) => {
-  const schoolId = getSchoolId(req);
+  const { id: userId, role } = req.user;
   const limit = parseInt(req.query.limit) || 10;
-  const { type } = req.query; // optional: 'event' | 'holiday' | 'pta_meeting' | 'term_start' | 'term_end' | 'sports' | 'activity'
+  const { type, learner_id: learnerId } = req.query; // optional type filter, plus the currently-selected child
   const today = new Date().toISOString().slice(0, 10);
+
+  if (role === 'parent' && learnerId && !(await verifyParentLink(userId, learnerId))) {
+    return res.status(403).json({ success: false, message: "Not authorized to view this learner's events" });
+  }
+
+  let schoolIds;
+  if (learnerId) {
+    const learnerSchoolId = await getLearnerSchoolId(learnerId);
+    schoolIds = learnerSchoolId ? [learnerSchoolId] : [];
+  } else {
+    const parentRow = role === 'parent' ? await getParentForUser(userId) : null;
+    schoolIds = parentRow ? await getParentSchoolIds(parentRow.id) : [];
+  }
+  if (schoolIds.length === 0) {
+    const fallback = getSchoolId(req);
+    schoolIds = fallback ? [fallback] : [];
+  }
 
   let query = supabase
     .from('school_events')
     .select('id, title, description, event_date, start_time, location, audience, event_type')
-    .eq('school_id', schoolId)
+    .in('school_id', schoolIds)
     .in('audience', ['all', 'parents'])
     .gte('event_date', today)
     .order('event_date', { ascending: true })
@@ -463,7 +542,6 @@ const getSchoolEvents = asyncHandler(async (req, res) => {
 // grade & class, stream, date of birth, class teacher, medical info, and
 // emergency contacts (every guardian linked to the learner).
 const getChildProfile = asyncHandler(async (req, res) => {
-  const schoolId = getSchoolId(req);
   const { id: userId, role } = req.user;
   const { learnerId } = req.params;
 
@@ -471,15 +549,25 @@ const getChildProfile = asyncHandler(async (req, res) => {
     return res.status(403).json({ success: false, message: "Not authorized to view this learner's profile" });
   }
 
-  const { data: learner, error: learnerError } = await supabase
+  // Parents: ownership is already confirmed above via verifyParentLink
+  // (checks learner_parents directly), and this child may belong to a
+  // different school than the parent's own account — so no school_id
+  // filter for them. Staff (teacher/school_admin/super_admin) still get
+  // scoped to their own school, since they have no equivalent per-child
+  // ownership check.
+  let learnerQuery = supabase
     .from('learners')
     .select(`
       id, first_name, last_name, admission_number, profile_photo,
-      date_of_birth, gender, medical_conditions, allergies, special_needs
+      date_of_birth, gender, medical_conditions, allergies, special_needs, school_id
     `)
-    .eq('id', learnerId)
-    .eq('school_id', schoolId)
-    .maybeSingle();
+    .eq('id', learnerId);
+
+  if (role !== 'parent') {
+    learnerQuery = learnerQuery.eq('school_id', getSchoolId(req));
+  }
+
+  const { data: learner, error: learnerError } = await learnerQuery.maybeSingle();
 
   if (learnerError) {
     return res.status(500).json({ success: false, message: 'Failed to fetch child profile', error: learnerError.message });

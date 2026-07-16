@@ -122,6 +122,11 @@ export const getMyChildren = async (): Promise<ApiResponse<{
     relationship: string | null;
     is_primary_guardian: boolean;
     latest_exam_summary: any;
+    // A parent's children can be enrolled at different schools — every
+    // child now carries its own school context instead of assuming the
+    // parent's single account school.
+    school_id: string | null;
+    school_name: string | null;
   }>;
   total_children: number;
 }>> => {

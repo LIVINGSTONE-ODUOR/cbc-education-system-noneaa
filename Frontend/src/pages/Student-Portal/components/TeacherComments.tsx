@@ -4,6 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, MessageSquare } from 'lucide-react';
 import { getLearnerTeacherComments, TeacherComment } from '@/lib/api/parentDashboardApi';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface TeacherCommentsProps {
   learnerId: string;
@@ -11,6 +12,7 @@ interface TeacherCommentsProps {
 }
 
 const TeacherComments: React.FC<TeacherCommentsProps> = ({ learnerId, emptyMessage }) => {
+  const { t } = useLanguage();
   const [comments, setComments] = useState<TeacherComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +30,7 @@ const TeacherComments: React.FC<TeacherCommentsProps> = ({ learnerId, emptyMessa
         const res = await getLearnerTeacherComments(learnerId, 20);
         if (!cancelled) setComments(res.data.comments || []);
       } catch (err: any) {
-        if (!cancelled) setError(err.message || 'Failed to load teacher comments');
+        if (!cancelled) setError(err.message || t('failedToLoadTeacherComments', 'Failed to load teacher comments'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -43,9 +45,9 @@ const TeacherComments: React.FC<TeacherCommentsProps> = ({ learnerId, emptyMessa
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MessageSquare className="h-5 w-5 text-primary" />
-          Teacher Comments
+          {t('teacherComments', 'Teacher Comments')}
         </CardTitle>
-        <CardDescription>Feedback your teachers have left for you</CardDescription>
+        <CardDescription>{t('teacherCommentsDesc', 'Feedback your teachers have left for you')}</CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -60,7 +62,7 @@ const TeacherComments: React.FC<TeacherCommentsProps> = ({ learnerId, emptyMessa
           </div>
         ) : comments.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            {emptyMessage || 'No teacher comments yet.'}
+            {emptyMessage || t('noTeacherCommentsYet', 'No teacher comments yet.')}
           </p>
         ) : (
           <div className="space-y-3">
@@ -68,7 +70,7 @@ const TeacherComments: React.FC<TeacherCommentsProps> = ({ learnerId, emptyMessa
               <div key={c.id} className="rounded-md border p-3 text-sm">
                 <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium">
-                    {c.teachers ? `${c.teachers.first_name} ${c.teachers.last_name}` : 'Teacher'}
+                    {c.teachers ? `${c.teachers.first_name} ${c.teachers.last_name}` : t('teacherFallback', 'Teacher')}
                   </span>
                   <div className="flex items-center gap-2">
                     {c.learning_areas && <Badge variant="outline">{c.learning_areas.name}</Badge>}

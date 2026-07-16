@@ -531,7 +531,6 @@ const StudentPortal = () => {
                   exams={exams}
                   upcomingExams={upcomingExams}
                   loading={loadingSummary}
-                  emptyMessage="No upcoming exams are scheduled yet — a revision plan will appear once one is."
                 />
 
                 {/* Export to calendar — .ics download + one-click Google Calendar links */}
@@ -735,10 +734,10 @@ const StudentPortal = () => {
                 />
 
                 {/* Learning heatmap — visual grid of strong/weak topics across exams */}
-                <LearningHeatmap exams={exams} emptyMessage="No exam results yet — the heatmap will appear once your marks are recorded." />
+                <LearningHeatmap exams={exams} />
 
                 {/* Grade history */}
-                <GradeHistory exams={exams} emptyMessage="No exams have been recorded for you yet." />
+                <GradeHistory exams={exams} />
 
                 {/* Report cards */}
                 <ReportCards
@@ -748,7 +747,7 @@ const StudentPortal = () => {
                 />
 
                 {/* Teacher comments */}
-                <TeacherComments learnerId={learner?.id || ''} emptyMessage="No teacher comments yet." />
+                <TeacherComments learnerId={learner?.id || ''} />
               </TabsContent>
 
               {/* Attendance Tab — real records from the backend */}
@@ -758,7 +757,7 @@ const StudentPortal = () => {
                 <Attendance learnerId={learner?.id || ''} emptyMessage="No attendance records yet this term." />
 
                 {/* Monthly attendance statistics + attendance trends */}
-                <AttendanceInsights learnerId={learner?.id || ''} emptyMessage="No attendance records yet this term." />
+                <AttendanceInsights learnerId={learner?.id || ''} />
 
                 {/* Leave requests */}
                 <LeaveRequests />
