@@ -12,10 +12,12 @@ import {
   RefreshCw, School, UserCheck, CalendarDays, Building2,
   Plus, Activity, Target,
   UserPlus, Award, Bell, ChevronRight, Zap, BarChart3,
-  Sparkles
+  Sparkles, TrendingUp, Layers
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  AreaChart, Area, Legend,
 } from 'recharts';
 import { motion } from 'framer-motion';
 
@@ -54,6 +56,29 @@ interface GradeDistribution {
   grade_code: string;
   count: number;
   percentage: number;
+}
+
+interface ClassPerformance {
+  class_id: string;
+  grade_level: string;
+  stream_name: string | null;
+  class_name: string;
+  average_score: number;
+  learner_count: number;
+}
+
+interface AttendanceTrendPoint {
+  attendance_date: string;
+  present_count: number;
+  absent_count: number;
+  late_count: number;
+  total_count: number;
+  attendance_rate: number;
+}
+
+interface EnrollmentByGrade {
+  grade_level: string;
+  students: number;
 }
 
 interface LearnerPerformance {
@@ -151,6 +176,9 @@ const getTimeAgo = (dateStr: string) => {
   return new Date(dateStr).toLocaleDateString();
 };
 
+const formatShortDate = (dateStr: string) =>
+  new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
 // ═══════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════
@@ -166,6 +194,9 @@ const SchoolDashboard = () => {
   const [gradeDistribution, setGradeDistribution] = useState<GradeDistribution[]>([]);
   const [topPerformers, setTopPerformers] = useState<LearnerPerformance[]>([]);
   const [bubbleLearners, setBubbleLearners] = useState<LearnerPerformance[]>([]);
+  const [classPerformance, setClassPerformance] = useState<ClassPerformance[]>([]);
+  const [attendanceTrend, setAttendanceTrend] = useState<AttendanceTrendPoint[]>([]);
+  const [enrollmentByGrade, setEnrollmentByGrade] = useState<EnrollmentByGrade[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [greeting, setGreeting] = useState(getGreeting());
 
@@ -189,12 +220,15 @@ const SchoolDashboard = () => {
       const schoolId = user.schoolId;
 
       // Fetch all dashboard data in parallel
-      const [statsData, activitiesData, gradeDistData, topData, bottomData] = await Promise.all([
+      const [statsData, activitiesData, gradeDistData, topData, bottomData, classPerfData, attendanceTrendData, enrollmentData] = await Promise.all([
         apiFetch<SchoolStats>(`/api/v1/dashboard/stats?school_id=${schoolId}`),
         apiFetch<ActivityItem[]>(`/api/v1/dashboard/activities?school_id=${schoolId}&limit=8`).catch(() => []),
         apiFetch<GradeDistribution[]>(`/api/v1/dashboard/analytics/grade-distribution?school_id=${schoolId}`).catch(() => []),
         apiFetch<LearnerPerformance[]>(`/api/v1/dashboard/learner-performance?school_id=${schoolId}&sort=top&limit=3`).catch(() => []),
         apiFetch<LearnerPerformance[]>(`/api/v1/dashboard/learner-performance?school_id=${schoolId}&sort=bottom&limit=3`).catch(() => []),
+        apiFetch<ClassPerformance[]>(`/api/v1/dashboard/analytics/class-performance?school_id=${schoolId}`).catch(() => []),
+        apiFetch<AttendanceTrendPoint[]>(`/api/v1/dashboard/analytics/attendance-trend?school_id=${schoolId}&days=14`).catch(() => []),
+        apiFetch<EnrollmentByGrade[]>(`/api/v1/dashboard/analytics/enrollment-by-grade?school_id=${schoolId}`).catch(() => []),
       ]);
 
       setStats(statsData);
@@ -202,6 +236,9 @@ const SchoolDashboard = () => {
       setGradeDistribution(gradeDistData);
       setTopPerformers(topData);
       setBubbleLearners(bottomData);
+      setClassPerformance(classPerfData);
+      setAttendanceTrend(attendanceTrendData);
+      setEnrollmentByGrade(enrollmentData);
       setLastUpdated(new Date());
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to load dashboard';
@@ -580,6 +617,181 @@ const SchoolDashboard = () => {
           </Card>
         </motion.div>
       </div>
+
+      {/* Class Performance Comparison + Enrollment by Grade */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Class Performance Comparison */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.35 }}
+          className="lg:col-span-2"
+        >
+          <Card className="h-full">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-indigo-500" />
+                  Class Performance Comparison
+                </CardTitle>
+                {classPerformance.length > 0 && (
+                  <Badge variant="outline" className="text-xs">
+                    {classPerformance.length} classes
+                  </Badge>
+                )}
+              </div>
+              <CardDescription>Average score by class this term</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {classPerformance.some((c) => c.learner_count > 0) ? (
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={classPerformance} margin={{ top: 10, right: 10, left: 0, bottom: 40 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis
+                      dataKey="class_name"
+                      tick={{ fontSize: 11 }}
+                      interval={0}
+                      angle={-40}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis tick={{ fontSize: 12 }} domain={[0, 100]} />
+                    <Tooltip
+                      contentStyle={{
+                        background: 'hsl(var(--popover))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                      }}
+                      formatter={(value: number, name: string, props) => [
+                        `${Number(value).toFixed(1)}% avg · ${props.payload.learner_count} learners`,
+                        'Performance',
+                      ]}
+                    />
+                    <Bar dataKey="average_score" radius={[6, 6, 0, 0]}>
+                      {classPerformance.map((entry) => (
+                        <Cell
+                          key={entry.class_id}
+                          fill={entry.average_score >= 75 ? '#10B981' : entry.average_score >= 50 ? '#3B82F6' : entry.average_score >= 25 ? '#F59E0B' : '#EF4444'}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[280px] text-muted-foreground">
+                  <Layers className="w-10 h-10 mb-2 opacity-30" />
+                  <p className="text-sm">No finalized report cards yet</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Enrollment by Grade */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Card className="h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <School className="w-5 h-5 text-blue-500" />
+                Enrollment by Grade
+              </CardTitle>
+              <CardDescription>Active learners per grade level</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {enrollmentByGrade.length > 0 ? (
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={enrollmentByGrade} layout="vertical" margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} className="stroke-muted" />
+                    <XAxis type="number" tick={{ fontSize: 12 }} allowDecimals={false} />
+                    <YAxis dataKey="grade_level" type="category" tick={{ fontSize: 12 }} width={64} />
+                    <Tooltip
+                      contentStyle={{
+                        background: 'hsl(var(--popover))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                      }}
+                      formatter={(value: number) => [`${value} learners`, 'Enrolled']}
+                    />
+                    <Bar dataKey="students" fill="#3B82F6" radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[280px] text-muted-foreground">
+                  <School className="w-10 h-10 mb-2 opacity-30" />
+                  <p className="text-sm">No enrollment data yet</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Attendance Trend */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.45 }}
+      >
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-cyan-500" />
+                Attendance Trend
+              </CardTitle>
+              <CardDescription className="text-xs">Last 14 days</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {attendanceTrend.some((d) => d.total_count > 0) ? (
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart data={attendanceTrend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="attendanceFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#06B6D4" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="attendance_date" tickFormatter={formatShortDate} tick={{ fontSize: 12 }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} tickFormatter={(v) => `${v}%`} />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'hsl(var(--popover))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                    }}
+                    labelFormatter={(label) => formatShortDate(String(label))}
+                    formatter={(value: number, name: string, props) => [
+                      `${value}% (${props.payload.present_count}/${props.payload.total_count} present)`,
+                      'Attendance',
+                    ]}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="attendance_rate"
+                    stroke="#06B6D4"
+                    strokeWidth={2.5}
+                    fill="url(#attendanceFill)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-[240px] text-muted-foreground">
+                <TrendingUp className="w-10 h-10 mb-2 opacity-30" />
+                <p className="text-sm">No attendance records in the last 14 days</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Top & Bubble Performers */}
       <div className="grid gap-6 lg:grid-cols-2">
