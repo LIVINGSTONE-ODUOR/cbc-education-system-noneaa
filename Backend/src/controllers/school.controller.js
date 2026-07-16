@@ -390,10 +390,14 @@ const updateSchool = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // school_admin can only ever edit their own school, and only a small
-    // safe subset of fields — self-service content, not identity/billing
-    // data. Everything else (code, subscription_status, is_active, etc.)
-    // stays super_admin-only via this same endpoint.
+    // school_admin can only ever edit their own school, and only a subset
+    // of fields — self-service content, not billing/registration data.
+    // 'name', 'physical_address', 'postal_address' are included here (same
+    // category as phone/email/website below) so a school_admin can fix
+    // their own school's name/address without needing a super_admin —
+    // this is what the Settings > School Profile screen edits.
+    // Everything else (code, subscription_status, is_active, etc.) stays
+    // super_admin-only via this same endpoint.
     const isSchoolAdmin = req.user.role === 'school_admin';
 
     if (isSchoolAdmin && req.user.schoolId !== id) {
@@ -402,6 +406,9 @@ const updateSchool = async (req, res) => {
 
     const allowedFields = isSchoolAdmin
       ? [
+          'name',
+          'physical_address',
+          'postal_address',
           'phone_number',
           'email',
           'website',
