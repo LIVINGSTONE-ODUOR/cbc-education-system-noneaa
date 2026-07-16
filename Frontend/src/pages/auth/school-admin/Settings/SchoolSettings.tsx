@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSchoolSettings } from '@/contexts/SchoolSettingsContext';
+import { getSchoolById, updateSchool as updateSchoolApi } from '@/lib/api/schoolsApi';
 import {
   Card,
   CardContent,
@@ -275,6 +275,7 @@ function SidebarNav({ tabs, activeTab, onTabChange }: SidebarNavProps) {
 interface SchoolProfileTabProps {
   schoolProfile: SchoolProfile;
   isSaving: boolean;
+  isLoading: boolean;
   onSchoolProfileChange: (profile: SchoolProfile) => void;
   onSave: () => Promise<void>;
 }
@@ -282,6 +283,7 @@ interface SchoolProfileTabProps {
 function SchoolProfileTab({
   schoolProfile,
   isSaving,
+  isLoading,
   onSchoolProfileChange,
   onSave,
 }: SchoolProfileTabProps) {
@@ -310,7 +312,7 @@ function SchoolProfileTab({
                     name: e.target.value,
                   })
                 }
-                disabled={isSaving}
+                disabled={isSaving || isLoading}
                 placeholder="e.g., Example Primary School"
               />
             </div>
@@ -320,26 +322,15 @@ function SchoolProfileTab({
               <Input
                 id="school-code"
                 value={schoolProfile.code}
-                onChange={(e) =>
-                  onSchoolProfileChange({
-                    ...schoolProfile,
-                    code: e.target.value,
-                  })
-                }
-                disabled={isSaving}
+                disabled
                 placeholder="e.g., EPS001"
               />
+              <p className="text-xs text-muted-foreground">Contact your super admin to change this.</p>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="school-level">School Level *</Label>
-              <Select
-                value={schoolProfile.level}
-                onValueChange={(value: any) =>
-                  onSchoolProfileChange({ ...schoolProfile, level: value })
-                }
-                disabled={isSaving}
-              >
+              <Select value={schoolProfile.level} disabled>
                 <SelectTrigger id="school-level">
                   <SelectValue />
                 </SelectTrigger>
@@ -349,6 +340,7 @@ function SchoolProfileTab({
                   <SelectItem value="secondary">Secondary</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">Contact your super admin to change this.</p>
             </div>
 
             <div className="space-y-2">
@@ -357,15 +349,10 @@ function SchoolProfileTab({
                 id="established"
                 type="number"
                 value={schoolProfile.established}
-                onChange={(e) =>
-                  onSchoolProfileChange({
-                    ...schoolProfile,
-                    established: e.target.value,
-                  })
-                }
-                disabled={isSaving}
+                disabled
                 placeholder="e.g., 2005"
               />
+              <p className="text-xs text-muted-foreground">Contact your super admin to change this.</p>
             </div>
 
             <div className="space-y-2">
@@ -373,15 +360,10 @@ function SchoolProfileTab({
               <Input
                 id="county"
                 value={schoolProfile.county}
-                onChange={(e) =>
-                  onSchoolProfileChange({
-                    ...schoolProfile,
-                    county: e.target.value,
-                  })
-                }
-                disabled={isSaving}
+                disabled
                 placeholder="e.g., Nairobi"
               />
+              <p className="text-xs text-muted-foreground">Contact your super admin to change this.</p>
             </div>
 
             <div className="space-y-2">
@@ -389,15 +371,10 @@ function SchoolProfileTab({
               <Input
                 id="sub-county"
                 value={schoolProfile.subCounty}
-                onChange={(e) =>
-                  onSchoolProfileChange({
-                    ...schoolProfile,
-                    subCounty: e.target.value,
-                  })
-                }
-                disabled={isSaving}
+                disabled
                 placeholder="e.g., Westlands"
               />
+              <p className="text-xs text-muted-foreground">Contact your super admin to change this.</p>
             </div>
           </div>
 
@@ -412,7 +389,7 @@ function SchoolProfileTab({
                   address: e.target.value,
                 })
               }
-              disabled={isSaving}
+              disabled={isSaving || isLoading}
               placeholder="Street, Building, City"
               rows={2}
             />
@@ -431,7 +408,7 @@ function SchoolProfileTab({
                     phone: e.target.value,
                   })
                 }
-                disabled={isSaving}
+                disabled={isSaving || isLoading}
                 placeholder="+254 700 000 000"
               />
             </div>
@@ -448,7 +425,7 @@ function SchoolProfileTab({
                     email: e.target.value,
                   })
                 }
-                disabled={isSaving}
+                disabled={isSaving || isLoading}
                 placeholder="info@school.edu"
               />
             </div>
@@ -464,7 +441,7 @@ function SchoolProfileTab({
                     website: e.target.value,
                   })
                 }
-                disabled={isSaving}
+                disabled={isSaving || isLoading}
                 placeholder="https://school.edu"
               />
             </div>
@@ -480,13 +457,13 @@ function SchoolProfileTab({
                     motto: e.target.value,
                   })
                 }
-                disabled={isSaving}
+                disabled={isSaving || isLoading}
                 placeholder="e.g., Excellence in Education"
               />
             </div>
           </div>
 
-          <Button onClick={onSave} disabled={isSaving} className="gap-2">
+          <Button onClick={onSave} disabled={isSaving || isLoading} className="gap-2">
             {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
             <Save className="h-4 w-4" />
             Save School Profile
@@ -1469,22 +1446,22 @@ export default function SchoolSettingsPage() {
   // STATE
   // ─────────────────────────────────────────────────────────────────
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('school-profile');
 
   const [schoolProfile, setSchoolProfile] = useState<SchoolProfile>({
-    name: 'Example Primary School',
-    code: 'EPS001',
+    name: '',
+    code: '',
     level: 'primary',
-    county: 'Nairobi',
-    subCounty: 'Westlands',
-    address: '123 Education Street, Nairobi',
-    phone: '+254 700 123 456',
-    email: 'info@exampleprimary.edu',
-    website: 'https://exampleprimary.edu',
-    motto: 'Excellence in Education',
-    established: '2005',
+    county: '',
+    subCounty: '',
+    address: '',
+    phone: '',
+    email: '',
+    website: '',
+    motto: '',
+    established: '',
   });
 
   const [branding, setBranding] = useState<BrandingSettings>({
@@ -1546,14 +1523,98 @@ export default function SchoolSettingsPage() {
   });
 
   // ─────────────────────────────────────────────────────────────────
+  // LOAD REAL DATA
+  // ─────────────────────────────────────────────────────────────────
+  // Only the School Profile tab is wired to the backend so far — it's the
+  // only one with a real endpoint (GET/PUT /api/v1/schools/:id). Branding,
+  // Academic, Finance, Communication, and Security below still use local
+  // state only until those get their own backend support.
+  useEffect(() => {
+    if (!user?.schoolId) {
+      setIsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        setIsLoading(true);
+        const res = await getSchoolById(user.schoolId as string);
+        const school = res.data;
+        if (!school || cancelled) return;
+        const validLevels: SchoolProfile['level'][] = ['ecde', 'primary', 'secondary'];
+        setSchoolProfile({
+          name: school.name || '',
+          code: school.code || '',
+          level: validLevels.includes(school.level as SchoolProfile['level'])
+            ? (school.level as SchoolProfile['level'])
+            : 'primary',
+          county: school.county || '',
+          subCounty: school.sub_county || '',
+          address: school.physical_address || '',
+          phone: school.phone_number || school.phone || '',
+          email: school.email || '',
+          website: school.website || '',
+          motto: school.motto || '',
+          established: school.year_established ? String(school.year_established) : '',
+        });
+      } catch (error) {
+        console.error('Error loading school profile:', error);
+        toast.error('Failed to load school profile', {
+          icon: <AlertCircle className="h-4 w-4" />,
+        });
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.schoolId]);
+
+  // ─────────────────────────────────────────────────────────────────
   // HANDLERS
   // ─────────────────────────────────────────────────────────────────
 
   const handleSave = useCallback(
     async (section: string) => {
+      if (section === 'School Profile') {
+        if (!user?.schoolId) {
+          toast.error('No school found for this account', {
+            icon: <AlertCircle className="h-4 w-4" />,
+          });
+          return;
+        }
+        try {
+          setIsSaving(true);
+          // Only fields school.controller.js -> updateSchool actually
+          // allows a school_admin to change. name/level/county/sub-county/
+          // code/established stay super_admin-only there, which is also
+          // why those inputs are disabled below for this role.
+          await updateSchoolApi(user.schoolId, {
+            name: schoolProfile.name,
+            physical_address: schoolProfile.address,
+            phone_number: schoolProfile.phone,
+            email: schoolProfile.email,
+            website: schoolProfile.website,
+            motto: schoolProfile.motto,
+          });
+          toast.success(`✓ ${section} saved successfully`, {
+            icon: <CheckCircle2 className="h-4 w-4" />,
+          });
+        } catch (error) {
+          console.error(`Error saving ${section}:`, error);
+          toast.error(error instanceof Error ? error.message : `Failed to save ${section}`, {
+            icon: <AlertCircle className="h-4 w-4" />,
+          });
+        } finally {
+          setIsSaving(false);
+        }
+        return;
+      }
+
       try {
         setIsSaving(true);
-        // Simulate API call
+        // Simulate API call — no backend endpoint for this section yet.
         await new Promise((resolve) => setTimeout(resolve, 1000));
         toast.success(`✓ ${section} saved successfully`, {
           icon: <CheckCircle2 className="h-4 w-4" />,
@@ -1567,7 +1628,7 @@ export default function SchoolSettingsPage() {
         setIsSaving(false);
       }
     },
-    []
+    [user?.schoolId, schoolProfile]
   );
 
   // ─────────────────────────────────────────────────────────────────
@@ -1616,6 +1677,7 @@ export default function SchoolSettingsPage() {
             <SchoolProfileTab
               schoolProfile={schoolProfile}
               isSaving={isSaving}
+              isLoading={isLoading}
               onSchoolProfileChange={setSchoolProfile}
               onSave={() => handleSave('School Profile')}
             />
