@@ -503,7 +503,7 @@ export default function TimetablePage() {
             Assign teachers to learning areas per class, and schedule the days and times each lesson runs.
           </p>
         </div>
-        <div className="flex gap-2 no-print">
+        <div className="flex flex-wrap gap-2 no-print">
           <Button variant="outline" onClick={openSettingsDialog}>
             <Settings className="h-4 w-4 mr-2" />
             Timetable Setup
