@@ -50,6 +50,7 @@ import {
   updateDaySettings,
   getSchoolTimetable,
   getTeacherLoadReport,
+  getTimetablePeriods,
   SchoolTimetableResponse,
   TeacherLoad,
   TeacherDayStatus,
@@ -59,6 +60,7 @@ import {
   DaySetting,
   WeekDay,
   WEEK_DAYS,
+  TimetablePeriodsResponse,
 } from '@/lib/api/timetableApi';
 
 interface TeacherOption {
@@ -104,12 +106,32 @@ export default function TimetablePage() {
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
   const [grid, setGrid] = useState<TimetableGrid>(emptyGrid());
 
+  // ── Year/Term picker: powers Print + Timetable Setup so admin can work
+  // with a different term/year than whatever's currently marked "current"
+  // (e.g. print last term's timetable, or plan next term's lesson counts).
+  const [periods, setPeriods] = useState<TimetablePeriodsResponse>({ academic_years: [], academic_terms: [] });
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getTimetablePeriods();
+        setPeriods(res.data);
+      } catch {
+        // Non-fatal — pickers just fall back to "current" only.
+      }
+    })();
+  }, []);
+
+  const currentYear = useMemo(() => periods.academic_years.find((y) => y.is_current) || null, [periods]);
+  const currentTerm = useMemo(() => periods.academic_terms.find((t) => t.is_current) || null, [periods]);
+
   // ── Timetable Setup: lessons-per-day, e.g. Monday = 8, Friday = 6 ────────
   const [daySettings, setDaySettings] = useState<DaySetting[]>(
     WEEK_DAYS.map(({ value }) => ({ day: value, lessons_count: 8 }))
   );
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsDraft, setSettingsDraft] = useState<Record<WeekDay, number>>({} as Record<WeekDay, number>);
+  const [settingsYearId, setSettingsYearId] = useState<string>('');
   const [savingSettings, setSavingSettings] = useState(false);
 
   const lessonLimit = useCallback(
@@ -134,15 +156,37 @@ export default function TimetablePage() {
     const draft = {} as Record<WeekDay, number>;
     WEEK_DAYS.forEach(({ value }) => { draft[value] = lessonLimit(value); });
     setSettingsDraft(draft);
+    setSettingsYearId(currentYear?.id || '');
     setSettingsOpen(true);
+  };
+
+  // Reload the per-day lesson counts for whichever year is picked in the
+  // dialog, so switching to next year's row doesn't show this year's numbers.
+  const handleSettingsYearChange = async (yearId: string) => {
+    setSettingsYearId(yearId);
+    try {
+      const res = await getDaySettings(yearId ? { academic_year_id: yearId } : undefined);
+      const draft = {} as Record<WeekDay, number>;
+      WEEK_DAYS.forEach(({ value }) => {
+        draft[value] = res.data.settings.find((s) => s.day === value)?.lessons_count ?? 8;
+      });
+      setSettingsDraft(draft);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load timetable setup for that year');
+    }
   };
 
   const saveSettings = async () => {
     setSavingSettings(true);
     try {
       const days = WEEK_DAYS.map(({ value }) => ({ day: value, lessons_count: settingsDraft[value] }));
-      const res = await updateDaySettings({ days });
-      setDaySettings(res.data.settings);
+      const res = await updateDaySettings({ academic_year_id: settingsYearId || undefined, days });
+      // Only refresh the live grid's lesson caps when editing the year
+      // that's actually current — editing next year's setup shouldn't
+      // change what today's grid shows as "full".
+      if (!settingsYearId || settingsYearId === currentYear?.id) {
+        setDaySettings(res.data.settings);
+      }
       toast.success('Timetable setup saved');
       setSettingsOpen(false);
     } catch (err) {
@@ -166,6 +210,9 @@ export default function TimetablePage() {
   // ── Print: full school timetable (all classes, all lessons, teachers) ───
   const [printData, setPrintData] = useState<SchoolTimetableResponse | null>(null);
   const [printing, setPrinting] = useState(false);
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [printYearId, setPrintYearId] = useState<string>('');
+  const [printTermId, setPrintTermId] = useState<string>('');
 
   // ── Teacher Load report: who's free, who's overloaded, per day ──────────
   const [loadReportOpen, setLoadReportOpen] = useState(false);
@@ -192,11 +239,21 @@ export default function TimetablePage() {
     return 'default';
   };
 
+  const openPrintDialog = () => {
+    setPrintYearId(currentYear?.id || '');
+    setPrintTermId(currentTerm?.id || '');
+    setPrintDialogOpen(true);
+  };
+
   const handlePrint = async () => {
     setPrinting(true);
     try {
-      const res = await getSchoolTimetable();
+      const res = await getSchoolTimetable({
+        academic_year_id: printYearId || undefined,
+        term_id: printTermId || undefined,
+      });
       setPrintData(res.data);
+      setPrintDialogOpen(false);
       // Wait a tick so the print-only markup is in the DOM before printing.
       setTimeout(() => window.print(), 50);
     } catch (err) {
@@ -396,7 +453,7 @@ export default function TimetablePage() {
             <Users className="h-4 w-4 mr-2" />
             Teacher Load
           </Button>
-          <Button variant="outline" onClick={handlePrint} disabled={printing}>
+          <Button variant="outline" onClick={openPrintDialog} disabled={printing}>
             {printing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
             Print Timetable
           </Button>
@@ -671,6 +728,27 @@ export default function TimetablePage() {
             </DialogDescription>
           </DialogHeader>
 
+          {periods.academic_years.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Academic Year</Label>
+              <Select value={settingsYearId} onValueChange={handleSettingsYearChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Current year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {periods.academic_years.map((y) => (
+                    <SelectItem key={y.id} value={y.id}>
+                      {y.name}{y.is_current ? ' (current)' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Switch year to plan next term's lesson counts without touching the current setup.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-3 py-2">
             {WEEK_DAYS.map(({ value, label }) => (
               <div key={value} className="flex items-center justify-between gap-4">
@@ -697,6 +775,63 @@ export default function TimetablePage() {
             <Button onClick={saveSettings} disabled={savingSettings}>
               {savingSettings && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Print: Year/Term picker ──────────────────────────────────────
+           Defaults to the current term/year; lets the admin print last
+           term's timetable for the archive, or preview next term's plan. */}
+      <Dialog open={printDialogOpen} onOpenChange={setPrintDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Print Timetable</DialogTitle>
+            <DialogDescription>
+              Choose which term and academic year to print. Defaults to the current one.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>Academic Year</Label>
+              <Select value={printYearId} onValueChange={setPrintYearId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Current year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {periods.academic_years.map((y) => (
+                    <SelectItem key={y.id} value={y.id}>
+                      {y.name}{y.is_current ? ' (current)' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Term</Label>
+              <Select value={printTermId} onValueChange={setPrintTermId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Current term" />
+                </SelectTrigger>
+                <SelectContent>
+                  {periods.academic_terms.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}{t.is_current ? ' (current)' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPrintDialogOpen(false)} disabled={printing}>
+              Cancel
+            </Button>
+            <Button onClick={handlePrint} disabled={printing}>
+              {printing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Print
             </Button>
           </DialogFooter>
         </DialogContent>
