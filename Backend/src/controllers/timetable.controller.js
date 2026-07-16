@@ -220,9 +220,13 @@ const getSchoolTimetable = asyncHandler(async (req, res) => {
   const { schoolId } = req.user;
   const { academic_year_id, term_id } = req.query;
 
+  // Was 'name, address' — schools has no 'address' column, only
+  // physical_address/postal_address (see school.controller.js), so this was
+  // always returning a blank address. Aliased back to 'address' so nothing
+  // downstream that reads school.address has to change.
   const { data: school } = await supabase
     .from('schools')
-    .select('name, address')
+    .select('name, address:physical_address')
     .eq('id', schoolId)
     .maybeSingle();
 
@@ -319,9 +323,12 @@ const getPrintHeader = asyncHandler(async (req, res) => {
   const { schoolId } = req.user;
   const { academic_year_id, term_id } = req.query;
 
+  // Was 'name, address' — schools has no 'address' column, only
+  // physical_address/postal_address (see school.controller.js), so this was
+  // always returning a blank school_address on the printout.
   const { data: school } = await supabase
     .from('schools')
-    .select('name, address')
+    .select('name, address:physical_address')
     .eq('id', schoolId)
     .maybeSingle();
 
