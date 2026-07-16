@@ -156,18 +156,36 @@ const getParentsOfLearners = async (learnerIds) => {
 };
 
 const getSchoolAdmins = async (schoolId) => {
-  const { data: rows } = await supabase
+  // Source of truth is `users` (role: school_admin/super_admin) — the same
+  // pattern getContacts already uses for a school_admin's own teacher list
+  // below. Querying `school_admins` alone made an admin invisible as a
+  // contact whenever that profile row was missing/out of sync, even though
+  // the account could log in and send messages fine — messages would be
+  // stored correctly but never surface as a selectable conversation for the
+  // teacher/student/parent on the other end. `school_admins` is now only
+  // used to enrich the label (Principal vs School Admin), not to gate
+  // who shows up at all.
+  const { data: adminUsers } = await supabase
+    .from('users')
+    .select('id, first_name, last_name')
+    .eq('school_id', schoolId)
+    .in('role', ['school_admin', 'super_admin'])
+    .is('deleted_at', null);
+
+  if (!adminUsers || adminUsers.length === 0) return [];
+
+  const { data: profiles } = await supabase
     .from('school_admins')
-    .select('user_id, is_principal, users:user_id ( id, first_name, last_name )')
+    .select('user_id, is_principal')
     .eq('school_id', schoolId);
 
-  return (rows || [])
-    .filter((r) => r.users?.id)
-    .map((r) => ({
-      user_id: r.users.id,
-      name: fullName(r.users),
-      role_label: r.is_principal ? 'Principal' : 'School Admin',
-    }));
+  const principalByUserId = new Map((profiles || []).map((p) => [p.user_id, !!p.is_principal]));
+
+  return adminUsers.map((u) => ({
+    user_id: u.id,
+    name: fullName(u),
+    role_label: principalByUserId.get(u.id) ? 'Principal' : 'School Admin',
+  }));
 };
 
 const getTeachersOfClass = async (classId) => {
