@@ -951,7 +951,7 @@ exports.getFullReportCardInternal = async (id) => {
     const report = await query(
       `SELECT rc.*, l.first_name, l.last_name, l.admission_number, l.date_of_birth,
               l.gender, l.photo_url,
-              c.name as class_name, c.grade_level,
+              c.grade_level || COALESCE(' — ' || c.stream_name, '') as class_name, c.grade_level,
               s.name as school_name, s.address as school_address, s.logo_url,
               t.name as term_name, ay.name as academic_year_name
        FROM report_cards rc
@@ -1071,7 +1071,8 @@ exports.getPromotionDecisions = async (req, res) => {
     const { learner_id, class_id, academic_year_id } = req.query;
 
     let sql = `SELECT pd.*, l.first_name, l.last_name,
-                      fc.name as from_class_name, tc.name as to_class_name
+                      fc.grade_level || COALESCE(' — ' || fc.stream_name, '') as from_class_name,
+                      tc.grade_level || COALESCE(' — ' || tc.stream_name, '') as to_class_name
                FROM promotion_decisions pd
                JOIN learners l ON pd.learner_id = l.id
                LEFT JOIN classes fc ON pd.from_class_id = fc.id
