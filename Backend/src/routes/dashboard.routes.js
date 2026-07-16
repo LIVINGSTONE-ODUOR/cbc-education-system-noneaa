@@ -32,5 +32,11 @@ router.delete('/widgets/:widgetKey', dashboardController.deleteDashboardWidget);
 // ─── PERFORMANCE ─────────────────────────────────────────────────
 router.get('/learner-performance', dashboardController.getLearnerPerformance);
 router.get('/analytics/grade-distribution', dashboardController.getGradeDistribution);
+router.get('/analytics/class-performance', dashboardController.getClassPerformance);
+router.get('/analytics/attendance-trend', dashboardController.getAttendanceTrend);
+router.get('/analytics/enrollment-by-grade', dashboardController.getEnrollmentByGrade);
+router.get('/analytics/gender-distribution', dashboardController.getGenderDistribution);
+router.get('/analytics/subject-performance', dashboardController.getSubjectPerformance);
+router.get('/analytics/term-trend', dashboardController.getTermTrend);
 
 module.exports = router;
