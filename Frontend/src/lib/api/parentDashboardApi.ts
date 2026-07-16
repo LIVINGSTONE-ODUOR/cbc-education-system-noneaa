@@ -158,7 +158,9 @@ export interface DashboardAnnouncement {
   body: string;
   class_id: string | null;
   category: 'general' | 'fee_reminder';
+  is_active?: boolean;
   created_at: string;
+  created_by?: string;
   classes: { id: string; grade_level: string; stream_name: string | null } | null;
 }
 
@@ -172,6 +174,8 @@ export interface AnnouncementsResponse {
  * `learnerId` should be the currently-selected child. It scopes the feed to
  * that child's own school — required for parents whose children attend
  * different schools, since "school-wide" only makes sense per-school.
+ * For staff (teacher/school_admin/super_admin), `learnerId` is ignored and
+ * every announcement broadcast for their own school is returned instead.
  */
 export const getAnnouncements = async (
   limit = 10,
@@ -184,6 +188,34 @@ export const getAnnouncements = async (
   const url = `${API_URL}/api/v1/parent-dashboard/announcements?${params.toString()}`;
   const response = await fetch(url, getFetchOptions('GET'));
   return handleResponse<ApiResponse<AnnouncementsResponse>>(response);
+};
+
+/**
+ * POST /api/v1/parent-dashboard/announcements
+ * Broadcasts a new announcement. Staff only (teacher/school_admin/super_admin).
+ * Omit `class_id` to send to the whole school.
+ */
+export const createAnnouncement = async (payload: {
+  title: string;
+  body: string;
+  class_id?: string;
+  category?: 'general' | 'fee_reminder';
+}): Promise<ApiResponse<DashboardAnnouncement>> => {
+  const url = `${API_URL}/api/v1/parent-dashboard/announcements`;
+  const response = await fetch(url, getFetchOptions('POST', payload));
+  return handleResponse<ApiResponse<DashboardAnnouncement>>(response);
+};
+
+/**
+ * PUT /api/v1/parent-dashboard/announcements/:id/deactivate
+ * Staff only. Soft-deletes an announcement without losing its history.
+ */
+export const deactivateAnnouncement = async (
+  id: string
+): Promise<ApiResponse<Record<string, never>>> => {
+  const url = `${API_URL}/api/v1/parent-dashboard/announcements/${id}/deactivate`;
+  const response = await fetch(url, getFetchOptions('PUT'));
+  return handleResponse<ApiResponse<Record<string, never>>>(response);
 };
 
 // ── Teacher comments ────────────────────────────────────────────────────
