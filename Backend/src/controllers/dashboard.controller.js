@@ -473,6 +473,99 @@ exports.getEnrollmentByGrade = async (req, res) => {
   }
 };
 
+// =============================================================================
+// GENDER DISTRIBUTION
+// =============================================================================
+
+/** GET /api/v1/dashboard/analytics/gender-distribution — active learner count by gender */
+exports.getGenderDistribution = async (req, res) => {
+  try {
+    const schoolId = req.query.school_id || req.user.schoolId;
+    if (!schoolId) return res.status(400).json({ success: false, message: 'School ID is required.' });
+
+    const result = await query(
+      `SELECT gender, COUNT(*) AS count
+       FROM learners
+       WHERE school_id = $1 AND is_active = true
+       GROUP BY gender`,
+      [schoolId]
+    );
+
+    return res.json({ success: true, data: result.rows });
+  } catch (error) {
+    logger.error('Get gender distribution error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to load gender distribution.' });
+  }
+};
+
+// =============================================================================
+// SUBJECT-WISE PERFORMANCE
+// =============================================================================
+
+/** GET /api/v1/dashboard/analytics/subject-performance — avg % score per learning area */
+exports.getSubjectPerformance = async (req, res) => {
+  try {
+    const schoolId = req.query.school_id || req.user.schoolId;
+    if (!schoolId) return res.status(400).json({ success: false, message: 'School ID is required.' });
+
+    const result = await query(
+      `SELECT
+         la.id AS learning_area_id,
+         la.name AS subject_name,
+         COALESCE(AVG(sa.total_score / NULLIF(sa.max_score, 0) * 100), 0) AS average_percentage,
+         COUNT(DISTINCT sa.learner_id) AS learner_count
+       FROM learning_areas la
+       LEFT JOIN subject_assessments sa
+         ON sa.learning_area_id = la.id AND sa.school_id = $1
+       WHERE la.school_id = $1 AND la.is_active = true
+       GROUP BY la.id, la.name
+       ORDER BY la.name`,
+      [schoolId]
+    );
+
+    return res.json({ success: true, data: result.rows });
+  } catch (error) {
+    logger.error('Get subject performance error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to load subject performance.' });
+  }
+};
+
+// =============================================================================
+// TERM-OVER-TERM PERFORMANCE TREND
+// =============================================================================
+
+/** GET /api/v1/dashboard/analytics/term-trend — average score per term over time */
+exports.getTermTrend = async (req, res) => {
+  try {
+    const schoolId = req.query.school_id || req.user.schoolId;
+    if (!schoolId) return res.status(400).json({ success: false, message: 'School ID is required.' });
+
+    // Deliberately joins academic_terms by id only (not school_id) — that
+    // column is a legacy INTEGER field unrelated to schools.id (UUID), see
+    // the academic_terms type-mismatch fixes earlier in this migration set.
+    // School scoping instead comes from report_cards.school_id.
+    const result = await query(
+      `SELECT
+         rc.academic_term_id,
+         t.name AS term_name,
+         t.start_date,
+         COALESCE(AVG(rc.average_score), 0) AS average_score,
+         COUNT(DISTINCT rc.learner_id) AS learner_count
+       FROM report_cards rc
+       LEFT JOIN academic_terms t ON t.id = rc.academic_term_id
+       WHERE rc.school_id = $1 AND rc.is_finalized = true
+       GROUP BY rc.academic_term_id, t.name, t.start_date
+       ORDER BY t.start_date NULLS LAST`,
+      [schoolId]
+    );
+
+    return res.json({ success: true, data: result.rows });
+  } catch (error) {
+    logger.error('Get term trend error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to load term trend.' });
+  }
+};
+
 // NOTE: All functions are already exported individually via exports.* above.
 // The previous module.exports = { getSchoolStats, ... } block at the bottom
 // caused EVERY dashboard endpoint to return 404 because the shorthand
