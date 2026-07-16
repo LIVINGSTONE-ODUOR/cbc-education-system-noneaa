@@ -224,6 +224,36 @@ const createSlot = asyncHandler(async (req, res) => {
     return respond(res, 404, false, 'No current academic year found. Pass academic_year_id explicitly.');
   }
 
+  // Enforce each day's configured lesson cap (set by the admin under
+  // Timetable Setup, e.g. Monday = 8 lessons, Friday = 6) before running
+  // conflict checks. Days with no explicit setting default to 8.
+  const { data: settingsRows } = await supabase
+    .from('timetable_day_settings')
+    .select('day, lessons_count')
+    .eq('school_id', schoolId)
+    .eq('academic_year_id', yearId);
+  const limitByDay = {};
+  (settingsRows || []).forEach((r) => { limitByDay[r.day] = r.lessons_count; });
+
+  for (const d of days) {
+    const dayLower = String(d).toLowerCase();
+    const limit = limitByDay[dayLower] ?? 8;
+    const { count, error: countError } = await supabase
+      .from('timetable_slots')
+      .select('id', { count: 'exact', head: true })
+      .eq('school_id', schoolId)
+      .eq('class_id', class_id)
+      .eq('academic_year_id', yearId)
+      .eq('day', dayLower)
+      .eq('is_active', true)
+      .is('deleted_at', null);
+    if (countError) throw countError;
+    if ((count || 0) >= limit) {
+      const label = dayLower.charAt(0).toUpperCase() + dayLower.slice(1);
+      return respond(res, 409, false, `${label} already has its full ${limit} lesson(s) for this class. Remove a lesson first or raise the limit in Timetable Setup.`);
+    }
+  }
+
   // Run conflict checks for every requested day before inserting anything,
   // so a multi-day request either fully succeeds or fully fails.
   const conflictsByDay = {};
@@ -416,9 +446,102 @@ const deleteSlot = asyncHandler(async (req, res) => {
   return respond(res, 200, true, 'Timetable slot deleted');
 });
 
+// =============================================================================
+// GET /api/v1/timetable/settings?academic_year_id=
+//   "Timetable Setup" — how many lessons the admin has configured for each
+//   day of the week (e.g. Monday: 8, Friday: 6). Days with nothing saved
+//   yet default to 8 so a fresh school still sees a sensible number.
+// =============================================================================
+const getDaySettings = asyncHandler(async (req, res) => {
+  const { schoolId } = req.user;
+  const { academic_year_id } = req.query;
+
+  let yearId = academic_year_id;
+  if (!yearId) {
+    const current = await getCurrentAcademicYear(schoolId);
+    if (current) yearId = current.id;
+  }
+  if (!yearId) {
+    return respond(res, 404, false, 'No current academic year found. Pass academic_year_id explicitly.');
+  }
+
+  const { data: rows, error } = await supabase
+    .from('timetable_day_settings')
+    .select('day, lessons_count')
+    .eq('school_id', schoolId)
+    .eq('academic_year_id', yearId);
+
+  if (error) {
+    logger.error('Failed to fetch timetable day settings', { error: error.message });
+    return respond(res, 500, false, 'Failed to fetch timetable day settings', null, error.message);
+  }
+
+  const byDay = {};
+  (rows || []).forEach((r) => { byDay[r.day] = r.lessons_count; });
+  const settings = DAYS.map((day) => ({ day, lessons_count: byDay[day] ?? 8 }));
+
+  return respond(res, 200, true, 'Timetable day settings fetched', { academic_year_id: yearId, settings });
+});
+
+// =============================================================================
+// PUT /api/v1/timetable/settings
+//   Body: { academic_year_id, days: [{ day, lessons_count }, ...] }
+//   Admin sets the number of lessons taught on each day of the week.
+// =============================================================================
+const updateDaySettings = asyncHandler(async (req, res) => {
+  const { schoolId, id: userId } = req.user;
+  const { academic_year_id, days } = req.body;
+
+  if (!Array.isArray(days) || !days.length) {
+    return respond(res, 400, false, 'days must be a non-empty array of { day, lessons_count }');
+  }
+
+  let yearId = academic_year_id;
+  if (!yearId) {
+    const current = await getCurrentAcademicYear(schoolId);
+    if (current) yearId = current.id;
+  }
+  if (!yearId) {
+    return respond(res, 404, false, 'No current academic year found. Pass academic_year_id explicitly.');
+  }
+
+  const invalidDay = days.find((d) => !DAYS.includes(String(d.day).toLowerCase()));
+  if (invalidDay) {
+    return respond(res, 400, false, `Invalid day: ${invalidDay.day}. Must be one of ${DAYS.join(', ')}.`);
+  }
+  const invalidCount = days.find((d) => !Number.isInteger(d.lessons_count) || d.lessons_count < 1 || d.lessons_count > 20);
+  if (invalidCount) {
+    return respond(res, 400, false, `lessons_count for ${invalidCount.day} must be a whole number between 1 and 20.`);
+  }
+
+  const now = new Date().toISOString();
+  const rows = days.map((d) => ({
+    school_id: schoolId,
+    academic_year_id: yearId,
+    day: String(d.day).toLowerCase(),
+    lessons_count: d.lessons_count,
+    updated_by: userId || null,
+    updated_at: now,
+  }));
+
+  const { data: saved, error } = await supabase
+    .from('timetable_day_settings')
+    .upsert(rows, { onConflict: 'school_id,academic_year_id,day' })
+    .select('day, lessons_count');
+
+  if (error) {
+    logger.error('Failed to update timetable day settings', { error: error.message });
+    return respond(res, 500, false, 'Failed to update timetable day settings', null, error.message);
+  }
+
+  return respond(res, 200, true, 'Timetable day settings updated', { academic_year_id: yearId, settings: saved });
+});
+
 module.exports = {
   getTimetable,
   createSlot,
   updateSlot,
   deleteSlot,
+  getDaySettings,
+  updateDaySettings,
 };
