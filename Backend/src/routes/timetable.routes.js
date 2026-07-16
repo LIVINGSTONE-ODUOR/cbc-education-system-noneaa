@@ -17,6 +17,7 @@ const {
   getSchoolTimetable,
   getPrintHeader,
   getTeacherLoadReport,
+  getCurriculumSyncReport,
   getTimetablePeriods,
 } = require('../controllers/timetable.controller');
 
@@ -49,6 +50,11 @@ router.get('/print-header', getPrintHeader);
 //   Per-teacher, per-day lesson counts vs. that day's lesson cap — flags
 //   free/unassigned days and overloaded days. Admin/super_admin only.
 router.get('/teacher-load', authorize('school_admin', 'super_admin'), getTeacherLoadReport);
+
+// GET /api/v1/timetable/curriculum-sync?academic_year_id=&term_id=
+//   Read-only: flags any class subject assigned in Curriculum that has zero
+//   timetable time scheduled for it. Admin/super_admin only.
+router.get('/curriculum-sync', authorize('school_admin', 'super_admin'), getCurriculumSyncReport);
 
 // GET /api/v1/timetable/periods
 //   Academic years + terms for the Year/Term picker on the Print and
