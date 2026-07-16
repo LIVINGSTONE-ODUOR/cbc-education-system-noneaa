@@ -357,6 +357,122 @@ exports.getGradeDistribution = async (req, res) => {
   }
 };
 
+// =============================================================================
+// CLASS PERFORMANCE COMPARISON
+// =============================================================================
+
+/** GET /api/v1/dashboard/analytics/class-performance — avg score per class */
+exports.getClassPerformance = async (req, res) => {
+  try {
+    const schoolId = req.query.school_id || req.user.schoolId;
+    if (!schoolId) return res.status(400).json({ success: false, message: 'School ID is required.' });
+
+    let academicTermId = req.query.academic_term_id;
+    if (!academicTermId) {
+      const activeTerm = await query(
+        `SELECT id FROM academic_terms WHERE NOW() BETWEEN start_date AND end_date LIMIT 1`,
+        []
+      );
+      academicTermId = activeTerm.rows[0]?.id || null;
+    }
+
+    const params = [schoolId];
+    let termFilter = '';
+    if (academicTermId) {
+      params.push(academicTermId);
+      termFilter = ` AND rc.academic_term_id = $${params.length}`;
+    }
+
+    const result = await query(
+      `SELECT
+         c.id AS class_id,
+         c.grade_level,
+         c.stream_name,
+         c.grade_level || COALESCE(' — ' || c.stream_name, '') AS class_name,
+         COALESCE(AVG(rc.average_score), 0) AS average_score,
+         COUNT(DISTINCT rc.learner_id) AS learner_count
+       FROM classes c
+       LEFT JOIN report_cards rc
+         ON rc.class_id = c.id AND rc.is_finalized = true${termFilter}
+       WHERE c.school_id = $1
+       GROUP BY c.id, c.grade_level, c.stream_name
+       ORDER BY c.grade_level, c.stream_name`,
+      params
+    );
+
+    return res.json({ success: true, data: result.rows });
+  } catch (error) {
+    logger.error('Get class performance error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to load class performance.' });
+  }
+};
+
+// =============================================================================
+// ATTENDANCE TREND
+// =============================================================================
+
+/** GET /api/v1/dashboard/analytics/attendance-trend — daily attendance rate over time */
+exports.getAttendanceTrend = async (req, res) => {
+  try {
+    const schoolId = req.query.school_id || req.user.schoolId;
+    if (!schoolId) return res.status(400).json({ success: false, message: 'School ID is required.' });
+
+    const days = Math.min(parseInt(req.query.days) || 14, 90);
+
+    const result = await query(
+      `SELECT
+         attendance_date,
+         COUNT(*) FILTER (WHERE status = 'present') AS present_count,
+         COUNT(*) FILTER (WHERE status = 'absent') AS absent_count,
+         COUNT(*) FILTER (WHERE status = 'late') AS late_count,
+         COUNT(*) AS total_count,
+         ROUND(
+           COUNT(*) FILTER (WHERE status = 'present') * 100.0 / NULLIF(COUNT(*), 0), 1
+         ) AS attendance_rate
+       FROM attendance_records
+       WHERE school_id = $1
+         AND attendance_date >= (CURRENT_DATE - $2::int)
+       GROUP BY attendance_date
+       ORDER BY attendance_date`,
+      [schoolId, days]
+    );
+
+    return res.json({ success: true, data: result.rows });
+  } catch (error) {
+    logger.error('Get attendance trend error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to load attendance trend.' });
+  }
+};
+
+// =============================================================================
+// ENROLLMENT BY GRADE
+// =============================================================================
+
+/** GET /api/v1/dashboard/analytics/enrollment-by-grade — learner count per grade level */
+exports.getEnrollmentByGrade = async (req, res) => {
+  try {
+    const schoolId = req.query.school_id || req.user.schoolId;
+    if (!schoolId) return res.status(400).json({ success: false, message: 'School ID is required.' });
+
+    const result = await query(
+      `SELECT
+         c.grade_level,
+         COUNT(DISTINCT le.learner_id) AS students
+       FROM learner_enrollments le
+       JOIN classes c ON le.class_id = c.id
+       WHERE le.school_id = $1 AND le.status = 'enrolled'
+       GROUP BY c.grade_level
+       ORDER BY c.grade_level`,
+      [schoolId]
+    );
+
+    return res.json({ success: true, data: result.rows });
+  } catch (error) {
+    logger.error('Get enrollment by grade error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to load enrollment by grade.' });
+  }
+};
+
 // NOTE: All functions are already exported individually via exports.* above.
 // The previous module.exports = { getSchoolStats, ... } block at the bottom
 // caused EVERY dashboard endpoint to return 404 because the shorthand
