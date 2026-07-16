@@ -37,7 +37,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { CalendarClock, Loader2, Plus, Pencil, Trash2, AlertTriangle, School, Settings, Printer } from 'lucide-react';
+import { CalendarClock, Loader2, Plus, Pencil, Trash2, AlertTriangle, School, Settings, Printer, Users } from 'lucide-react';
 
 import { getClasses, getClassLearningAreas, ClassApiItem, ClassLearningArea } from '@/lib/api/classApi';
 import { getTeachers } from '@/lib/api/teacherApi';
@@ -49,7 +49,10 @@ import {
   getDaySettings,
   updateDaySettings,
   getSchoolTimetable,
+  getTeacherLoadReport,
   SchoolTimetableResponse,
+  TeacherLoad,
+  TeacherDayStatus,
   TimetableConflictError,
   TimetableGrid,
   TimetableSlot,
@@ -163,6 +166,31 @@ export default function TimetablePage() {
   // ── Print: full school timetable (all classes, all lessons, teachers) ───
   const [printData, setPrintData] = useState<SchoolTimetableResponse | null>(null);
   const [printing, setPrinting] = useState(false);
+
+  // ── Teacher Load report: who's free, who's overloaded, per day ──────────
+  const [loadReportOpen, setLoadReportOpen] = useState(false);
+  const [loadReportLoading, setLoadReportLoading] = useState(false);
+  const [teacherLoad, setTeacherLoad] = useState<TeacherLoad[]>([]);
+
+  const openLoadReport = async () => {
+    setLoadReportOpen(true);
+    setLoadReportLoading(true);
+    try {
+      const res = await getTeacherLoadReport();
+      setTeacherLoad(res.data.teachers);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load the teacher load report');
+    } finally {
+      setLoadReportLoading(false);
+    }
+  };
+
+  const statusBadgeVariant = (status: TeacherDayStatus): 'secondary' | 'outline' | 'destructive' | 'default' => {
+    if (status === 'overloaded') return 'destructive';
+    if (status === 'free') return 'outline';
+    if (status === 'light') return 'secondary';
+    return 'default';
+  };
 
   const handlePrint = async () => {
     setPrinting(true);
@@ -363,6 +391,10 @@ export default function TimetablePage() {
           <Button variant="outline" onClick={openSettingsDialog}>
             <Settings className="h-4 w-4 mr-2" />
             Timetable Setup
+          </Button>
+          <Button variant="outline" onClick={openLoadReport}>
+            <Users className="h-4 w-4 mr-2" />
+            Teacher Load
           </Button>
           <Button variant="outline" onClick={handlePrint} disabled={printing}>
             {printing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
@@ -666,6 +698,69 @@ export default function TimetablePage() {
               {savingSettings && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Save
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Teacher Load report ─────────────────────────────────────────── */}
+      <Dialog open={loadReportOpen} onOpenChange={setLoadReportOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Teacher Clash / Free-Period Report</DialogTitle>
+            <DialogDescription>
+              Lessons taught per day against that day's limit (set in Timetable Setup). "Free" means no lessons
+              that day at all; "Overloaded" means more lessons than the day's configured limit.
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadReportLoading ? (
+            <div className="flex items-center justify-center py-16 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading teacher load…
+            </div>
+          ) : teacherLoad.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-10">No active teachers found.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2 pr-3">Teacher</th>
+                    {WEEK_DAYS.map(({ value, label }) => (
+                      <th key={value} className="text-center py-2 px-2">{label.slice(0, 3)}</th>
+                    ))}
+                    <th className="text-center py-2 pl-3">Weekly</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {teacherLoad.map((t) => (
+                    <tr key={t.teacher_id} className="border-b last:border-b-0">
+                      <td className="py-2 pr-3 font-medium whitespace-nowrap">
+                        {t.name}
+                        {(t.days_unassigned > 0 || t.days_overloaded > 0) && (
+                          <div className="text-xs text-muted-foreground font-normal">
+                            {t.days_overloaded > 0 && <span className="text-destructive">{t.days_overloaded} overloaded day(s)</span>}
+                            {t.days_overloaded > 0 && t.days_unassigned > 0 && ' · '}
+                            {t.days_unassigned > 0 && <span>{t.days_unassigned} free day(s)</span>}
+                          </div>
+                        )}
+                      </td>
+                      {t.days.map((d) => (
+                        <td key={d.day} className="text-center py-2 px-2">
+                          <Badge variant={statusBadgeVariant(d.status)} title={`${d.lessons_count} of ${d.limit} lessons`}>
+                            {d.lessons_count}/{d.limit}
+                          </Badge>
+                        </td>
+                      ))}
+                      <td className="text-center py-2 pl-3 font-medium">{t.weekly_total}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLoadReportOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
