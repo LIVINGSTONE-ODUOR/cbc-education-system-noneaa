@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
+const logger = require('../utils/logger');
 const {
   hashPassword,
   verifyPassword,
@@ -73,7 +74,7 @@ exports.login = async (req, res) => {
       owner: { id: owner.id, name: owner.name, email: owner.email },
     });
   } catch (error) {
-    console.error('websiteOwner.login error:', error);
+    logger.error('websiteOwner.login error:', error);
     return respond(res, 500, false, 'Login failed. Please try again.');
   }
 };
@@ -114,7 +115,7 @@ exports.changePassword = async (req, res) => {
 
     return respond(res, 200, true, 'Password updated successfully.');
   } catch (error) {
-    console.error('websiteOwner.changePassword error:', error);
+    logger.error('websiteOwner.changePassword error:', error);
     return respond(res, 500, false, 'Could not update password.');
   }
 };

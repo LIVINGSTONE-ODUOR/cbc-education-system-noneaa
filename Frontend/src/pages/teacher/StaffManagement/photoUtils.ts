@@ -8,53 +8,34 @@ import { supabase } from '@/lib/supabase';
  */
 export const uploadStaffPhoto = async (base64Image: string, staffId: string): Promise<string | null> => {
   try {
-    console.log('[DEBUG] uploadStaffPhoto starting for staffId:', staffId);
-    console.log('[DEBUG] base64Image length:', base64Image.length);
-    console.log('[DEBUG] base64Image starts with:', base64Image.substring(0, 30));
-
     // Convert base64 to blob
     const response = await fetch(base64Image);
-    if (!response.ok) {
-      console.error('[DEBUG] fetch failed with status:', response.status, response.statusText);
-      return null;
-    }
+    if (!response.ok) return null;
     const blob = await response.blob();
-    console.log('[DEBUG] Blob created, size:', blob.size);
 
     // Generate unique filename
     const timestamp = Date.now();
     const fileName = `staff-photos/${staffId}-${timestamp}.jpg`;
-    console.log('[DEBUG] Uploading to:', fileName);
 
-    if (!supabase) {
-      console.error('[uploadStaffPhoto] Supabase is not configured (missing VITE_SUPABASE_URL/ANON_KEY).');
-      return null;
-    }
+    if (!supabase) return null;
 
     // Upload to Supabase Storage
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('staff-images')
       .upload(fileName, blob, {
         contentType: 'image/jpeg',
         upsert: false
       });
 
-    if (error) {
-      console.error('[DEBUG] Supabase upload error:', error.message, error);
-      return null;
-    }
-
-    console.log('[DEBUG] Upload successful, data:', data);
+    if (error) return null;
 
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('staff-images')
       .getPublicUrl(fileName);
 
-    console.log('[DEBUG] Public URL generated:', publicUrl);
     return publicUrl;
-  } catch (error) {
-    console.error('[DEBUG] uploadStaffPhoto error:', error);
+  } catch {
     return null;
   }
 };
@@ -66,10 +47,7 @@ export const uploadStaffPhoto = async (base64Image: string, staffId: string): Pr
  */
 export const deleteStaffPhoto = async (photoUrl: string): Promise<boolean> => {
   try {
-    if (!supabase) {
-      console.error('[deleteStaffPhoto] Supabase is not configured (missing VITE_SUPABASE_URL/ANON_KEY).');
-      return false;
-    }
+    if (!supabase) return false;
 
     // Extract filename from URL
     const urlParts = photoUrl.split('/');
@@ -79,14 +57,10 @@ export const deleteStaffPhoto = async (photoUrl: string): Promise<boolean> => {
       .from('staff-images')
       .remove([`staff-photos/${fileName}`]);
 
-    if (error) {
-      console.error('Error deleting staff photo:', error);
-      return false;
-    }
+    if (error) return false;
 
     return true;
-  } catch (error) {
-    console.error('Error deleting staff photo:', error);
+  } catch {
     return false;
   }
 };

@@ -1,4 +1,5 @@
 const { query, pool } = require('../config/database');
+const logger = require('../utils/logger');
 
 // Table name - using academic_years as this is what exists in the database
 const TABLE_NAME = 'academic_years';
@@ -55,7 +56,7 @@ const getTerms = async (req, res) => {
       data: result.rows,
     });
   } catch (error) {
-    console.error('getTerms error:', error);
+    logger.error('getTerms error:', error);
     return res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };
@@ -88,7 +89,7 @@ const getTermById = async (req, res) => {
 
     return res.status(200).json({ success: true, data: term });
   } catch (error) {
-    console.error('getTermById error:', error);
+    logger.error('getTermById error:', error);
     return res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };
@@ -121,7 +122,7 @@ const getCurrentTerm = async (req, res) => {
 
     return res.status(200).json({ success: true, data: result.rows[0] });
   } catch (error) {
-    console.error('getCurrentTerm error:', error);
+    logger.error('getCurrentTerm error:', error);
     return res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };
@@ -178,7 +179,7 @@ const createTerm = async (req, res) => {
     return res.status(201).json({ success: true, message: 'Academic term created', data: result.rows[0] });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('createTerm error:', error);
+    logger.error('createTerm error:', error);
     
     // Handle duplicate key error
     if (error.code === '23505') {
@@ -258,7 +259,7 @@ const updateTerm = async (req, res) => {
     return res.status(200).json({ success: true, message: 'Academic term updated', data: result.rows[0] });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('updateTerm error:', error);
+    logger.error('updateTerm error:', error);
     return res.status(500).json({ success: false, message: 'Server error', error: error.message });
   } finally {
     client.release();
@@ -309,7 +310,7 @@ const setCurrentTerm = async (req, res) => {
     return res.status(200).json({ success: true, message: 'Term set as current', data: result.rows[0] });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('setCurrentTerm error:', error);
+    logger.error('setCurrentTerm error:', error);
     return res.status(500).json({ success: false, message: 'Server error', error: error.message });
   } finally {
     client.release();
@@ -352,7 +353,7 @@ const toggleTermStatus = async (req, res) => {
       data: result.rows[0],
     });
   } catch (error) {
-    console.error('toggleTermStatus error:', error);
+    logger.error('toggleTermStatus error:', error);
     return res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };
@@ -390,7 +391,7 @@ const deleteTerm = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Academic term deleted' });
   } catch (error) {
-    console.error('deleteTerm error:', error);
+    logger.error('deleteTerm error:', error);
     return res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };

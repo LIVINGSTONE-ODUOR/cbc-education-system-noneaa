@@ -12,6 +12,7 @@
 // ================================================================
 
 const { query } = require('../config/database');
+const logger = require('../utils/logger');
 
 const respond = (res, status, success, message, data = null, errors = null) => {
   const payload = { success, message };
@@ -96,7 +97,7 @@ const getDepartments = async (req, res) => {
       departments: result.rows.map(toApiDepartment),
     });
   } catch (err) {
-    console.error('[getDepartments]', err.message);
+    logger.error('[getDepartments]', err.message);
     return respond(res, 500, false, 'Failed to retrieve departments');
   }
 };
@@ -119,7 +120,7 @@ const getDepartmentById = async (req, res) => {
       department: toApiDepartment(result.rows[0]),
     });
   } catch (err) {
-    console.error('[getDepartmentById]', err.message);
+    logger.error('[getDepartmentById]', err.message);
     return respond(res, 500, false, 'Failed to retrieve department');
   }
 };
@@ -173,7 +174,7 @@ const createDepartment = async (req, res) => {
     if (err.code === '23505') {
       return respond(res, 409, false, 'A department with this code already exists');
     }
-    console.error('[createDepartment]', err.message);
+    logger.error('[createDepartment]', err.message);
     return respond(res, err.statusCode || 500, false, err.message || 'Failed to create department');
   }
 };
@@ -232,7 +233,7 @@ const updateDepartment = async (req, res) => {
     if (err.code === '23505') {
       return respond(res, 409, false, 'A department with this code already exists');
     }
-    console.error('[updateDepartment]', err.message);
+    logger.error('[updateDepartment]', err.message);
     return respond(res, err.statusCode || 500, false, err.message || 'Failed to update department');
   }
 };
@@ -259,7 +260,7 @@ const deleteDepartment = async (req, res) => {
     }
     return respond(res, 200, true, 'Department deleted');
   } catch (err) {
-    console.error('[deleteDepartment]', err.message);
+    logger.error('[deleteDepartment]', err.message);
     return respond(res, 500, false, 'Failed to delete department');
   }
 };
@@ -294,7 +295,7 @@ const getDepartmentLearningAreas = async (req, res) => {
     );
     return respond(res, 200, true, 'Learning areas retrieved', { learning_areas: result.rows });
   } catch (err) {
-    console.error('[getDepartmentLearningAreas]', err.message);
+    logger.error('[getDepartmentLearningAreas]', err.message);
     return respond(res, 500, false, 'Failed to retrieve learning areas');
   }
 };
@@ -326,7 +327,7 @@ const assignLearningArea = async (req, res) => {
       learning_area_ids: result.rows[0].learning_area_ids,
     });
   } catch (err) {
-    console.error('[assignLearningArea]', err.message);
+    logger.error('[assignLearningArea]', err.message);
     return respond(res, err.statusCode || 500, false, err.message || 'Failed to assign learning area');
   }
 };
@@ -350,7 +351,7 @@ const removeLearningArea = async (req, res) => {
       learning_area_ids: result.rows[0].learning_area_ids,
     });
   } catch (err) {
-    console.error('[removeLearningArea]', err.message);
+    logger.error('[removeLearningArea]', err.message);
     return respond(res, 500, false, 'Failed to remove learning area');
   }
 };
@@ -390,7 +391,7 @@ const getDepartmentTeachers = async (req, res) => {
       })),
     });
   } catch (err) {
-    console.error('[getDepartmentTeachers]', err.message);
+    logger.error('[getDepartmentTeachers]', err.message);
     return respond(res, 500, false, 'Failed to retrieve teachers');
   }
 };
@@ -435,7 +436,7 @@ const assignDepartmentTeacher = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('[assignDepartmentTeacher]', err.message);
+    logger.error('[assignDepartmentTeacher]', err.message);
     return respond(res, 500, false, 'Failed to assign teacher');
   }
 };
@@ -458,7 +459,7 @@ const removeDepartmentTeacher = async (req, res) => {
 
     return respond(res, 200, true, 'Teacher removed');
   } catch (err) {
-    console.error('[removeDepartmentTeacher]', err.message);
+    logger.error('[removeDepartmentTeacher]', err.message);
     return respond(res, 500, false, 'Failed to remove teacher');
   }
 };

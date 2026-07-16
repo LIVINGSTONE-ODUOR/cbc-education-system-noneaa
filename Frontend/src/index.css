@@ -226,6 +226,97 @@
 }
 
 /* ==========================================================================
+   RESPONSIVE UTILITIES — applied globally across all portal pages
+   ========================================================================== */
+
+/* Prevent text overflow in all containers */
+* {
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Ensure flex containers wrap properly */
+.flex-responsive {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+/* Responsive container padding */
+.responsive-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Table responsive wrapper */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table {
+  min-width: 100%;
+}
+
+/* Card overflow fix */
+.card-responsive {
+  overflow: hidden;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Responsive typography */
+@media (max-width: 639px) {
+  h1 { font-size: 1.5rem !important; }
+  h2 { font-size: 1.25rem !important; }
+  .text-responsive { font-size: 0.875rem; }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .text-responsive { font-size: 0.9375rem; }
+}
+
+/* Prevent grid/layout blowout */
+.grid-responsive {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 1rem;
+}
+
+/* Fix images in cards */
+.card img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Ensure tables don't overflow cards */
+.card .overflow-x-auto {
+  margin-left: -1rem;
+  margin-right: -1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  width: calc(100% + 2rem);
+}
+
+/* ==========================================================================
    Student Portal theme — scoped override, applied only via the
    `.student-portal-theme` class on the Student Portal's root element
    (Frontend/src/pages/Student-Portal/Student.tsx). Reuses the same CSS

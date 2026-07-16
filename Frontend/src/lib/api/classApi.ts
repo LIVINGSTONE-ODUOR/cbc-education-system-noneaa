@@ -12,7 +12,6 @@ const getApiUrl = (): string => {
 };
 
 const API_URL = getApiUrl();
-console.log('[classApi] API_URL:', API_URL, 'PROD:', import.meta.env.PROD);
 
 const getAuthToken = (): string | null => {
   return localStorage.getItem('cbe_access_token');
@@ -144,7 +143,10 @@ export const getClasses = async (params: {
   // call throw "body stream already read".
   if (!response.ok) {
     const txt = await response.clone().text().catch(() => '');
-    console.error('[classApi:getClasses] request failed', { url, status: response.status, body: txt });
+    // Request failed — log in dev only
+    if (import.meta.env.DEV) {
+      console.warn('[classApi] request failed', { url, status: response.status });
+    }
   }
   return handleResponse<ApiResponse<ClassesApiResponse>>(response);
 };
@@ -171,8 +173,11 @@ export const createClass = async (payload: {
   const url = `${API_URL}/api/v1/classes`;
   const response = await fetchWithAuth(url, getFetchOptions('POST', payload));
   if (!response.ok) {
-    const txt = await response.clone().text().catch(() => '');
-    console.error('[classApi:createClass] request failed', { url, status: response.status, body: txt });
+    // Request failed — log in dev only
+    if (import.meta.env.DEV) {
+      const txt = await response.clone().text().catch(() => '');
+      console.warn('[classApi] create failed', { url, status: response.status });
+    }
   }
   return handleResponse<ApiResponse<ClassApiItem>>(response);
 };
@@ -192,8 +197,9 @@ export const updateClass = async (
   const url = `${API_URL}/api/v1/classes/${id}`;
   const response = await fetchWithAuth(url, getFetchOptions('PUT', payload));
   if (!response.ok) {
-    const txt = await response.clone().text().catch(() => '');
-    console.error('[classApi:updateClass] request failed', { url, status: response.status, body: txt });
+    if (import.meta.env.DEV) {
+      console.warn('[classApi] update failed', { url, status: response.status });
+    }
   }
   return handleResponse<ApiResponse<ClassApiItem>>(response);
 };
@@ -299,8 +305,9 @@ export const getClassLearners = async (
 
   const response = await fetchWithAuth(url, getFetchOptions('GET'));
   if (!response.ok) {
-    const txt = await response.clone().text().catch(() => '');
-    console.error('[classApi:getClassLearners] request failed', { url, status: response.status, body: txt });
+    if (import.meta.env.DEV) {
+      console.warn('[classApi] learners request failed', { url, status: response.status });
+    }
   }
   return handleResponse<ApiResponse<ClassLearnersApiResponse>>(response);
 };

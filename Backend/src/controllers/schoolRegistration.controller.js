@@ -13,6 +13,7 @@
 const bcrypt    = require('bcrypt');
 const { createClient } = require('@supabase/supabase-js');
 const { sendSchoolAdminWelcomeEmail } = require('../utils/email');
+const logger = require('../utils/logger');
 
 // ----------------------------------------------------------------
 // Supabase admin client (service_role key — bypasses RLS)
@@ -22,12 +23,11 @@ const { sendSchoolAdminWelcomeEmail } = require('../utils/email');
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://ywcrsgaxftooovqipkdr.supabase.co';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
-console.log('🔧 Supabase URL:', supabaseUrl ? 'Set' : 'NOT SET');
-console.log('🔧 Service Role Key:', supabaseServiceKey ? 'Set (length: ' + supabaseServiceKey.length + ')' : 'NOT SET');
+logger.debug('Supabase credentials check completed');
 
 if (!supabaseServiceKey) {
-  console.error('❌ FATAL: SUPABASE_SERVICE_ROLE_KEY is not set. Admin operations require this key.');
-  console.error('🔧 Please set SUPABASE_SERVICE_ROLE_KEY in your .env file');
+  logger.error('FATAL: SUPABASE_SERVICE_ROLE_KEY is not set. Admin operations require this key.');
+  logger.error('Please set SUPABASE_SERVICE_ROLE_KEY in your .env file');
 }
 
 let supabaseAdmin = null;
@@ -44,9 +44,9 @@ if (supabaseUrl && supabaseServiceKey) {
       },
     }
   );
-  console.log('✅ Supabase admin client initialized successfully');
+  logger.boot('Supabase admin client initialized successfully');
 } else {
-  console.error('❌ Cannot initialize Supabase admin client: missing configuration');
+  logger.error('Cannot initialize Supabase admin client: missing configuration');
 }
 
 // ----------------------------------------------------------------
@@ -152,8 +152,8 @@ const respond = (res, statusCode, success, message, data = null, errors = null) 
 // Check if Supabase admin is initialized before proceeding
 const checkSupabaseAdmin = (res) => {
   if (!supabaseAdmin) {
-    console.error('[schoolRegistration] Supabase admin client is not initialized');
-    console.error('[schoolRegistration] Please ensure SUPABASE_SERVICE_ROLE_KEY is set in environment variables');
+    logger.error('[schoolRegistration] Supabase admin client is not initialized');
+    logger.error('[schoolRegistration] Please ensure SUPABASE_SERVICE_ROLE_KEY is set in environment variables');
     res.status(500).json({
       success: false,
       message: 'Server configuration error. Please contact support.',
@@ -290,7 +290,7 @@ const registerSchoolAdmin = async (req, res) => {
       .single();
 
     if (schoolError) {
-      console.error('[registerSchoolAdmin] School insert error:', schoolError);
+      logger.error('[registerSchoolAdmin] School insert error:', schoolError);
 
       // Handle unique constraint violation on code or email
       if (schoolError.code === '23505') {
@@ -327,7 +327,7 @@ const registerSchoolAdmin = async (req, res) => {
       });
 
     if (authError) {
-      console.error('[registerSchoolAdmin] Auth user creation error:', authError);
+      logger.error('[registerSchoolAdmin] Auth user creation error:', authError);
 
       // Rollback: delete the school we just created
       await supabaseAdmin
@@ -362,7 +362,7 @@ const registerSchoolAdmin = async (req, res) => {
       .single();
 
     if (userError) {
-      console.error('[registerSchoolAdmin] Public user insert error:', userError);
+      logger.error('[registerSchoolAdmin] Public user insert error:', userError);
 
       // Rollback both school and auth user
       await supabaseAdmin.auth.admin.deleteUser(authUserId);
@@ -396,7 +396,7 @@ const registerSchoolAdmin = async (req, res) => {
       .insert(adminData);
 
     if (adminError) {
-      console.error('[registerSchoolAdmin] school_admins insert error:', adminError);
+      logger.error('[registerSchoolAdmin] school_admins insert error:', adminError);
 
       // Rollback everything
       await supabaseAdmin.from('users').delete().eq('id', authUserId);
@@ -446,7 +446,7 @@ const registerSchoolAdmin = async (req, res) => {
     if (academicYearError) {
       // Don't fail registration over this — log it so it can be
       // fixed manually via Term Management, but let the admin in.
-      console.error('[registerSchoolAdmin] Default academic year seed failed:', academicYearError);
+      logger.error('[registerSchoolAdmin] Default academic year seed failed:', academicYearError);
     }
 
     // ── Step 9b: Send welcome email (login URL + email + temp password) ──
@@ -462,7 +462,7 @@ const registerSchoolAdmin = async (req, res) => {
     );
 
     if (!emailSent) {
-      console.error(`[registerSchoolAdmin] Welcome email failed to send for ${normalizedEmail} (school: ${school.name}). Registration still succeeded.`);
+      logger.error(`[registerSchoolAdmin] Welcome email failed to send for ${normalizedEmail} (school: ${school.name}). Registration still succeeded.`);
     }
 
     // ── Step 10: Generate session token for immediate login ────
@@ -497,8 +497,8 @@ const registerSchoolAdmin = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[registerSchoolAdmin] Unexpected error:', err);
-    console.error('[registerSchoolAdmin] Error stack:', err.stack);
+    logger.error('[registerSchoolAdmin] Unexpected error:', err);
+    logger.error('[registerSchoolAdmin] Error stack:', err.stack);
     
     // Provide more detailed error message
     const errorMessage = err.message || 'Unknown error';
@@ -660,7 +660,7 @@ const registerTeacher = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[registerTeacher] Unexpected error:', err);
+    logger.error('[registerTeacher] Unexpected error:', err);
     return respond(res, 500, false, 'An unexpected error occurred');
   }
 };
@@ -804,7 +804,7 @@ const registerParent = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[registerParent] Unexpected error:', err);
+    logger.error('[registerParent] Unexpected error:', err);
     return respond(res, 500, false, 'An unexpected error occurred');
   }
 };

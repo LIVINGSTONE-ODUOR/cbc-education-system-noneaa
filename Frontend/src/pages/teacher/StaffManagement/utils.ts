@@ -135,10 +135,6 @@ export const backendToStaffMember = (backend: any): StaffMember => {
 export const staffMemberToBackend = (staff: Partial<StaffMember>): Record<string, any> => {
   const snake: Record<string, any> = {};
 
-  console.log('[DEBUG] staffMemberToBackend input staff object:', staff);
-  console.log('[DEBUG] staffMemberToBackend photo property from input:', staff.photo);
-  console.log('[DEBUG] staffMemberToBackend ALL properties:', Object.keys(staff));
-
   // Basic Information
   if (staff.firstName !== undefined) snake.first_name = staff.firstName;
   if (staff.lastName !== undefined) snake.last_name = staff.lastName;
@@ -185,10 +181,7 @@ export const staffMemberToBackend = (staff: Partial<StaffMember>): Record<string
 
   // Photo
   if (staff.photo !== undefined) {
-    console.log('[DEBUG] staffMemberToBackend setting photo from staff.photo:', staff.photo);
     snake.photo = staff.photo;
-  } else {
-    console.log('[DEBUG] staffMemberToBackend photo is undefined, not setting');
   }
 
   // Remove undefined values and convert empty strings to null
@@ -201,9 +194,6 @@ export const staffMemberToBackend = (staff: Partial<StaffMember>): Record<string
     }
   });
 
-  console.log('[DEBUG] staffMemberToBackend output:', snake);
-  console.log('[DEBUG] staffMemberToBackend photo in output:', snake.photo);
-  console.log('[DEBUG] staffMemberToBackend output keys:', Object.keys(snake));
   return snake;
 };
 

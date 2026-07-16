@@ -12,7 +12,6 @@ const getApiUrl = (): string => {
 };
 
 const API_URL = getApiUrl();
-console.log('[profileApi] API_URL:', API_URL);
 
 // Get auth token from localStorage (matches other APIs)
 const getAuthToken = (): string | null => localStorage.getItem('cbe_access_token');

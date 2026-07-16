@@ -1,4 +1,5 @@
 const { query, pool } = require('../config/database');
+const logger = require('../utils/logger');
 
 const respond = (res, statusCode, success, message, data = null, errors = null) => {
   const payload = { success, message };
@@ -40,7 +41,7 @@ function asBool(value, fallback = false) {
 }
 
 function dbFailure(res, error, fallbackMessage) {
-  console.error('[academicYear] Error:', error);
+  logger.error('[academicYear] Error:', error);
 
   if (error?.code === '42P01' || error?.code === '42703') {
     return respond(

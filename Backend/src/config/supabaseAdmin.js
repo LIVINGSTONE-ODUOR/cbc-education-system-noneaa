@@ -5,8 +5,7 @@ const env = validateEnv();
 
 if (!env.SUPABASE_URL) {
   // Allow process to boot; repositories should fail gracefully when called.
-  // eslint-disable-next-line no-console
-  console.warn('[supabaseAdmin] SUPABASE_URL is missing. Supabase admin client is not initialized.');
+  require('../utils/logger').warn('[supabaseAdmin] SUPABASE_URL is missing. Supabase admin client is not initialized.');
 }
 
 const supabaseAdmin = env.SUPABASE_URL

@@ -30,11 +30,6 @@ const unwrapResponse = <T>(response: ApiResponse<T>, fallbackMessage: string): T
 // In production, use relative path so requests are proxied through Vercel (avoids CORS on custom domains)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
   (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
-
-// 🔍 DEBUG LOGGING
-if (!import.meta.env.PROD) {
-  console.log('🔍 Frontend auth - API_BASE_URL:', API_BASE_URL);
-}
 const TOKEN_KEY = 'cbe_access_token';
 const REFRESH_TOKEN_KEY = 'cbe_refresh_token';
 const USER_KEY = 'cbe_user_data';
@@ -96,9 +91,6 @@ class ApiClient {
       }
 
       return await response.json();
-    } catch (error) {
-      console.error('API request failed:', error);
-      throw error;
     }
   }
 
@@ -177,7 +169,6 @@ class ApiClient {
 
       return true;
     } catch (error) {
-      console.error('Token refresh failed:', error);
       return false;
     }
   }
@@ -196,11 +187,9 @@ const apiClient = new ApiClient(API_BASE_URL);
 export class AuthService {
   // Login
   static async login(email: string, password: string): Promise<{ user: User; tokens: AuthTokens }> {
-    console.log('🔍 Frontend LOGIN:', { email });
     const response = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', { email, password });
     const loginData = unwrapResponse(response, 'Login failed');
 
-    console.log('✅ Frontend LOGIN SUCCESS - token set:', loginData.tokens.accessToken ? 'YES' : 'NO');
     apiClient.setToken(loginData.tokens.accessToken);
     apiClient.setRefreshToken(loginData.tokens.refreshToken);
     localStorage.setItem(USER_KEY, JSON.stringify(loginData.user));
@@ -208,11 +197,11 @@ export class AuthService {
   }
 
   // Logout
-  static async logout(): Promise<void> {
+  static  async logout(): Promise<void> {
     try {
       await apiClient.post('/auth/logout', {});
-    } catch (error) {
-      console.error('Logout error:', error);
+    } catch {
+      // Silently handle logout errors
     } finally {
       apiClient.logout();
     }

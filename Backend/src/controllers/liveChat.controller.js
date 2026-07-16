@@ -1,4 +1,5 @@
 const { query } = require('../config/database');
+const logger = require('../utils/logger');
 
 // Phrases that signal the visitor wants (or needs) a human, checked
 // case-insensitively against each visitor message.
@@ -43,7 +44,7 @@ exports.startConversation = async (req, res) => {
     );
     return respond(res, 201, true, 'Conversation started', result.rows[0]);
   } catch (error) {
-    console.error('liveChat.startConversation error:', error);
+    logger.error('liveChat.startConversation error:', error);
     return respond(res, 500, false, 'Could not start conversation');
   }
 };
@@ -99,7 +100,7 @@ exports.postVisitorMessage = async (req, res) => {
 
     return respond(res, 200, true, 'Message received', { escalated });
   } catch (error) {
-    console.error('liveChat.postVisitorMessage error:', error);
+    logger.error('liveChat.postVisitorMessage error:', error);
     return respond(res, 500, false, 'Could not send message');
   }
 };
@@ -131,7 +132,7 @@ exports.escalateConversation = async (req, res) => {
 
     return respond(res, 200, true, 'Conversation escalated', { escalated: true });
   } catch (error) {
-    console.error('liveChat.escalateConversation error:', error);
+    logger.error('liveChat.escalateConversation error:', error);
     return respond(res, 500, false, 'Could not escalate conversation');
   }
 };
@@ -157,7 +158,7 @@ exports.getMessages = async (req, res) => {
     const result = await query(sql, params);
     return respond(res, 200, true, 'Messages fetched', { messages: result.rows });
   } catch (error) {
-    console.error('liveChat.getMessages error:', error);
+    logger.error('liveChat.getMessages error:', error);
     return respond(res, 500, false, 'Could not fetch messages');
   }
 };
@@ -181,7 +182,7 @@ exports.getInbox = async (req, res) => {
     );
     return respond(res, 200, true, 'Inbox fetched', { conversations: result.rows });
   } catch (error) {
-    console.error('liveChat.getInbox error:', error);
+    logger.error('liveChat.getInbox error:', error);
     return respond(res, 500, false, 'Could not fetch inbox');
   }
 };
@@ -210,7 +211,7 @@ exports.claimConversation = async (req, res) => {
     }
     return respond(res, 200, true, 'Conversation claimed', result.rows[0]);
   } catch (error) {
-    console.error('liveChat.claimConversation error:', error);
+    logger.error('liveChat.claimConversation error:', error);
     return respond(res, 500, false, 'Could not claim conversation');
   }
 };
@@ -238,7 +239,7 @@ exports.postAgentReply = async (req, res) => {
 
     return respond(res, 200, true, 'Reply sent');
   } catch (error) {
-    console.error('liveChat.postAgentReply error:', error);
+    logger.error('liveChat.postAgentReply error:', error);
     return respond(res, 500, false, 'Could not send reply');
   }
 };
@@ -258,7 +259,7 @@ exports.closeConversation = async (req, res) => {
     );
     return respond(res, 200, true, 'Conversation closed');
   } catch (error) {
-    console.error('liveChat.closeConversation error:', error);
+    logger.error('liveChat.closeConversation error:', error);
     return respond(res, 500, false, 'Could not close conversation');
   }
 };

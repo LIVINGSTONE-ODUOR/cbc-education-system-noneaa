@@ -1,5 +1,4 @@
 import React, { Component, ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 interface ErrorBoundaryState {
@@ -13,6 +12,8 @@ interface ErrorBoundaryProps {
   fallback?: ReactNode;
 }
 
+const isDev = import.meta.env.DEV;
+
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
@@ -24,18 +25,10 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    this.setState({
-      error,
-      errorInfo,
-    });
-
-    // Log error to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('ErrorBoundary caught an error:', error, errorInfo);
+    this.setState({ error, errorInfo });
+    if (isDev) {
+      console.warn('ErrorBoundary caught an error:', error.message);
     }
-
-    // In production, you might want to send this to an error reporting service
-    // logErrorToService(error, errorInfo);
   }
 
   handleReset = () => {
@@ -66,31 +59,21 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             </p>
 
             <div className="space-y-3">
-              <Button 
+              <button
                 onClick={this.handleReset}
-                className="w-full"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors"
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
+                <RefreshCw className="w-4 h-4" />
                 Try Again
-              </Button>
+              </button>
               
-              <Button 
-                variant="outline" 
+              <button
                 onClick={() => window.location.reload()}
-                className="w-full"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
               >
                 Reload Page
-              </Button>
+              </button>
             </div>
-
-            {process.env.NODE_ENV === 'development' && this.state.error && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="text-sm font-medium text-gray-900 mb-2">Error Details:</h3>
-                <pre className="text-xs text-gray-600 overflow-auto">
-                  {this.state.error.toString()}
-                </pre>
-              </div>
-            )}
           </div>
         </div>
       );

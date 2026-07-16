@@ -53,7 +53,8 @@ function load() {
     }));
     cache = { generatedAt: parsed.generatedAt || null, pages };
   } catch (error) {
-    console.warn(
+    const logger = require('../utils/logger');
+    logger.warn(
       `[site-knowledge] Could not load ${KNOWLEDGE_FILE}: ${error.message}. ` +
         `Run "npm run build:knowledge" to generate it. Falling back to empty knowledge base.`
     );

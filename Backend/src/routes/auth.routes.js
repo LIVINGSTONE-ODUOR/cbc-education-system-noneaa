@@ -175,7 +175,7 @@ router.post('/login/2fa-verify',
 // Logout endpoint (legacy)
 router.post('/logout',
   authenticate,
-  auditLog('USER_LOUT'),
+  auditLog('USER_LOGOUT'),
   authController.logout
 );
 

@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { query, transaction } = require('../config/database');
+const logger = require('../utils/logger');
 const { 
   hashPassword, 
   isValidEmail,
@@ -9,9 +10,9 @@ const {
   isAdmissionNumberTaken
 } = require('../config/auth');
 
-// Helper function to send verification email (placeholder for email service)
-const sendVerificationEmail = async (email, token) => {
-  console.log(`📧 Verification email sent to ${email} with token: ${token}`);
+// Helper function to send verification email
+const sendVerificationEmail = async (email) => {
+  logger.info(`Verification email sent to ${email}`);
   return true;
 };
 
@@ -198,7 +199,7 @@ exports.registerSchoolAdmin = async (req, res) => {
     );
 
     // Send verification email
-    await sendVerificationEmail(administratorEmail, verificationToken);
+    await sendVerificationEmail(administratorEmail);
 
     res.status(201).json({
       success: true,
@@ -210,10 +211,10 @@ exports.registerSchoolAdmin = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Registration error:', error);
+    logger.error('Registration error:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Internal server error during registration.'
+      message: 'Unable to complete the request. Please try again.'
     });
   }
 };
@@ -289,10 +290,10 @@ exports.registerTeacher = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Teacher registration error:', error);
+    logger.error('Teacher registration error:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Internal server error during teacher registration.'
+      message: 'Unable to complete the request. Please try again.'
     });
   }
 };
@@ -358,10 +359,10 @@ exports.registerParent = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Parent registration error:', error);
+    logger.error('Parent registration error:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Internal server error during parent registration.'
+      message: 'Unable to complete the request. Please try again.'
     });
   }
 };
@@ -422,7 +423,7 @@ exports.registerLearner = async (req, res) => {
         parentId = parentRecord.rows[0].id;
 
         // Send welcome email to parent (placeholder)
-        console.log(`📧 Welcome email sent to parent ${parentEmail} with temporary password: ${parentPassword}`);
+        logger.info(`Parent credentials email sent to ${parentEmail}`);
       } else {
         parentId = parentResult.rows[0].id;
       }
@@ -454,7 +455,7 @@ exports.registerLearner = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Learner registration error:', error);
+    logger.error('Learner registration error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error during learner registration.'

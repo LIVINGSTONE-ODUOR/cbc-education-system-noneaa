@@ -136,7 +136,6 @@ export default function LoginPage() {
     setFieldErrors({});
 
     try {
-      console.log('[LoginPage] Attempting login for:', formData.email, 'as', userType);
       const result = await login(formData.email, formData.password, userType);
 
       // Only accounts that have actually enabled 2FA in their settings

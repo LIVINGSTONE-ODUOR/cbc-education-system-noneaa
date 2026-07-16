@@ -1,3 +1,9 @@
+/**
+ * Environment Variable Validation — CBC Education System
+ */
+
+const logger = require('../utils/logger');
+
 const required = [
   'SUPABASE_URL',
   'SUPABASE_ANON_KEY',
@@ -18,15 +24,14 @@ function validateEnv() {
     return v === undefined;
   });
 
-  // Fail fast in production; otherwise allow boot for local dev ergonomics.
-  const isProd = process.env.NODE_ENV === 'production';
-  if (missing.length) {
+  const isProd = (process.env.NODE_ENV || 'development').toLowerCase() === 'production';
+
+  if (missing.length > 0) {
     const message = `Missing required environment variables: ${missing.join(', ')}`;
     if (isProd) {
       throw new Error(message);
     }
-    // eslint-disable-next-line no-console
-    console.warn(`[env] ${message}. Continuing with limited functionality.`);
+    logger.warn(`[env] ${message}. Continuing with limited functionality.`);
   }
 
   return {
@@ -39,4 +44,3 @@ function validateEnv() {
 module.exports = {
   validateEnv,
 };
-

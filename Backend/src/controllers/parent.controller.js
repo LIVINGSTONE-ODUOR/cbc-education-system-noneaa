@@ -13,6 +13,7 @@ const { createClient } = require('@supabase/supabase-js');
 const asyncHandler     = require('express-async-handler');
 const bcrypt           = require('bcrypt');
 const crypto           = require('crypto');
+const logger           = require('../utils/logger');
 
 // ---------------------------------------------------------------------------
 // Supabase service-role client (bypasses RLS for admin operations)
@@ -63,9 +64,9 @@ const normalizePhone = (raw) => {
  */
 const dispatchInvite = async ({ channel, to, firstName, inviteUrl, schoolName }) => {
   if (process.env.NODE_ENV === 'production') {
-    console.log(`[INVITE] ${channel.toUpperCase()} → ${to} | url: ${inviteUrl}`);
+    logger.info(`[INVITE] ${channel.toUpperCase()} → ${to} | url: ${inviteUrl}`);
   } else {
-    console.log(`[DEV INVITE] channel=${channel} to=${to} firstName=${firstName} url=${inviteUrl}`);
+    logger.debug(`[DEV INVITE] channel=${channel} to=${to} firstName=${firstName} url=${inviteUrl}`);
   }
 };
 
@@ -315,7 +316,7 @@ const listParents = asyncHandler(async (req, res) => {
     const { data, error, count } = await Promise.race([query, timeoutPromise]);
     
     if (error) {
-      console.error('Supabase error:', error);
+      logger.error('Supabase error:', error);
       return res.status(500).json({ 
         success: false, 
         message: 'Failed to fetch parents', 
@@ -358,7 +359,7 @@ const listParents = asyncHandler(async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('Query failed:', err);
+    logger.error('Query failed:', err);
     return res.status(500).json({ 
       success: false, 
       message: 'Database query timeout',
@@ -940,7 +941,7 @@ const getMyChildren = asyncHandler(async (req, res) => {
     .eq('parent_id', parent.id);
 
   if (linksErr) {
-    console.error('[getMyChildren] learner_parents query failed:', linksErr);
+    logger.error('[getMyChildren] learner_parents query failed:', linksErr);
     return res.status(500).json({ success: false, message: 'Failed to load linked learners', error: linksErr.message });
   }
 
@@ -967,7 +968,7 @@ const getMyChildren = asyncHandler(async (req, res) => {
     .in('id', learnerIds);
 
   if (learnersErr) {
-    console.error('[getMyChildren] learners query failed:', learnersErr);
+    logger.error('[getMyChildren] learners query failed:', learnersErr);
     return res.status(500).json({ success: false, message: 'Failed to load learner details', error: learnersErr.message });
   }
 
@@ -1000,7 +1001,7 @@ const getMyChildren = asyncHandler(async (req, res) => {
     .limit(200);
 
   if (attendanceErr) {
-    console.error('[getMyChildren] attendance_records query failed:', attendanceErr);
+    logger.error('[getMyChildren] attendance_records query failed:', attendanceErr);
     // Non-fatal — a parent should still see grades/profile even if
     // attendance is temporarily unavailable.
   }
@@ -1034,7 +1035,7 @@ const getMyChildren = asyncHandler(async (req, res) => {
         // Every exam this learner has results for, most recent first.
         examHistory = (await buildLearnerSummaries(parent.school_id, learner.id)) || [];
       } catch (e) {
-        console.error(`[getMyChildren] exam summary failed for learner ${learner.id}:`, e.message);
+        logger.error(`[getMyChildren] exam summary failed for learner ${learner.id}:`, e.message);
         examHistory = [];
       }
 

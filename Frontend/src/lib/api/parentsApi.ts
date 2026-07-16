@@ -14,7 +14,6 @@ const getApiUrl = (): string => {
 };
 
 const API_URL = getApiUrl();
-console.log('[parentsApi] API_URL:', API_URL);
 
 const getAuthToken = (): string | null => {
   return localStorage.getItem('cbe_access_token');

@@ -1,36 +1,60 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 
+const logger = require('./utils/logger');
+const requestLogger = require('./middleware/requestLogger');
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+
 // Create Express app
 const app = express();
 
-// Trust proxy for accurate IP detection (important for GitHub Codespaces and rate limiting)
-app.set('trust proxy', true);
+const isProduction = (process.env.NODE_ENV || 'development').toLowerCase() === 'production';
 
-// ==================== MIDDLEWARE ====================
+// ==================== TRUST PROXY ====================
+// Production: trust the first proxy (reverse proxy, load balancer, Vercel, Render)
+// Development: no proxy — trust proxy is off to avoid ERR_ERL_PERMISSIVE_TRUST_PROXY
+app.set('trust proxy', isProduction ? 1 : false);
+
+// ==================== SECURITY MIDDLEWARE ====================
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" } // Allow cross-origin resource sharing
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      fontSrc: ["'self'", 'https:', 'data:'],
+      connectSrc: ["'self'", 'https:'],
+      frameAncestors: ["'none'"],
+      formAction: ["'self'"],
+      baseUri: ["'self'"],
+    },
+  },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  frameguard: { action: 'deny' },
+  noSniff: true,
+  xssFilter: true,
+  hidePoweredBy: true,
+  ieNoOpen: true,
 }));
-app.use(compression()); // Compress responses
+
+app.use(compression());
 
 // Serve static files for uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ==================== CORS CONFIGURATION FOR GITHUB CODESPACES ====================
-
-// Load origins from .env
+// ==================== CORS CONFIGURATION ====================
 const envOrigins = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
   .map(origin => origin.trim())
   .filter(Boolean);
 
-// Default development origins including GitHub Codespaces patterns
 const defaultOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
@@ -40,21 +64,12 @@ const defaultOrigins = [
   'https://localhost:5174',
   'https://cbc-education-system-a478.vercel.app',
   'https://cbc-education-system-1.onrender.com',
-  // Additional production frontend origins
   'https://www.noneaa.com',
   'https://noneaa.com',
-  // GitHub Codespaces patterns
-
-  'https://*.app.github.dev',
-  'https://*.preview.app.github.dev',
-  'https://*.vercel.app',
-  'https://*.render.com'
 ];
 
-// Function to check if origin matches dynamic host patterns (Codespaces / Vercel / Render)
 const normalizeOrigin = (origin) => {
   if (!origin) return '';
-  // Trim whitespace and remove any trailing slash to prevent subtle mismatches
   return String(origin).trim().replace(/\/$/, '');
 };
 
@@ -62,26 +77,19 @@ const isAllowedDynamicOrigin = (origin) => {
   origin = normalizeOrigin(origin);
   if (!origin) return false;
   const patterns = [
-    /^https:\/\/[a-zA-Z0-9\-]+\.app\.github\.dev$/,
-    /^https:\/\/[a-zA-Z0-9\-]+\.preview\.app\.github\.dev$/,
-    /^https:\/\/[a-zA-Z0-9\-]+-3001\.app\.github\.dev$/,
-    /^https:\/\/[a-zA-Z0-9\-]+-5173\.app\.github\.dev$/,
-    /^https:\/\/[a-zA-Z0-9\-]+\.vercel\.app$/,
-    /^https:\/\/[a-zA-Z0-9\-]+\.onrender\.com$/,
-    // School subdomains, e.g. https://maseno.noneaa.com
-    /^https:\/\/[a-zA-Z0-9\-]+\.noneaa\.com$/,
-    /^https:\/\/[a-zA-Z0-9\-]+\.render\.com$/
+    /^https:\/\/[a-zA-Z0-9-]+\.app\.github\.dev$/,
+    /^https:\/\/[a-zA-Z0-9-]+\.preview\.app\.github\.dev$/,
+    /^https:\/\/[a-zA-Z0-9-]+-3001\.app\.github\.dev$/,
+    /^https:\/\/[a-zA-Z0-9-]+-5173\.app\.github\.dev$/,
+    /^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/,
+    /^https:\/\/[a-zA-Z0-9-]+\.onrender\.com$/,
+    /^https:\/\/[a-zA-Z0-9-]+\.noneaa\.com$/,
+    /^https:\/\/[a-zA-Z0-9-]+\.render\.com$/,
   ];
   return patterns.some(pattern => pattern.test(origin));
 };
 
-// Merge and remove duplicates (and normalize for exact matching)
 const allowedOrigins = [...new Set([...envOrigins, ...defaultOrigins].map(normalizeOrigin))];
-
-// Log CORS configuration on startup
-console.log('[CORS] Configuration loaded');
-console.log('[CORS] Allowed origins:', allowedOrigins);
-console.log('[CORS] Dynamic host pattern matching enabled (Codespaces / Vercel / Render)');
 
 const isOriginAllowed = (origin) => {
   origin = normalizeOrigin(origin);
@@ -93,95 +101,65 @@ const isOriginAllowed = (origin) => {
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests without origin (Postman, mobile apps, curl, server-to-server)
-    if (!origin) {
-      return callback(null, true);
-    }
-
+    if (!origin) return callback(null, true);
     if (isOriginAllowed(origin)) {
-      const normalized = normalizeOrigin(origin);
-      console.log('[CORS] ✅ Allowed origin:', normalized);
       return callback(null, true);
     }
-
-    const normalized = normalizeOrigin(origin);
-    console.warn('[CORS] ❌ Blocked request from origin:', normalized);
-    console.warn('[CORS] Allowed origins are:', allowedOrigins);
-
-    return callback(new Error(`CORS policy: Origin ${normalized} not allowed`));
+    if (isProduction) {
+      logger.warn('CORS blocked origin:', normalizeOrigin(origin));
+    }
+    return callback(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
   allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Requested-With',
-    'Accept',
-    'Origin',
-    'Cookie',
-    'Set-Cookie'
+    'Content-Type', 'Authorization', 'X-Requested-With',
+    'Accept', 'Origin', 'Cookie', 'Set-Cookie',
   ],
   exposedHeaders: ['Set-Cookie'],
   optionsSuccessStatus: 200,
-  preflightContinue: false
+  preflightContinue: false,
 }));
 
 // Handle preflight requests explicitly
 app.options('*', (req, res) => {
   const origin = req.headers.origin;
-  console.log('[CORS] Handling preflight request from origin:', origin);
-
-  // Keep logic consistent with the main cors middleware decision
   if (!origin || isOriginAllowed(origin)) {
     res.header('Access-Control-Allow-Origin', normalizeOrigin(origin) || '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD');
-    res.header(
-      'Access-Control-Allow-Headers',
-      'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cookie, Set-Cookie'
-    );
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cookie, Set-Cookie');
     res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Max-Age', '86400'); // 24 hours
+    res.header('Access-Control-Max-Age', '86400');
     return res.sendStatus(200);
   }
-
-  console.warn('[CORS] Preflight blocked for origin:', normalizeOrigin(origin));
   return res.sendStatus(403);
 });
 
-app.use(morgan('combined')); // HTTP request logging
+// ==================== REQUEST PARSING ====================
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// ==================== REQUEST LOGGING ====================
+app.use(requestLogger);
+
 // ==================== RATE LIMIT ====================
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300, // raised — polling features (live chat) use a lot more requests than a typical page
+  windowMs: 15 * 60 * 1000,
+  max: 300,
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.',
-  }, // object, not a string — Express sends this as real JSON so the frontend won't choke parsing it
+  },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.path.startsWith('/v1/live-chat'), // this endpoint is meant to be polled frequently
+  skip: (req) => req.path.startsWith('/v1/live-chat'),
 });
+
 app.use('/api/', limiter);
 
-// ==================== REQUEST LOGGING MIDDLEWARE ====================
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - Origin: ${req.headers.origin || 'unknown'}`);
-  next();
-});
-
 // ==================== ROUTES ====================
-
-// Learners API routes
 app.use('/api/v1/learners', require('./routes/learner.routes'));
-
-// API Versioning
-// NOTE: auth.routes already includes both legacy and v1 prefixes (e.g. /v1/login).
-// Mounting it at '/api/v1/auth' caused the frontend to hit '/api/v1/login'
-// while the backend effectively served '/api/v1/auth/v1/login' (404).
 app.use('/api', require('./routes/auth.routes'));
 app.use('/api/v1/classes', require('./routes/class.routes'));
 app.use('/api/v1/exams', require('./routes/exam.routes'));
@@ -193,13 +171,8 @@ app.use('/api/v1/study-groups', require('./routes/studyGroup.routes'));
 app.use('/api/v1/lost-found', require('./routes/lostFound.routes'));
 app.use('/api/v1/campus-locations', require('./routes/campusLocation.routes'));
 app.use('/api/v1/portfolio', require('./routes/portfolio.routes'));
-
 app.use('/api/v1/register', require('./routes/register.routes'));
-
-
-// Users (includes profile endpoints)
 app.use('/api/v1/users', require('./routes/users.routes'));
-
 app.use('/api/v1/schools', require('./routes/schools.routes'));
 app.use('/api/v1/password', require('./routes/password.routes'));
 app.use('/api/v1/academic-terms', require('./routes/academicTermsRoutes'));
@@ -211,13 +184,13 @@ app.use('/api/v1/fee-structures', require('./routes/feeStructure.routes'));
 app.use('/api/v1/ai', require('./routes/ai.routes'));
 app.use('/api/v1/ai-assistant', require('./routes/aiAssistant.routes'));
 app.use('/api/v1/live-chat', require('./routes/liveChat.routes'));
-app.use('/api/v1/website-owner', require('./routes/websiteOwner.routes'));
+app.use('/api/v1/grading', require('./routes/grading.routes'));
+app.use('/api/v1/performance', require('./routes/performance.routes'));
 
-// Parents API routes
+
+app.use('/api/v1/website-owner', require('./routes/websiteOwner.routes'));
 app.use('/api/v1/parents', require('./routes/parent.routes'));
 app.use('/api/v1/parent-dashboard', require('./routes/parentDashboard.routes'));
-
-// Profile (non-versioned fallback)
 app.use('/api/users', require('./routes/users.routes'));
 
 // ==================== HEALTH CHECK ====================
@@ -225,56 +198,14 @@ app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    cors: 'enabled',
-    allowedOrigins: allowedOrigins.length
+    environment: isProduction ? 'production' : 'development',
   });
 });
-
-// ==================== DEBUG ENDPOINT (dev only) ====================
-if (process.env.NODE_ENV !== 'production') {
-  app.get('/debug/cors-info', (req, res) => {
-    res.json({
-      allowedOrigins: allowedOrigins,
-      requestOrigin: req.headers.origin,
-      environment: process.env.NODE_ENV,
-      nodeVersion: process.version
-    });
-  });
-}
 
 // ==================== 404 HANDLER ====================
-app.use('*', (req, res) => {
-  console.log(`[404] ${req.method} ${req.originalUrl} - Not found`);
-  res.status(404).json({
-    success: false,
-    error: 'Endpoint not found',
-    path: req.originalUrl,
-    method: req.method,
-    timestamp: new Date().toISOString()
-  });
-});
+app.use('*', notFoundHandler);
 
 // ==================== ERROR HANDLING MIDDLEWARE ====================
-app.use((err, req, res, next) => {
-  console.error('[ERROR]', err.stack);
-  
-  // Handle CORS errors specifically
-  if (err.message && err.message.includes('CORS')) {
-    return res.status(403).json({
-      success: false,
-      error: 'CORS policy violation',
-      message: err.message,
-      timestamp: new Date().toISOString()
-    });
-  }
-  
-  res.status(500).json({
-    success: false,
-    error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined,
-    timestamp: new Date().toISOString()
-  });
-});
+app.use(errorHandler);
 
 module.exports = app;

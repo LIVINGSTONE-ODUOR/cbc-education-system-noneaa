@@ -9,7 +9,6 @@ const getApiUrl = (): string => {
 };
 
 const API_URL = getApiUrl();
-console.log('[schoolsApi] API_URL:', API_URL);
 
 // Get auth token
 const getAuthToken = (): string | null => localStorage.getItem('cbe_access_token');

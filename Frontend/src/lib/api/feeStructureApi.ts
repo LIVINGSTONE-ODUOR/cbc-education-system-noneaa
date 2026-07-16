@@ -11,7 +11,6 @@ const getApiUrl = (): string => {
 };
 
 const API_URL = getApiUrl();
-console.log('[feeStructureApi] API_URL:', API_URL, 'PROD:', import.meta.env.PROD);
 
 // Get auth token from localStorage
 const getAuthToken = (): string | null => {

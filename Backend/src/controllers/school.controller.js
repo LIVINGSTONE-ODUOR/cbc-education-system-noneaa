@@ -2,6 +2,7 @@ const { query, transaction } = require('../config/database');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const { sendSchoolAdminWelcomeEmail } = require('../utils/email');
+const logger = require('../utils/logger');
 
 const respond = (res, statusCode, success, message, data = null, errors = null) => {
   const payload = { success, message };
@@ -71,7 +72,7 @@ const schoolAccessDenied = (req, res, schoolId) => {
 };
 
 const dbFailure = (res, error, fallbackMessage) => {
-  console.error('[school.controller] Error:', error);
+  logger.error('[school.controller] Error:', error);
 
   if (error?.code === '42P01' || error?.code === '42703') {
     return respond(
@@ -253,7 +254,7 @@ const getSchoolById = async (req, res) => {
       }
     } catch (subError) {
       // Table might not exist yet
-      console.log('Subscription table not yet available');
+      logger.debug('Subscription table not yet available');
     }
 
     return respond(res, 200, true, 'School loaded successfully.', {
@@ -371,7 +372,7 @@ const createSchool = async (req, res) => {
         // Don't fail the whole request if admin account creation has an
         // issue — the school record still exists and can be retried/fixed
         // from the School Management screen.
-        console.error('[createSchool] Failed to create admin account:', adminSetupError);
+        logger.error('[createSchool] Failed to create admin account:', adminSetupError);
       }
     }
 
@@ -532,7 +533,7 @@ const createSubscription = async (req, res) => {
            payment_reference || null, receiptNumber, expiryDate]
         );
       } catch (insertError) {
-        console.log('Subscription table insert warning:', insertError.message);
+        logger.debug('Subscription table insert warning:', insertError.message);
       }
 
       return updateSchool.rows[0];
@@ -589,7 +590,7 @@ const getCurrentSubscription = async (req, res) => {
       );
       subscriptionHistory = historyResult.rows;
     } catch (subError) {
-      console.log('Subscription table not yet available');
+      logger.debug('Subscription table not yet available');
     }
 
     return respond(res, 200, true, 'Subscription loaded successfully.', {

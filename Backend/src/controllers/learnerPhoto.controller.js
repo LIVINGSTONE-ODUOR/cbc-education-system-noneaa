@@ -2,6 +2,7 @@ const { createClient } = require('@supabase/supabase-js');
 const asyncHandler = require('express-async-handler');
 const path = require('path');
 const sharp = require('sharp');
+const logger = require('../utils/logger');
 
 // Supabase storage client (service role)
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -9,52 +10,32 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 // POST /api/v1/learners/upload-photo
 // Upload student profile photo to 'student-photos' bucket
 const uploadLearnerPhoto = asyncHandler(async (req, res) => {
-  console.log('[uploadLearnerPhoto] START', { 
-    hasFile: !!req.file,
-    user: req.user ? { id: req.user.id, role: req.user.role, schoolId: req.user.schoolId } : null
-  });
-
-  // ✅ FIX #1: Correct auth check
   if (!req.user) {
-    console.log('[uploadLearnerPhoto] Not authenticated');
     return res.status(401).json({ success: false, message: 'Authentication required' });
   }
 
   if (req.user.role !== 'super_admin' && !req.user.schoolId) {
-    console.log('[uploadLearnerPhoto] No school access');
     return res.status(403).json({ success: false, message: 'School access required' });
   }
 
   if (!req.file) {
-    console.log('[uploadLearnerPhoto] No file provided');
     return res.status(400).json({ success: false, message: 'No file uploaded' });
   }
 
   const file = req.file;
-  const school_id = req.user.schoolId;
   const admission_number = req.body.filename || req.body.admission_number || path.parse(file.originalname).name;
-  
-  console.log('[uploadLearnerPhoto] Processing file', { 
-    filename: admission_number,
-    mimeType: file.mimetype,
-    size: file.size,
-    schoolId: school_id
-  });
 
   // Validate file type
   if (!file.mimetype.startsWith('image/')) {
-    console.log('[uploadLearnerPhoto] Invalid file type:', file.mimetype);
     return res.status(400).json({ success: false, message: 'Only image files allowed' });
   }
 
   // Validate file size
   if (file.size > 5 * 1024 * 1024) {
-    console.log('[uploadLearnerPhoto] File too large');
     return res.status(400).json({ success: false, message: 'File size exceeds 5MB limit' });
   }
 
   try {
-    console.log('[uploadLearnerPhoto] Resizing image...');
     
     // Resize and optimize image (max 400x400, webp)
     const timestamp = Date.now();
@@ -66,7 +47,7 @@ const uploadLearnerPhoto = asyncHandler(async (req, res) => {
       .webp({ quality: 80 })
       .toBuffer();
 
-    console.log('[uploadLearnerPhoto] Uploading to Supabase...');
+
 
     // Upload to Supabase storage
     const { data, error } = await supabase.storage
@@ -77,15 +58,12 @@ const uploadLearnerPhoto = asyncHandler(async (req, res) => {
       });
 
     if (error) {
-      console.error('[uploadLearnerPhoto] Storage upload error:', error);
+      logger.error('Storage upload failed:', error.message);
       return res.status(500).json({ 
         success: false, 
-        message: 'Failed to upload photo to storage',
-        error: error.message 
+        message: 'Failed to upload photo to storage'
       });
     }
-
-    console.log('[uploadLearnerPhoto] Getting public URL...');
 
     // ✅ FIX #2: Proper error handling for getPublicUrl
     try {
@@ -96,14 +74,14 @@ const uploadLearnerPhoto = asyncHandler(async (req, res) => {
       const publicUrl = data?.publicUrl;
 
       if (!publicUrl) {
-        console.error('[uploadLearnerPhoto] No public URL returned');
+        logger.error('No public URL returned from storage');
         return res.status(500).json({ 
           success: false, 
           message: 'Failed to get public URL' 
         });
       }
 
-      console.log('[uploadLearnerPhoto] Success', { publicUrl });
+      logger.debug('Learner photo uploaded successfully');
 
       res.json({
         success: true,
@@ -112,20 +90,17 @@ const uploadLearnerPhoto = asyncHandler(async (req, res) => {
         filePath: filePath,
         filename: fileName
       });
-    } catch (urlError) {
-      console.error('[uploadLearnerPhoto] URL generation error:', urlError);
+    } catch {
       return res.status(500).json({ 
         success: false, 
-        message: 'Failed to generate photo URL',
-        error: urlError.message 
+        message: 'Failed to generate photo URL'
       });
     }
   } catch (error) {
-    console.error('[uploadLearnerPhoto] Processing error:', error);
+    logger.error('Photo processing failed:', error.message);
     res.status(500).json({ 
       success: false, 
-      message: 'Photo processing failed',
-      error: error.message 
+      message: 'Photo processing failed'
     });
   }
 });

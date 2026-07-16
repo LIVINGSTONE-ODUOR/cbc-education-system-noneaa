@@ -1,5 +1,6 @@
 const OpenAI = require("openai");
 const siteKnowledge = require("../services/siteKnowledge.service");
+const logger = require('../utils/logger');
 
 // Check for API key - support both OpenRouter and direct OpenAI
 const apiKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
@@ -16,8 +17,8 @@ if (apiKey) {
     } : undefined,
   });
 } else {
-  console.error("WARNING: API key is missing. Please set either OPENROUTER_API_KEY or OPENAI_API_KEY in your .env file.");
-  console.error("Get your API key from: https://openrouter.ai/keys or https://platform.openai.com/api-keys");
+  logger.warn("WARNING: API key is missing. Please set either OPENROUTER_API_KEY or OPENAI_API_KEY in your .env file.");
+  logger.warn("Get your API key from: https://openrouter.ai/keys or https://platform.openai.com/api-keys");
 }
 
 exports.chat = async (req, res) => {
@@ -62,7 +63,7 @@ exports.chat = async (req, res) => {
     const reply = completion.choices?.[0]?.message?.content || "No response generated.";
     return res.json({ message: reply });
   } catch (error) {
-    console.error("OpenRouter API Error:", error);
+    logger.error("OpenRouter API Error:", error);
     return res.status(500).json({ error: "Failed to get AI response" });
   }
 };

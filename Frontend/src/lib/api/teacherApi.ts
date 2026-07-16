@@ -14,7 +14,6 @@ const getApiUrl = (): string => {
 };
 
 const API_URL = getApiUrl();
-console.log('[teacherApi] API_URL:', API_URL);
 
 // Auth token from localStorage (same as curriculumApi)
 const getAuthToken = (): string | null => {
@@ -190,12 +189,8 @@ export const updateTeacher = async (
     url += `?school_id=${encodeURIComponent(effectiveSchoolId)}`;
   }
   
-  console.log('[DEBUG] updateTeacher RAW frontend payload:', payload);
-  
   // Convert StaffMember to backend format using your utility
   const backendPayload = staffMemberToBackend(payload);
-  
-  console.log('[DEBUG] updateTeacher FINAL backend payload:', backendPayload);
   
   const response = await fetch(url, getFetchOptions('PUT', backendPayload));
   const result = await handleResponse<ApiResponse<any>>(response);

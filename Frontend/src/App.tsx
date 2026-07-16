@@ -113,6 +113,14 @@ import { BlogProvider } from "@/contexts/BlogContext";
 
 import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
 
+// Grading System Pages
+import GradingManagement from "@/components/grading/GradingManagement";
+import TeacherAssessmentEntry from "@/components/grading/TeacherAssessmentEntry";
+import StudentReportPortal from "@/components/grading/StudentReportPortal";
+import ParentReportPortal from "@/components/grading/ParentReportPortal";
+import ReportCardView from "@/components/grading/ReportCardView";
+import GradingAnalytics from "@/components/grading/GradingAnalytics";
+
 const queryClient = new QueryClient();
 
 
@@ -286,6 +294,26 @@ function AppRoutes() {
       {/* ── Demo Routes ── */}
       <Route path="/dashboard-demo" element={<ModernDashboard />} />
 
+      {/* ── Student Report Portal (Grading) ── */}
+      <Route
+        path="/student/reports"
+        element={
+          <ProtectedRoute requiredRole="student" silent>
+            <StudentReportPortal />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ── Parent Report Portal (Grading) ── */}
+      <Route
+        path="/parent/reports"
+        element={
+          <ProtectedRoute requiredRole="parent">
+            <ParentReportPortal />
+          </ProtectedRoute>
+        }
+      />
+
       {/* ── Student Routes ── */}
       <Route
         path="/student/learning-materials"
@@ -334,6 +362,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute requiredRole="teacher">
             <MarksEntry />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/assessments"
+        element={
+          <ProtectedRoute requiredRole="teacher">
+            <TeacherAssessmentEntry />
           </ProtectedRoute>
         }
       />
@@ -411,6 +447,11 @@ function AppRoutes() {
                 <Route path="fee-management" element={<FeeManagement onBack={() => window.history.back()} />} />
                 <Route path="assessments" element={<Assessments />} />
                 <Route path="staff-attendance" element={<AdminAttendance />} />
+
+                {/* ── Grading System ── */}
+                <Route path="grading/schemes" element={<GradingManagement />} />
+                <Route path="grading/analytics" element={<GradingAnalytics />} />
+                <Route path="grading/reports" element={<ReportCardView />} />
 
                 {/* ── Attendance (sidebar links live in menuData.ts under ATTENDANCE & PERFORMANCE) ── */}
                 <Route path="attendance/students" element={<Navigate to="/school-admin/attendance/students/daily" replace />} />

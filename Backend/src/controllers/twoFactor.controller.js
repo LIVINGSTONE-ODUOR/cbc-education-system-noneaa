@@ -4,6 +4,7 @@ const QRCode = require('qrcode');
 const { authenticator } = require('otplib');
 const db = require('../config/database');
 const { verifyPassword } = require('../config/auth');
+const logger = require('../utils/logger');
 
 const ISSUER = 'CBC Education System';
 
@@ -58,7 +59,7 @@ exports.setupTwoFactor = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('2FA setup error:', error);
+    logger.error('2FA setup error:', error);
     return res.status(500).json({ success: false, message: 'Failed to start two-factor authentication setup' });
   }
 };
@@ -117,7 +118,7 @@ exports.verifyTwoFactor = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('2FA verify error:', error);
+    logger.error('2FA verify error:', error);
     return res.status(500).json({ success: false, message: 'Failed to verify two-factor authentication code' });
   }
 };
@@ -160,7 +161,7 @@ exports.disableTwoFactor = async (req, res) => {
 
     return res.json({ success: true, message: 'Two-factor authentication disabled' });
   } catch (error) {
-    console.error('2FA disable error:', error);
+    logger.error('2FA disable error:', error);
     return res.status(500).json({ success: false, message: 'Failed to disable two-factor authentication' });
   }
 };

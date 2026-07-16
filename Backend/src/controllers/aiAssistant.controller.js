@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const OpenAI = require('openai');
 const siteKnowledge = require('../services/siteKnowledge.service');
+const logger = require('../utils/logger');
 // Supabase admin client is initialized in server-side layers (repos/services).
 
 
@@ -128,10 +129,10 @@ function requestId(req) {
 function log(level, event, payload) {
   const line = JSON.stringify({ ts: new Date().toISOString(), level, event, ...payload });
   if (level === 'error') {
-    console.error('[ai-assistant]', line);
+    logger.error('[ai-assistant]', line);
     return;
   }
-  console.log('[ai-assistant]', line);
+  logger.debug('[ai-assistant]', line);
 }
 
 function consumeBucket(map, key, maxPerWindow) {
@@ -177,13 +178,13 @@ function validateAiAssistantEnv() {
   if (!CFG.baseUrl) missing.push('OPENROUTER_BASE_URL');
 
   if (missing.length) {
-    console.error(
+    logger.warn(
       `[ai-assistant] Missing env vars: ${missing.join(', ')}. Running in fallback mode.`
     );
     return { ok: false, missing };
   }
 
-  console.log(`[ai-assistant] OpenRouter configured. model=${CFG.model}, timeoutMs=${CFG.timeoutMs}`);
+  logger.boot(`[ai-assistant] OpenRouter configured. model=${CFG.model}, timeoutMs=${CFG.timeoutMs}`);
   return { ok: true, missing: [] };
 }
 

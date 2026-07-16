@@ -7,6 +7,7 @@ const { body, query } = require('express-validator');
 const { authenticate, authorize, auditLog, securityHeaders } = require('../middleware/auth');
 const db = require('../config/database');
 const twoFactorController = require('../controllers/twoFactor.controller');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -92,8 +93,7 @@ router.get('/me', authenticate, async (req, res) => {
         }
       }
     });
-  } catch (error) {
-    console.error('Get profile error:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to fetch profile' });
   }
 });
@@ -115,8 +115,7 @@ router.put('/me/personal-info', authenticate, async (req, res) => {
     );
 
     return res.json({ success: true, message: 'Personal information updated successfully' });
-  } catch (error) {
-    console.error('Update personal info error:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to update personal information' });
   }
 });
@@ -136,8 +135,7 @@ router.put('/me/contact-info', authenticate, async (req, res) => {
     );
 
     return res.json({ success: true, message: 'Contact information updated successfully' });
-  } catch (error) {
-    console.error('Update contact info error:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to update contact information' });
   }
 });
@@ -158,8 +156,7 @@ router.put('/me/emergency-contact', authenticate, async (req, res) => {
     );
 
     return res.json({ success: true, message: 'Emergency contact updated successfully' });
-  } catch (error) {
-    console.error('Update emergency contact error:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to update emergency contact' });
   }
 });
@@ -191,8 +188,7 @@ router.post('/me/change-password', authenticate, async (req, res) => {
     await db.query(`UPDATE users SET password_hash = $1, password_changed_at = NOW(), updated_at = NOW() WHERE id = $2`, [newPasswordHash, userId]);
 
     return res.json({ success: true, message: 'Password changed successfully' });
-  } catch (error) {
-    console.error('Change password error:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to change password' });
   }
 });
@@ -215,8 +211,7 @@ router.post('/me/avatar', authenticate, uploadAvatar.single('avatar'), async (re
 
     await db.query('UPDATE users SET avatar_url = $1, updated_at = NOW() WHERE id = $2', [avatarUrl, userId]);
     return res.json({ success: true, data: { avatarUrl }, message: 'Avatar uploaded successfully' });
-  } catch (error) {
-    console.error('Upload avatar error:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to upload avatar' });
   }
 });
@@ -234,8 +229,7 @@ router.delete('/me/avatar', authenticate, async (req, res) => {
 
     await db.query('UPDATE users SET avatar_url = NULL, updated_at = NOW() WHERE id = $1', [userId]);
     return res.json({ success: true, message: 'Avatar removed successfully' });
-  } catch (error) {
-    console.error('Delete avatar error:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to remove avatar' });
   }
 });
@@ -323,9 +317,8 @@ router.get('/', authenticate, async (req, res) => {
       data: result.rows,
       pagination: { page, limit, total, pages: totalPages }
     });
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch users', error: error.message });
+  } catch {
+    return res.status(500).json({ success: false, message: 'Failed to fetch users' });
   }
 });
 
@@ -359,8 +352,7 @@ router.get('/stats/summary', authenticate, async (req, res) => {
 
     const result = await db.query(statsQuery, params);
     return res.json({ success: true, data: result.rows[0] });
-  } catch (error) {
-    console.error('Error fetching user stats:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to fetch user statistics' });
   }
 });
@@ -391,8 +383,7 @@ router.get('/:id', authenticate, async (req, res) => {
     }
 
     return res.json({ success: true, data: result.rows[0] });
-  } catch (error) {
-    console.error('Error fetching user:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to fetch user' });
   }
 });
@@ -438,8 +429,7 @@ router.post('/', authenticate, authorize('super_admin', 'school_admin'), [
     );
 
     return res.status(201).json({ success: true, data: result.rows[0], message: 'User created successfully' });
-  } catch (error) {
-    console.error('Error creating user:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to create user' });
   }
 });
@@ -485,8 +475,7 @@ router.put('/:id', authenticate, authorize('super_admin', 'school_admin'), audit
     }
 
     return res.json({ success: true, data: result.rows[0], message: 'User updated successfully' });
-  } catch (error) {
-    console.error('Error updating user:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to update user' });
   }
 });
@@ -519,8 +508,7 @@ router.patch('/:id/status', authenticate, authorize('super_admin', 'school_admin
     }
 
     return res.json({ success: true, data: result.rows[0], message: is_active ? 'User activated successfully' : 'User deactivated successfully' });
-  } catch (error) {
-    console.error('Error updating user status:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to update user status' });
   }
 });
@@ -552,8 +540,7 @@ router.post('/:id/unlock', authenticate, authorize('super_admin', 'school_admin'
     }
 
     return res.json({ success: true, data: result.rows[0], message: 'User account unlocked successfully' });
-  } catch (error) {
-    console.error('Error unlocking user:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to unlock user' });
   }
 });
@@ -581,8 +568,7 @@ router.post('/:id/reset-password', authenticate, authorize('super_admin', 'schoo
     await db.query(`UPDATE users SET password_reset_required = true, updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL`, [id]);
 
     return res.json({ success: true, message: 'Password reset email sent successfully' });
-  } catch (error) {
-    console.error('Error resetting password:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to reset password' });
   }
 });
@@ -618,8 +604,7 @@ router.delete('/:id', authenticate, authorize('super_admin', 'school_admin'), au
     }
 
     return res.json({ success: true, message: 'User deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting user:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to delete user' });
   }
 });
@@ -645,8 +630,7 @@ router.get('/me/notification-preferences', authenticate, async (req, res) => {
         email: true, sms: true, announcements: true, attendance: true, grades: true, fees: true
       }
     });
-  } catch (error) {
-    console.error('Get notification preferences error:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to fetch notification preferences' });
   }
 });
@@ -684,8 +668,7 @@ router.put('/me/notification-preferences', authenticate, async (req, res) => {
       data: result.rows[0].notification_preferences,
       message: 'Notification preferences updated successfully'
     });
-  } catch (error) {
-    console.error('Update notification preferences error:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to update notification preferences' });
   }
 });
@@ -719,8 +702,7 @@ router.get('/me/security-settings', authenticate, async (req, res) => {
         lastActivity: result.rows[0].last_activity
       }
     });
-  } catch (error) {
-    console.error('Get security settings error:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to fetch security settings' });
   }
 });
@@ -741,8 +723,7 @@ router.put('/me/security-settings', authenticate, async (req, res) => {
     );
 
     return res.json({ success: true, message: 'Security settings updated successfully' });
-  } catch (error) {
-    console.error('Update security settings error:', error);
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to update security settings' });
   }
 });
@@ -775,7 +756,7 @@ router.post('/me/trusted-device', authenticate, async (req, res) => {
     await db.query('UPDATE users SET trusted_devices = $1, updated_at = NOW() WHERE id = $2', [JSON.stringify(trustedDevices), userId]);
     return res.json({ success: true, message: 'Device added to trusted list' });
   } catch (error) {
-    console.error('Add trusted device error:', error);
+    logger.error('Add trusted device error:', error);
     return res.status(500).json({ success: false, message: 'Failed to add trusted device' });
   }
 });
@@ -793,28 +774,22 @@ router.delete('/me/trusted-device/:deviceId', authenticate, async (req, res) => 
     await db.query('UPDATE users SET trusted_devices = $1, updated_at = NOW() WHERE id = $2', [JSON.stringify(trustedDevices), userId]);
     return res.json({ success: true, message: 'Trusted device removed' });
   } catch (error) {
-    console.error('Remove trusted device error:', error);
+    logger.error('Remove trusted device error:', error);
     return res.status(500).json({ success: false, message: 'Failed to remove trusted device' });
   }
 });
 
 // POST /api/users/me/update-activity
-router.post('/me/update-activity', authenticate, async (req, res) => {
-  try {
-    console.log('🔍 UPDATE-ACTIVITY CALLED:', { userId: req.user?.id, timestamp: new Date().toISOString() });
-    
+router.post('/me/update-activity', authenticate, async (req, res) => {    try {
     if (!req.user?.id) {
-      console.log('❌ NO USER IN REQ.USER - AUTH FAILED');
       return res.status(401).json({ success: false, message: 'No authenticated user' });
     }
     
     const userId = req.user.id;
     const result = await db.query('UPDATE users SET last_activity = NOW() WHERE id = $1 RETURNING id, last_activity', [userId]);
     
-    console.log('✅ ACTIVITY UPDATED:', result.rows[0]);
     return res.json({ success: true, last_activity: result.rows[0]?.last_activity });
   } catch (error) {
-    console.error('❌ Update activity error:', error);
     return res.status(500).json({ success: false, message: 'Failed to update activity' });
   }
 });

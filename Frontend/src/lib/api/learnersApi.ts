@@ -11,7 +11,6 @@ const getApiUrl = (): string => {
 };
 
 export const API_URL = getApiUrl();
-console.log('[learnersApi] API_URL:', API_URL);
 
 const getAuthToken = (): string | null => localStorage.getItem('cbe_access_token');
 

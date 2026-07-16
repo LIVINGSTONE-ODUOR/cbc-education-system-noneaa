@@ -12,6 +12,7 @@ const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer'); // or your email utility
+const logger = require('../utils/logger');
 
 // ---------------------------------------------------------------------------
 // Supabase client (service-role so we bypass RLS where needed)
@@ -129,7 +130,7 @@ const inviteTeacher = asyncHandler(async (req, res) => {
     .maybeSingle();
 
   if (existingUserErr) {
-    console.error('[inviteTeacher] Failed to check existing user:', existingUserErr.message);
+    logger.error('[inviteTeacher] Failed to check existing user:', existingUserErr.message);
     return res.status(500).json({
       success: false,
       message: 'Failed to check for an existing account with this email',
@@ -159,7 +160,7 @@ const inviteTeacher = asyncHandler(async (req, res) => {
     .maybeSingle();
 
   if (employeeNumberErr) {
-    console.error('[inviteTeacher] Failed to check existing employee number:', employeeNumberErr.message);
+    logger.error('[inviteTeacher] Failed to check existing employee number:', employeeNumberErr.message);
     return res.status(500).json({
       success: false,
       message: 'Failed to check for an existing employee number',
@@ -213,7 +214,7 @@ const inviteTeacher = asyncHandler(async (req, res) => {
         error: userError.message,
       });
     }
-    console.error('[inviteTeacher] Failed to create user:', userError.message);
+    logger.error('[inviteTeacher] Failed to create user:', userError.message);
     return res.status(500).json({ success: false, message: 'Failed to create user', error: userError.message });
   }
 
@@ -276,11 +277,11 @@ const inviteTeacher = asyncHandler(async (req, res) => {
 //    List all teachers for the school (paginated, with user info)
 // =============================================================================
 const listTeachers = asyncHandler(async (req, res) => {
-  console.log('AUTH USER:', req.user);
+  logger.debug('AUTH USER:', req.user);
   const school_id = req.user?.schoolId;
 
   if (!school_id) {
-    console.error("Missing school_id in request", req.user);
+    logger.error("Missing school_id in request", req.user);
     return res.status(401).json({
       success: false,
       message: "School ID required (authentication issue)"
@@ -365,7 +366,7 @@ const listTeachers = asyncHandler(async (req, res) => {
 
   if (joinError) {
     // DEV logging: show real Supabase error to quickly pinpoint join/schema/RLS issues.
-    console.error('[teachers:listTeachers] Complex join failed', {
+    logger.error('[teachers:listTeachers] Complex join failed', {
       message: joinError.message,
       code: joinError.code,
       hint: joinError.hint,
@@ -481,8 +482,8 @@ const getTeacher = asyncHandler(async (req, res) => {
   const { schoolId: school_id, role } = req.user;
   const { id } = req.params;
 
-  console.log('[DEBUG] getTeacher called for ID:', id);
-  console.log('[DEBUG] User role:', role, 'School ID:', school_id);
+  logger.debug('[DEBUG] getTeacher called for ID:', id);
+  logger.debug('[DEBUG] User role:', role, 'School ID:', school_id);
 
   const baseFields = `
       id,
@@ -550,7 +551,7 @@ const getTeacher = asyncHandler(async (req, res) => {
   let { data: teacher, error } = await buildQuery(fullSelect).single();
 
   if (error) {
-    console.error('[getTeacher] Full join failed, retrying with simpler assignments join:', {
+    logger.error('[getTeacher] Full join failed, retrying with simpler assignments join:', {
       message: error.message, code: error.code, hint: error.hint, id,
     });
 
@@ -568,7 +569,7 @@ const getTeacher = asyncHandler(async (req, res) => {
   }
 
   if (error) {
-    console.error('[getTeacher] Simpler join also failed, retrying with no assignments join:', {
+    logger.error('[getTeacher] Simpler join also failed, retrying with no assignments join:', {
       message: error.message, code: error.code, hint: error.hint, id,
     });
 
@@ -579,7 +580,7 @@ const getTeacher = asyncHandler(async (req, res) => {
   if (error) {
     // At this point the teacher row genuinely doesn't exist / isn't
     // accessible to this user — a real 404.
-    console.error('[getTeacher] Teacher truly not found:', {
+    logger.error('[getTeacher] Teacher truly not found:', {
       message: error.message, code: error.code, id, role, school_id,
     });
     return res.status(404).json({
@@ -616,8 +617,8 @@ const updateTeacher = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const query_school_id = req.query.school_id;
 
-  console.log('[DEBUG] updateTeacher req.user:', req.user);
-  console.log('[DEBUG] updateTeacher check:', { teacherId: id, userSchoolId: user_school_id, querySchoolId: query_school_id, userRole: role });
+  logger.debug('[DEBUG] updateTeacher req.user:', req.user);
+  logger.debug('[DEBUG] updateTeacher check:', { teacherId: id, userSchoolId: user_school_id, querySchoolId: query_school_id, userRole: role });
 
   if (!['school_admin', 'super_admin'].includes(role)) {
     return res.status(403).json({ success: false, message: 'Insufficient permissions' });
@@ -633,14 +634,14 @@ const updateTeacher = asyncHandler(async (req, res) => {
 
   // Skip school filter for super_admin or if no school context
   if (role === 'super_admin' || !effective_school_id) {
-    console.log('[DEBUG] Super admin bypass or no school_id - querying by ID only');
+    logger.debug('[DEBUG] Super admin bypass or no school_id - querying by ID only');
   } else {
     query = query.eq('school_id', effective_school_id);
   }
 
   const { data: existing, error: fetchErr } = await query.single();
 
-  console.log('[DEBUG] teacher query result:', { existing, error: fetchErr?.message });
+  logger.debug('[DEBUG] teacher query result:', { existing, error: fetchErr?.message });
 
   if (fetchErr || !existing) {
     const schoolInfo = effective_school_id ? `School: ${effective_school_id}` : 'No school filter';
@@ -650,7 +651,7 @@ const updateTeacher = asyncHandler(async (req, res) => {
     });
   }
 
-  console.log('[DEBUG] updateTeacher FULL payload (snake_case):', req.body);
+  logger.debug('[DEBUG] updateTeacher FULL payload (snake_case):', req.body);
   
   // Full destructuring - handle all possible fields from frontend StaffMember (post-camelToSnake)
   const {
@@ -696,7 +697,7 @@ const updateTeacher = asyncHandler(async (req, res) => {
       updated_by: req.user.id 
     };
     
-    console.log('[DEBUG] Teachers UPDATE:', cleanTeacherUpdates);
+    logger.debug('[DEBUG] Teachers UPDATE:', cleanTeacherUpdates);
     const { error: updateErr, data: updatedData } = await supabase
       .from('teachers')
       .update(cleanTeacherUpdates)
@@ -704,13 +705,13 @@ const updateTeacher = asyncHandler(async (req, res) => {
       .select();
     
     if (updateErr) {
-      console.error('[ERROR] Teachers update failed:', updateErr);
+      logger.error('[ERROR] Teachers update failed:', updateErr);
       return res.status(500).json({ success: false, message: 'Failed to update teacher', error: updateErr.message });
     }
     if (!updatedData || updatedData.length === 0) {
       return res.status(404).json({ success: false, message: 'Teacher not found' });
     }
-    console.log('[DEBUG] Teachers updated:', updatedData);
+    logger.debug('[DEBUG] Teachers updated:', updatedData);
   }
 
   // ========== USERS TABLE UPDATES ==========
@@ -721,7 +722,7 @@ const updateTeacher = asyncHandler(async (req, res) => {
   
   // Skip email updates for security
   if (email !== undefined) {
-    console.warn('[WARN] Email update ignored for security');
+    logger.warn('[WARN] Email update ignored for security');
   }
 
   // Teachers log in with email + employee number, so if the admin changes
@@ -741,17 +742,17 @@ const updateTeacher = asyncHandler(async (req, res) => {
       updated_by: req.user.id 
     };
     
-    console.log('[DEBUG] Users UPDATE:', cleanUserUpdates);
+    logger.debug('[DEBUG] Users UPDATE:', cleanUserUpdates);
     const { error: userUpdateErr } = await supabase
       .from('users')
       .update(cleanUserUpdates)
       .eq('id', existing.user_id);
     
     if (userUpdateErr) {
-      console.error('[ERROR] Users update failed:', userUpdateErr);
+      logger.error('[ERROR] Users update failed:', userUpdateErr);
       // Don't fail whole transaction - teachers already updated
     } else {
-      console.log('[DEBUG] Users updated successfully');
+      logger.debug('[DEBUG] Users updated successfully');
     }
   }
 
@@ -797,11 +798,11 @@ const updateTeacher = asyncHandler(async (req, res) => {
   const { data: updated, error: fetchError } = await finalQuery.single();
 
   if (fetchError || !updated) {
-    console.error('[DEBUG] Fetch error after update:', fetchError);
+    logger.error('[DEBUG] Fetch error after update:', fetchError);
     return res.status(404).json({ success: false, message: 'Updated teacher not found' });
   }
 
-  console.log('[DEBUG] Returning updated teacher:', updated);
+  logger.debug('[DEBUG] Returning updated teacher:', updated);
 
   res.json({ 
     success: true, 
@@ -1343,7 +1344,7 @@ const listTeacherAssignments = asyncHandler(async (req, res) => {
   let { data: assignments, error } = await buildAssignmentsQuery(fullSelect);
 
   if (error) {
-    console.error('[listTeacherAssignments] Full join failed, retrying with simpler join:', {
+    logger.error('[listTeacherAssignments] Full join failed, retrying with simpler join:', {
       message: error.message, code: error.code, hint: error.hint, teacherId,
     });
 
@@ -1360,7 +1361,7 @@ const listTeacherAssignments = asyncHandler(async (req, res) => {
   }
 
   if (error) {
-    console.error('[listTeacherAssignments] Simpler join also failed, retrying with no joins:', {
+    logger.error('[listTeacherAssignments] Simpler join also failed, retrying with no joins:', {
       message: error.message, code: error.code, hint: error.hint, teacherId,
     });
 
@@ -1371,7 +1372,7 @@ const listTeacherAssignments = asyncHandler(async (req, res) => {
   }
 
   if (error) {
-    console.error('[listTeacherAssignments] All fallbacks failed:', {
+    logger.error('[listTeacherAssignments] All fallbacks failed:', {
       message: error.message, code: error.code, hint: error.hint, teacherId,
     });
     return res.status(500).json({ success: false, message: 'Failed to fetch assignments', error: error.message });
@@ -1567,7 +1568,7 @@ const getMyClassStudents = asyncHandler(async (req, res) => {
     .maybeSingle();
 
   if (assignmentErr) {
-    console.error('[getMyClassStudents] Failed to verify assignment:', {
+    logger.error('[getMyClassStudents] Failed to verify assignment:', {
       message: assignmentErr.message, code: assignmentErr.code, teacherId: teacher.id, classId,
     });
     return res.status(500).json({ success: false, message: 'Failed to verify class assignment', error: assignmentErr.message });

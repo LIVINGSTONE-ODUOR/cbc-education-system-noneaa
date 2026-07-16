@@ -15,6 +15,7 @@
 // ================================================================
 
 const { query } = require('../config/database');
+const logger = require('../utils/logger');
 
 // ----------------------------------------------------------------
 // Constants — adjust based on your DB ENUM types
@@ -146,7 +147,7 @@ const getFeeStructures = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[getFeeStructures] Error:', err.message);
+    logger.error('[getFeeStructures] Error:', err.message);
     return respond(res, 500, false, 'Failed to retrieve fee structures');
   }
 };
@@ -232,7 +233,7 @@ const getFeesByGrade = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[getFeesByGrade] Error:', err.message);
+    logger.error('[getFeesByGrade] Error:', err.message);
     return respond(res, 500, false, 'Failed to retrieve fees for grade');
   }
 };
@@ -277,7 +278,7 @@ const getFeeStructureById = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[getFeeStructureById] Error:', err.message);
+    logger.error('[getFeeStructureById] Error:', err.message);
     return respond(res, 500, false, 'Failed to retrieve fee structure');
   }
 };
@@ -396,7 +397,7 @@ const createFeeStructure = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[createFeeStructure] Error:', err.message);
+    logger.error('[createFeeStructure] Error:', err.message);
 
     if (err.code === '23505') {
       return respond(res, 409, false, 'A similar fee structure already exists');
@@ -522,7 +523,7 @@ const updateFeeStructure = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[updateFeeStructure] Error:', err.message);
+    logger.error('[updateFeeStructure] Error:', err.message);
     return respond(res, 500, false, 'Failed to update fee structure');
   }
 };
@@ -583,7 +584,7 @@ const deleteFeeStructure = async (req, res) => {
     return respond(res, 200, true, 'Fee structure deleted successfully');
 
   } catch (err) {
-    console.error('[deleteFeeStructure] Error:', err.message);
+    logger.error('[deleteFeeStructure] Error:', err.message);
     return respond(res, 500, false, 'Failed to delete fee structure');
   }
 };
@@ -711,7 +712,7 @@ const duplicateFromYear = async (req, res) => {
     );
 
   } catch (err) {
-    console.error('[duplicateFromYear] Error:', err.message);
+    logger.error('[duplicateFromYear] Error:', err.message);
     return respond(res, 500, false, 'Failed to duplicate fee structures');
   }
 };
@@ -766,7 +767,7 @@ const getFeesSummary = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[getFeesSummary] Error:', err.message);
+    logger.error('[getFeesSummary] Error:', err.message);
     return respond(res, 500, false, 'Failed to get fee summary');
   }
 };

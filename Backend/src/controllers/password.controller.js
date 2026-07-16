@@ -6,10 +6,11 @@ const {
   isValidEmail,
   validatePassword
 } = require('../config/auth');
+const logger = require('../utils/logger');
 
 // Helper function to send password reset email (placeholder for email service)
-const sendPasswordResetEmail = async (email, token) => {
-  console.log(`📧 Password reset email sent to ${email} with token: ${token}`);
+const sendPasswordResetEmail = async (email) => {
+  logger.info(`Password reset email sent to ${email}`);
   return true;
 };
 
@@ -56,10 +57,10 @@ exports.requestPasswordReset = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Password reset request error:', error);
+    logger.error('Password reset request error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error during password reset request.'
+      message: 'Unable to process request. Please try again.'
     });
   }
 };
@@ -111,10 +112,10 @@ exports.resetPassword = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Password reset error:', error);
+    logger.error('Password reset error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error during password reset.'
+      message: 'Unable to process request. Please try again.'
     });
   }
 };
@@ -161,10 +162,10 @@ exports.changePassword = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Change password error:', error);
+    logger.error('Change password error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error during password change.'
+      message: 'Unable to process request. Please try again.'
     });
   }
 };
@@ -207,10 +208,10 @@ exports.verifyEmail = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Email verification error:', error);
+    logger.error('Email verification error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error during email verification.'
+      message: 'Unable to process request. Please try again.'
     });
   }
 };

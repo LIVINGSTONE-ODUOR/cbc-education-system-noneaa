@@ -11,6 +11,7 @@ const asyncHandler = require('express-async-handler');
 const csv = require('csv-parse/sync');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const logger = require('../utils/logger');
 const { sendParentCredentialsEmail } = require('../utils/email');
 
 // Supabase service-role client (bypasses RLS for admin operations)
@@ -203,10 +204,10 @@ const registerLearner = asyncHandler(async (req, res) => {
     .single();
 
   if (error) {
+    logger.error('Failed to register learner:', error.message);
     return res.status(500).json({
       success: false,
-      message: 'Failed to register learner',
-      error: error.message
+      message: 'Failed to register learner'
     });
   }
 
@@ -229,7 +230,7 @@ const registerLearner = asyncHandler(async (req, res) => {
     .maybeSingle();
 
   if (schoolLookupErr || !schoolRow?.subdomain) {
-    console.error('[registerLearner] Could not resolve school subdomain for student login:', schoolLookupErr?.message);
+    logger.error('[registerLearner] Could not resolve school subdomain for student login:', schoolLookupErr?.message);
     learnerAccountWarning = 'Learner registered, but a student login could not be created (school subdomain missing).';
   } else {
     const studentUsername = `${admission_number}@${schoolRow.subdomain}.${rootDomain}`;
@@ -269,7 +270,7 @@ const registerLearner = asyncHandler(async (req, res) => {
         });
 
       if (studentUserErr) {
-        console.error('[registerLearner] Failed to create student login:', studentUserErr.message);
+        logger.error('[registerLearner] Failed to create student login:', studentUserErr.message);
         learnerAccountWarning = `Learner registered, but the student login could not be created: ${studentUserErr.message}`;
       } else {
         studentCredentials = {
@@ -308,7 +309,7 @@ const registerLearner = asyncHandler(async (req, res) => {
         .maybeSingle();
 
       if (existingParentErr) {
-        console.error('[registerLearner] Failed to look up existing parent:', existingParentErr.message);
+        logger.error('[registerLearner] Failed to look up existing parent:', existingParentErr.message);
         parentWarning = 'Could not look up parent record; learner saved without a linked parent.';
       } else if (existingParent) {
         parentInfo = existingParent;
@@ -330,13 +331,13 @@ const registerLearner = asyncHandler(async (req, res) => {
               relationship: parent_info.relationship || 'guardian',
               is_primary: true
             });
-          if (linkErr) console.error('[registerLearner] Failed to link existing parent:', linkErr.message);
+          if (linkErr) logger.error('[registerLearner] Failed to link existing parent:', linkErr.message);
 
           const { error: updateErr } = await supabase
             .from('learners')
             .update({ parent_id: existingParent.id })
             .eq('id', learner.id);
-          if (updateErr) console.error('[registerLearner] Failed to set learner.parent_id:', updateErr.message);
+          if (updateErr) logger.error('[registerLearner] Failed to set learner.parent_id:', updateErr.message);
         }
       } else {
         // ✅ No parent row for this school yet. Before creating a brand-new
@@ -353,7 +354,7 @@ const registerLearner = asyncHandler(async (req, res) => {
           .maybeSingle();
 
         if (existingUserErr) {
-          console.error('[registerLearner] Failed to look up existing user:', existingUserErr.message);
+          logger.error('[registerLearner] Failed to look up existing user:', existingUserErr.message);
           parentWarning = 'Could not verify parent email; learner saved without a linked parent.';
         } else {
           let parentUserId = existingUser?.id || null;
@@ -388,7 +389,7 @@ const registerLearner = asyncHandler(async (req, res) => {
               // Do NOT `return` here — the learner is already saved and the
               // caller still needs an HTTP response. Just record a warning
               // and skip parent creation; the response is still sent below.
-              console.error('[registerLearner] Failed to create parent user:', userError.message);
+              logger.error('[registerLearner] Failed to create parent user:', userError.message);
               parentWarning = `Learner registered, but parent account could not be created: ${userError.message}`;
             } else {
               parentUserId = newUser.id;
@@ -416,7 +417,7 @@ const registerLearner = asyncHandler(async (req, res) => {
               .single();
 
             if (parentError) {
-              console.error('[registerLearner] Failed to create parent record:', parentError.message);
+              logger.error('[registerLearner] Failed to create parent record:', parentError.message);
               parentWarning = `Learner registered, but parent record could not be saved: ${parentError.message}`;
             } else {
               parentInfo = parentRecord;
@@ -430,13 +431,13 @@ const registerLearner = asyncHandler(async (req, res) => {
                   relationship: parent_info.relationship || 'guardian',
                   is_primary: true
                 });
-              if (linkErr) console.error('[registerLearner] Failed to link new parent:', linkErr.message);
+              if (linkErr) logger.error('[registerLearner] Failed to link new parent:', linkErr.message);
 
               const { error: updateErr } = await supabase
                 .from('learners')
                 .update({ parent_id: parentRecord.id })
                 .eq('id', learner.id);
-              if (updateErr) console.error('[registerLearner] Failed to set learner.parent_id:', updateErr.message);
+              if (updateErr) logger.error('[registerLearner] Failed to set learner.parent_id:', updateErr.message);
 
               // ✅ Email the parent their portal login (only for brand-new
               // accounts — an existing parent already has credentials).
@@ -464,7 +465,7 @@ const registerLearner = asyncHandler(async (req, res) => {
     } catch (error) {
       // Catch-all: never let a parent-creation problem take down the
       // response for an already-saved learner.
-      console.error('[registerLearner] Error handling parent creation:', error.message);
+      logger.error('[registerLearner] Error handling parent creation:', error.message);
       parentWarning = 'Learner registered, but an unexpected error occurred while saving the parent.';
     }
   }
@@ -516,7 +517,7 @@ const registerLearner = asyncHandler(async (req, res) => {
     // table does not have this column yet. Add it back once a migration
     // adds learner_enrollments.term_id (see Backend/migrations).
 
-    console.log('[registerLearner] Creating enrollment with payload:', enrollmentPayload);
+    logger.info('Creating enrollment for learner');
 
     const { data: enrollment, error: enrollmentError } = await supabase
       .from('learner_enrollments')
@@ -525,7 +526,7 @@ const registerLearner = asyncHandler(async (req, res) => {
       .single();
 
     if (enrollmentError) {
-      console.error('[registerLearner] Enrollment insert failed:', {
+      logger.error('[registerLearner] Enrollment insert failed:', {
         error: enrollmentError.message,
         code: enrollmentError.code,
         details: enrollmentError.details,
@@ -779,11 +780,10 @@ const listLearners = asyncHandler(async (req, res) => {
   const { data: learners, error, count } = await query;
 
   if (error) {
-    console.error('List learners error:', error);
+    logger.error('List learners error:', error.message);
     return res.status(500).json({
       success: false,
-      message: 'Failed to fetch learners',
-      error: error.message
+      message: 'Failed to fetch learners'
     });
   }
 
@@ -1167,7 +1167,7 @@ const updateLearner = asyncHandler(async (req, res) => {
   const { data: learner, error } = await updateQuery.select().single();
 
   if (error) {
-    console.error('[updateLearner] Update error:', error);
+    logger.error('[updateLearner] Update error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to update learner',
@@ -1196,7 +1196,7 @@ const updateLearner = asyncHandler(async (req, res) => {
 
       if (existingParent) {
         parentInfo = existingParent;
-        console.log('[updateLearner] Found existing parent:', existingParent.id);
+        logger.debug('[updateLearner] Found existing parent:', existingParent.id);
 
         // Check if learner is already linked to this parent
         const { data: existingLink } = await supabase
@@ -1227,7 +1227,7 @@ const updateLearner = asyncHandler(async (req, res) => {
         }
       } else {
         // ✅ CREATE NEW PARENT WITH USER ACCOUNT
-        console.log('[updateLearner] Creating new parent account');
+        logger.debug('[updateLearner] Creating new parent account');
 
         // Portal login = parent's email (username) + phone number (password),
         // matching registerLearner and parent.controller.js.
@@ -1253,7 +1253,7 @@ const updateLearner = asyncHandler(async (req, res) => {
           .single();
 
         if (userError) {
-          console.error('[updateLearner] Failed to create user:', userError);
+          logger.error('[updateLearner] Failed to create user:', userError);
           return res.status(500).json({
             success: false,
             message: 'Failed to create parent user account',
@@ -1262,7 +1262,7 @@ const updateLearner = asyncHandler(async (req, res) => {
         }
 
         const userId = newUser.id;
-        console.log('[updateLearner] Created user:', userId);
+        logger.debug('[updateLearner] Created user:', userId);
 
         // Now create parent record with user_id
         const { data: parentRecord, error: parentError } = await supabase
@@ -1283,7 +1283,7 @@ const updateLearner = asyncHandler(async (req, res) => {
           .single();
 
         if (parentError) {
-          console.error('[updateLearner] Failed to create parent:', parentError);
+          logger.error('[updateLearner] Failed to create parent:', parentError);
           // Roll back user if parent creation fails
           await supabase.from('users').delete().eq('id', userId);
           return res.status(500).json({
@@ -1294,7 +1294,7 @@ const updateLearner = asyncHandler(async (req, res) => {
         }
 
         parentInfo = parentRecord;
-        console.log('[updateLearner] Created parent:', parentRecord.id);
+        logger.debug('[updateLearner] Created parent:', parentRecord.id);
 
         // Link parent to learner
         await supabase
@@ -1313,7 +1313,7 @@ const updateLearner = asyncHandler(async (req, res) => {
           .eq('id', id);
       }
     } catch (error) {
-      console.error('[updateLearner] Error handling parent:', error);
+      logger.error('[updateLearner] Error handling parent:', error);
       // Don't fail the whole update, just log the warning
     }
   }
@@ -1429,15 +1429,6 @@ const deleteLearner = asyncHandler(async (req, res) => {
 //    Enroll learner in a class
 // =============================================================================
 const enrollLearner = asyncHandler(async (req, res) => {
-  console.log('[DEBUG enrollLearner] START:', {
-    learnerId: req.params.id,
-    classId: req.body.class_id,
-    schoolId: getSchoolId(req),
-    user: req.user
-      ? { role: req.user.role, schoolId: req.user.schoolId, school_id: req.user.school_id }
-      : null
-  });
-
   const school_id = getSchoolId(req);
   const { role } = req.user;
   const { id } = req.params;
@@ -1461,7 +1452,6 @@ const enrollLearner = asyncHandler(async (req, res) => {
   }
 
   const { data: learner, error: learnerError } = await learnerQuery.single();
-  console.log('[DEBUG enrollLearner] Learner:', learner, 'Error:', learnerError);
 
   if (!learner) {
     return res.status(404).json({
@@ -1488,7 +1478,6 @@ const enrollLearner = asyncHandler(async (req, res) => {
   }
 
   const { data: classData, error: classError } = await classQuery.single();
-  console.log('[DEBUG enrollLearner] Class:', classData, 'Error:', classError);
 
   if (!classData) {
     return res.status(404).json({
@@ -1541,7 +1530,7 @@ const enrollLearner = asyncHandler(async (req, res) => {
         .single();
 
       if (error) {
-        console.error('[DEBUG enrollLearner] Re-enroll error:', error);
+        logger.error('[enrollLearner] Re-enroll error:', error);
         return res.status(500).json({
           success: false,
           message: 'Failed to re-enroll learner',
@@ -1549,7 +1538,6 @@ const enrollLearner = asyncHandler(async (req, res) => {
         });
       }
 
-      console.log('[DEBUG enrollLearner] Re-enrolled successfully:', enrollment);
       return res.json({
         success: true,
         message: 'Learner re-enrolled successfully',
@@ -1568,7 +1556,6 @@ const enrollLearner = asyncHandler(async (req, res) => {
       .limit(1)
       .single();
 
-    console.log('[DEBUG enrollLearner] Current academic year:', currentYear);
     if (currentYear) {
       finalAcademicYearId = currentYear.id;
     }
@@ -1583,7 +1570,6 @@ const enrollLearner = asyncHandler(async (req, res) => {
     enrollment_date: enrollment_date || new Date().toISOString().split('T')[0],
     status: 'enrolled'
   };
-  console.log('[DEBUG enrollLearner] Creating enrollment with payload:', enrollmentPayload);
 
   const { data: enrollment, error } = await supabase
     .from('learner_enrollments')
@@ -1592,16 +1578,12 @@ const enrollLearner = asyncHandler(async (req, res) => {
     .single();
 
   if (error) {
-    console.error('[DEBUG enrollLearner] Insert error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to enroll learner',
-      error: error.message,
-      details: error
+      message: 'Failed to enroll learner'
     });
   }
 
-  console.log('[DEBUG enrollLearner] Success:', enrollment);
   res.status(201).json({
     success: true,
     message: 'Learner enrolled successfully',

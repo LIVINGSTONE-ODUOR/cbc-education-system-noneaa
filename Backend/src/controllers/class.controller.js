@@ -9,6 +9,7 @@
 
 const { createClient } = require('@supabase/supabase-js');
 const asyncHandler = require('express-async-handler');
+const logger = require('../utils/logger');
 
 // ---------------------------------------------------------------------------
 // Supabase client (service-role)
@@ -198,7 +199,7 @@ const createClass = asyncHandler(async (req, res) => {
   }
 
   if (error) {
-    console.error('[classes:createClass] insert failed', {
+    logger.error('[classes:createClass] insert failed', {
       attemptedTeacherId: class_teacher_id || null,
       retriedWithUserId: resolvedTeacher?.user_id,
       code: error.code,
@@ -332,7 +333,7 @@ const listClasses = asyncHandler(async (req, res) => {
       .in('class_id', classIds);
 
     if (enrollmentCountError) {
-      console.error('[listClasses] learner_count aggregation error:', enrollmentCountError);
+      logger.error('[listClasses] learner_count aggregation error:', enrollmentCountError);
     } else {
       learnerCounts = (enrollments || []).reduce((acc, row) => {
         acc[row.class_id] = (acc[row.class_id] || 0) + 1;
@@ -518,7 +519,7 @@ const updateClass = asyncHandler(async (req, res) => {
   }
 
   if (error) {
-    console.error('[classes:updateClass] update failed', {
+    logger.error('[classes:updateClass] update failed', {
       classId: id,
       attemptedTeacherId: updatePayload.class_teacher_id,
       retriedWithUserId: resolvedTeacher?.user_id,
@@ -664,7 +665,7 @@ const getClassLearners = asyncHandler(async (req, res) => {
   const { data: allLearners, error } = await query;
 
   if (error) {
-    console.error('[getClassLearners] Query error:', {
+    logger.error('[getClassLearners] Query error:', {
       message: error.message,
       code: error.code,
       details: error.details,

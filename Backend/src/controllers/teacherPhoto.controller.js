@@ -2,19 +2,14 @@ const { createClient } = require('@supabase/supabase-js');
 const asyncHandler = require('express-async-handler');
 const path = require('path');
 const sharp = require('sharp');
+const logger = require('../utils/logger');
 
 // Supabase storage client (service role)
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 // POST /api/v1/teachers/upload-photo
-// Upload teacher profile photo to the 'student-photos' bucket, under a
-// teachers/ prefix (reuses the existing bucket so no new Supabase Storage
-// bucket needs to be created).
 const uploadTeacherPhoto = asyncHandler(async (req, res) => {
-  console.log('[uploadTeacherPhoto] START', {
-    hasFile: !!req.file,
-    user: req.user ? { id: req.user.id, role: req.user.role, schoolId: req.user.schoolId } : null
-  });
+  logger.debug('Teacher photo upload started');
 
   if (!req.user) {
     return res.status(401).json({ success: false, message: 'Authentication required' });
@@ -29,7 +24,6 @@ const uploadTeacherPhoto = asyncHandler(async (req, res) => {
   }
 
   const file = req.file;
-  const school_id = req.user.schoolId;
   const label = req.body.filename || req.body.employee_number || path.parse(file.originalname).name;
 
   if (!file.mimetype.startsWith('image/')) {
@@ -44,7 +38,7 @@ const uploadTeacherPhoto = asyncHandler(async (req, res) => {
     const timestamp = Date.now();
     const safeLabel = String(label).replace(/[^a-zA-Z0-9-_]/g, '') || 'teacher';
     const fileName = `${safeLabel}-${timestamp}.webp`;
-    const filePath = `teachers/${school_id}/${fileName}`;
+    const filePath = `teachers/${req.user.schoolId || 'unknown'}/${fileName}`;
 
     const buffer = await sharp(file.buffer)
       .resize(400, 400, { fit: 'cover' })
@@ -59,11 +53,10 @@ const uploadTeacherPhoto = asyncHandler(async (req, res) => {
       });
 
     if (error) {
-      console.error('[uploadTeacherPhoto] Storage upload error:', error);
+      logger.error('Storage upload failed:', error.message);
       return res.status(500).json({
         success: false,
-        message: 'Failed to upload photo to storage',
-        error: error.message
+        message: 'Failed to upload photo to storage'
       });
     }
 
@@ -77,7 +70,7 @@ const uploadTeacherPhoto = asyncHandler(async (req, res) => {
       return res.status(500).json({ success: false, message: 'Failed to get public URL' });
     }
 
-    console.log('[uploadTeacherPhoto] Success', { publicUrl });
+    logger.debug('Teacher photo uploaded successfully');
 
     res.json({
       success: true,
@@ -87,11 +80,10 @@ const uploadTeacherPhoto = asyncHandler(async (req, res) => {
       filename: fileName
     });
   } catch (error) {
-    console.error('[uploadTeacherPhoto] Processing error:', error);
+    logger.error('Photo processing failed:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Photo processing failed',
-      error: error.message
+      message: 'Photo processing failed'
     });
   }
 });

@@ -18,6 +18,7 @@
 // ================================================================
 
 const { query, pool, supabaseAdmin } = require('../config/database');
+const logger = require('../utils/logger');
 
 // ----------------------------------------------------------------
 // Shared helpers
@@ -127,7 +128,7 @@ const getLearningAreas = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[getLearningAreas]', err.message);
+    logger.error('[getLearningAreas]', err.message);
     return respond(res, 500, false, 'Failed to retrieve learning areas');
   }
 };
@@ -161,7 +162,7 @@ const getLearningAreaById = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[getLearningAreaById]', err.message);
+    logger.error('[getLearningAreaById]', err.message);
     return respond(res, 500, false, 'Failed to retrieve learning area');
   }
 };
@@ -211,7 +212,7 @@ const createLearningArea = async (req, res) => {
     const { data: foundClasses, error: classCheckErr } = await classQuery;
 
     if (classCheckErr) {
-      console.error('[createLearningArea] class_ids check failed:', classCheckErr.message);
+      logger.error('[createLearningArea] class_ids check failed:', classCheckErr.message);
       return respond(res, 500, false, `Failed to validate class_ids: ${classCheckErr.message}`);
     }
 
@@ -253,7 +254,7 @@ const createLearningArea = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[createLearningArea]', err.message);
+    logger.error('[createLearningArea]', err.message);
     if (err.code === '23505') return respond(res, 409, false, 'Code already exists');
     return respond(res, 500, false, 'Failed to create learning area');
   }
@@ -311,7 +312,7 @@ const updateLearningArea = async (req, res) => {
         const { data: foundClasses, error: classCheckErr } = await classQuery;
 
         if (classCheckErr) {
-          console.error('[updateLearningArea] class_ids check failed:', classCheckErr.message);
+          logger.error('[updateLearningArea] class_ids check failed:', classCheckErr.message);
           return respond(res, 500, false, `Failed to validate class_ids: ${classCheckErr.message}`);
         }
 
@@ -345,7 +346,7 @@ const updateLearningArea = async (req, res) => {
     return respond(res, 200, true, 'Learning area updated', { learning_area: result.rows[0] });
 
   } catch (err) {
-    console.error('[updateLearningArea]', err.message);
+    logger.error('[updateLearningArea]', err.message);
     return respond(res, 500, false, 'Failed to update learning area');
   }
 };
@@ -394,7 +395,7 @@ const getStrands = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[getStrands]', err.message);
+    logger.error('[getStrands]', err.message);
     return respond(res, 500, false, 'Failed to retrieve strands');
   }
 };
@@ -452,7 +453,7 @@ const createStrand = async (req, res) => {
     return respond(res, 201, true, 'Strand created', { strand: result.rows[0] });
 
   } catch (err) {
-    console.error('[createStrand]', err.message);
+    logger.error('[createStrand]', err.message);
     if (err.code === '23505') return respond(res, 409, false, 'Strand code already exists');
     if (err.code === '23503') return respond(res, 404, false, 'Learning area not found');
     return respond(res, 500, false, 'Failed to create strand');
@@ -503,7 +504,7 @@ const getSubStrands = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[getSubStrands]', err.message);
+    logger.error('[getSubStrands]', err.message);
     return respond(res, 500, false, 'Failed to retrieve sub-strands');
   }
 };
@@ -562,7 +563,7 @@ const createSubStrand = async (req, res) => {
     return respond(res, 201, true, 'Sub-strand created', { sub_strand: result.rows[0] });
 
   } catch (err) {
-    console.error('[createSubStrand]', err.message);
+    logger.error('[createSubStrand]', err.message);
     if (err.code === '23505') return respond(res, 409, false, 'Code already exists in this strand');
     if (err.code === '23503') return respond(res, 404, false, 'Strand not found');
     return respond(res, 500, false, 'Failed to create sub-strand');
@@ -613,7 +614,7 @@ const getCompetencies = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[getCompetencies]', err.message);
+    logger.error('[getCompetencies]', err.message);
     return respond(res, 500, false, 'Failed to retrieve competencies');
   }
 };
@@ -677,7 +678,7 @@ const createCompetency = async (req, res) => {
     return respond(res, 201, true, 'Competency created', { competency: result.rows[0] });
 
   } catch (err) {
-    console.error('[createCompetency]', err.message);
+    logger.error('[createCompetency]', err.message);
     if (err.code === '23503') return respond(res, 404, false, 'Sub-strand not found');
     return respond(res, 500, false, 'Failed to create competency');
   }
@@ -776,7 +777,7 @@ const getCurriculumTree = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[getCurriculumTree]', err.message);
+    logger.error('[getCurriculumTree]', err.message);
     return respond(res, 500, false, 'Failed to retrieve curriculum tree');
   }
 };
@@ -903,7 +904,7 @@ const seedCBCCurriculum = async (req, res) => {
 
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('[seedCBCCurriculum]', err.message);
+    logger.error('[seedCBCCurriculum]', err.message);
     return respond(res, 500, false, 'Seed failed: ' + err.message);
   } finally {
     client.release();
@@ -995,7 +996,7 @@ const softDelete = (table) => async (req, res) => {
     return respond(res, 200, true, 'Deleted successfully');
 
   } catch (err) {
-    console.error(`[softDelete:${table}]`, err.message);
+    logger.error(`[softDelete:${table}]`, err.message);
     return respond(res, 500, false, 'Failed to delete item');
   }
 };
@@ -1059,7 +1060,7 @@ const hardDelete = (table) => async (req, res) => {
     return respond(res, 200, true, 'Permanently deleted');
 
   } catch (err) {
-    console.error(`[hardDelete:${table}]`, err.message);
+    logger.error(`[hardDelete:${table}]`, err.message);
     return respond(res, 500, false, 'Failed to permanently delete item');
   }
 };

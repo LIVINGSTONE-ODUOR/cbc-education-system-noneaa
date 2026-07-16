@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const logger = require('../utils/logger');
 
 // Configure transporter (use environment variables in production)
 // FIXED: createTransport (not createTransporter)
@@ -42,9 +43,9 @@ const sendLoginAlertEmail = async (email, firstName, ip, userAgent) => {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Login alert email sent to ${email}`);
+    logger.info(`Login alert email sent to ${email}`);
   } catch (error) {
-    console.error('❌ Failed to send login alert email:', error);
+    logger.error('Failed to send login alert email:', error);
     // Don't fail login on email issues
   }
 };
@@ -84,7 +85,7 @@ const sendSchoolAdminWelcomeEmail = async (email, firstName, schoolName, tempPas
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error('❌ Cannot send welcome email: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set');
+    logger.error('Cannot send welcome email: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set');
     return false;
   }
 
@@ -112,14 +113,14 @@ const sendSchoolAdminWelcomeEmail = async (email, firstName, schoolName, tempPas
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      console.error('❌ send-school-admin-welcome edge function error:', data);
+      logger.error('send-school-admin-welcome edge function error:', data);
       return false;
     }
 
-    console.log(`✅ School admin welcome email sent to ${email} (Resend id: ${data.id})`);
+    logger.info(`School admin welcome email sent to ${email} (Resend id: ${data.id})`);
     return true;
   } catch (error) {
-    console.error('❌ Failed to call send-school-admin-welcome edge function:', error);
+    logger.error('Failed to call send-school-admin-welcome edge function:', error);
     return false;
   }
 };
@@ -141,7 +142,7 @@ const sendParentCredentialsEmail = async (
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error('❌ Cannot send parent credentials email: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set');
+    logger.error('Cannot send parent credentials email: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set');
     return false;
   }
 
@@ -173,14 +174,14 @@ const sendParentCredentialsEmail = async (
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      console.error('❌ send-parent-credentials edge function error:', data);
+      logger.error('send-parent-credentials edge function error:', data);
       return false;
     }
 
-    console.log(`✅ Parent credentials email sent to ${email} (Resend id: ${data.id})`);
+    logger.info(`Parent credentials email sent to ${email} (Resend id: ${data.id})`);
     return true;
   } catch (error) {
-    console.error('❌ Failed to call send-parent-credentials edge function:', error);
+    logger.error('Failed to call send-parent-credentials edge function:', error);
     return false;
   }
 };
