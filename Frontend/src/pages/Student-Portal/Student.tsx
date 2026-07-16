@@ -60,7 +60,7 @@ import ExportToCalendar from './components/ExportToCalendar';
 import LostAndFound from './components/LostAndFound';
 import CampusMap from './components/CampusMap';
 import Portfolio from './components/Portfolio';
-import Messages from '../Parent-Portal/components/Messages';
+import Messages from './components/Messages';
 import Announcements from '../Parent-Portal/components/Announcements';
 import PerformanceTrends from '@/components/marks/PerformanceTrends';
 
@@ -763,21 +763,15 @@ const StudentPortal = () => {
                 <LeaveRequests />
               </TabsContent>
 
-              {/* Communication Tab — real data from the backend, same
-                  messaging/announcements system the Parent Portal uses.
-                  Messages and Announcements aren't learner-scoped by role,
-                  so they work unchanged for a student account: the backend
-                  only special-cases the 'parent' role for the
-                  parent-link check, everyone else (student included)
-                  already passes through, same as Timetable/TeacherComments
-                  elsewhere in this file. */}
+              {/* Communication Tab — uses the dedicated Student Portal
+                  Messages component (./components/Messages), which calls
+                  the general-purpose /api/v1/messages endpoints built for
+                  teacher/student/school_admin roles. This is the same API
+                  the Teacher Portal's Messages component uses; the Parent
+                  Portal keeps its own separate /api/v1/parent-dashboard
+                  messaging endpoints, unchanged. */}
               <TabsContent value="communication" className="space-y-6">
-                {user?.id && (
-                  <Messages
-                    learnerId={learner?.id || ''}
-                    currentUserId={user.id}
-                  />
-                )}
+                {user?.id && <Messages />}
                 <Announcements />
               </TabsContent>
 
