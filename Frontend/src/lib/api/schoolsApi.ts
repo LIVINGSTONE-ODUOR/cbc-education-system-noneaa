@@ -38,6 +38,17 @@ export interface School {
   fee_payment_instructions?: string | null;
   is_active: boolean;
   created_at: string;
+  // Additional profile fields returned by GET /schools/:id — optional here
+  // so existing consumers that only use the fields above are unaffected.
+  phone_number?: string | null;
+  physical_address?: string | null;
+  postal_address?: string | null;
+  county?: string | null;
+  sub_county?: string | null;
+  level?: string | null;
+  motto?: string | null;
+  website?: string | null;
+  year_established?: number | string | null;
 }
 
 export interface Branch {
@@ -54,6 +65,15 @@ export interface CreateSchoolPayload {
   phone?: string;
   address?: string;
   fee_payment_instructions?: string;
+  // updateSchool() sends the payload straight through as the request body —
+  // school.controller.js -> updateSchool reads these exact snake_case names
+  // (not 'phone'/'address' above), so include them here too for callers
+  // updating an existing school's profile.
+  physical_address?: string;
+  postal_address?: string;
+  phone_number?: string;
+  website?: string;
+  motto?: string;
 }
 
 export interface ApiResponse<T> {
