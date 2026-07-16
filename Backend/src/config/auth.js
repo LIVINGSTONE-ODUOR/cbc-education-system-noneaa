@@ -14,23 +14,16 @@ const logger = require('../utils/logger');
 // ─────────────────────────────────────────────
 // JWT Configuration
 // ─────────────────────────────────────────────
-// In production, JWT_SECRET MUST be set. The app refuses to start without it.
-if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-  throw new Error(
-    'JWT_SECRET environment variable is not set. Refusing to start in production. ' +
-      'Generate a long random secret (e.g. `openssl rand -hex 64`) and set it in your deployment environment.'
-  );
-}
-
-// In development, warn but don't fail
+// JWT_SECRET is required in ALL environments. The app refuses to start without it.
+// This ensures tokens are valid across restarts and deployments.
 if (!process.env.JWT_SECRET) {
-  logger.warn(
-    'JWT_SECRET is not set — using a random secret for this process only. ' +
-      'Every restart invalidates existing tokens. Set JWT_SECRET in .env to avoid this.'
+  throw new Error(
+    'JWT_SECRET environment variable is not set. Refusing to start. ' +
+      'Generate a long random secret (e.g. `openssl rand -hex 64`) and set it in your .env file.'
   );
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
 

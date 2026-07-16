@@ -91,6 +91,11 @@ class ApiClient {
       }
 
       return await response.json();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('An unexpected error occurred');
     }
   }
 

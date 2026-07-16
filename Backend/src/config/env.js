@@ -8,6 +8,7 @@ const required = [
   'SUPABASE_URL',
   'SUPABASE_ANON_KEY',
   'SUPABASE_SERVICE_ROLE_KEY',
+  'JWT_SECRET',
 ];
 
 function env(name, { allowEmpty = false } = {}) {
@@ -24,20 +25,16 @@ function validateEnv() {
     return v === undefined;
   });
 
-  const isProd = (process.env.NODE_ENV || 'development').toLowerCase() === 'production';
-
   if (missing.length > 0) {
-    const message = `Missing required environment variables: ${missing.join(', ')}`;
-    if (isProd) {
-      throw new Error(message);
-    }
-    logger.warn(`[env] ${message}. Continuing with limited functionality.`);
+    const message = `Missing required environment variables: ${missing.join(', ')}. Application startup failed.`;
+    throw new Error(message);
   }
 
   return {
     SUPABASE_URL: env('SUPABASE_URL', { allowEmpty: false }),
     SUPABASE_ANON_KEY: env('SUPABASE_ANON_KEY', { allowEmpty: false }),
     SUPABASE_SERVICE_ROLE_KEY: env('SUPABASE_SERVICE_ROLE_KEY', { allowEmpty: false }),
+    JWT_SECRET: env('JWT_SECRET', { allowEmpty: false }),
   };
 }
 

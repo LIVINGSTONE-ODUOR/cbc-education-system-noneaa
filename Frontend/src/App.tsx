@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -64,7 +64,6 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 
 // School Admin Pages
 import SchoolManagement from "./pages/SchoolManagement/schoolmanagement";
-import DashboardWidgets from "./pages/school-admin/learners/DashboardWidgets";
 import TeachersListPage from "@/pages/auth/school-admin/teachers/TeachersList";
 import StudentManagement from "@/pages/auth/school-admin/learners/Learners";  //  Keep only one
 import AddLearnerPage from "./pages/auth/school-admin/learners/AddLearner";
@@ -88,6 +87,7 @@ import SystemStatusPage from "@/pages/website-pages/SystemStatusPage";
 import ReportIncidentPage from "@/pages/website-pages/ReportIncidentPage";
 import UserManagement from "./pages/Users/UserManagement";
 import ModernDashboard from "@/components/ModernDashboard";
+const SchoolDashboard = lazy(() => import("@/components/dashboard/SchoolDashboard"));
 
 // Parent Portal
 import ParentPortal from "./pages/Parent-Portal/Parent-Portal";
@@ -437,7 +437,7 @@ function AppRoutes() {
             <DashboardLayout>
               <Routes>
                 <Route index element={<Navigate to="dashboard" replace />} />
-                <Route path="dashboard" element={<DashboardWidgets />} />
+                <Route path="dashboard" element={<Suspense fallback={<div className="flex items-center justify-center min-h-[60vh]"><LoadingSpinner size="lg" text="Loading Dashboard..." /></div>}><SchoolDashboard /></Suspense>} />
 
                 {/* ── Teachers ── */}
                 <Route path="teachers" element={<TeachersListPage />} />

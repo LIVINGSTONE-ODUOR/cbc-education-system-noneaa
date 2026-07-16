@@ -191,7 +191,7 @@ export const filterLearningAreas = (
   filters: FilterOptions,
   kpiFilter: string | null
 ) => {
-  let filtered = areas.filter(r => {
+  const filtered = areas.filter(r => {
     const lvl = kpiFilter || filters.level;
     if (lvl !== "all" && lvl !== null && r.levelId !== lvl) return false;
     if (filters.type !== "all" && (filters.type === "optional" ? !r.optional : r.optional)) return false;

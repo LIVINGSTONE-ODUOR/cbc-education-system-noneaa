@@ -258,8 +258,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       applyLoginResponse(data, email);
       return {};
-    } catch (error) {
-      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -285,8 +283,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       applyLoginResponse(data, '');
-    } catch (error) {
-      throw error;
     } finally {
       setIsLoading(false);
     }

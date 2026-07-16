@@ -191,6 +191,7 @@ app.use('/api/v1/performance', require('./routes/performance.routes'));
 app.use('/api/v1/website-owner', require('./routes/websiteOwner.routes'));
 app.use('/api/v1/parents', require('./routes/parent.routes'));
 app.use('/api/v1/parent-dashboard', require('./routes/parentDashboard.routes'));
+app.use('/api/v1/dashboard', require('./routes/dashboard.routes'));
 app.use('/api/users', require('./routes/users.routes'));
 
 // ==================== HEALTH CHECK ====================

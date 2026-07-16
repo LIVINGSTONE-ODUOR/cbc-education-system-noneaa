@@ -11,97 +11,23 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
-
-// =============================================================================
-// SCHEME CACHE (in-memory with TTL to prevent per-request DB queries)
-// =============================================================================
-const schemeCache = new Map();
-const SCHEME_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-
-function getCachedScheme(schoolId) {
-  const cached = schemeCache.get(schoolId);
-  if (cached && Date.now() - cached.timestamp < SCHEME_CACHE_TTL_MS) {
-    return cached.scheme;
-  }
-  schemeCache.delete(schoolId);
-  return null;
-}
-
-function setCachedScheme(schoolId, scheme) {
-  schemeCache.set(schoolId, { scheme, timestamp: Date.now() });
-}
-
-function invalidateSchemeCache(schoolId) {
-  schemeCache.delete(schoolId);
-  // Also clear all caches (school_id might have changed)
-  if (!schoolId) schemeCache.clear();
-}
+const gradingCache = require('../services/gradingCache');
+const { generateReportCardPdf } = require('../services/reportCardPdf');
 
 // =============================================================================
 // HELPERS
 // =============================================================================
 
-/** Get the default grading scheme for a school, or create one */
-async function getOrCreateDefaultScheme(schoolId) {
-  // Check cache first
-  const cached = getCachedScheme(schoolId);
-  if (cached) return cached;
-
-  let result = await query(
-    `SELECT * FROM grading_schemes WHERE school_id = $1 AND is_default = true AND is_active = true LIMIT 1`,
-    [schoolId]
-  );
-
-  if (result.rows.length > 0) {
-    setCachedScheme(schoolId, result.rows[0]);
-    return result.rows[0];
-  }
-
-  // Create default CBC scheme
-  const scheme = await query(
-    `INSERT INTO grading_schemes (school_id, name, description, is_default)
-     VALUES ($1, 'CBC Standard', 'Default CBC Competency-Based grading scheme', true)
-     RETURNING *`,
-    [schoolId]
-  );
-
-  // Create default levels: BE, ME, AE, EE
-  const levels = [
-    { code: 'BE', name: 'Below Expectation', min: 0, max: 24, color: '#EF4444', sort: 1, pass: false },
-    { code: 'ME', name: 'Meeting Expectation', min: 25, max: 49, color: '#F59E0B', sort: 2, pass: true },
-    { code: 'AE', name: 'Above Expectation', min: 50, max: 74, color: '#3B82F6', sort: 3, pass: true },
-    { code: 'EE', name: 'Exceeding Expectation', min: 75, max: 100, color: '#10B981', sort: 4, pass: true },
-  ];
-
-  for (const lv of levels) {
-    await query(
-      `INSERT INTO grading_levels (scheme_id, code, name, min_score, max_score, color, sort_order, is_pass)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [scheme.id, lv.code, lv.name, lv.min, lv.max, lv.color, lv.sort, lv.pass]
-    );
-  }
-
-  setCachedScheme(schoolId, scheme);
-  return scheme;
+/** Convenience: load scheme + levels once, then grade in-memory with zero DB lookups */
+async function loadGradingContext(schoolId) {
+  const scheme = await gradingCache.getScheme(schoolId);
+  const levels = scheme ? await gradingCache.getLevels(scheme.id) : [];
+  return { scheme, levels };
 }
 
-/** Determine grade code and competency level from score */
-async function calculateGrade(schemeId, score) {
-  const result = await query(
-    `SELECT * FROM grading_levels
-     WHERE scheme_id = $1 AND is_active = true
-       AND $2 >= min_score AND $2 <= max_score
-     ORDER BY sort_order
-     LIMIT 1`,
-    [schemeId, score]
-  );
-
-  if (result.rows.length > 0) {
-    const level = result.rows[0];
-    return { gradeCode: level.code, competencyLevel: level.name };
-  }
-
-  return { gradeCode: 'N/A', competencyLevel: 'Not Assessed' };
+/** Grade a single score using cached levels (no DB query) */
+function gradeScore(levels, score) {
+  return gradingCache.calculateGradeFromLevels(levels, score);
 }
 
 // =============================================================================
@@ -153,8 +79,7 @@ exports.createScheme = async (req, res) => {
       [schoolId, name, description || '', !!is_default, req.user.id]
     );
 
-    // Invalidate cache for this school
-    invalidateSchemeCache(schoolId);
+    gradingCache.bust(schoolId);
 
     return res.status(201).json({ success: true, data: result.rows[0], message: 'Grading scheme created.' });
   } catch (error) {
@@ -193,8 +118,7 @@ exports.updateScheme = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Scheme not found.' });
     }
 
-    // Invalidate cache for this school
-    invalidateSchemeCache(result.rows[0].school_id);
+    gradingCache.bust(result.rows[0].school_id);
 
     return res.json({ success: true, data: result.rows[0], message: 'Grading scheme updated.' });
   } catch (error) {
@@ -207,17 +131,17 @@ exports.updateScheme = async (req, res) => {
 exports.deleteScheme = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await query(
-      `DELETE FROM grading_schemes WHERE id = $1 RETURNING id`,
-      [id]
-    );
 
-    if (result.rows.length === 0) {
+    // Look up school_id for scoped cache bust
+    const schemeLookup = await query(`SELECT school_id FROM grading_schemes WHERE id = $1`, [id]);
+    if (schemeLookup.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Scheme not found.' });
     }
+    const schoolId = schemeLookup.rows[0].school_id;
 
-    // Invalidate cache
-    invalidateSchemeCache();
+    await query(`DELETE FROM grading_schemes WHERE id = $1`, [id]);
+
+    gradingCache.bust(schoolId);
 
     return res.json({ success: true, message: 'Grading scheme deleted.' });
   } catch (error) {
@@ -262,6 +186,8 @@ exports.createLevel = async (req, res) => {
       [scheme_id, code, name, description || '', min_score, max_score, color || '#6B7280', sort_order || 0, is_pass !== false]
     );
 
+    gradingCache.bust(result.rows[0].scheme_id);
+
     return res.status(201).json({ success: true, data: result.rows[0], message: 'Grading level created.' });
   } catch (error) {
     logger.error('Create level error:', error);
@@ -295,6 +221,8 @@ exports.updateLevel = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Level not found.' });
     }
 
+    gradingCache.bust(result.rows[0].scheme_id);
+
     return res.json({ success: true, data: result.rows[0], message: 'Grading level updated.' });
   } catch (error) {
     logger.error('Update level error:', error);
@@ -306,7 +234,13 @@ exports.updateLevel = async (req, res) => {
 exports.deleteLevel = async (req, res) => {
   try {
     const { id } = req.params;
+    const levelLookup = await query(`SELECT scheme_id FROM grading_levels WHERE id = $1`, [id]);
+    const schemeId = levelLookup.rows[0]?.scheme_id;
+
     await query(`DELETE FROM grading_levels WHERE id = $1`, [id]);
+
+    gradingCache.bust(schemeId);
+
     return res.json({ success: true, message: 'Grading level deleted.' });
   } catch (error) {
     logger.error('Delete level error:', error);
@@ -329,12 +263,8 @@ exports.saveCompetencyAssessment = async (req, res) => {
     }
 
     const schoolId = req.user.schoolId;
-
-    // Get grading scheme
-    const scheme = await getOrCreateDefaultScheme(schoolId);
-
-    // Calculate grade
-    const { gradeCode, competencyLevel } = await calculateGrade(scheme.id, score);
+    const ctx = await loadGradingContext(schoolId);
+    const { gradeCode, competencyLevel } = gradeScore(ctx.levels, score);
 
     // Upsert
     const result = await query(
@@ -354,7 +284,7 @@ exports.saveCompetencyAssessment = async (req, res) => {
          updated_at = NOW()
        RETURNING *`,
       [schoolId, learner_id, class_id, learning_area_id, competency_area_id, academic_term_id, academic_year_id,
-       score, max_score || 100, gradeCode, competencyLevel, teacher_remarks || null, req.user.id, assessment_date || new Date()]
+       score, max_score || 100, gradeCode, competencyLevel, teacher_remarks || null, req.user.id, assessment_date ? new Date(assessment_date).toISOString() : new Date().toISOString()]
     );
 
     return res.json({ success: true, data: result.rows[0], message: 'Assessment saved.' });
@@ -440,8 +370,8 @@ exports.saveSubjectAssessment = async (req, res) => {
     }
 
     const schoolId = req.user.schoolId;
-    const scheme = await getOrCreateDefaultScheme(schoolId);
-    const { gradeCode, competencyLevel } = await calculateGrade(scheme.id, total_score);
+    const ctx = await loadGradingContext(schoolId);
+    const { gradeCode, competencyLevel } = gradeScore(ctx.levels, total_score);
 
     const result = await query(
       `INSERT INTO subject_assessments
@@ -550,8 +480,8 @@ async function updateReportCard(schoolId, learnerId, classId, termId, yearId) {
     const totalScore = subjects.rows.reduce((sum, s) => sum + parseFloat(s.total_score || 0), 0);
     const averageScore = totalScore / subjects.rows.length;
 
-    const scheme = await getOrCreateDefaultScheme(schoolId);
-    const { gradeCode } = await calculateGrade(scheme.id, averageScore);
+    const ctx = await loadGradingContext(schoolId);
+    const { gradeCode } = gradeScore(ctx.levels, averageScore);
 
     await query(
       `INSERT INTO report_cards
@@ -610,46 +540,11 @@ exports.getReportCards = async (req, res) => {
 /** GET /api/v1/grading/report-cards/:id/full — full report with all assessments */
 exports.getFullReportCard = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const report = await query(
-      `SELECT rc.*, l.first_name, l.last_name, l.admission_number, l.date_of_birth,
-              l.gender, l.photo_url,
-              c.name as class_name, c.grade_level,
-              s.name as school_name, s.address as school_address, s.logo_url,
-              t.name as term_name, ay.name as academic_year_name
-       FROM report_cards rc
-       JOIN learners l ON rc.learner_id = l.id
-       LEFT JOIN classes c ON rc.class_id = c.id
-       LEFT JOIN schools s ON rc.school_id = s.id
-       LEFT JOIN academic_terms t ON rc.academic_term_id = t.id
-       LEFT JOIN academic_years ay ON rc.academic_year_id = ay.id
-       WHERE rc.id = $1
-       LIMIT 1`,
-      [id]
-    );
-
-    if (report.rows.length === 0) {
+    const data = await exports.getFullReportCardInternal(req.params.id);
+    if (!data) {
       return res.status(404).json({ success: false, message: 'Report card not found.' });
     }
-
-    // Get all subject assessments
-    const subjects = await query(
-      `SELECT sa.*, la.name as subject_name
-       FROM subject_assessments sa
-       JOIN learning_areas la ON sa.learning_area_id = la.id
-       WHERE sa.learner_id = $1 AND sa.academic_term_id = $2
-       ORDER BY la.name`,
-      [report.rows[0].learner_id, report.rows[0].academic_term_id]
-    );
-
-    return res.json({
-      success: true,
-      data: {
-        ...report.rows[0],
-        subjects: subjects.rows,
-      },
-    });
+    return res.json({ success: true, data });
   } catch (error) {
     logger.error('Get full report card error:', error);
     return res.status(500).json({ success: false, message: 'Unable to load report card.' });
@@ -789,6 +684,349 @@ exports.getClassAnalytics = async (req, res) => {
 };
 
 // =============================================================================
+// BULK OPERATIONS
+// =============================================================================
+
+/** POST /api/v1/grading/competency-assessments/bulk — bulk upload assessments */
+exports.bulkSaveCompetencyAssessments = async (req, res) => {
+  try {
+    const { assessments } = req.body;
+
+    if (!Array.isArray(assessments) || assessments.length === 0) {
+      return res.status(400).json({ success: false, message: 'assessments array is required with at least one entry.' });
+    }
+
+    const maxItems = parseInt(process.env.BULK_UPLOAD_MAX) || 1000;
+    if (assessments.length > maxItems) {
+      return res.status(400).json({ success: false, message: `Maximum ${maxItems} assessments per bulk upload.` });
+    }
+
+    const schoolId = req.user.schoolId;
+    const userId = req.user.id;
+
+    // ── Load grading context ONCE (zero DB lookups inside the loop) ──
+    const ctx = await loadGradingContext(schoolId);
+
+    // Build rows, skipping invalid entries
+    const valueRows = [];
+    const valueParams = [];
+    const errors = [];
+
+    for (let i = 0; i < assessments.length; i++) {
+      const a = assessments[i];
+
+      if (!a.learner_id || !a.learning_area_id || !a.academic_term_id) {
+        errors.push({ index: i, message: 'Missing required fields: learner_id, learning_area_id, academic_term_id' });
+        continue;
+      }
+
+      const { gradeCode, competencyLevel } = gradeScore(ctx.levels, a.score);
+      const paramOffset = valueParams.length + 1;
+
+      valueRows.push(`($${paramOffset}, $${paramOffset+1}, $${paramOffset+2}, $${paramOffset+3}, $${paramOffset+4}, $${paramOffset+5}, $${paramOffset+6}, $${paramOffset+7}, $${paramOffset+8}, $${paramOffset+9}, $${paramOffset+10}, $${paramOffset+11}, $${paramOffset+12}, $${paramOffset+13})`);
+
+      valueParams.push(
+        schoolId, a.learner_id, a.class_id || null, a.learning_area_id,
+        a.competency_area_id || null, a.academic_term_id, a.academic_year_id || null,
+        a.score, a.max_score || 100, gradeCode, competencyLevel,
+        a.teacher_remarks || null, userId, a.assessment_date ? new Date(a.assessment_date).toISOString() : new Date().toISOString()
+      );
+    }
+
+    if (valueRows.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No valid assessments to save.',
+        data: { saved: 0, failed: errors.length, errors },
+      });
+    }
+
+    // ── Single batch INSERT with ON CONFLICT DO UPDATE ──
+    // wrap in transaction for atomicity
+    async function executeBatch() {
+      await query(
+        `INSERT INTO competency_assessments
+         (school_id, learner_id, class_id, learning_area_id, competency_area_id, academic_term_id, academic_year_id,
+          score, max_score, grade_code, competency_level, teacher_remarks, assessed_by, assessment_date)
+         VALUES ${valueRows.join(', ')}
+         ON CONFLICT (learner_id, learning_area_id, competency_area_id, academic_term_id, academic_year_id)
+         DO UPDATE SET
+           score = EXCLUDED.score,
+           max_score = EXCLUDED.max_score,
+           grade_code = EXCLUDED.grade_code,
+           competency_level = EXCLUDED.competency_level,
+           teacher_remarks = EXCLUDED.teacher_remarks,
+           assessed_by = EXCLUDED.assessed_by,
+           updated_at = NOW()`,
+        valueParams
+      );
+    }
+
+    // Try direct query first, fall back to transaction if available
+    try {
+      await executeBatch();
+    } catch (batchError) {
+      logger.warn('Batch insert failed, falling back to transaction:', batchError.message);
+      // Split into smaller batches if the full batch fails
+      const chunkSize = 100;
+      for (let i = 0; i < valueRows.length; i += chunkSize) {
+        const chunk = valueRows.slice(i, i + chunkSize);
+        const chunkParams = valueParams.slice(i * 14, (i + chunkSize) * 14);
+        await query(
+          `INSERT INTO competency_assessments
+           (school_id, learner_id, class_id, learning_area_id, competency_area_id, academic_term_id, academic_year_id,
+            score, max_score, grade_code, competency_level, teacher_remarks, assessed_by, assessment_date)
+           VALUES ${chunk.join(', ')}
+           ON CONFLICT (learner_id, learning_area_id, competency_area_id, academic_term_id, academic_year_id)
+           DO UPDATE SET
+             score = EXCLUDED.score,
+             max_score = EXCLUDED.max_score,
+             grade_code = EXCLUDED.grade_code,
+             competency_level = EXCLUDED.competency_level,
+             teacher_remarks = EXCLUDED.teacher_remarks,
+             assessed_by = EXCLUDED.assessed_by,
+             updated_at = NOW()`,
+          chunkParams
+        );
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: `Bulk upload completed. ${valueRows.length} saved, ${errors.length} skipped.`,
+      data: { saved: valueRows.length, failed: errors.length, errors: errors.length > 0 ? errors : undefined },
+    });
+  } catch (error) {
+    logger.error('Bulk save error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to process bulk upload.' });
+  }
+};
+
+/** POST /api/v1/grading/competency-assessments/bulk — bulk from CSV */
+exports.bulkUploadAssessmentsCsv = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'CSV file is required.' });
+    }
+
+    const csvData = req.file.buffer.toString('utf-8');
+    const lines = csvData.split('\n').filter(l => l.trim());
+    if (lines.length < 2) {
+      return res.status(400).json({ success: false, message: 'CSV must have a header row and at least one data row.' });
+    }
+
+    // Parse CSV
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const assessments = [];
+    for (let i = 1; i < lines.length && i <= 1001; i++) {
+      const values = lines[i].split(',').map(v => v.trim());
+      const row = {};
+      headers.forEach((h, idx) => { row[h] = values[idx]; });
+      assessments.push({
+        learner_id: row.learner_id || row.learnerid || row.student_id || row.studentid,
+        learning_area_id: row.learning_area_id || row.learningarea || row.subject_id || row.subjectid,
+        academic_term_id: row.academic_term_id || row.term_id || row.termid,
+        academic_year_id: row.academic_year_id || row.academic_year || row.year,
+        competency_area_id: row.competency_area_id || row.competencyid || row.strand_id || null,
+        class_id: row.class_id || row.classid || null,
+        score: parseFloat(row.score || row.marks || row.grade) || 0,
+        max_score: parseFloat(row.max_score || row.maxscore || row.outof) || 100,
+        teacher_remarks: row.remarks || row.comment || row.notes || null,
+      });
+    }
+
+    // Store assessments on request for reuse by bulkSaveCompetencyAssessments
+    req.body = { assessments };
+    return exports.bulkSaveCompetencyAssessments(req, res);
+  } catch (error) {
+    logger.error('CSV bulk upload error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to process CSV upload.' });
+  }
+};
+
+/** POST /api/v1/grading/schemes/:id/clone — clone an existing scheme */
+exports.cloneScheme = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description } = req.body;
+
+    // Get source scheme
+    const sourceResult = await query(
+      `SELECT * FROM grading_schemes WHERE id = $1 LIMIT 1`,
+      [id]
+    );
+
+    if (sourceResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Source scheme not found.' });
+    }
+
+    const source = sourceResult.rows[0];
+    const newName = name || `${source.name} (Copy)`;
+
+    // Create clone
+    const cloneResult = await query(
+      `INSERT INTO grading_schemes (school_id, name, description, is_default, created_by)
+       VALUES ($1, $2, $3, false, $4)
+       RETURNING *`,
+      [source.school_id, newName, description || source.description, req.user.id]
+    );
+
+    const newScheme = cloneResult.rows[0];
+
+    // Clone levels (batch INSERT)
+    const sourceLevels = await query(
+      `SELECT * FROM grading_levels WHERE scheme_id = $1 ORDER BY sort_order`,
+      [id]
+    );
+
+    if (sourceLevels.rows.length > 0) {
+      const levelValueRows = [];
+      const levelParams = [];
+
+      for (let li = 0; li < sourceLevels.rows.length; li++) {
+        const lv = sourceLevels.rows[li];
+        const po = levelParams.length + 1;
+        levelValueRows.push(`($${po}, $${po+1}, $${po+2}, $${po+3}, $${po+4}, $${po+5}, $${po+6}, $${po+7}, $${po+8})`);
+        levelParams.push(
+          newScheme.id, lv.code, lv.name, lv.description || '',
+          lv.min_score, lv.max_score, lv.color, lv.sort_order, lv.is_pass
+        );
+      }
+
+      await query(
+        `INSERT INTO grading_levels (scheme_id, code, name, description, min_score, max_score, color, sort_order, is_pass)
+         VALUES ${levelValueRows.join(', ')}`,
+        levelParams
+      );
+    }
+
+    const levelCount = sourceLevels.rows.length;
+
+    gradingCache.bust(source.school_id);
+
+    return res.status(201).json({
+      success: true,
+      data: { ...newScheme, level_count: levelCount },
+      message: `Scheme cloned with ${levelCount} levels.`,
+    });
+  } catch (error) {
+    logger.error('Clone scheme error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to clone grading scheme.' });
+  }
+};
+
+// =============================================================================
+// PDF GENERATION
+// =============================================================================
+
+/** GET /api/v1/grading/report-cards/:id/pdf — generate downloadable PDF */
+exports.generateReportCardPdf = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const fullReport = await exports.getFullReportCardInternal(id);
+    if (!fullReport) {
+      return res.status(404).json({ success: false, message: 'Report card not found.' });
+    }
+
+    const pdfBuffer = await generateReportCardPdf(fullReport);
+
+    const learnerId = (fullReport.admission_number || fullReport.learner_id || 'report').toString();
+    const termSlug = (fullReport.term_name || 'term').replace(/\s+/g, '-');
+    const filename = `report-card-${learnerId}-${termSlug}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.send(pdfBuffer);
+  } catch (error) {
+    logger.error('Generate PDF error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to generate PDF.' });
+  }
+};
+
+/** Internal: fetch full report card data (shared between JSON and PDF) */
+exports.getFullReportCardInternal = async (id) => {
+  try {
+    const report = await query(
+      `SELECT rc.*, l.first_name, l.last_name, l.admission_number, l.date_of_birth,
+              l.gender, l.photo_url,
+              c.name as class_name, c.grade_level,
+              s.name as school_name, s.address as school_address, s.logo_url,
+              t.name as term_name, ay.name as academic_year_name
+       FROM report_cards rc
+       JOIN learners l ON rc.learner_id = l.id
+       LEFT JOIN classes c ON rc.class_id = c.id
+       LEFT JOIN schools s ON rc.school_id = s.id
+       LEFT JOIN academic_terms t ON rc.academic_term_id = t.id
+       LEFT JOIN academic_years ay ON rc.academic_year_id = ay.id
+       WHERE rc.id = $1
+       LIMIT 1`,
+      [id]
+    );
+
+    if (report.rows.length === 0) return null;
+
+    const subjects = await query(
+      `SELECT sa.*, la.name as subject_name
+       FROM subject_assessments sa
+       JOIN learning_areas la ON sa.learning_area_id = la.id
+       WHERE sa.learner_id = $1 AND sa.academic_term_id = $2
+       ORDER BY la.name`,
+      [report.rows[0].learner_id, report.rows[0].academic_term_id]
+    );
+
+    // Rankings
+    let classRank = null;
+    let termRank = null;
+    let schoolRank = null;
+
+    const r = report.rows[0];
+    if (r.class_id && r.academic_term_id) {
+      const rankResult = await query(
+        `SELECT class_rank FROM v_learner_performance_summary
+         WHERE learner_id = $1 AND class_id = $2 AND academic_term_id = $3 LIMIT 1`,
+        [r.learner_id, r.class_id, r.academic_term_id]
+      );
+      if (rankResult.rows.length > 0) classRank = rankResult.rows[0].class_rank;
+
+      const totalResult = await query(
+        `SELECT COUNT(*) as total_learners FROM report_cards
+         WHERE class_id = $1 AND academic_term_id = $2 AND average_score IS NOT NULL`,
+        [r.class_id, r.academic_term_id]
+      );
+      termRank = classRank !== null ? `${classRank} / ${totalResult.rows[0].total_learners}` : null;
+    }
+
+    if (r.school_id && r.academic_term_id) {
+      // Use a windowed RANK() to compute school rank efficiently
+      const schoolRankResult = await query(
+        `SELECT school_rank FROM (
+           SELECT learner_id,
+                  RANK() OVER (ORDER BY AVG(average_score) DESC) as school_rank
+           FROM report_cards
+           WHERE school_id = $1 AND academic_term_id = $2 AND average_score IS NOT NULL
+           GROUP BY learner_id
+         ) ranked
+         WHERE learner_id = $3
+         LIMIT 1`,
+        [r.school_id, r.academic_term_id, r.learner_id]
+      );
+      if (schoolRankResult.rows.length > 0) schoolRank = schoolRankResult.rows[0].school_rank;
+    }
+
+    return {
+      ...r,
+      subjects: subjects.rows,
+      rankings: { classRank, termRank, schoolRank },
+    };
+  } catch (error) {
+    logger.error('Get full report card internal error:', error);
+    return null;
+  }
+};
+
+// =============================================================================
 // PROMOTION DECISIONS
 // =============================================================================
 
@@ -885,8 +1123,8 @@ exports.generateTranscript = async (req, res) => {
     const totalTerms = reportCards.rows.length;
     const cumulativeAverage = totalTerms > 0 ? totalScore / totalTerms : 0;
 
-    const scheme = await getOrCreateDefaultScheme(req.user.schoolId);
-    const { gradeCode } = await calculateGrade(scheme.id, cumulativeAverage);
+    const ctx = await loadGradingContext(req.user.schoolId);
+    const { gradeCode } = gradeScore(ctx.levels, cumulativeAverage);
 
     const termSummary = reportCards.rows.map(rc => ({
       term: rc.term_name,

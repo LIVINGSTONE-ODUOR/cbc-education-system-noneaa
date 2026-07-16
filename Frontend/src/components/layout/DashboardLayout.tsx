@@ -621,22 +621,22 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       }
     };
 
-    const interval = setInterval(updateActivity, 240000);
+    const interval = setInterval(sendActivityPing, 240000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        updateActivity();
+        sendActivityPing();
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', updateActivity);
-    updateActivity();
+    window.addEventListener('focus', sendActivityPing);
+    sendActivityPing();
 
     return () => {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', updateActivity);
+      window.removeEventListener('focus', sendActivityPing);
     };
   }, []);
 
