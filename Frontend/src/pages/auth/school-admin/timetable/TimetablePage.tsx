@@ -65,7 +65,14 @@ const emptyGrid = (): TimetableGrid => ({
 interface FormState {
   learning_area_id: string;
   teacher_id: string;
-  days: WeekDay[];
+  // The day this lesson is being scheduled for. Each day/time slot on the
+  // grid is independent — Monday 8-9AM can be Maths while Tuesday 8-9AM is
+  // English for the same class, with no conflict between them.
+  primaryDay: WeekDay | '';
+  // Opt-in only: when checked, the SAME learning area + teacher + time is
+  // also booked on the extra days below (e.g. Maths every day 8-9AM).
+  repeatOnExtraDays: boolean;
+  extraDays: WeekDay[];
   start_time: string;
   end_time: string;
   room: string;
@@ -74,7 +81,9 @@ interface FormState {
 const emptyForm: FormState = {
   learning_area_id: '',
   teacher_id: '',
-  days: [],
+  primaryDay: '',
+  repeatOnExtraDays: false,
+  extraDays: [],
   start_time: '08:00',
   end_time: '09:00',
   room: '',
@@ -165,7 +174,9 @@ export default function TimetablePage() {
     setForm({
       learning_area_id: slot.learning_area_id,
       teacher_id: slot.teacher_id,
-      days: [slot.day],
+      primaryDay: slot.day,
+      repeatOnExtraDays: false,
+      extraDays: [],
       start_time: slot.start_time.slice(0, 5),
       end_time: slot.end_time.slice(0, 5),
       room: slot.room || '',
@@ -174,17 +185,17 @@ export default function TimetablePage() {
     setDialogOpen(true);
   };
 
-  const toggleDay = (day: WeekDay) => {
+  const toggleExtraDay = (day: WeekDay) => {
     setForm((f) => ({
       ...f,
-      days: f.days.includes(day) ? f.days.filter((d) => d !== day) : [...f.days, day],
+      extraDays: f.extraDays.includes(day) ? f.extraDays.filter((d) => d !== day) : [...f.extraDays, day],
     }));
   };
 
   const handleSubmit = async () => {
     if (!selectedClassId) return;
-    if (!form.learning_area_id || !form.teacher_id || form.days.length === 0) {
-      setFormError('Select a learning area, a teacher, and at least one day.');
+    if (!form.learning_area_id || !form.teacher_id || !form.primaryDay) {
+      setFormError('Select a learning area, a teacher, and a day.');
       return;
     }
     if (form.start_time >= form.end_time) {
@@ -192,12 +203,20 @@ export default function TimetablePage() {
       return;
     }
 
+    // The primary day is always included. Extra days are only added when
+    // the admin explicitly opted in to repeat this exact lesson on them —
+    // otherwise every other day/time on the grid is left untouched, so
+    // Tuesday 8-9AM can be a completely different subject.
+    const days: WeekDay[] = form.repeatOnExtraDays
+      ? [form.primaryDay, ...form.extraDays.filter((d) => d !== form.primaryDay)]
+      : [form.primaryDay];
+
     setSaving(true);
     setFormError(null);
     try {
       if (editingSlot) {
         await updateTimetableSlot(editingSlot.id, {
-          day: form.days[0],
+          day: form.primaryDay,
           start_time: form.start_time,
           end_time: form.end_time,
           teacher_id: form.teacher_id,
@@ -210,12 +229,12 @@ export default function TimetablePage() {
           class_id: selectedClassId,
           learning_area_id: form.learning_area_id,
           teacher_id: form.teacher_id,
-          day: form.days,
+          day: days,
           start_time: form.start_time,
           end_time: form.end_time,
           room: form.room || undefined,
         });
-        toast.success(form.days.length > 1 ? 'Lesson scheduled for the selected days' : 'Lesson scheduled');
+        toast.success(days.length > 1 ? 'Lesson scheduled for the selected days' : 'Lesson scheduled');
       }
       setDialogOpen(false);
       await loadClassData(selectedClassId);
@@ -392,28 +411,52 @@ export default function TimetablePage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Day{!editingSlot ? 's' : ''}</Label>
-              <div className="flex flex-wrap gap-3">
-                {WEEK_DAYS.map(({ value, label }) => (
-                  <label key={value} className="flex items-center gap-1.5 text-sm">
-                    <Checkbox
-                      checked={form.days.includes(value)}
-                      onCheckedChange={() => {
-                        if (editingSlot) {
-                          setForm((f) => ({ ...f, days: [value] }));
-                        } else {
-                          toggleDay(value);
-                        }
-                      }}
-                    />
-                    {label}
-                  </label>
-                ))}
-              </div>
-              {!editingSlot && (
-                <p className="text-xs text-muted-foreground">Pick multiple days to schedule the same lesson on all of them at once.</p>
-              )}
+              <Label>Day</Label>
+              <Select
+                value={form.primaryDay}
+                onValueChange={(v) => setForm((f) => ({ ...f, primaryDay: v as WeekDay, extraDays: f.extraDays.filter((d) => d !== v) }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a day" />
+                </SelectTrigger>
+                <SelectContent>
+                  {WEEK_DAYS.map(({ value, label }) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Each day and time slot is independent — e.g. Maths on Monday 8-9AM doesn't affect what's taught Tuesday 8-9AM.
+              </p>
             </div>
+
+            {!editingSlot && (
+              <div className="space-y-2 rounded-md border p-3">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <Checkbox
+                    checked={form.repeatOnExtraDays}
+                    onCheckedChange={(checked) => setForm((f) => ({ ...f, repeatOnExtraDays: checked === true }))}
+                  />
+                  Repeat this exact lesson on other days too
+                </label>
+                {form.repeatOnExtraDays && (
+                  <div className="flex flex-wrap gap-3 pt-1">
+                    {WEEK_DAYS.filter(({ value }) => value !== form.primaryDay).map(({ value, label }) => (
+                      <label key={value} className="flex items-center gap-1.5 text-sm">
+                        <Checkbox
+                          checked={form.extraDays.includes(value)}
+                          onCheckedChange={() => toggleExtraDay(value)}
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Only use this if the same learning area and teacher genuinely repeat, e.g. Maths every weekday 8-9AM.
+                </p>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
