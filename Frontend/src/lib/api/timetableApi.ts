@@ -166,3 +166,39 @@ export const deleteTimetableSlot = async (id: string): Promise<ApiResponse<{ mes
   const response = await fetchWithAuth(url, getFetchOptions('DELETE'));
   return handleResponse<ApiResponse<{ message: string }>>(response);
 };
+
+// ── Timetable Setup: number of lessons taught per day ───────────────────────
+// e.g. Monday = 8 lessons, Friday = 6 lessons. Configured by the school
+// admin and enforced server-side when scheduling new lessons.
+
+export interface DaySetting {
+  day: WeekDay;
+  lessons_count: number;
+}
+
+export interface DaySettingsResponse {
+  academic_year_id: string;
+  settings: DaySetting[];
+}
+
+// GET /api/v1/timetable/settings?academic_year_id=
+export const getDaySettings = async (params?: {
+  academic_year_id?: string;
+}): Promise<ApiResponse<DaySettingsResponse>> => {
+  const searchParams = new URLSearchParams();
+  if (params?.academic_year_id) searchParams.append('academic_year_id', params.academic_year_id);
+  const qs = searchParams.toString();
+  const url = `${API_URL}/api/v1/timetable/settings${qs ? `?${qs}` : ''}`;
+  const response = await fetchWithAuth(url, getFetchOptions('GET'));
+  return handleResponse<ApiResponse<DaySettingsResponse>>(response);
+};
+
+// PUT /api/v1/timetable/settings
+export const updateDaySettings = async (payload: {
+  academic_year_id?: string;
+  days: DaySetting[];
+}): Promise<ApiResponse<DaySettingsResponse>> => {
+  const url = `${API_URL}/api/v1/timetable/settings`;
+  const response = await fetchWithAuth(url, getFetchOptions('PUT', payload));
+  return handleResponse<ApiResponse<DaySettingsResponse>>(response);
+};
