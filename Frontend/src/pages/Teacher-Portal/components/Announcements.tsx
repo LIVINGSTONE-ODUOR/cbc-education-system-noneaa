@@ -1,80 +1,47 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Megaphone, CalendarDays, Trophy, ClipboardList, Users, CheckCircle2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Megaphone, AlertCircle } from 'lucide-react';
+import { getAnnouncements, DashboardAnnouncement } from '@/lib/api/parentDashboardApi';
 
-// TODO: replace with real API once /announcements backend exists.
-// Expected shape: GET /api/v1/announcements (school-scoped, posted by principal/admin),
-// POST /api/v1/announcements/:id/acknowledge for the "acknowledge receipt" action.
-
-type AnnouncementCategory = 'staff_meeting' | 'holiday' | 'sports_day' | 'cbc_update';
-
-interface Announcement {
-  id: string;
-  category: AnnouncementCategory;
-  title: string;
-  body: string;
-  postedBy: string;
-  postedAt: string;
-  acknowledged: boolean;
-}
-
-const CATEGORY_META: Record<AnnouncementCategory, { label: string; icon: React.ReactNode }> = {
-  staff_meeting: { label: 'Staff Meeting', icon: <Users className="h-4 w-4" /> },
-  holiday: { label: 'Holiday', icon: <CalendarDays className="h-4 w-4" /> },
-  sports_day: { label: 'Sports Day', icon: <Trophy className="h-4 w-4" /> },
-  cbc_update: { label: 'CBC Update', icon: <ClipboardList className="h-4 w-4" /> },
-};
-
-const INITIAL_ANNOUNCEMENTS: Announcement[] = [
-  {
-    id: 'a1',
-    category: 'staff_meeting',
-    title: 'Mandatory Staff Meeting — Thursday',
-    body: 'All teachers to attend the staff meeting in the staff room at 3:30 PM to discuss end-of-term reporting.',
-    postedBy: 'Principal Otieno',
-    postedAt: '2 hours ago',
-    acknowledged: false,
-  },
-  {
-    id: 'a2',
-    category: 'cbc_update',
-    title: 'Updated CBC Assessment Rubric',
-    body: 'The Ministry has released an updated competency-based assessment rubric for Grade 6. Please review before the next marking period.',
-    postedBy: 'Principal Otieno',
-    postedAt: 'Yesterday',
-    acknowledged: true,
-  },
-  {
-    id: 'a3',
-    category: 'sports_day',
-    title: 'Inter-house Sports Day — Next Friday',
-    body: 'Sports day will be held next Friday starting 8:00 AM. Class teachers should submit house lists by Wednesday.',
-    postedBy: 'Principal Otieno',
-    postedAt: '2 days ago',
-    acknowledged: false,
-  },
-  {
-    id: 'a4',
-    category: 'holiday',
-    title: 'Mid-term Break Dates Confirmed',
-    body: 'Mid-term break will run from the 24th to the 28th. School resumes on the 29th.',
-    postedBy: 'Principal Otieno',
-    postedAt: '4 days ago',
-    acknowledged: true,
-  },
-];
+// Real data from the backend's `announcements` table (same one the school
+// admin's Communication > Announcements page posts to, and the Parent
+// Portal reads from). getAnnouncements() already treats teacher/school_admin
+// /super_admin as "staff" and returns everything posted for their school —
+// see parentDashboard.controller.js:getAnnouncements.
+//
+// Note: there's no "acknowledge receipt" tracking in the backend yet (no
+// table/endpoint for it), so unlike the old placeholder UI this is a
+// read-only feed. Acknowledgement tracking would need a new
+// announcement_acknowledgements table + endpoint if that's wanted later.
 
 const Announcements: React.FC = () => {
-  const [announcements, setAnnouncements] = useState<Announcement[]>(INITIAL_ANNOUNCEMENTS);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [announcements, setAnnouncements] = useState<DashboardAnnouncement[]>([]);
 
-  const acknowledge = (id: string) => {
-    setAnnouncements((prev) => prev.map((a) => (a.id === id ? { ...a, acknowledged: true } : a)));
-    // TODO: POST /api/v1/announcements/:id/acknowledge
-  };
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await getAnnouncements(30);
+        if (!cancelled) setAnnouncements(res.data.announcements || []);
+      } catch (err: any) {
+        if (!cancelled) setError(err.message || 'Failed to load announcements');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const pendingCount = announcements.filter((a) => !a.acknowledged).length;
+  const formatDate = (d: string) =>
+    new Date(d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 
   return (
     <Card>
@@ -82,46 +49,37 @@ const Announcements: React.FC = () => {
         <CardTitle className="flex items-center gap-2">
           <Megaphone className="h-5 w-5" /> Announcements
         </CardTitle>
-        <CardDescription>
-          Posts from the Principal — staff meetings, holidays, sports day, CBC updates.
-          {pendingCount > 0 && (
-            <span className="ml-1 font-medium text-amber-600">{pendingCount} awaiting your acknowledgement.</span>
-          )}
-        </CardDescription>
+        <CardDescription>Posts from the school admin — staff meetings, holidays, events, CBC updates.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {announcements.map((a) => (
-          <div key={a.id} className="border rounded-md p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="bg-primary/10 p-2 rounded-full text-primary shrink-0">
-                  {CATEGORY_META[a.category].icon}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="font-semibold">{a.title}</h4>
-                    <Badge variant="outline" className="text-[10px]">{CATEGORY_META[a.category].label}</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">{a.body}</p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Posted by {a.postedBy} · {a.postedAt}
-                  </p>
-                </div>
-              </div>
-              <div className="shrink-0">
-                {a.acknowledged ? (
-                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100 flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3" /> Acknowledged
-                  </Badge>
-                ) : (
-                  <Button size="sm" onClick={() => acknowledge(a.id)}>
-                    Acknowledge
-                  </Button>
-                )}
-              </div>
-            </div>
+      <CardContent className="space-y-3">
+        {loading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
           </div>
-        ))}
+        ) : error ? (
+          <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+            <AlertCircle className="h-4 w-4" />
+            {error}
+          </div>
+        ) : announcements.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">No announcements yet.</p>
+        ) : (
+          announcements.map((a) => (
+            <div key={a.id} className="rounded-md border p-4">
+              <div className="flex items-start justify-between gap-4">
+                <h4 className="font-semibold">{a.title}</h4>
+                <Badge variant="outline" className="shrink-0 text-[10px]">{formatDate(a.created_at)}</Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">{a.body}</p>
+              {a.classes && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  For {a.classes.grade_level}{a.classes.stream_name ? ` ${a.classes.stream_name}` : ''}
+                </p>
+              )}
+            </div>
+          ))
+        )}
       </CardContent>
     </Card>
   );
