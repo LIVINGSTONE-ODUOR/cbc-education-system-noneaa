@@ -116,6 +116,10 @@ import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
 // Timetable Page (was orphaned - never routed)
 import TimetablePage from "@/pages/auth/school-admin/timetable/TimetablePage";
 
+// Communication (Announcements & Messages)
+import AnnouncementsPage from "@/pages/auth/school-admin/communication/AnnouncementsPage";
+import MessagesInboxPage from "@/pages/auth/school-admin/communication/MessagesInboxPage";
+
 // Grading System Pages
 import GradingManagement from "@/components/grading/GradingManagement";
 import TeacherAssessmentEntry from "@/components/grading/TeacherAssessmentEntry";
@@ -477,6 +481,10 @@ function AppRoutes() {
 
                 {/* ── Timetable (was orphaned - component existed but had no route) ── */}
                 <Route path="timetable" element={<TimetablePage />} />
+
+                {/* ── Communication (Announcements & Messages) ── */}
+                <Route path="announcements" element={<AnnouncementsPage />} />
+                <Route path="messages" element={<MessagesInboxPage />} />
 
                 {/* ── Grading System ── */}
                 <Route path="grading/schemes" element={<GradingManagement />} />
