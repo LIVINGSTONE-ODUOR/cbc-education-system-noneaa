@@ -277,7 +277,7 @@ const setLockState = (locked) => asyncHandler(async (req, res) => {
 
   const { data: batch, error: fetchError } = await supabase
     .from('promotion_batches')
-    .select('status')
+    .select('status, kind, criteria, academic_year_id')
     .eq('id', id)
     .eq('school_id', schoolId)
     .single();
@@ -293,19 +293,85 @@ const setLockState = (locked) => asyncHandler(async (req, res) => {
     return res.status(409).json({ success: false, message: 'Batch is not locked' });
   }
 
-  // Locking a promotion batch commits learners.grade_level / class to the new class
+  // Locking a promotion batch commits each learner's class change / graduation.
+  //
+  // NOTE: this previously wrote to `learners.current_class_id` and
+  // `learners.status`, but neither column exists — every other controller
+  // in this codebase (attendance, exam, assignment, results, parent
+  // dashboard) resolves/moves a learner's current class via the
+  // `learner_enrollments` table, not a direct column on `learners`. This now
+  // follows that same pattern, and also records each decision in
+  // `promotion_decisions` (the grading module's table) so report cards and
+  // getPromotionDecisions() see batch-driven promotions/graduations too —
+  // previously the two systems never touched each other.
   if (locked) {
     const { data: rows } = await supabase
       .from('promotion_batch_learners')
-      .select('learner_id, to_class_id, decision')
+      .select('learner_id, from_class_id, to_class_id, decision')
       .eq('batch_id', id);
+
+    const nowIso = new Date().toISOString();
+    const lockDate = nowIso.split('T')[0];
 
     for (const row of rows || []) {
       if (row.decision === 'promoted' && row.to_class_id) {
-        await supabase.from('learners').update({ current_class_id: row.to_class_id }).eq('id', row.learner_id);
+        // Close out the learner's current enrollment...
+        await supabase
+          .from('learner_enrollments')
+          .update({
+            status: 'promoted',
+            exit_date: lockDate,
+            exit_reason: 'Promoted to next grade',
+            updated_at: nowIso,
+          })
+          .eq('learner_id', row.learner_id)
+          .eq('status', 'enrolled');
+
+        // ...and enroll them in the destination class.
+        await supabase.from('learner_enrollments').insert({
+          learner_id: row.learner_id,
+          class_id: row.to_class_id,
+          school_id: schoolId,
+          academic_year_id: batch.academic_year_id,
+          enrollment_date: lockDate,
+          status: 'enrolled',
+        });
       }
+
       if (row.decision === 'graduated') {
-        await supabase.from('learners').update({ status: 'graduated' }).eq('id', row.learner_id);
+        // Close out the enrollment and deactivate the learner record —
+        // mirrors how learner.controller.js deactivates a learner elsewhere.
+        await supabase
+          .from('learner_enrollments')
+          .update({
+            status: 'graduated',
+            exit_date: lockDate,
+            exit_reason: 'Graduated',
+            updated_at: nowIso,
+          })
+          .eq('learner_id', row.learner_id)
+          .eq('status', 'enrolled');
+
+        await supabase
+          .from('learners')
+          .update({ is_active: false, updated_at: nowIso })
+          .eq('id', row.learner_id);
+      }
+
+      // Mirror the decision into the grading module's per-learner table,
+      // linked back to this batch via batch_id.
+      if (row.decision === 'promoted' || row.decision === 'graduated') {
+        await supabase.from('promotion_decisions').insert({
+          school_id: schoolId,
+          learner_id: row.learner_id,
+          from_class_id: row.from_class_id || null,
+          to_class_id: row.to_class_id || null,
+          academic_year_id: batch.academic_year_id,
+          decision: row.decision,
+          remarks: `Batch ${batch.kind}: ${batch.criteria}`,
+          decided_by: userId,
+          batch_id: id,
+        });
       }
     }
   }
