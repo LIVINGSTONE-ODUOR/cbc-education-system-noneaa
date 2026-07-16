@@ -255,3 +255,54 @@ export const getSchoolTimetable = async (params?: {
   const response = await fetchWithAuth(url, getFetchOptions('GET'));
   return handleResponse<ApiResponse<SchoolTimetableResponse>>(response);
 };
+
+// ── Teacher Load Report ─────────────────────────────────────────────────
+// Per-teacher, per-day lesson counts against that day's configured lesson
+// cap (Timetable Setup) — flags free/unassigned days and overloaded days.
+
+export type TeacherDayStatus = 'free' | 'light' | 'balanced' | 'overloaded';
+
+export interface TeacherLoadLesson {
+  id: string;
+  start_time: string;
+  end_time: string;
+  class: string | null;
+  learning_area: string | null;
+}
+
+export interface TeacherLoadDay {
+  day: WeekDay;
+  lessons_count: number;
+  limit: number;
+  free_periods: number;
+  status: TeacherDayStatus;
+  lessons: TeacherLoadLesson[];
+}
+
+export interface TeacherLoad {
+  teacher_id: string;
+  name: string;
+  weekly_total: number;
+  days_unassigned: number;
+  days_overloaded: number;
+  days: TeacherLoadDay[];
+}
+
+export interface TeacherLoadResponse {
+  academic_year_id: string;
+  teachers: TeacherLoad[];
+}
+
+// GET /api/v1/timetable/teacher-load?academic_year_id=&term_id=
+export const getTeacherLoadReport = async (params?: {
+  academic_year_id?: string;
+  term_id?: string;
+}): Promise<ApiResponse<TeacherLoadResponse>> => {
+  const searchParams = new URLSearchParams();
+  if (params?.academic_year_id) searchParams.append('academic_year_id', params.academic_year_id);
+  if (params?.term_id) searchParams.append('term_id', params.term_id);
+  const qs = searchParams.toString();
+  const url = `${API_URL}/api/v1/timetable/teacher-load${qs ? `?${qs}` : ''}`;
+  const response = await fetchWithAuth(url, getFetchOptions('GET'));
+  return handleResponse<ApiResponse<TeacherLoadResponse>>(response);
+};
