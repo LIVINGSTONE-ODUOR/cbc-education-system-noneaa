@@ -13,6 +13,8 @@ const {
   deleteSlot,
   getDaySettings,
   updateDaySettings,
+  getSchoolTimetable,
+  getPrintHeader,
 } = require('../controllers/timetable.controller');
 
 router.use(securityHeaders);
@@ -29,6 +31,16 @@ router.get('/settings', getDaySettings);
 // PUT /api/v1/timetable/settings
 //   Body: { academic_year_id, days: [{ day, lessons_count }, ...] }
 router.put('/settings', authorize('school_admin', 'super_admin'), updateDaySettings);
+
+// GET /api/v1/timetable/school-wide?academic_year_id=&term_id=
+//   Every class's weekly grid in one response — powers the admin's "Print
+//   Timetable" button (all lessons, all classes, teacher per subject).
+router.get('/school-wide', authorize('school_admin', 'super_admin'), getSchoolTimetable);
+
+// GET /api/v1/timetable/print-header?academic_year_id=&term_id=
+//   School name / term / academic year for the print header. Used by the
+//   Teacher, Parent, and Student portal print buttons too.
+router.get('/print-header', getPrintHeader);
 
 // GET /api/v1/timetable?class_id=&academic_year_id=&term_id=
 //   Weekly grid for one class. Any authenticated role in the school can read.
