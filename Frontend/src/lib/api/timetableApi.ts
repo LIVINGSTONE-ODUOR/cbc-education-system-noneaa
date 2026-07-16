@@ -306,3 +306,26 @@ export const getTeacherLoadReport = async (params?: {
   const response = await fetchWithAuth(url, getFetchOptions('GET'));
   return handleResponse<ApiResponse<TeacherLoadResponse>>(response);
 };
+
+// ── Year/Term picker ────────────────────────────────────────────────────
+// Powers the picker on the Print and Timetable Setup screens — lets the
+// admin print last term's timetable, or set up next term's lesson counts,
+// without disturbing whatever is currently marked "current".
+
+export interface TimetablePeriod {
+  id: string;
+  name: string;
+  is_current: boolean;
+}
+
+export interface TimetablePeriodsResponse {
+  academic_years: TimetablePeriod[];
+  academic_terms: TimetablePeriod[];
+}
+
+// GET /api/v1/timetable/periods
+export const getTimetablePeriods = async (): Promise<ApiResponse<TimetablePeriodsResponse>> => {
+  const url = `${API_URL}/api/v1/timetable/periods`;
+  const response = await fetchWithAuth(url, getFetchOptions('GET'));
+  return handleResponse<ApiResponse<TimetablePeriodsResponse>>(response);
+};
