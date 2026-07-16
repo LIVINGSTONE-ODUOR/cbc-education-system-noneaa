@@ -202,3 +202,56 @@ export const updateDaySettings = async (payload: {
   const response = await fetchWithAuth(url, getFetchOptions('PUT', payload));
   return handleResponse<ApiResponse<DaySettingsResponse>>(response);
 };
+
+// ── Printing ─────────────────────────────────────────────────────────────
+
+export interface PrintHeader {
+  school_name: string | null;
+  school_address: string | null;
+  academic_year_name: string | null;
+  term_name: string | null;
+}
+
+// GET /api/v1/timetable/print-header — school name/term/year for a print
+// header. Shared by the Teacher, Parent, and Student portal print buttons.
+export const getPrintHeader = async (params?: {
+  academic_year_id?: string;
+  term_id?: string;
+}): Promise<ApiResponse<PrintHeader>> => {
+  const searchParams = new URLSearchParams();
+  if (params?.academic_year_id) searchParams.append('academic_year_id', params.academic_year_id);
+  if (params?.term_id) searchParams.append('term_id', params.term_id);
+  const qs = searchParams.toString();
+  const url = `${API_URL}/api/v1/timetable/print-header${qs ? `?${qs}` : ''}`;
+  const response = await fetchWithAuth(url, getFetchOptions('GET'));
+  return handleResponse<ApiResponse<PrintHeader>>(response);
+};
+
+export interface SchoolTimetableClass {
+  id: string;
+  grade_level: string;
+  stream_name: string | null;
+  timetable: TimetableGrid;
+}
+
+export interface SchoolTimetableResponse extends PrintHeader {
+  school: { name: string; address: string | null } | null;
+  academic_year: { id: string; name: string | null };
+  term: { id: string; name: string } | null;
+  classes: SchoolTimetableClass[];
+}
+
+// GET /api/v1/timetable/school-wide — every class's weekly grid in one
+// response, for the school admin's "Print Timetable" button.
+export const getSchoolTimetable = async (params?: {
+  academic_year_id?: string;
+  term_id?: string;
+}): Promise<ApiResponse<SchoolTimetableResponse>> => {
+  const searchParams = new URLSearchParams();
+  if (params?.academic_year_id) searchParams.append('academic_year_id', params.academic_year_id);
+  if (params?.term_id) searchParams.append('term_id', params.term_id);
+  const qs = searchParams.toString();
+  const url = `${API_URL}/api/v1/timetable/school-wide${qs ? `?${qs}` : ''}`;
+  const response = await fetchWithAuth(url, getFetchOptions('GET'));
+  return handleResponse<ApiResponse<SchoolTimetableResponse>>(response);
+};
