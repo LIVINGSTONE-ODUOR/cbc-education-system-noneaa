@@ -67,7 +67,7 @@ class ApiClient {
           ...headers,
           Authorization: `Bearer ${newToken}`,
         };
-        
+
         const retryResponse = await fetch(url, {
           ...options,
           headers: newHeaders,
@@ -78,26 +78,18 @@ class ApiClient {
         }
 
         return await retryResponse.json();
-      } else {
-        // Refresh failed, logout user
-        this.logout();
-        throw new Error('Authentication failed, please login again');
       }
-<<<<<<< HEAD
 
-      return await response.json();
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('An unexpected error occurred');
-=======
->>>>>>> 8de7e12699a0027a5c6c4e10e7d9be9b5eb63230
+      // Refresh failed, logout user
+      this.logout();
+      throw new Error('Authentication failed, please login again');
     }
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
+
+
 
     return await response.json();
   }
