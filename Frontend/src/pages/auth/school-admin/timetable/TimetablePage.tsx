@@ -37,7 +37,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { CalendarClock, Loader2, Plus, Pencil, Trash2, AlertTriangle, School } from 'lucide-react';
+import { CalendarClock, Loader2, Plus, Pencil, Trash2, AlertTriangle, School, Settings } from 'lucide-react';
 
 import { getClasses, getClassLearningAreas, ClassApiItem, ClassLearningArea } from '@/lib/api/classApi';
 import { getTeachers } from '@/lib/api/teacherApi';
@@ -46,9 +46,12 @@ import {
   createTimetableSlot,
   updateTimetableSlot,
   deleteTimetableSlot,
+  getDaySettings,
+  updateDaySettings,
   TimetableConflictError,
   TimetableGrid,
   TimetableSlot,
+  DaySetting,
   WeekDay,
   WEEK_DAYS,
 } from '@/lib/api/timetableApi';
@@ -95,6 +98,54 @@ export default function TimetablePage() {
   const [learningAreas, setLearningAreas] = useState<ClassLearningArea[]>([]);
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
   const [grid, setGrid] = useState<TimetableGrid>(emptyGrid());
+
+  // ── Timetable Setup: lessons-per-day, e.g. Monday = 8, Friday = 6 ────────
+  const [daySettings, setDaySettings] = useState<DaySetting[]>(
+    WEEK_DAYS.map(({ value }) => ({ day: value, lessons_count: 8 }))
+  );
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsDraft, setSettingsDraft] = useState<Record<WeekDay, number>>({} as Record<WeekDay, number>);
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  const lessonLimit = useCallback(
+    (day: WeekDay) => daySettings.find((s) => s.day === day)?.lessons_count ?? 8,
+    [daySettings]
+  );
+
+  const loadDaySettings = useCallback(async () => {
+    try {
+      const res = await getDaySettings();
+      setDaySettings(res.data.settings);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load timetable setup');
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDaySettings();
+  }, [loadDaySettings]);
+
+  const openSettingsDialog = () => {
+    const draft = {} as Record<WeekDay, number>;
+    WEEK_DAYS.forEach(({ value }) => { draft[value] = lessonLimit(value); });
+    setSettingsDraft(draft);
+    setSettingsOpen(true);
+  };
+
+  const saveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const days = WEEK_DAYS.map(({ value }) => ({ day: value, lessons_count: settingsDraft[value] }));
+      const res = await updateDaySettings({ days });
+      setDaySettings(res.data.settings);
+      toast.success('Timetable setup saved');
+      setSettingsOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save timetable setup');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   const [loadingClasses, setLoadingClasses] = useState(true);
   const [loadingGrid, setLoadingGrid] = useState(false);
@@ -211,6 +262,18 @@ export default function TimetablePage() {
       ? [form.primaryDay, ...form.extraDays.filter((d) => d !== form.primaryDay)]
       : [form.primaryDay];
 
+    // Respect the lessons-per-day cap set in Timetable Setup (e.g. Monday
+    // maxes out at 8 lessons). Editing an existing slot doesn't add a new
+    // lesson to the day, so it's exempt from this check.
+    if (!editingSlot) {
+      const fullDays = days.filter((d) => (grid[d]?.length || 0) >= lessonLimit(d));
+      if (fullDays.length) {
+        const label = fullDays.map((d) => d.charAt(0).toUpperCase() + d.slice(1)).join(', ');
+        setFormError(`${label} already has its full lesson count for this class. Remove a lesson first or raise the limit in Timetable Setup.`);
+        return;
+      }
+    }
+
     setSaving(true);
     setFormError(null);
     try {
@@ -276,10 +339,16 @@ export default function TimetablePage() {
             Assign teachers to learning areas per class, and schedule the days and times each lesson runs.
           </p>
         </div>
-        <Button onClick={openAddDialog} disabled={!selectedClassId || loadingClasses}>
-          <Plus className="h-4 w-4 mr-2" />
-          Schedule Lesson
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={openSettingsDialog}>
+            <Settings className="h-4 w-4 mr-2" />
+            Timetable Setup
+          </Button>
+          <Button onClick={openAddDialog} disabled={!selectedClassId || loadingClasses}>
+            <Plus className="h-4 w-4 mr-2" />
+            Schedule Lesson
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -324,7 +393,15 @@ export default function TimetablePage() {
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               {WEEK_DAYS.map(({ value, label }) => (
                 <div key={value} className="space-y-2">
-                  <div className="text-sm font-semibold text-center py-1.5 rounded-md bg-muted">{label}</div>
+                  <div className="text-sm font-semibold text-center py-1.5 rounded-md bg-muted flex items-center justify-center gap-1.5">
+                    {label}
+                    <Badge
+                      variant={(grid[value]?.length || 0) >= lessonLimit(value) ? 'destructive' : 'secondary'}
+                      className="text-[10px] font-normal"
+                    >
+                      {grid[value]?.length || 0}/{lessonLimit(value)}
+                    </Badge>
+                  </div>
                   <div className="space-y-2 min-h-[80px]">
                     {(grid[value] || []).length === 0 && (
                       <div className="text-xs text-muted-foreground text-center py-4 border border-dashed rounded-md">
@@ -526,6 +603,48 @@ export default function TimetablePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Timetable Setup: lessons per day ───────────────────────────── */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Timetable Setup</DialogTitle>
+            <DialogDescription>
+              Set how many lessons are taught on each day, e.g. Monday = 8 lessons, Friday = 6.
+              Applies school-wide and caps how many lessons any class can be scheduled for on that day.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            {WEEK_DAYS.map(({ value, label }) => (
+              <div key={value} className="flex items-center justify-between gap-4">
+                <Label className="w-28">{label}</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={settingsDraft[value] ?? 8}
+                  onChange={(e) =>
+                    setSettingsDraft((s) => ({ ...s, [value]: Math.max(1, Math.min(20, Number(e.target.value) || 1)) }))
+                  }
+                  className="w-24"
+                />
+                <span className="text-xs text-muted-foreground">lessons</span>
+              </div>
+            ))}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSettingsOpen(false)} disabled={savingSettings}>
+              Cancel
+            </Button>
+            <Button onClick={saveSettings} disabled={savingSettings}>
+              {savingSettings && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
