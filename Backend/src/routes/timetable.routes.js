@@ -16,6 +16,7 @@ const {
   getSchoolTimetable,
   getPrintHeader,
   getTeacherLoadReport,
+  getTimetablePeriods,
 } = require('../controllers/timetable.controller');
 
 router.use(securityHeaders);
@@ -47,6 +48,11 @@ router.get('/print-header', getPrintHeader);
 //   Per-teacher, per-day lesson counts vs. that day's lesson cap — flags
 //   free/unassigned days and overloaded days. Admin/super_admin only.
 router.get('/teacher-load', authorize('school_admin', 'super_admin'), getTeacherLoadReport);
+
+// GET /api/v1/timetable/periods
+//   Academic years + terms for the Year/Term picker on the Print and
+//   Timetable Setup screens. Any authenticated role in the school can read.
+router.get('/periods', getTimetablePeriods);
 
 // GET /api/v1/timetable?class_id=&academic_year_id=&term_id=
 //   Weekly grid for one class. Any authenticated role in the school can read.
