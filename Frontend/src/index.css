@@ -403,3 +403,13 @@
   --input: 0 0% 16%;
   --ring: 158 40% 45%;
 }
+
+/* Global print rule: any element (or ancestor of one) marked .no-print is
+   hidden when printing, so portal chrome (sidebars, nav, quick actions,
+   greeting banners) never shows up in printed timetables/reports —
+   regardless of which page/component happens to be mounted. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
