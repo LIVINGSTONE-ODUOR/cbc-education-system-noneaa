@@ -382,9 +382,9 @@ const Header = ({
   return (
     <header
       className={cn(
-        'flex-shrink-0 h-16 border-b border-gray-200 dark:border-gray-800',
+        'flex-shrink-0 h-16 border-b border-gray-200 dark:border-border',
         'flex items-center px-4 md:px-6 sticky top-0 z-40 w-full',
-        'bg-white dark:bg-slate-900 dark:bg-gray-950 transition-colors duration-300'
+        'bg-white dark:bg-background transition-colors duration-300'
       )}
     >
       <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -429,7 +429,7 @@ const Header = ({
           >
             <HelpCircle className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
-          <div className="absolute right-0 top-full mt-1 w-80 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+          <div className="absolute right-0 top-full mt-1 w-80 rounded-xl shadow-xl border border-gray-200 dark:border-border bg-white dark:bg-card opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
             <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
               <HelpCircle className="w-5 h-5 text-blue-500" />
               <h3 className="font-semibold text-gray-900 dark:text-gray-100">Need Help?</h3>
@@ -668,7 +668,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, []);
 
   return (
-    <div className={cn('flex h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden transition-colors duration-300')}>
+    <div className={cn('flex h-screen bg-muted/40 dark:bg-background overflow-hidden transition-colors duration-300')}>
       {/* Sidebar */}
       <Sidebar
         collapsed={collapsed}
