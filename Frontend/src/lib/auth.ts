@@ -52,43 +52,38 @@ class ApiClient {
       ...(token && { Authorization: `Bearer ${token}` }),
     };
 
-    try {
-      const response = await fetch(url, {
-        ...options,
-        headers,
-      });
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
 
-      if (response.status === 401) {
-        // Try to refresh token
-        const refreshed = await this.refreshToken();
-        if (refreshed) {
-          // Retry the original request with new token
-          const newToken = this.getToken();
-          const newHeaders = {
-            ...headers,
-            Authorization: `Bearer ${newToken}`,
-          };
-          
-          const retryResponse = await fetch(url, {
-            ...options,
-            headers: newHeaders,
-          });
+    if (response.status === 401) {
+      // Try to refresh token
+      const refreshed = await this.refreshToken();
+      if (refreshed) {
+        // Retry the original request with new token
+        const newToken = this.getToken();
+        const newHeaders = {
+          ...headers,
+          Authorization: `Bearer ${newToken}`,
+        };
+        
+        const retryResponse = await fetch(url, {
+          ...options,
+          headers: newHeaders,
+        });
 
-          if (!retryResponse.ok) {
-            throw new Error(`HTTP error! status: ${retryResponse.status}`);
-          }
-
-          return await retryResponse.json();
-        } else {
-          // Refresh failed, logout user
-          this.logout();
-          throw new Error('Authentication failed, please login again');
+        if (!retryResponse.ok) {
+          throw new Error(`HTTP error! status: ${retryResponse.status}`);
         }
-      }
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        return await retryResponse.json();
+      } else {
+        // Refresh failed, logout user
+        this.logout();
+        throw new Error('Authentication failed, please login again');
       }
+<<<<<<< HEAD
 
       return await response.json();
     } catch (error) {
@@ -96,7 +91,15 @@ class ApiClient {
         throw error;
       }
       throw new Error('An unexpected error occurred');
+=======
+>>>>>>> 8de7e12699a0027a5c6c4e10e7d9be9b5eb63230
     }
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
   }
 
   async get<T>(endpoint: string): Promise<T> {

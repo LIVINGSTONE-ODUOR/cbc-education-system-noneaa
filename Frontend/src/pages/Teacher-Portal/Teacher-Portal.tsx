@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Calendar, User, ChevronDown, ChevronUp, Users, UserRound, ClipboardCheck, MessageSquare, Megaphone, Settings as SettingsIcon, UsersRound, BarChart3, FileText, LogOut, Home } from 'lucide-react';
+import { BookOpen, Calendar, User, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Users, UserRound, ClipboardCheck, MessageSquare, Megaphone, Settings as SettingsIcon, UsersRound, BarChart3, FileText, LogOut, Home, GraduationCap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ClassSelectSkeleton, StudentRowsSkeleton, DetailRowsSkeleton } from './components/skeletons';
 import MarkAttendance from './components/MarkAttendance';
@@ -70,6 +71,7 @@ const TeacherPortal = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -221,128 +223,228 @@ const TeacherPortal = () => {
     { value: 'messages', label: 'Messages', icon: MessageSquare },
     { value: 'reports', label: 'Reports', icon: FileText },
     { value: 'announcements', label: 'Announcements', icon: Megaphone },
-    { value: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
 
-  return (
-      <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background container mx-auto px-4 py-6">
-        {!profileLoading && profile && (
-          <div className="mb-5 animate-fade-in-down">
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
-              {getGreeting(currentHour)}, <span className="text-primary">{profile.full_name.split(' ')[0]}</span>
-            </h1>
-            {profile.school_name && (
-              <p className="text-muted-foreground text-sm">{profile.school_name}</p>
-            )}
-          </div>
-        )}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-5 items-start">
-          {/* Sidebar */}
-          <div className="col-span-1 md:sticky md:top-4 space-y-4 animate-slide-in-left">
-            <Card className="overflow-hidden border-0 shadow-md">
-              {profileLoading ? (
-                <>
-                  <div className="bg-muted/60 px-4 pt-5 pb-6 flex flex-col items-center gap-2">
-                    <Skeleton className="w-16 h-16 rounded-full" />
-                    <Skeleton className="h-4 w-28" />
-                    <Skeleton className="h-3 w-16" />
-                    <Skeleton className="h-5 w-20 rounded-full" />
-                  </div>
-                  <CardContent className="p-3">
-                    <DetailRowsSkeleton />
-                  </CardContent>
-                </>
-              ) : profile ? (
-                <>
-                  <div className="bg-gradient-to-br from-primary to-primary/70 px-4 pt-5 pb-6 text-center relative">
-                    <div className="w-16 h-16 mx-auto rounded-full overflow-hidden border-2 border-white/70 bg-white/10 flex items-center justify-center shadow-lg">
-                      {profile.photo ? (
-                        <img src={profile.photo} alt={profile.full_name} className="w-full h-full object-cover" />
-                      ) : (
-                        <UserRound className="w-8 h-8 text-white/90" />
-                      )}
-                    </div>
-                    <h2 className="text-sm font-semibold mt-2.5 text-white">{profile.full_name}</h2>
-                    <p className="text-white/80 text-xs">{profile.designation || 'Teacher'}</p>
-                    {profile.employee_number && (
-                      <div className="inline-block bg-white/15 text-white text-[11px] px-2.5 py-0.5 rounded-full mt-1.5 backdrop-blur-sm">
-                        ID: {profile.employee_number}
-                      </div>
-                    )}
-                  </div>
-                  <CardContent className="p-3 text-xs space-y-1.5">
-                    <div className="flex justify-between py-1 border-b border-border/60">
-                      <span className="text-muted-foreground">School</span>
-                      <span className="font-medium text-right truncate max-w-[60%]">{profile.school_name || '—'}</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-border/60">
-                      <span className="text-muted-foreground">Experience</span>
-                      <span className="font-medium">{profile.experience || '—'}</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-border/60">
-                      <span className="text-muted-foreground">Email</span>
-                      <span className="font-medium truncate max-w-[60%]">{profile.email}</span>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span className="text-muted-foreground">Phone</span>
-                      <span className="font-medium">{profile.phone || '—'}</span>
-                    </div>
-                  </CardContent>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">Profile unavailable.</p>
-              )}
-            </Card>
+  const initials = (profile?.full_name || '')
+    .split(' ')
+    .filter(Boolean)
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 
-            {/* Navigation */}
-            <Card className="border-0 shadow-md">
-              <CardContent className="p-2">
-                <nav className="flex flex-col gap-0.5">
+  return (
+      <div className="teacher-portal-theme lg:h-screen lg:overflow-hidden bg-background">
+        <div className="w-full lg:h-full px-3 sm:px-4 lg:px-6 py-6 md:py-8 flex flex-col">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col lg:flex-row gap-4 items-start lg:items-stretch w-full flex-1 lg:min-h-0">
+
+            {/* Left: collapsible green sidebar navigation, styled like the Student Portal */}
+            <div className={cn('order-1 w-full min-w-0 flex-shrink-0 transition-all duration-300 lg:h-full lg:flex lg:flex-col', sidebarCollapsed ? 'lg:w-20' : 'lg:w-64')}>
+              <div className="rounded-2xl bg-[#152C21] border border-[#2A4A3A] flex flex-col overflow-hidden lg:flex-1 lg:min-h-0">
+                {/* Header */}
+                <div className="hidden lg:flex items-center justify-between gap-2 px-3 py-4 border-b border-[#2A4A3A]">
+                  {!sidebarCollapsed && (
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0 ring-1 ring-amber-300/40">
+                        <GraduationCap className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm text-white truncate">{profile?.school_name || 'School'}</p>
+                        <p className="text-xs text-emerald-200/60 truncate">Teacher Portal</p>
+                      </div>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setSidebarCollapsed((prev) => !prev)}
+                    className="p-2 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0"
+                    aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                    title={sidebarCollapsed ? 'Expand' : 'Collapse'}
+                  >
+                    {sidebarCollapsed ? (
+                      <ChevronRight className="w-4 h-4 text-emerald-200/70" />
+                    ) : (
+                      <ChevronLeft className="w-4 h-4 text-emerald-200/70" />
+                    )}
+                  </button>
+                </div>
+
+                {/* Navigation */}
+                <nav className="flex flex-row lg:flex-col overflow-x-auto lg:overflow-y-auto lg:overflow-x-hidden gap-1 lg:gap-0 lg:space-y-1 py-2 lg:py-3 px-2 lg:flex-1 lg:min-h-0">
                   {navItems.map(({ value, label, icon: Icon }) => {
                     const isActive = activeTab === value;
                     return (
                       <button
                         key={value}
+                        type="button"
                         onClick={() => setActiveTab(value)}
-                        className={`group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-left transition-all duration-200 ease-out
-                          ${isActive
-                            ? 'bg-primary text-primary-foreground shadow-sm font-semibold translate-x-0.5'
-                            : 'text-foreground/80 hover:bg-muted hover:translate-x-0.5'}`}
+                        title={label}
+                        aria-label={label}
+                        className={cn(
+                          'flex-shrink-0 lg:w-full flex items-center justify-center lg:justify-start gap-3 rounded-lg h-10 text-sm font-medium transition-all duration-200 px-3',
+                          sidebarCollapsed && 'lg:justify-center lg:px-2',
+                          isActive
+                            ? 'bg-gradient-to-r from-amber-500/20 to-transparent text-amber-300 border-r-2 lg:border-r-2 border-amber-400 shadow-sm'
+                            : 'text-emerald-100/80 hover:bg-white/5 hover:text-white'
+                        )}
                       >
-                        <Icon className={`h-4 w-4 shrink-0 transition-transform duration-200 ${isActive ? '' : 'group-hover:scale-110 text-primary'}`} />
-                        <span className="truncate">{label}</span>
+                        <Icon className={cn('w-5 h-5 flex-shrink-0', isActive && 'text-amber-300')} />
+                        {!sidebarCollapsed && <span className="hidden lg:inline truncate">{label}</span>}
                       </button>
                     );
                   })}
                 </nav>
-              </CardContent>
-            </Card>
 
-            {/* Home / Logout */}
-            <Card className="border-0 shadow-md">
-              <CardContent className="p-2 space-y-1">
-                <button
-                  onClick={handleGoHome}
-                  className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-left text-foreground/80 transition-all duration-200 ease-out hover:bg-muted hover:translate-x-0.5"
-                >
-                  <Home className="h-4 w-4 shrink-0 text-primary" />
-                  <span>Back to Website</span>
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-left text-destructive transition-all duration-200 ease-out hover:bg-destructive/10 hover:translate-x-0.5"
-                >
-                  <LogOut className="h-4 w-4 shrink-0" />
-                  <span>Log Out</span>
-                </button>
-              </CardContent>
-            </Card>
-          </div>
+                {/* Mobile-only: current section label, since the icon strip has no room for text labels */}
+                <div className="lg:hidden px-3 pb-2 -mt-1 text-xs font-medium text-amber-300 truncate">
+                  {navItems.find((i) => i.value === activeTab)?.label}
+                </div>
 
-          {/* Main content */}
-          <div className="col-span-1 md:col-span-3 space-y-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <div key={activeTab} className="animate-fade-in-up">
+                {/* User footer */}
+                <div className="hidden lg:block flex-shrink-0 border-t border-[#2A4A3A] p-3">
+                  <div className={cn('flex items-center gap-2 mb-2', sidebarCollapsed && 'justify-center')}>
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-white">{initials || 'T'}</span>
+                    </div>
+                    {!sidebarCollapsed && (
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-white truncate">{profile?.full_name || 'Teacher'}</p>
+                        <p className="text-xs text-emerald-200/60 truncate">{profile?.designation || 'Teacher'}</p>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleGoHome}
+                    className={cn(
+                      'w-full flex items-center gap-2 rounded-lg h-9 text-sm text-emerald-100/80 hover:bg-white/5 transition-colors',
+                      sidebarCollapsed ? 'justify-center' : 'px-3'
+                    )}
+                  >
+                    <Home className="w-4 h-4 flex-shrink-0" />
+                    {!sidebarCollapsed && <span>Back to Website</span>}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className={cn(
+                      'w-full flex items-center gap-2 rounded-lg h-9 text-sm text-red-300 hover:bg-white/5 transition-colors',
+                      sidebarCollapsed ? 'justify-center' : 'px-3'
+                    )}
+                  >
+                    <LogOut className="w-4 h-4 flex-shrink-0" />
+                    {!sidebarCollapsed && <span>Log Out</span>}
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                variant={activeTab === 'settings' ? 'default' : 'outline'}
+                className={cn('w-full justify-center gap-2 rounded-xl h-11 shadow-sm mt-3 lg:flex-shrink-0', sidebarCollapsed && 'px-0')}
+                onClick={() => setActiveTab('settings')}
+                title={sidebarCollapsed ? 'Settings' : undefined}
+              >
+                <SettingsIcon className="h-5 w-5 shrink-0" />
+                {!sidebarCollapsed && <span className="text-sm font-medium">Settings</span>}
+              </Button>
+            </div>
+
+            {/* Right: teacher profile card + quick actions, mirroring the Student Portal's right rail */}
+            <div className="order-2 lg:order-3 w-full lg:w-72 flex-shrink-0 space-y-3 min-w-0 lg:h-full lg:overflow-y-auto">
+              <Card className="overflow-hidden border-border/60 shadow-sm">
+                {profileLoading ? (
+                  <CardContent className="p-4">
+                    <div className="flex flex-col items-center gap-2">
+                      <Skeleton className="w-14 h-14 rounded-full" />
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                    <div className="mt-4">
+                      <DetailRowsSkeleton />
+                    </div>
+                  </CardContent>
+                ) : profile ? (
+                  <>
+                    <div className="h-10 bg-gradient-to-r from-primary to-primary/80" />
+                    <CardContent className="pt-0 px-3 pb-3">
+                      <div className="flex flex-col items-center -mt-7 mb-3">
+                        <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-background bg-muted shadow-md ring-2 ring-accent/40 flex items-center justify-center">
+                          {profile.photo ? (
+                            <img src={profile.photo} alt={profile.full_name} className="w-full h-full object-cover" />
+                          ) : (
+                            <UserRound className="w-7 h-7 text-muted-foreground" />
+                          )}
+                        </div>
+                        <p className="font-serif italic text-accent text-[11px] mt-2">Teacher Profile</p>
+                        <h2 className="text-sm font-bold mt-0.5 text-center leading-tight break-words">{profile.full_name}</h2>
+                        <p className="text-muted-foreground text-xs">{profile.designation || 'Teacher'}</p>
+                        {profile.employee_number && (
+                          <div className="bg-accent/10 text-accent text-[11px] font-medium px-2 py-0.5 rounded-full mt-1.5">
+                            ID: {profile.employee_number}
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-0.5 border-t pt-3 text-xs">
+                        <div className="flex justify-between gap-2 py-0.5">
+                          <span className="text-muted-foreground">School:</span>
+                          <span className="font-medium text-right truncate">{profile.school_name || '—'}</span>
+                        </div>
+                        <div className="flex justify-between gap-2 py-0.5">
+                          <span className="text-muted-foreground">Experience:</span>
+                          <span className="font-medium text-right truncate">{profile.experience || '—'}</span>
+                        </div>
+                        <div className="flex justify-between gap-2 py-0.5">
+                          <span className="text-muted-foreground">Email:</span>
+                          <span className="font-medium text-right truncate">{profile.email || '—'}</span>
+                        </div>
+                        <div className="flex justify-between gap-2 py-0.5">
+                          <span className="text-muted-foreground">Phone:</span>
+                          <span className="font-medium text-right truncate">{profile.phone || '—'}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </>
+                ) : (
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground text-center py-8">Profile unavailable.</p>
+                  </CardContent>
+                )}
+              </Card>
+
+              <Card className="border-border/60 shadow-sm">
+                <CardHeader className="py-3 px-3">
+                  <CardTitle className="text-sm font-serif italic text-accent font-normal">Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-1.5 px-3 pb-3">
+                  <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setAttendanceDialogOpen(true)} disabled={!selectedClass}>
+                    <ClipboardCheck className="mr-2 h-3.5 w-3.5" /> Mark Attendance
+                  </Button>
+                  <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('gradebook')}>
+                    <BarChart3 className="mr-2 h-3.5 w-3.5" /> Open Gradebook
+                  </Button>
+                  <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('assignments')}>
+                    <BookOpen className="mr-2 h-3.5 w-3.5" /> New Assignment
+                  </Button>
+                  <Button size="sm" variant="outline" className="w-full justify-start rounded-xl text-xs h-8 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors" onClick={() => setActiveTab('announcements')}>
+                    <Megaphone className="mr-2 h-3.5 w-3.5" /> Post Announcement
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Middle: active tab's content */}
+            <div className="order-3 lg:order-2 flex-1 w-full space-y-6 min-w-0 lg:h-full lg:overflow-y-auto">
+              {!profileLoading && profile && (
+                <div className="animate-fade-in-down">
+                  <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
+                    {getGreeting(currentHour)}, <span className="text-primary">{profile.full_name.split(' ')[0]}</span>
+                  </h1>
+                  {profile.school_name && (
+                    <p className="text-muted-foreground text-sm">{profile.school_name}</p>
+                  )}
+                </div>
+              )}
+              <div key={activeTab} className="animate-fade-in-up space-y-6">
 
               {/* Dashboard / Home Tab */}
               <TabsContent value="dashboard" className="space-y-6">
@@ -674,8 +776,8 @@ const TeacherPortal = () => {
                 <SettingsTab />
               </TabsContent>
               </div>
-            </Tabs>
-          </div>
+            </div>
+          </Tabs>
         </div>
 
         {selectedClass && (

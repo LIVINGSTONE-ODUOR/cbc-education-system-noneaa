@@ -1,11 +1,3 @@
-/**
- * SchoolDashboard — Modern School Admin Dashboard
- *
- * Fetches live data from /api/v1/dashboard/* endpoints and renders
- * interactive KPI cards, charts, activity feed, and performance
- * insights. Handles loading, error, empty, and refresh states.
- */
-
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
