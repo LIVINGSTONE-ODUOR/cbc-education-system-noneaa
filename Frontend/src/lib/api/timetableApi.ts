@@ -329,3 +329,42 @@ export const getTimetablePeriods = async (): Promise<ApiResponse<TimetablePeriod
   const response = await fetchWithAuth(url, getFetchOptions('GET'));
   return handleResponse<ApiResponse<TimetablePeriodsResponse>>(response);
 };
+
+// ── Bulk copy: duplicate a whole term/year's timetable into another term
+// or year, so the admin only has to tweak what's different instead of
+// rebuilding the grid from scratch every term.
+
+export interface CopyTimetableSkippedItem {
+  class: string | null;
+  teacher: string | null;
+  learning_area: string | null;
+  day: WeekDay;
+  start_time: string;
+  end_time: string;
+  room: string | null;
+  reason: string;
+}
+
+export interface CopyTimetableResponse {
+  total_source: number;
+  copied: number;
+  skipped_count: number;
+  skipped: CopyTimetableSkippedItem[];
+  target_academic_year_id: string;
+  target_term_id: string | null;
+  classes_copied: number;
+}
+
+// POST /api/v1/timetable/copy
+export const copyTimetable = async (payload: {
+  source_academic_year_id?: string;
+  source_term_id?: string;
+  target_academic_year_id: string;
+  target_term_id?: string;
+  class_ids?: string[];
+  overwrite?: boolean;
+}): Promise<ApiResponse<CopyTimetableResponse>> => {
+  const url = `${API_URL}/api/v1/timetable/copy`;
+  const response = await fetchWithAuth(url, getFetchOptions('POST', payload));
+  return handleResponse<ApiResponse<CopyTimetableResponse>>(response);
+};
