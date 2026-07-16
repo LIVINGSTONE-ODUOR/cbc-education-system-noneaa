@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Bell, MapPin, CalendarDays, CalendarRange, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { getMyTimetable, type MyTimetableSlot } from '@/lib/api/teacherApi';
 import { getPrintHeader, type PrintHeader } from '@/lib/api/timetableApi';
 import { TableBodySkeleton } from './skeletons';
@@ -49,6 +50,8 @@ const formatClass = (cls: MyTimetableSlot['class']) =>
 
 const Timetable: React.FC = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const teacherName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '';
   const [timetable, setTimetable] = useState<Record<string, MyTimetableSlot[]>>({});
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<ViewMode>('today');
@@ -134,10 +137,11 @@ const Timetable: React.FC = () => {
       {/* Print-only header — shown only when printing */}
       <div className="hidden print:block text-center mb-4">
         <h1 className="text-xl font-bold uppercase">{printHeader?.school_name}</h1>
+        <h2 className="text-base font-semibold mt-1">Teacher Timetable</h2>
+        {teacherName && <p className="text-sm font-medium mt-1">{teacherName}</p>}
         <p className="text-sm">
           {printHeader?.term_name || 'Term'} — {printHeader?.academic_year_name || 'Academic Year'}
         </p>
-        <h2 className="text-base font-semibold mt-1">Teacher Timetable</h2>
       </div>
 
       {/* Lesson reminder banner — only appears within 15 minutes of the next lesson */}
