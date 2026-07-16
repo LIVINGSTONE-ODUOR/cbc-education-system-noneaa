@@ -239,7 +239,7 @@ const TeacherPortal = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col lg:flex-row gap-4 items-start lg:items-stretch w-full flex-1 lg:min-h-0">
 
             {/* Left: collapsible green sidebar navigation, styled like the Student Portal */}
-            <div className={cn('order-1 w-full min-w-0 flex-shrink-0 transition-all duration-300 lg:h-full lg:flex lg:flex-col', sidebarCollapsed ? 'lg:w-20' : 'lg:w-64')}>
+            <div className={cn('order-1 w-full min-w-0 flex-shrink-0 transition-all duration-300 lg:h-full lg:flex lg:flex-col no-print', sidebarCollapsed ? 'lg:w-20' : 'lg:w-64')}>
               <div className="rounded-2xl bg-[#152C21] border border-[#2A4A3A] flex flex-col overflow-hidden lg:flex-1 lg:min-h-0">
                 {/* Header */}
                 <div className="hidden lg:flex items-center justify-between gap-2 px-3 py-4 border-b border-[#2A4A3A]">
@@ -350,7 +350,7 @@ const TeacherPortal = () => {
             </div>
 
             {/* Right: teacher profile card + quick actions, mirroring the Student Portal's right rail */}
-            <div className="order-2 lg:order-3 w-full lg:w-72 flex-shrink-0 space-y-3 min-w-0 lg:h-full lg:overflow-y-auto">
+            <div className="order-2 lg:order-3 w-full lg:w-72 flex-shrink-0 space-y-3 min-w-0 lg:h-full lg:overflow-y-auto no-print">
               <Card className="overflow-hidden border-border/60 shadow-sm">
                 {profileLoading ? (
                   <CardContent className="p-4">
@@ -435,7 +435,7 @@ const TeacherPortal = () => {
             {/* Middle: active tab's content */}
             <div className="order-3 lg:order-2 flex-1 w-full space-y-6 min-w-0 lg:h-full lg:overflow-y-auto">
               {!profileLoading && profile && (
-                <div className="animate-fade-in-down">
+                <div className="animate-fade-in-down no-print">
                   <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
                     {getGreeting(currentHour)}, <span className="text-primary">{profile.full_name.split(' ')[0]}</span>
                   </h1>
