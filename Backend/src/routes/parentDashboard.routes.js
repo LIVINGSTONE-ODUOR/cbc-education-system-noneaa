@@ -13,6 +13,8 @@ const {
   sendMessage,
   getConversation,
   getAnnouncements,
+  createAnnouncement,
+  deactivateAnnouncement,
   getTeacherComments,
   getTimetable,
   getSchoolEvents,
@@ -43,8 +45,18 @@ router.get('/messages/conversation/:otherUserId', getConversation);
 router.get('/learner/:learnerId/contacts', getMessageContacts);
 
 // GET  /api/v1/parent-dashboard/announcements?limit=10
-//   School-wide announcements + any targeted at the caller's children's classes
+//   Parents: school-wide announcements + any targeted at their children's classes.
+//   Staff (teacher/school_admin/super_admin): everything broadcast for their school.
 router.get('/announcements', getAnnouncements);
+
+// POST /api/v1/parent-dashboard/announcements
+//   Body: { title, body, class_id?, category? } — class_id omitted = whole school.
+//   Staff only.
+router.post('/announcements', createAnnouncement);
+
+// PUT  /api/v1/parent-dashboard/announcements/:id/deactivate
+//   Staff only. Soft-deletes (is_active = false) without losing history.
+router.put('/announcements/:id/deactivate', deactivateAnnouncement);
 
 // GET  /api/v1/parent-dashboard/learner/:learnerId/comments?limit=10
 //   Roles: parent (own linked child only), teacher/school_admin/super_admin
