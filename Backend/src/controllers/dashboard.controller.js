@@ -15,75 +15,96 @@ const logger = require('../utils/logger');
 // SCHOOL STATISTICS
 // =============================================================================
 
+/**
+ * Compute fresh stats for a school and upsert them into school_stats.
+ * Shared by getSchoolStats (self-healing fallback) and refreshSchoolStats
+ * (explicit refresh) so the two can't drift out of sync.
+ */
+async function computeAndCacheSchoolStats(schoolId) {
+  const [learnerStats, teacherStats, classStats, performanceStats, attendanceStats, activeTerm] =
+    await Promise.all([
+      query(`SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE is_active = true) as active FROM learners WHERE school_id = $1`, [schoolId]),
+      query(`SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE is_active = true) as active FROM teachers WHERE school_id = $1`, [schoolId]),
+      query(`SELECT COUNT(*) as total FROM classes WHERE school_id = $1`, [schoolId]),
+      query(`SELECT COALESCE(AVG(average_score), 0) as avg_score, COUNT(*) as graded FROM report_cards WHERE school_id = $1 AND is_finalized = true`, [schoolId]),
+      query(`SELECT COALESCE(AVG(CASE WHEN status = 'present' THEN 100.0 ELSE 0 END), 0) as rate FROM attendance_records WHERE school_id = $1`, [schoolId]),
+      query(`SELECT id, name FROM academic_terms WHERE NOW() BETWEEN start_date AND end_date LIMIT 1`, []),
+    ]);
+
+  const termId = activeTerm.rows[0]?.id || null;
+
+  const computed = {
+    school_id: schoolId,
+    total_learners: parseInt(learnerStats.rows[0]?.total || 0),
+    active_learners: parseInt(learnerStats.rows[0]?.active || 0),
+    total_teachers: parseInt(teacherStats.rows[0]?.total || 0),
+    active_teachers: parseInt(teacherStats.rows[0]?.active || 0),
+    total_classes: parseInt(classStats.rows[0]?.total || 0),
+    average_score: parseFloat(performanceStats.rows[0]?.avg_score || 0),
+    attendance_rate: parseFloat(attendanceStats.rows[0]?.rate || 0),
+    active_term_name: activeTerm.rows[0]?.name || null,
+  };
+
+  // Upsert into school_stats so the cached view is accurate next time.
+  await query(
+    `INSERT INTO school_stats
+     (school_id, total_learners, active_learners, total_teachers, active_teachers,
+      total_classes, average_score, attendance_rate, active_term_id, calculated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+     ON CONFLICT (school_id)
+     DO UPDATE SET
+       total_learners = EXCLUDED.total_learners,
+       active_learners = EXCLUDED.active_learners,
+       total_teachers = EXCLUDED.total_teachers,
+       active_teachers = EXCLUDED.active_teachers,
+       total_classes = EXCLUDED.total_classes,
+       average_score = EXCLUDED.average_score,
+       attendance_rate = EXCLUDED.attendance_rate,
+       active_term_id = EXCLUDED.active_term_id,
+       calculated_at = NOW(),
+       updated_at = NOW()`,
+    [
+      schoolId,
+      computed.total_learners,
+      computed.active_learners,
+      computed.total_teachers,
+      computed.active_teachers,
+      computed.total_classes,
+      computed.average_score,
+      computed.attendance_rate,
+      termId,
+    ]
+  );
+
+  return computed;
+}
+
 /** GET /api/v1/dashboard/stats — get school dashboard summary statistics */
 exports.getSchoolStats = async (req, res) => {
   try {
     const schoolId = req.query.school_id || req.user.schoolId;
     if (!schoolId) return res.status(400).json({ success: false, message: 'School ID is required.' });
 
-    // Try the materialized view first
+    // Try the cached view first — but only trust it if school_stats has
+    // actually been populated at least once (stats_updated_at set). The
+    // view's columns are all COALESCE(..., 0), so an unpopulated cache and
+    // a genuinely empty school were previously indistinguishable: new
+    // schools with real learners/teachers/classes would see permanent
+    // zeros on the dashboard until someone happened to call
+    // POST /stats/refresh, which nothing does automatically.
     const viewResult = await query(
       `SELECT * FROM v_school_dashboard_summary WHERE school_id = $1 LIMIT 1`,
       [schoolId]
     );
 
-    if (viewResult.rows.length > 0) {
+    if (viewResult.rows.length > 0 && viewResult.rows[0].stats_updated_at) {
       return res.json({ success: true, data: viewResult.rows[0] });
     }
 
-    // Fallback: compute stats on-the-fly
-    const [
-      learnerStats,
-      teacherStats,
-      classStats,
-      performanceStats,
-      attendanceStats,
-      activeTerm,
-    ] = await Promise.all([
-      query(
-        `SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = 'active') as active
-         FROM learners WHERE school_id = $1`,
-        [schoolId]
-      ),
-      query(
-        `SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = 'active') as active
-         FROM teachers WHERE school_id = $1`,
-        [schoolId]
-      ),
-      query(`SELECT COUNT(*) as total FROM classes WHERE school_id = $1`, [schoolId]),
-      query(
-        `SELECT COALESCE(AVG(average_score), 0) as avg_score
-         FROM report_cards WHERE school_id = $1 AND is_finalized = true`,
-        [schoolId]
-      ),
-      query(
-        `SELECT COALESCE(
-          AVG(CASE WHEN status = 'present' THEN 100.0 ELSE 0 END), 0
-        ) as rate FROM attendance WHERE school_id = $1`,
-        [schoolId]
-      ),
-      query(
-        `SELECT id, name FROM academic_terms
-         WHERE NOW() BETWEEN start_date AND end_date
-         LIMIT 1`,
-        []
-      ),
-    ]);
-
-    return res.json({
-      success: true,
-      data: {
-        school_id: schoolId,
-        total_learners: parseInt(learnerStats.rows[0]?.total || 0),
-        active_learners: parseInt(learnerStats.rows[0]?.active || 0),
-        total_teachers: parseInt(teacherStats.rows[0]?.total || 0),
-        active_teachers: parseInt(teacherStats.rows[0]?.active || 0),
-        total_classes: parseInt(classStats.rows[0]?.total || 0),
-        average_score: parseFloat(performanceStats.rows[0]?.avg_score || 0),
-        attendance_rate: parseFloat(attendanceStats.rows[0]?.rate || 0),
-        active_term_name: activeTerm.rows[0]?.name || null,
-      },
-    });
+    // Cache was never populated for this school — compute fresh stats now
+    // and cache them (self-healing), so this only happens once per school.
+    const computed = await computeAndCacheSchoolStats(schoolId);
+    return res.json({ success: true, data: computed });
   } catch (error) {
     logger.error('Get school stats error:', error);
     return res.status(500).json({ success: false, message: 'Unable to load school statistics.' });
@@ -96,49 +117,7 @@ exports.refreshSchoolStats = async (req, res) => {
     const schoolId = req.query.school_id || req.user.schoolId;
     if (!schoolId) return res.status(400).json({ success: false, message: 'School ID is required.' });
 
-    // Compute fresh stats
-    const [learnerStats, teacherStats, classStats, performanceStats, attendanceStats, activeTerm] =
-      await Promise.all([
-        query(`SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = 'active') as active FROM learners WHERE school_id = $1`, [schoolId]),
-        query(`SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = 'active') as active FROM teachers WHERE school_id = $1`, [schoolId]),
-        query(`SELECT COUNT(*) as total FROM classes WHERE school_id = $1`, [schoolId]),
-        query(`SELECT COALESCE(AVG(average_score), 0) as avg_score, COUNT(*) as graded FROM report_cards WHERE school_id = $1 AND is_finalized = true`, [schoolId]),
-        query(`SELECT COALESCE(AVG(CASE WHEN status = 'present' THEN 100.0 ELSE 0 END), 0) as rate FROM attendance WHERE school_id = $1`, [schoolId]),
-        query(`SELECT id, name FROM academic_terms WHERE NOW() BETWEEN start_date AND end_date LIMIT 1`, []),
-      ]);
-
-    const termId = activeTerm.rows[0]?.id || null;
-
-    // Upsert into school_stats
-    await query(
-      `INSERT INTO school_stats
-       (school_id, total_learners, active_learners, total_teachers, active_teachers,
-        total_classes, average_score, attendance_rate, active_term_id, calculated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-       ON CONFLICT (school_id)
-       DO UPDATE SET
-         total_learners = EXCLUDED.total_learners,
-         active_learners = EXCLUDED.active_learners,
-         total_teachers = EXCLUDED.total_teachers,
-         active_teachers = EXCLUDED.active_teachers,
-         total_classes = EXCLUDED.total_classes,
-         average_score = EXCLUDED.average_score,
-         attendance_rate = EXCLUDED.attendance_rate,
-         active_term_id = EXCLUDED.active_term_id,
-         calculated_at = NOW(),
-         updated_at = NOW()`,
-      [
-        schoolId,
-        parseInt(learnerStats.rows[0]?.total || 0),
-        parseInt(learnerStats.rows[0]?.active || 0),
-        parseInt(teacherStats.rows[0]?.total || 0),
-        parseInt(teacherStats.rows[0]?.active || 0),
-        parseInt(classStats.rows[0]?.total || 0),
-        parseFloat(performanceStats.rows[0]?.avg_score || 0),
-        parseFloat(attendanceStats.rows[0]?.rate || 0),
-        termId,
-      ]
-    );
+    await computeAndCacheSchoolStats(schoolId);
 
     return res.json({ success: true, message: 'School statistics refreshed.' });
   } catch (error) {
@@ -324,7 +303,7 @@ async function computeGradeDistribution(schoolId, classId, academicTermId) {
   let whereClause = 'WHERE sa.academic_term_id = $1';
 
   if (classId) {
-    whereClause += ` AND l.class_id = $${idx++}`;
+    whereClause += ` AND sa.class_id = $${idx++}`;
     params.push(classId);
   } else {
     whereClause += ` AND l.school_id = $${idx++}`;
@@ -350,10 +329,24 @@ exports.getGradeDistribution = async (req, res) => {
   try {
     const schoolId = req.query.school_id || req.user.schoolId;
     const classId = req.query.class_id;
-    const academicTermId = req.query.academic_term_id;
+    let academicTermId = req.query.academic_term_id;
 
     if (!academicTermId) {
-      return res.status(400).json({ success: false, message: 'academic_term_id is required.' });
+      // Default to the currently active term instead of requiring the
+      // caller to know it — the dashboard's chart card never passes this,
+      // so this endpoint previously 400'd on every dashboard load and the
+      // pie chart silently showed "no data" (frontend catches the error
+      // and falls back to an empty array).
+      const activeTerm = await query(
+        `SELECT id FROM academic_terms WHERE NOW() BETWEEN start_date AND end_date LIMIT 1`,
+        []
+      );
+      academicTermId = activeTerm.rows[0]?.id || null;
+    }
+
+    if (!academicTermId) {
+      // Still nothing — no active term configured for this school at all.
+      return res.json({ success: true, data: [] });
     }
 
     const distribution = await computeGradeDistribution(schoolId, classId, academicTermId);
