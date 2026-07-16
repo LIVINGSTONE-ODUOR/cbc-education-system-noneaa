@@ -3,9 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Clock, AlertCircle, CalendarDays, CalendarRange, FileText } from 'lucide-react';
+import { Clock, AlertCircle, CalendarDays, CalendarRange, FileText, Printer } from 'lucide-react';
 import { getLearnerTimetable, TimetablePeriod } from '@/lib/api/parentDashboardApi';
 import { getLearnerUpcomingExams, LearnerUpcomingExam } from '@/lib/api/examApi';
+import { getPrintHeader, PrintHeader } from '@/lib/api/timetableApi';
 
 interface TimetableProps {
   learnerId: string;
@@ -33,6 +34,20 @@ const TimetableWidget: React.FC<TimetableProps> = ({ learnerId, reloadKey, empty
 
   const [view, setView] = useState<ViewMode>('daily');
   const [selectedDay, setSelectedDay] = useState<number>(todayDayOfWeek());
+  const [printHeader, setPrintHeader] = useState<PrintHeader | null>(null);
+
+  const handlePrint = async () => {
+    if (!printHeader) {
+      try {
+        const res = await getPrintHeader();
+        setPrintHeader(res.data);
+      } catch {
+        // Print still works without the header — just falls back silently.
+      }
+    }
+    setView('weekly');
+    setTimeout(() => window.print(), 50);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -92,7 +107,16 @@ const TimetableWidget: React.FC<TimetableProps> = ({ learnerId, reloadKey, empty
 
   return (
     <Card id="timetable-section">
-      <CardHeader>
+      {/* Print-only header — shown only when printing */}
+      <div className="hidden print:block text-center pt-4">
+        <h1 className="text-xl font-bold uppercase">{printHeader?.school_name}</h1>
+        <p className="text-sm">
+          {printHeader?.term_name || 'Term'} — {printHeader?.academic_year_name || 'Academic Year'}
+        </p>
+        <h2 className="text-base font-semibold mt-1">Learner Timetable</h2>
+      </div>
+
+      <CardHeader className="no-print">
         <CardTitle className="flex items-center gap-2">
           <CalendarRange className="h-5 w-5 text-primary" />
           Timetable
@@ -111,6 +135,10 @@ const TimetableWidget: React.FC<TimetableProps> = ({ learnerId, reloadKey, empty
               <span className="ml-1.5">{b.label}</span>
             </Button>
           ))}
+          <Button size="sm" variant="outline" onClick={handlePrint}>
+            <Printer className="h-3.5 w-3.5" />
+            <span className="ml-1.5">Print</span>
+          </Button>
         </div>
       </CardHeader>
 
@@ -237,6 +265,15 @@ const TimetableWidget: React.FC<TimetableProps> = ({ learnerId, reloadKey, empty
           )
         )}
       </CardContent>
+
+      {/* Print Styles */}
+      <style>{`
+        @media print {
+          body { background: white; font-size: 11pt; }
+          .no-print { display: none !important; }
+          @page { margin: 1.2cm; }
+        }
+      `}</style>
     </Card>
   );
 };
